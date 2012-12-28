@@ -210,9 +210,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     @Option(name = "-ccPrint", hidden = true, usage = "Print Cell Constraints for each input sentence and exit (no parsing done)")
     public static boolean chartConstraintsPrint = false;
 
-    @Option(name = "-pm", aliases = { "-pruningmodel" }, hidden = true, metaVar = "FILE", usage = "Cell selector model file")
-    private File[] pruningModels = null;
-    
     @Option(name = "-help-long", usage = "List all research parsers and options")
     public boolean longHelp = false;
 
@@ -545,108 +542,108 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
             throw new IllegalArgumentException("Unsupported parser type: " + e.getMessage());
         }
     }
-            
-//    public Parser<?> createParser() {
-//        switch (researchParserType) {
-//        case ECPCellCrossList:
-//            return new ECPCellCrossList(this, (LeftListGrammar) grammar);
-//        case ECPCellCrossListTreeConstrained:
-//            return new ECPCellCrossListTreeConstrained(this, (LeftListGrammar) grammar);
-//        case ECPCellCrossHash:
-//            return new ECPCellCrossHash(this, (LeftHashGrammar) grammar);
-//        case ECPCellCrossHashGrammarLoop:
-//            return new ECPCellCrossHashGrammarLoop(this, (LeftHashGrammar) grammar);
-//        case ECPCellCrossHashGrammarLoop2:
-//            return new ECPCellCrossHashGrammarLoop2(this, (LeftHashGrammar) grammar);
-//        case ECPCellCrossMatrix:
-//            return new ECPCellCrossMatrix(this, (ChildMatrixGrammar) grammar);
-//        case ECPGrammarLoop:
-//            return new ECPGrammarLoop(this, (ListGrammar) grammar);
-//        case ECPGrammarLoopBerkeleyFilter:
-//            return new ECPGrammarLoopBerkFilter(this, (ListGrammar) grammar);
-//        case ECPInsideOutside:
-//            return new ECPInsideOutside(this, (LeftListGrammar) grammar);
-//            // return new ECPInsideOutside2(parserOptions, (LeftHashGrammar) grammar);
-//
-//            final Parser<?> parser = c.newInstance(this, grammar);
-//            parserInstances.add(parser);
-//            return parser;
-//
-//        case BeamSearchChartParser:
-//            return new BeamSearchChartParser<LeftHashGrammar, CellChart>(this, (LeftHashGrammar) grammar);
-//        case BSCPSplitUnary:
-//            return new BSCPSplitUnary(this, (LeftHashGrammar) grammar);
-//        case BSCPPruneViterbi:
-//            return new BSCPPruneViterbi(this, (LeftHashGrammar) grammar);
-//        case BSCPOnlineBeam:
-//            return new BSCPWeakThresh(this, (LeftHashGrammar) grammar);
-//        case BSCPBoundedHeap:
-//            return new BSCPBoundedHeap(this, (LeftHashGrammar) grammar);
-//        case BSCPExpDecay:
-//            return new BSCPExpDecay(this, (LeftHashGrammar) grammar);
-//        case BSCPPerceptronCell:
-//            return new BSCPSkipBaseCells(this, (LeftHashGrammar) grammar);
-//        case BSCPFomDecode:
-//            return new BSCPFomDecode(this, (LeftHashGrammar) grammar);
-//            // case BSCPBeamConf:
-//            // return new BSCPBeamConf(this, (LeftHashGrammar) grammar, parserOptions.beamConfModel);
-//        case BSCPBeamConfTrain:
-//            String feats = "";
-//            if (beamFeatFile != null) {
-//                try {
-//                    feats = TrainPerceptron.featureTemplateToString(beamFeatFile);
-//                } catch (final IOException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//            return new BSCPBeamPredictTrain(this, (LeftHashGrammar) grammar, feats);
-//
-//        case CoarseCellAgenda:
-//            return new CoarseCellAgendaParser(this, (LeftHashGrammar) grammar);
-//            // case CoarseCellAgendaCSLUT:
-//            // final CSLUTBlockedCells cslutScores = (CSLUTBlockedCells) CellSelector.create(
-//            // parserOptions.cellSelectorType, parserOptions.cellModelStream,
-//            // parserOptions.cslutScoresStream);
-//            // return new CoarseCellAgendaParserWithCSLUT(this, (LeftHashGrammar) grammar, cslutScores);
-//
-//        case CsrSpmv:
-//            return new CsrSpmvParser(this, (CsrSparseMatrixGrammar) grammar);
-//        case GrammarParallelCsrSpmv:
-//            return new GrammarParallelCsrSpmvParser(this, (CsrSparseMatrixGrammar) grammar);
-//        case CscSpmv:
-//            return new CscSpmvParser(this, (LeftCscSparseMatrixGrammar) grammar);
-//        case GrammarParallelCscSpmv:
-//            return new GrammarParallelCscSpmvParser(this, (LeftCscSparseMatrixGrammar) grammar);
-//        case DenseVectorOpenClSpmv:
-//            return new DenseVectorOpenClSpmvParser(this, (CsrSparseMatrixGrammar) grammar);
-//        case PackedOpenClSpmv:
-//            return new PackedOpenClSpmvParser(this, (CsrSparseMatrixGrammar) grammar);
-//
-//        case LeftChildMl:
-//            return new LeftChildLoopSpmlParser(this, (LeftCscSparseMatrixGrammar) grammar);
-//        case RightChildMl:
-//            return new RightChildLoopSpmlParser(this, (RightCscSparseMatrixGrammar) grammar);
-//        case GrammarLoopMl:
-//            return new GrammarLoopSpmlParser(this, (CsrSparseMatrixGrammar) grammar);
-//        case CartesianProductBinarySearchMl:
-//            return new CartesianProductBinarySearchSpmlParser(this, (LeftCscSparseMatrixGrammar) grammar);
-//        case CartesianProductBinarySearchLeftChildMl:
-//            return new CartesianProductBinarySearchLeftChildSpmlParser(this, (LeftCscSparseMatrixGrammar) grammar);
-//        case CartesianProductHashMl:
-//            return new CartesianProductHashSpmlParser(this, (LeftCscSparseMatrixGrammar) grammar);
-//        case CartesianProductLeftChildHashMl:
-//            return new CartesianProductLeftChildHashSpmlParser(this, (LeftCscSparseMatrixGrammar) grammar);
-//        case InsideOutsideCartesianProductHash:
-//            return new InsideOutsideCphSpmlParser(this, (InsideOutsideCscSparseMatrixGrammar) grammar);
-//
-//        case ConstrainedCartesianProductHashMl:
-//            cellSelectorModel = ConstrainedCellSelector.MODEL;
-//            return new ConstrainedCphSpmlParser(this, (LeftCscSparseMatrixGrammar) grammar);
-//
-//        default:
-//            throw new IllegalArgumentException("Unsupported parser type");
-//        }
-//    }
+
+    // public Parser<?> createParser() {
+    // switch (researchParserType) {
+    // case ECPCellCrossList:
+    // return new ECPCellCrossList(this, (LeftListGrammar) grammar);
+    // case ECPCellCrossListTreeConstrained:
+    // return new ECPCellCrossListTreeConstrained(this, (LeftListGrammar) grammar);
+    // case ECPCellCrossHash:
+    // return new ECPCellCrossHash(this, (LeftHashGrammar) grammar);
+    // case ECPCellCrossHashGrammarLoop:
+    // return new ECPCellCrossHashGrammarLoop(this, (LeftHashGrammar) grammar);
+    // case ECPCellCrossHashGrammarLoop2:
+    // return new ECPCellCrossHashGrammarLoop2(this, (LeftHashGrammar) grammar);
+    // case ECPCellCrossMatrix:
+    // return new ECPCellCrossMatrix(this, (ChildMatrixGrammar) grammar);
+    // case ECPGrammarLoop:
+    // return new ECPGrammarLoop(this, (ListGrammar) grammar);
+    // case ECPGrammarLoopBerkeleyFilter:
+    // return new ECPGrammarLoopBerkFilter(this, (ListGrammar) grammar);
+    // case ECPInsideOutside:
+    // return new ECPInsideOutside(this, (LeftListGrammar) grammar);
+    // // return new ECPInsideOutside2(parserOptions, (LeftHashGrammar) grammar);
+    //
+    // final Parser<?> parser = c.newInstance(this, grammar);
+    // parserInstances.add(parser);
+    // return parser;
+    //
+    // case BeamSearchChartParser:
+    // return new BeamSearchChartParser<LeftHashGrammar, CellChart>(this, (LeftHashGrammar) grammar);
+    // case BSCPSplitUnary:
+    // return new BSCPSplitUnary(this, (LeftHashGrammar) grammar);
+    // case BSCPPruneViterbi:
+    // return new BSCPPruneViterbi(this, (LeftHashGrammar) grammar);
+    // case BSCPOnlineBeam:
+    // return new BSCPWeakThresh(this, (LeftHashGrammar) grammar);
+    // case BSCPBoundedHeap:
+    // return new BSCPBoundedHeap(this, (LeftHashGrammar) grammar);
+    // case BSCPExpDecay:
+    // return new BSCPExpDecay(this, (LeftHashGrammar) grammar);
+    // case BSCPPerceptronCell:
+    // return new BSCPSkipBaseCells(this, (LeftHashGrammar) grammar);
+    // case BSCPFomDecode:
+    // return new BSCPFomDecode(this, (LeftHashGrammar) grammar);
+    // // case BSCPBeamConf:
+    // // return new BSCPBeamConf(this, (LeftHashGrammar) grammar, parserOptions.beamConfModel);
+    // case BSCPBeamConfTrain:
+    // String feats = "";
+    // if (beamFeatFile != null) {
+    // try {
+    // feats = TrainPerceptron.featureTemplateToString(beamFeatFile);
+    // } catch (final IOException e) {
+    // e.printStackTrace();
+    // }
+    // }
+    // return new BSCPBeamPredictTrain(this, (LeftHashGrammar) grammar, feats);
+    //
+    // case CoarseCellAgenda:
+    // return new CoarseCellAgendaParser(this, (LeftHashGrammar) grammar);
+    // // case CoarseCellAgendaCSLUT:
+    // // final CSLUTBlockedCells cslutScores = (CSLUTBlockedCells) CellSelector.create(
+    // // parserOptions.cellSelectorType, parserOptions.cellModelStream,
+    // // parserOptions.cslutScoresStream);
+    // // return new CoarseCellAgendaParserWithCSLUT(this, (LeftHashGrammar) grammar, cslutScores);
+    //
+    // case CsrSpmv:
+    // return new CsrSpmvParser(this, (CsrSparseMatrixGrammar) grammar);
+    // case GrammarParallelCsrSpmv:
+    // return new GrammarParallelCsrSpmvParser(this, (CsrSparseMatrixGrammar) grammar);
+    // case CscSpmv:
+    // return new CscSpmvParser(this, (LeftCscSparseMatrixGrammar) grammar);
+    // case GrammarParallelCscSpmv:
+    // return new GrammarParallelCscSpmvParser(this, (LeftCscSparseMatrixGrammar) grammar);
+    // case DenseVectorOpenClSpmv:
+    // return new DenseVectorOpenClSpmvParser(this, (CsrSparseMatrixGrammar) grammar);
+    // case PackedOpenClSpmv:
+    // return new PackedOpenClSpmvParser(this, (CsrSparseMatrixGrammar) grammar);
+    //
+    // case LeftChildMl:
+    // return new LeftChildLoopSpmlParser(this, (LeftCscSparseMatrixGrammar) grammar);
+    // case RightChildMl:
+    // return new RightChildLoopSpmlParser(this, (RightCscSparseMatrixGrammar) grammar);
+    // case GrammarLoopMl:
+    // return new GrammarLoopSpmlParser(this, (CsrSparseMatrixGrammar) grammar);
+    // case CartesianProductBinarySearchMl:
+    // return new CartesianProductBinarySearchSpmlParser(this, (LeftCscSparseMatrixGrammar) grammar);
+    // case CartesianProductBinarySearchLeftChildMl:
+    // return new CartesianProductBinarySearchLeftChildSpmlParser(this, (LeftCscSparseMatrixGrammar) grammar);
+    // case CartesianProductHashMl:
+    // return new CartesianProductHashSpmlParser(this, (LeftCscSparseMatrixGrammar) grammar);
+    // case CartesianProductLeftChildHashMl:
+    // return new CartesianProductLeftChildHashSpmlParser(this, (LeftCscSparseMatrixGrammar) grammar);
+    // case InsideOutsideCartesianProductHash:
+    // return new InsideOutsideCphSpmlParser(this, (InsideOutsideCscSparseMatrixGrammar) grammar);
+    //
+    // case ConstrainedCartesianProductHashMl:
+    // cellSelectorModel = ConstrainedCellSelector.MODEL;
+    // return new ConstrainedCphSpmlParser(this, (LeftCscSparseMatrixGrammar) grammar);
+    //
+    // default:
+    // throw new IllegalArgumentException("Unsupported parser type");
+    // }
+    // }
 
     @Override
     protected FutureTask<ParseTask> lineTask(final String input) {
@@ -743,7 +740,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     public void setGrammar(final Grammar g) {
         this.grammar = g;
     }
-    
+
     static public ParserDriver defaultTestOptions() {
         final ParserDriver opts = new ParserDriver();
         BaseLogger.singleton().setLevel(Level.FINER);

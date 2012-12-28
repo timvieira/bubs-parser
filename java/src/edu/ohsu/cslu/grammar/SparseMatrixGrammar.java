@@ -298,18 +298,18 @@ public abstract class SparseMatrixGrammar extends Grammar {
 
         // Create POS-only and phrase-level-only arrays so we can store features more compactly
         initPosAndPhraseSets(pos);
-        
+
         // reduce range of POS indices so we can store the features more efficiently
-        for (short i = 0; i < numNonTerms(); i++) {
-            if (pos.contains(nonTermSet.getSymbol(i))) {
-                posSet.addSymbol(i);
-            }
-            // NB: some treebank entries are mislabeled w/ POS tags in the tree an non-terms as POS tags
-            // This messes things up if we enforce disjoint sets.
-            if (nonPosSet.contains(nonTermSet.getSymbol(i))) {
-                phraseSet.addSymbol(i);
-            }
-        }
+        // for (short i = 0; i < numNonTerms(); i++) {
+        // if (pos.contains(nonTermSet.getSymbol(i))) {
+        // posSet.addSymbol(i);
+        // }
+        // // NB: some treebank entries are mislabeled w/ POS tags in the tree an non-terms as POS tags
+        // // This messes things up if we enforce disjoint sets.
+        // if (nonPosSet.contains(nonTermSet.getSymbol(i))) {
+        // phraseSet.addSymbol(i);
+        // }
+        // }
 
         this.packingFunction = createPackingFunction(functionClass, tmpBinaryProductions);
 

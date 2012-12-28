@@ -31,7 +31,6 @@ import edu.ohsu.cslu.parser.agenda.APGhostEdges;
 import edu.ohsu.cslu.parser.agenda.APWithMemory;
 import edu.ohsu.cslu.parser.agenda.AgendaParser;
 import edu.ohsu.cslu.parser.agenda.CoarseCellAgendaParser;
-import edu.ohsu.cslu.parser.beam.BSCPBeamConfTrain;
 import edu.ohsu.cslu.parser.beam.BSCPBoundedHeap;
 import edu.ohsu.cslu.parser.beam.BSCPExpDecay;
 import edu.ohsu.cslu.parser.beam.BSCPFomDecode;
@@ -247,7 +246,7 @@ public abstract class Parser<G extends Grammar> {
         BSCPExpDecay(BSCPExpDecay.class.getName(), "beamed"),
         BSCPPerceptronCell(BSCPFomDecode.class.getName(), "beampc"),
         BSCPFomDecode(BSCPFomDecode.class.getName(), "beamfom"),
-        BSCPBeamConfTrain(BSCPBeamConfTrain.class.getName(), "beamconftrain"),
+        // BSCPBeamConfTrain(BSCPBeamConfTrain.class.getName(), "beamconftrain"),
         CoarseCellAgenda(CoarseCellAgendaParser.class.getName(), "cc"),
         CoarseCellAgendaCSLUT(null, "cccslut"), // Not currently supported
 

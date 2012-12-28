@@ -211,7 +211,7 @@ public class DiscriminativeFOM extends FigureOfMeritModel {
 
         public float calcFOM(final short start, final short mid, final short end, final short A, final short B,
                 final short C, final float insideProb) {
-            final SparseBitVector feats = chart.getEdgeFeatures(start, mid, end, A, B, C, false);
+            final SparseBitVector feats = chart.getEdgeFeatures(start, mid, end, A, B, C);
             // TODO: fix
             // return model.scoreBinary(feats) + insideProb * insideWeight;
             return 0f;

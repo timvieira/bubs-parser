@@ -406,6 +406,7 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
             if (end - start == 1) {
                 // No constraints on lexical cells
                 return true;
+            }
             if (grammarRightBinarized) {
                 if (endScores[end - 1] > endThresh)
                     return false;
@@ -428,6 +429,7 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
 
             if (!isCellOpen(start, end)) {
                 return false;
+            }
             if (grammarRightBinarized) {
                 if (beginScores[start] > beginThresh)
                     return true;
@@ -543,10 +545,10 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
             cellListIterator = cellList.iterator();
         }
 
-        //@Override
-        //protected boolean isGrammarLeftFactored() {
-            // NB: this class has the grammar binarization backwards
-        //    return grammarRightBinarized;
-        //}
+        // @Override
+        // protected boolean isGrammarLeftFactored() {
+        // NB: this class has the grammar binarization backwards
+        // return grammarRightBinarized;
+        // }
     }
 }

@@ -104,7 +104,7 @@ public class SerializeModel extends BaseCommandlineTool {
                     : new BufferedReader(new FileReader(fomModelFileName));
             switch (fomType) {
             case BoundaryPOS:
-                fom = new BoundaryInOut(fomModelReader, g).createFOM();
+            	fom = new BoundaryInOut(FOMType.BoundaryPOS, g, fomModelReader).createFOM();
                 break;
             default:
                 throw new UnsupportedOperationException("FOM type not supported");
