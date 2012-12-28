@@ -71,22 +71,29 @@ public class TrainFOM extends BaseCommandlineTool {
     @Option(name = "-input", usage = "Input treebank file")
     private String inputFileName;
 
-    public BufferedWriter outputStream = new BufferedWriter(new OutputStreamWriter(System.out));
-    public BufferedReader inputStream = new BufferedReader(new InputStreamReader(System.in));
-
     public static void main(final String[] args) {
         run(args);
     }
 
     @Override
     public void run() throws Exception {
-        if (fomType == FOMType.BoundaryPOS) {
+
+        final BufferedWriter outputStream = new BufferedWriter(new OutputStreamWriter(System.out));
+        final BufferedReader inputStream = new BufferedReader(new InputStreamReader(System.in));
+
+        switch (fomType) {
+
+        case BoundaryPOS:
             BoundaryInOut.train(inputStream, outputStream, grammarFile, smoothingCount, writeCounts, posNgramOrder);
-        } else if (fomType == FOMType.BoundaryLex) {
-            final BoundaryLex model = new BoundaryLex(FOMType.BoundaryLex);
-            model.train(inputStream, outputStream, grammarFile, smoothingCount, writeCounts, pruneCount, lexCountFile,
-                    unkThresh, lexMapFile);
-        } else if (fomType == FOMType.Discriminative) {
+            break;
+
+        case BoundaryLex:
+            final BoundaryLex boundaryModel = new BoundaryLex(FOMType.BoundaryLex);
+            boundaryModel.train(inputStream, outputStream, grammarFile, smoothingCount, writeCounts, pruneCount,
+                    lexCountFile, unkThresh, lexMapFile);
+            break;
+
+        case Discriminative:
             DiscriminativeFOM.train(inputFileName, outputStream, grammarFile, featTemplate, iterations, learningRate);
             if (extractFeatures) {
                 // DiscriminativeFOMLR.extractFeatures(inputStream, outputStream, grammarFile, featTemplate);
@@ -94,15 +101,21 @@ public class TrainFOM extends BaseCommandlineTool {
                 // DiscriminativeFOMLR.train(inputStream, outputStream, grammarFile, featTemplate, iterations,
                 // learningRate);
             }
-        } else if (fomType == FOMType.Prior) {
+            break;
+
+        case Prior:
             PriorFOM.train(inputStream, outputStream, grammarFile, smoothingCount, writeCounts);
-        } else if (fomType == FOMType.Ngram) {
-            final NGramOutside model = new NGramOutside();
-            model.train(inputStream, outputStream, grammarFile, smoothingCount, writeCounts, pruneCount, lexCountFile,
-                    unkThresh);
-        } else {
+            break;
+
+        case Ngram:
+            final NGramOutside nGramModel = new NGramOutside();
+            nGramModel.train(inputStream, outputStream, grammarFile, smoothingCount, writeCounts, pruneCount,
+                    lexCountFile, unkThresh);
+            break;
+
+        default:
             throw new IllegalArgumentException("FOM type '" + fomType + "' not supported.");
+
         }
     }
-
 }

@@ -21,7 +21,7 @@ package edu.ohsu.cslu.parser;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-import java.io.InputStreamReader;
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Reader;
 import java.lang.reflect.Constructor;
@@ -367,16 +367,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     }
 
     /**
-     * Used by other tools
-     */
-    public static Grammar readGrammar(final String grammarFile, final ResearchParserType researchParserType,
-            final PackingFunctionType packingFunctionType) throws Exception {
-        // Handle gzipped and non-gzipped grammar files
-        return createGrammar(new InputStreamReader(Util.file2inputStream(grammarFile)), researchParserType,
-                packingFunctionType);
-    }
-
-    /**
      * Creates a specific {@link Grammar} subclass, based on the generic instance passed in.
      * 
      * TODO Use the generic grammar types on the parser class to eliminate this massive switch?
@@ -384,10 +374,10 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
      * @param grammarFile
      * @param researchParserType
      * @return a Grammar instance
-     * @throws Exception
+     * @throws IOException
      */
     public static Grammar createGrammar(final Reader grammarFile, final ResearchParserType researchParserType,
-            final PackingFunctionType packingFunctionType) throws Exception {
+            final PackingFunctionType packingFunctionType) throws IOException {
 
         switch (researchParserType) {
         case ECPInsideOutside:

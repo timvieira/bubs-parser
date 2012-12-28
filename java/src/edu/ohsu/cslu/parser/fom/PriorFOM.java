@@ -9,7 +9,6 @@ import edu.ohsu.cslu.counters.SimpleCounterSet;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.Parser.ResearchParserType;
-import edu.ohsu.cslu.parser.ParserDriver;
 
 public class PriorFOM extends FigureOfMeritModel {
 
@@ -59,7 +58,7 @@ public class PriorFOM extends FigureOfMeritModel {
 
         // To train a BoundaryInOut FOM model we need a grammar and
         // binarized gold input trees with NTs from same grammar
-        final Grammar grammar = ParserDriver.readGrammar(grammarFile, ResearchParserType.ECPCellCrossList, null);
+        final Grammar grammar = readGrammar(grammarFile, ResearchParserType.ECPCellCrossList, null);
 
         while ((line = inStream.readLine()) != null) {
             tree = ParseTree.readBracketFormat(line);

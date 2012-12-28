@@ -434,29 +434,30 @@ public class TrainGrammar extends BaseCommandlineTool {
         final ArrayList<MergeCost> mergeCosts = new ArrayList<MergeCost>();
         for (short i = 0; i < estimatedMergeLikelihoodLoss.length; i++) {
             final short nt = (short) (i * 2 + 1);
-            mergeCosts.add(new MergeCost(nt, estimatedMergeLikelihoodLoss[i], ruleCountDelta[i]));
+            mergeCosts.add(new MergeCost(countGrammar.vocabulary.getSymbol(nt), nt, estimatedMergeLikelihoodLoss[i],
+                    ruleCountDelta[i]));
         }
 
         // Sort the list of merge costs by various criteria and assign rankings for use by the final comparator.
-        assignMergeOrderRankings(mergeCosts);
+        computeMergeCosts(mergeCosts);
 
         // Sort the list by cost (from least costly to most), according to the specified objective function.
-        Collections.sort(mergeCosts, mergeRanking.comparator);
+        Collections.sort(mergeCosts, mergeRanking.comparator());
 
-        // Copy the least-costly indices into a new array
-        final short[] mergeIndices = new short[Math.round(mergeCosts.size() * mergeFraction)];
+        // Copy the least-costly indices into a new array (round the number to merge down)
+        final short[] mergeIndices = new short[(int) (mergeCosts.size() * mergeFraction)];
         for (int i = 0; i < mergeIndices.length; i++) {
-            mergeIndices[i] = mergeCosts.get(i).nonTerminal;
+            mergeIndices[i] = mergeCosts.get(i).nonTerminalIndex;
         }
 
         // Output the costs and potential rule-count savings for each mergeable non-terminal
         if (BaseLogger.singleton().isLoggable(Level.FINE)) {
             final StringBuilder sb = new StringBuilder();
             for (int i = 0; i < mergeCosts.size(); i++) {
-                final MergeCost mergeCost = mergeCosts.get(i);
-                sb.append(String.format("%11s  %12.6f  %6d  %6d  %6d\n",
-                        countGrammar.vocabulary.getSymbol(mergeCost.nonTerminal), mergeCost.estimatedLikelihoodLoss,
-                        mergeCost.binaryRuleCountDelta, mergeCost.unaryRuleCountDelta, mergeCost.lexicalRuleCountDelta));
+                sb.append(mergeCosts.get(i).toString());
+                sb.append('\n');
+
+                // Label the cut-point
                 if (i == mergeIndices.length) {
                     sb.append("--------\n");
                 }
@@ -506,22 +507,26 @@ public class TrainGrammar extends BaseCommandlineTool {
 
     /**
      * Sorts the list of merge costs by various criteria and assigns ranking numbers for each (e.g. estimated likelihood
-     * loss, rule count savings, etc.)
+     * loss, rule count savings, etc.), then computes total merge cost for each non-terminal pair
      * 
      * @param mergeCosts An unordered list of estimated merge costs. Note that this list will be reordered.
      */
-    private void assignMergeOrderRankings(final ArrayList<MergeCost> mergeCosts) {
+    private void computeMergeCosts(final ArrayList<MergeCost> mergeCosts) {
 
         // Estimated likelihood loss
-        Collections.sort(mergeCosts, MergeRanking.Likelihood.comparator);
+        Collections.sort(mergeCosts, MergeRanking.Likelihood.comparator());
         for (int i = 0; i < mergeCosts.size(); i++) {
             mergeCosts.get(i).likelihoodLossRanking = i;
         }
 
         // Total rule count delta
-        Collections.sort(mergeCosts, MergeRanking.TotalRuleCount.comparator);
+        Collections.sort(mergeCosts, MergeRanking.TotalRuleCount.comparator());
         for (int i = 0; i < mergeCosts.size(); i++) {
             mergeCosts.get(i).totalRuleCountRanking = i;
+        }
+
+        for (final MergeCost mc : mergeCosts) {
+            mc.mergeCost = mergeRanking.objectiveFunction.mergeCost(mc);
         }
     }
 
@@ -634,8 +639,9 @@ public class TrainGrammar extends BaseCommandlineTool {
 
     private static class MergeCost {
 
+        private final String nonTerminal;
+        private final short nonTerminalIndex;
         private final float estimatedLikelihoodLoss;
-        private final short nonTerminal;
         private final int binaryRuleCountDelta;
         private final int unaryRuleCountDelta;
         private final int lexicalRuleCountDelta;
@@ -654,16 +660,21 @@ public class TrainGrammar extends BaseCommandlineTool {
          */
         private int totalRuleCountRanking;
 
+        /** Combined merge cost, as assigned by a {@link MergeObjectiveFunction} */
+        private float mergeCost;
+
         /**
-         * 
          * @param nonTerminal
+         * @param nonTerminalIndex
          * @param estimatedLikelihoodLoss Estimated likelihood loss on the training corpus.
          * @param ruleCountDelta Estimated rule-count savings if this pair is merged. 3-tuple of binary, unary, and
          *            lexical counts.
          */
-        public MergeCost(final short nonTerminal, final float estimatedLikelihoodLoss, final int[] ruleCountDelta) {
+        public MergeCost(final String nonTerminal, final short nonTerminalIndex, final float estimatedLikelihoodLoss,
+                final int[] ruleCountDelta) {
 
             this.nonTerminal = nonTerminal;
+            this.nonTerminalIndex = nonTerminalIndex;
 
             this.estimatedLikelihoodLoss = estimatedLikelihoodLoss;
 
@@ -673,6 +684,13 @@ public class TrainGrammar extends BaseCommandlineTool {
 
             this.totalRuleCountDelta = binaryRuleCountDelta + unaryRuleCountDelta + lexicalRuleCountDelta;
         }
+
+        @Override
+        public String toString() {
+            return String.format("%11s  %14.6f  %6d  %6d  %6d  %6d  %6d  %6d  %7.2f", nonTerminal,
+                    estimatedLikelihoodLoss, likelihoodLossRanking, binaryRuleCountDelta, unaryRuleCountDelta,
+                    lexicalRuleCountDelta, totalRuleCountDelta, totalRuleCountRanking, mergeCost);
+        }
     }
 
     /**
@@ -681,45 +699,57 @@ public class TrainGrammar extends BaseCommandlineTool {
      */
     private static enum MergeRanking {
 
-        Likelihood(new Comparator<MergeCost>() {
-
+        Likelihood(new MergeObjectiveFunction() {
             @Override
-            public int compare(final MergeCost o1, final MergeCost o2) {
-                return Float.compare(o1.estimatedLikelihoodLoss, o2.estimatedLikelihoodLoss);
+            public float mergeCost(final MergeCost mergeCost) {
+                return mergeCost.estimatedLikelihoodLoss;
             }
         }),
 
-        TotalRuleCount(new Comparator<MergeCost>() {
-
+        TotalRuleCount(new MergeObjectiveFunction() {
             @Override
-            public int compare(final MergeCost o1, final MergeCost o2) {
-                return Integer.compare(o1.totalRuleCountDelta, o2.totalRuleCountDelta);
+            public float mergeCost(final MergeCost mergeCost) {
+                return mergeCost.totalRuleCountDelta;
             }
         }),
 
         /**
          * Note: Likelihood and rule-count rankings must be computed, as in
-         * {@link TrainGrammar#assignMergeOrderRankings(ArrayList)} before sorting with this comparator
+         * {@link TrainGrammar#computeMergeCosts(ArrayList)} before applying this function
          */
-        Combined(new Comparator<MergeCost>() {
+        Combined(new MergeObjectiveFunction() {
 
             final float likelihoodLambda = GlobalConfigProperties.singleton()
                     .getFloatProperty(OPT_LIKELIHOOD_LAMBDA, 1);
             final float ruleCountLambda = GlobalConfigProperties.singleton().getFloatProperty(OPT_RULE_COUNT_LAMBDA, 1);
 
             @Override
-            public int compare(final MergeCost o1, final MergeCost o2) {
-                return Float.compare(o1.likelihoodLossRanking * likelihoodLambda + o1.totalRuleCountRanking
-                        * ruleCountLambda, o2.likelihoodLossRanking * likelihoodLambda + o2.totalRuleCountRanking
-                        * ruleCountLambda);
+            public float mergeCost(final MergeCost mergeCost) {
+                return mergeCost.likelihoodLossRanking * likelihoodLambda + mergeCost.totalRuleCountRanking
+                        * ruleCountLambda;
             }
         });
 
         /** Comparator for the specified objective function */
-        public final Comparator<MergeCost> comparator;
+        public final MergeObjectiveFunction objectiveFunction;
 
-        private MergeRanking(final Comparator<MergeCost> comparator) {
-            this.comparator = comparator;
+        private MergeRanking(final MergeObjectiveFunction objectiveFunction) {
+            this.objectiveFunction = objectiveFunction;
         }
+
+        public Comparator<MergeCost> comparator() {
+            return new Comparator<MergeCost>() {
+                @Override
+                public int compare(final MergeCost o1, final MergeCost o2) {
+                    return Float.compare(objectiveFunction.mergeCost(o1), objectiveFunction.mergeCost(o2));
+                }
+            };
+        }
+
+        private static abstract class MergeObjectiveFunction {
+            public abstract float mergeCost(MergeCost mergeCost);
+        }
+
     }
+
 }
