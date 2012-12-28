@@ -167,12 +167,12 @@ public class TestMath {
     @Test
     public void testApproximateLogSum() {
         assertEquals(java.lang.Math.log(.5),
-                Math.logSum((float) java.lang.Math.log(.25), (float) java.lang.Math.log(.25)), 0.05f);
+                Math.approximateLogSum((float) java.lang.Math.log(.25), (float) java.lang.Math.log(.25)), 0.05f);
         assertEquals(Float.NEGATIVE_INFINITY, Math.logSum(Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY), 0.1f);
-        assertEquals(-10f, Math.logSum(Float.NEGATIVE_INFINITY, -10f), 0.1f);
-        assertEquals(-10f, Math.logSum(-10f, Float.NEGATIVE_INFINITY), 0.1f);
-        assertEquals(-10f, Math.logSum(-50f, -10f), 0.1f);
-        assertEquals(-10f, Math.logSum(-10f, -50f), 0.1f);
+        assertEquals(-10f, Math.approximateLogSum(Float.NEGATIVE_INFINITY, -10f), 0.1f);
+        assertEquals(-10f, Math.approximateLogSum(-10f, Float.NEGATIVE_INFINITY), 0.1f);
+        assertEquals(-10f, Math.approximateLogSum(-50f, -10f), 0.1f);
+        assertEquals(-10f, Math.approximateLogSum(-10f, -50f), 0.1f);
     }
 
     @Test
