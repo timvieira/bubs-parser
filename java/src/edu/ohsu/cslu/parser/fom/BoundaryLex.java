@@ -35,7 +35,6 @@ import edu.ohsu.cslu.grammar.Tokenizer;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.Parser.ResearchParserType;
-import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.TreeTools;
 import edu.ohsu.cslu.parser.chart.Chart;
 
@@ -257,7 +256,7 @@ public final class BoundaryLex extends FigureOfMeritModel {
         final SimpleCounterSet<String> leftBoundaryCount = new SimpleCounterSet<String>();
         final SimpleCounterSet<String> rightBoundaryCount = new SimpleCounterSet<String>();
 
-        grammar = ParserDriver.readGrammar(grammarFile, ResearchParserType.ECPCellCrossList, null);
+        grammar = readGrammar(grammarFile, ResearchParserType.ECPCellCrossList, null);
 
         if (lexCountFile != null) {
             lexCounts = Tokenizer.readLexCountFile(lexCountFile);

@@ -108,6 +108,7 @@ public class Util {
         return b + Math.log(Math.exp(a - b) + 1);
     }
 
+    // TODO Merge with helper functions in BaseCommandlineTool
     public static InputStream file2inputStream(final String fileName) throws FileNotFoundException, IOException {
         if (fileName.endsWith(".gz")) {
             return new GZIPInputStream(new FileInputStream(fileName));

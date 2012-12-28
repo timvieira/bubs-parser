@@ -85,8 +85,8 @@ public class DiscriminativeFOM extends FigureOfMeritModel {
         // ResearchParserType.CartesianProductHashMl, PackingFunctionType.PerfectHash);
         // final CartesianProductHashSpmlParser parser = new CartesianProductHashSpmlParser(opts, grammar);
 
-        final LeftHashGrammar grammar = (LeftHashGrammar) ParserDriver.readGrammar(grammarFile,
-                ResearchParserType.ECPCellCrossHash, null);
+        final LeftHashGrammar grammar = (LeftHashGrammar) readGrammar(grammarFile, ResearchParserType.ECPCellCrossHash,
+                null);
         final BeamSearchChartParser<LeftHashGrammar, CellChart> parser = new BeamSearchChartParser<LeftHashGrammar, CellChart>(
                 opts, grammar);
 

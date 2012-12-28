@@ -25,11 +25,14 @@ import java.io.Reader;
 import java.io.Serializable;
 
 import cltool4j.GlobalConfigProperties;
+import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.ParseTask;
+import edu.ohsu.cslu.parser.Parser.ResearchParserType;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.fom.BoundaryInOut.BoundaryInOutSelector;
 import edu.ohsu.cslu.parser.fom.NGramOutside.NGramSelector;
+import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.PackingFunctionType;
 
 /**
  * Represents a figure of merit model and creates instances using that model (see {@link FigureOfMerit} ).
@@ -61,6 +64,16 @@ public abstract class FigureOfMeritModel {
      * @return a new {@link FigureOfMerit} instance based on this model.
      */
     public abstract FigureOfMerit createFOM();
+
+    /**
+     * Reads in a grammar from disk.
+     */
+    protected static Grammar readGrammar(final String grammarFile, final ResearchParserType researchParserType,
+            final PackingFunctionType packingFunctionType) throws IOException {
+        // Handle gzipped and non-gzipped grammar files
+        return ParserDriver.createGrammar(ParserDriver.fileAsBufferedReader(grammarFile), researchParserType,
+                packingFunctionType);
+    }
 
     public abstract class FigureOfMerit implements Serializable {
 

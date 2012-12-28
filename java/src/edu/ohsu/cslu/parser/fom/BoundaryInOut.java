@@ -189,11 +189,19 @@ public final class BoundaryInOut extends FigureOfMeritModel {
         }
     }
 
-    public static void train(final BufferedReader inStream, final BufferedWriter outStream, final String grammarFile)
-            throws Exception {
-        BoundaryInOut.train(inStream, outStream, grammarFile, 0.5, false, 2);
-    }
-
+    /**
+     * Trains a boundary FOM, from a set of (binarized) training trees including all subcategories
+     * 
+     * TODO Make training consistent between FigureOfMeritModel implementations - static or not?
+     * 
+     * @param inStream
+     * @param outStream
+     * @param grammarFile
+     * @param smoothingCount
+     * @param writeCounts
+     * @param posNgramOrder
+     * @throws Exception
+     */
     public static void train(final BufferedReader inStream, final BufferedWriter outStream, final String grammarFile,
             final double smoothingCount, final boolean writeCounts, final int posNgramOrder) throws Exception {
         String line, historyStr;
@@ -205,7 +213,7 @@ public final class BoundaryInOut extends FigureOfMeritModel {
 
         // To train a BoundaryInOut FOM model we need a grammar and
         // binarized gold input trees with NTs from same grammar
-        final Grammar grammar = ParserDriver.readGrammar(grammarFile, ResearchParserType.ECPCellCrossList, null);
+        final Grammar grammar = readGrammar(grammarFile, ResearchParserType.ECPCellCrossList, null);
 
         // TODO: note that we have to have the same training grammar as decoding grammar here
         // so the input needs to be binarized. If we are parsing with the Berkeley latent-variable
