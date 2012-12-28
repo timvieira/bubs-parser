@@ -196,6 +196,18 @@ public class DenseVectorChart extends ParallelArrayChart {
         }
 
         @Override
+        public void storeLexicalProductions(final int child, final short[] parents, final float[] probabilities) {
+
+            final int packedChild = sparseMatrixGrammar.packingFunction().packLexical(child);
+
+            for (int i = 0; i < parents.length; i++) {
+                final int index = offset + parents[i];
+                insideProbabilities[index] = probabilities[i];
+                packedChildren[index] = packedChild;
+            }
+        }
+
+        @Override
         public ChartEdge getBestEdge(final int nonTerminal) {
 
             final int index = offset + nonTerminal;

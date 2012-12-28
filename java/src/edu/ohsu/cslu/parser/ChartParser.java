@@ -95,8 +95,12 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
         chart = (C) new CellChart(parseTask, this);
     }
 
+    /**
+     * Adds lexical productions to the base (span-1) cells of the chart
+     * 
+     * @param cell
+     */
     protected void addLexicalProductions(final ChartCell cell) {
-        // add lexical productions to the a base cells of the chart
         if (ParserDriver.parseFromInputTags) {
             // add only one POS => word production given by input (or 1-best) tags
             final int posTag = chart.parseTask.inputTags[cell.start()];

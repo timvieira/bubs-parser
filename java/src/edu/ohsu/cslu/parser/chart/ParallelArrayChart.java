@@ -263,6 +263,14 @@ public abstract class ParallelArrayChart extends Chart {
 
         public abstract String toString(final boolean formatFractions);
 
+        /**
+         * Populates lexical production probabilities.
+         * @param child
+         * @param parents
+         * @param probabilities
+         */
+        public abstract void storeLexicalProductions(final int child, final short[] parents, final float[] probabilities);
+
         @Override
         public String toString() {
             return toString(false);
