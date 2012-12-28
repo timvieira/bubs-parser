@@ -567,7 +567,7 @@ public class Math {
     }
 
     /**
-     * Computes log(sum(e^x))
+     * Computes log_e(e^x_1 + e^x_2 + ...)
      * 
      * @param x
      * @return log_e(e^x_1 + e^x_2 + ...)
@@ -577,7 +577,7 @@ public class Math {
     }
 
     /**
-     * Computes log(sum(e^x))
+     * Computes log_e(e^x_1 + e^x_2 + ...)
      * 
      * @param maxDelta log delta between maximum element of x and each other element. Elements below this cutoff will
      *            not be included in sum.
