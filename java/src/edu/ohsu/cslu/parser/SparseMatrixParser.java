@@ -36,6 +36,7 @@ import edu.ohsu.cslu.parser.chart.DenseVectorChart.DenseVectorChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.TemporaryChartCell;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
+import edu.ohsu.cslu.parser.chart.ParallelArrayChart.ParallelArrayChartCell;
 import edu.ohsu.cslu.parser.ml.ConstrainedCphSpmlParser;
 
 /**
@@ -224,6 +225,19 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
             } catch (final Exception e) {
                 throw new RuntimeException(e);
             }
+        }
+    }
+
+    @Override
+    protected void addLexicalProductions(final ChartCell cell) {
+        if (ParserDriver.parseFromInputTags) {
+            super.addLexicalProductions(cell);
+        } else {
+            final short start = cell.start();
+            final int child = chart.parseTask.tokens[start];
+            final short[] parents = grammar.lexicalParents(child);
+            final float[] lexicalLogProbabilities = grammar.lexicalLogProbabilities(child);
+            ((ParallelArrayChartCell) cell).storeLexicalProductions(child, parents, lexicalLogProbabilities);
         }
     }
 

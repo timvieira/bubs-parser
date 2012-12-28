@@ -1246,6 +1246,22 @@ public class PackedArrayChart extends ParallelArrayChart {
         }
 
         @Override
+        public void storeLexicalProductions(final int child, final short[] parents, final float[] probabilities) {
+
+            // Allow update of cells created without temporary storage, even though this will be inefficient;
+            // it should be rare, and is at least useful for unit testing.
+            allocateTemporaryStorage();
+
+            final int packedChild = sparseMatrixGrammar.packingFunction().packLexical(child);
+
+            for (int i = 0; i < parents.length; i++) {
+                final short parent = parents[i];
+                tmpCell.insideProbabilities[parent] = probabilities[i];
+                tmpCell.packedChildren[parent] = packedChild;
+            }
+        }
+
+        @Override
         public ChartEdge getBestEdge(final int nonTerminal) {
             int edgeChildren;
             short edgeMidpoint;
