@@ -161,6 +161,8 @@ public class ListGrammar extends Grammar {
         nonPosSet.add(startSymbolStr);
 
         // Make the POS set disjoint from the other sets.
+        // TODO: NB: some treebank entries are mislabeled w/ POS tags in the tree an non-terms as POS tags
+        // This messes things up if we enforce disjoint sets.
         rightChildrenSet.removeAll(pos);
         leftChildrenSet.removeAll(pos);
         nonPosSet.removeAll(pos);
@@ -231,7 +233,7 @@ public class ListGrammar extends Grammar {
         // this.tokenizer = new Tokenizer(lexSet);
 
         // Create POS-only and phrase-level-only arrays so we can store features more compactly
-        initPosAndPhraseSets(pos);
+        initPosAndPhraseSets(pos, nonPosSet);
 
         unaryProductionsByChild = storeProductionByChild(unaryProductions, nonTermSet.size() - 1);
         lexicalProdsByChild = storeProductionByChild(lexicalProductions, lexSet.size() - 1);

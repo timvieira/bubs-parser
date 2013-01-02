@@ -311,8 +311,10 @@ public abstract class Grammar implements Serializable {
      * Initializes {@link Grammar#posSet}, {@link Grammar#posIndexMap}, and {@link Grammar#phraseSet}
      * 
      * @param pos Set of all parts-of-speech
+     * @param phrase Set of all phrase-level labels
      */
-    protected void initPosAndPhraseSets(final HashSet<String> pos) {
+    protected void initPosAndPhraseSets(final HashSet<String> pos, final HashSet<String> phrase) {
+
         final ShortArrayList tmpPosList = new ShortArrayList();
         final ShortArrayList tmpPhraseList = new ShortArrayList();
         this.posIndexMap = new short[numNonTerms()];
@@ -321,10 +323,15 @@ public abstract class Grammar implements Serializable {
             if (pos.contains(nonTermSet.getSymbol(i))) {
                 tmpPosList.add(i);
                 posIndexMap[i] = (short) (tmpPosList.size() - 1);
-            } else {
+            }
+
+            // NB: some treebank entries are mislabeled w/ POS tags in the tree an non-terms as POS tags
+            // This messes things up if we enforce disjoint sets.
+            if (phrase.contains(nonTermSet.getSymbol(i))) {
                 tmpPhraseList.add(i);
             }
         }
+
         this.posSet = tmpPosList.toShortArray();
         this.phraseSet = tmpPhraseList.toShortArray();
     }

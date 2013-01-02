@@ -453,20 +453,20 @@ public final class BoundaryInOut extends FigureOfMeritModel {
                 // Forward-backward Chart is one off from the parser chart
                 final int fwdChartIndex = fwdIndex - 1;
 
-                final short[] posList = fwdChartIndex >= sentLen ? NULL_LIST : grammar
+                final short[] lexicalParents = fwdChartIndex >= sentLen ? NULL_LIST : grammar
                         .lexicalParents(task.tokens[fwdChartIndex]);
-                final float[] fwdPOSProbs = fwdChartIndex >= sentLen ? NULL_PROBABILITIES : grammar
+                final float[] lexicalLogProbabilities = fwdChartIndex >= sentLen ? NULL_PROBABILITIES : grammar
                         .lexicalLogProbabilities(task.tokens[fwdChartIndex]);
 
                 final short[] currentBackpointer = backPointer[fwdIndex];
 
-                for (int i = 0; i < posList.length; i++) {
-                    final short curPOS = posList[i];
+                for (int i = 0; i < lexicalParents.length; i++) {
+                    final short curPOS = lexicalParents[i];
                     if (posTransitionZeros.getBoolean(curPOS)) {
                         continue;
                     }
 
-                    final float posEmissionLogProb = fwdPOSProbs[i];
+                    final float posEmissionLogProb = lexicalLogProbabilities[i];
                     final float[] curPosTransitionLogProb = posTransitionLogProb[curPOS];
                     float bestScore = Float.NEGATIVE_INFINITY;
                     short bestPrevPOS = -1;
@@ -485,7 +485,7 @@ public final class BoundaryInOut extends FigureOfMeritModel {
                 // compute left outside scores to be used during decoding
                 // FOM = outsideLeft[i][A] * inside[i][j][A] * outsideRight[j][A]
                 final float[] currentOutsideLeft = outsideLeft[fwdIndex];
-                for (final short pos : posList) {
+                for (final short pos : lexicalParents) {
                     if (leftBoundaryZeros.getBoolean(pos)) {
                         continue;
                     }
@@ -503,7 +503,7 @@ public final class BoundaryInOut extends FigureOfMeritModel {
                 final float[] tmp = prevScores;
                 prevScores = scores;
                 scores = tmp;
-                prevPOSList = posList;
+                prevPOSList = lexicalParents;
             }
 
             // Backward pass
@@ -517,9 +517,9 @@ public final class BoundaryInOut extends FigureOfMeritModel {
                 Arrays.fill(scores, Float.NEGATIVE_INFINITY);
 
                 final int bkwChartIndex = bkwIndex - 1;
-                final short[] posList = bkwChartIndex < 0 ? NULL_LIST : grammar
+                final short[] lexicalParents = bkwChartIndex < 0 ? NULL_LIST : grammar
                         .lexicalParents(task.tokens[bkwChartIndex]);
-                final float[] bkwPOSProbs = bkwChartIndex < 0 ? NULL_PROBABILITIES : grammar
+                final float[] lexicalLogProbabilities = bkwChartIndex < 0 ? NULL_PROBABILITIES : grammar
                         .lexicalLogProbabilities(task.tokens[bkwChartIndex]);
 
                 for (final short prevPOS : prevPOSList) {
@@ -528,9 +528,9 @@ public final class BoundaryInOut extends FigureOfMeritModel {
                     }
                     final float prevScore = prevScores[prevPOS];
                     final float[] prevPosTransitionLogProb = posTransitionLogProb[prevPOS];
-                    for (int i = 0; i < posList.length; i++) {
-                        final short curPOS = posList[i];
-                        final float score = prevScore + prevPosTransitionLogProb[curPOS] + bkwPOSProbs[i];
+                    for (int i = 0; i < lexicalParents.length; i++) {
+                        final short curPOS = lexicalParents[i];
+                        final float score = prevScore + prevPosTransitionLogProb[curPOS] + lexicalLogProbabilities[i];
                         if (score > scores[curPOS]) {
                             scores[curPOS] = score;
                         }
@@ -540,7 +540,7 @@ public final class BoundaryInOut extends FigureOfMeritModel {
                 // compute right outside scores to be used during decoding
                 // FOM = outsideLeft[i][A] * inside[i][j][A] * outsideRight[j][A]
                 final float[] currentOutsideRight = outsideRight[bkwIndex];
-                for (final short pos : posList) {
+                for (final short pos : lexicalParents) {
                     if (rightBoundaryZeros.getBoolean(pos)) {
                         continue;
                     }
@@ -558,7 +558,7 @@ public final class BoundaryInOut extends FigureOfMeritModel {
                 final float[] tmp = prevScores;
                 prevScores = scores;
                 scores = tmp;
-                prevPOSList = posList;
+                prevPOSList = lexicalParents;
             }
 
             // tags from parseTask.tags are used for chart cell feature extraction when

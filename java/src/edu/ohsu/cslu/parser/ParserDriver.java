@@ -59,9 +59,9 @@ import edu.ohsu.cslu.parser.Parser.InputFormat;
 import edu.ohsu.cslu.parser.Parser.ParserType;
 import edu.ohsu.cslu.parser.Parser.ReparseStrategy;
 import edu.ohsu.cslu.parser.Parser.ResearchParserType;
+import edu.ohsu.cslu.parser.cellselector.CellConstraintsComboModel;
 import edu.ohsu.cslu.parser.cellselector.CellSelectorModel;
 import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
-import edu.ohsu.cslu.parser.cellselector.LimitedSpanOHSUCellConstraintsModel;
 import edu.ohsu.cslu.parser.cellselector.LimitedSpanTraversalModel;
 import edu.ohsu.cslu.parser.cellselector.OHSUCellConstraintsModel;
 import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthModel;
@@ -145,6 +145,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     @Option(name = "-inputTreeBeamRank", hidden = true, usage = "Print rank of input tree constituents during beam-search parsing.")
     public static boolean inputTreeBeamRank = false;
 
+    @Option(name = "-inputTreeBeamFeat", hidden = true, metaVar = "FEAT_FILE", usage = "Print features for training a Beam-Width Prediction model.")
+    private String beamFeatFile = null;
+
     @Option(name = "-fom", metaVar = "FOM", usage = "Figure-of-Merit edge scoring function (name or model file)")
     private String fomTypeOrModel = "Inside";
 
@@ -185,6 +188,10 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
 
     @Option(name = "-debug", hidden = true, usage = "Exit on error with trace")
     public boolean debug = false;
+
+    // @Option(name = "-printFeatMap", hidden = true, usage =
+    // "Write lex/pos/nt feature strings and indicies for beam-width prediction and disc FOM to stdout.  Note this mapping must be identical for training and testing.")
+    // public boolean printFeatMap = false;
 
     // corpus stats
     private long parseStartTime;
@@ -258,7 +265,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
         if (researchParserType == null) {
             researchParserType = parserType.researchParserType;
         }
-        if (inputTreeBeamRank) {
+        if (inputTreeBeamRank || beamFeatFile != null) {
             researchParserType = ResearchParserType.BSCPBeamConfTrain;
         }
 
@@ -292,66 +299,67 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
 
             if (fomTypeOrModel.equals("Inside")) {
                 fomModel = new InsideProb();
+
             } else if (fomTypeOrModel.equals("InsideWithFwdBkwd")) {
                 // fomModel = new BoundaryInOut(FOMType.InsideWithFwdBkwd);
                 throw new IllegalArgumentException("FOM InsideWithFwdBkwd no longer supported");
+
             } else if (new File(fomTypeOrModel).exists()) {
                 // read first line and extract model type
                 final BufferedReader tmp = fileAsBufferedReader(fomTypeOrModel);
                 final HashMap<String, String> keyValue = Util.readKeyValuePairs(tmp.readLine().trim());
                 tmp.close();
 
-                if (!keyValue.containsKey("model")) {
+                if (!keyValue.containsKey("type")) {
                     throw new IllegalArgumentException(
-                            "FOM model file has unexpected format.  Looking for 'model=' in first line.");
+                            "FOM model file has unexpected format.  Looking for 'type=' in first line.");
                 }
-                if (keyValue.get("model").equals("DiscriminativeFOM")) {
-                    // Discriminative FOM
-                    // fomModel = new DiscriminativeFOMLR(FOMType.Discriminative, grammar,
-                    // fileAsBufferedReader(fomTypeOrModel));
-                } else if (keyValue.get("model").equals("FOM") && keyValue.containsKey("type")) {
-                    if (keyValue.get("type").equals("BoundaryInOut")) {
-                        // BoundaryInOut FOM
-                        Grammar fomGrammar = grammar;
-                        if (this.coarseGrammarFile != null) {
-                            coarseGrammar = new CoarseGrammar(coarseGrammarFile, this.grammar);
-                            BaseLogger.singleton().fine("FOM coarse grammar stats: " + coarseGrammar.getStats());
-                            fomGrammar = coarseGrammar;
-                        }
-                        fomModel = new BoundaryInOut(FOMType.BoundaryPOS, fomGrammar,
-                                fileAsBufferedReader(fomTypeOrModel));
-                    } else if (keyValue.get("type").equals("BoundaryLex")) {
-                        fomModel = new BoundaryLex(FOMType.BoundaryLex, grammar, fileAsBufferedReader(fomTypeOrModel));
-                    } else if (keyValue.get("type").equals("Prior")) {
-                        fomModel = new PriorFOM(FOMType.Prior, grammar, fileAsBufferedReader(fomTypeOrModel));
-                    } else {
-                        throw new IllegalArgumentException("FOM model type '" + keyValue.get("type") + "' in file "
-                                + fomTypeOrModel + "' not expected.");
+                final String fomType = keyValue.get("type");
+                if (fomType.equals("BoundaryInOut")) {
+                    Grammar fomGrammar = grammar;
+                    if (this.coarseGrammarFile != null) {
+                        coarseGrammar = new CoarseGrammar(coarseGrammarFile, this.grammar);
+                        BaseLogger.singleton().fine("FOM coarse grammar stats: " + coarseGrammar.getStats());
+                        fomGrammar = coarseGrammar;
                     }
+                    fomModel = new BoundaryInOut(FOMType.BoundaryPOS, fomGrammar, fileAsBufferedReader(fomTypeOrModel));
+
+                } else if (fomType.equals("BoundaryLex")) {
+                    fomModel = new BoundaryLex(FOMType.BoundaryLex, grammar, fileAsBufferedReader(fomTypeOrModel));
+
+                } else if (fomType.equals("Prior")) {
+                    fomModel = new PriorFOM(FOMType.Prior, grammar, fileAsBufferedReader(fomTypeOrModel));
+
                 } else {
-                    throw new IllegalArgumentException("Model value '" + keyValue.get("model") + "' in file "
-                            + fomTypeOrModel + "' not expected.");
+                    throw new IllegalArgumentException("FOM model type '" + fomType + "' in file " + fomTypeOrModel
+                            + "' not expected.");
                 }
+
             } else {
                 throw new IllegalArgumentException("-fom value '" + fomTypeOrModel + "' not valid.");
             }
 
-            // TODO Handle multiple cell-selector models here and in Parser
+            OHSUCellConstraintsModel cellConstraints = null;
             if (chartConstraintsModel != null) {
-                cellSelectorModel = new OHSUCellConstraintsModel(fileAsBufferedReader(chartConstraintsModel));
+                cellConstraints = new OHSUCellConstraintsModel(fileAsBufferedReader(chartConstraintsModel));
+                cellSelectorModel = cellConstraints;
+            }
 
-            } else if (limitedSpanChartConstraintsModel != null) {
-                cellSelectorModel = new LimitedSpanOHSUCellConstraintsModel(
-                        fileAsBufferedReader(limitedSpanChartConstraintsModel), maxSubtreeSpan);
-
+            PerceptronBeamWidthModel beamConstraints = null;
+            if (beamModelFileName != null) {
+                beamConstraints = new PerceptronBeamWidthModel(fileAsBufferedReader(beamModelFileName));
             } else if (pruningModels != null && pruningModels.length > 0) {
                 final ObjectInputStream ois = new ObjectInputStream(fileAsInputStream(pruningModels[0]));
                 cellSelectorModel = (CellSelectorModel) ois.readObject();
                 ois.close();
+                cellSelectorModel = beamConstraints;
+            }
 
-            } else if (beamModelFileName != null) {
-                cellSelectorModel = new PerceptronBeamWidthModel(fileAsBufferedReader(beamModelFileName));
-
+            if (cellConstraints != null && beamConstraints != null) {
+                final CellConstraintsComboModel constraintsCombo = new CellConstraintsComboModel();
+                constraintsCombo.addModel(cellConstraints);
+                constraintsCombo.addModel(beamConstraints);
+                cellSelectorModel = constraintsCombo;
             } else if (maxSubtreeSpan != 0) {
                 cellSelectorModel = new LimitedSpanTraversalModel(maxSubtreeSpan);
             }
