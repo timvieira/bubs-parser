@@ -189,13 +189,13 @@ public abstract class CellSelector implements Iterator<short[]> {
     }
 
     public int getMidStart(final short start, final short end) {
-        if ((end - start) < 2 || !isCellOnlyFactored(start, end) || isGrammarLeftFactored())
+        if ((end - start) < 2 || !isCellOnlyFactored(start, end) || isGrammarLeftBinarized())
             return start + 1;
         return end - 1; // only allow one midpoint
     }
 
     public int getMidEnd(final short start, final short end) {
-        if ((end - start) < 2 || !isCellOnlyFactored(start, end) || !isGrammarLeftFactored())
+        if ((end - start) < 2 || !isCellOnlyFactored(start, end) || !isGrammarLeftBinarized())
             return end - 1;
         return start + 1; // only allow one midpoint
     }
@@ -227,7 +227,7 @@ public abstract class CellSelector implements Iterator<short[]> {
         return Integer.MAX_VALUE;
     }
 
-    protected final boolean isGrammarLeftFactored() {
+    protected final boolean isGrammarLeftBinarized() {
         return parser.grammar.binarization() == Binarization.LEFT;
     }
 }

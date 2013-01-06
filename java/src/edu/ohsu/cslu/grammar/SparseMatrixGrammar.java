@@ -232,6 +232,8 @@ public abstract class SparseMatrixGrammar extends Grammar {
         nonPosSet.add(startSymbolStr);
 
         // Make the POS set disjoint from the other sets.
+        // TODO: NB: some treebank entries are mislabeled w/ POS tags in the tree an non-terms as POS tags
+        // This messes things up if we enforce disjoint sets.
         rightChildrenSet.removeAll(pos);
         leftChildrenSet.removeAll(pos);
         nonPosSet.removeAll(pos);
@@ -296,7 +298,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
         this.numPosSymbols = posEnd - posStart + 1;
 
         // Create POS-only and phrase-level-only arrays so we can store features more compactly
-        initPosAndPhraseSets(pos);
+        initPosAndPhraseSets(pos, nonPosSet);
 
         this.packingFunction = createPackingFunction(functionClass, tmpBinaryProductions);
 

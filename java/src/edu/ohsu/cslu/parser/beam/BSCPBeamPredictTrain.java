@@ -37,24 +37,30 @@ import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.Chart.Feature;
 
 /*
- Generates features to be used to train a regression model of the form:
+ This class is used for two purposes:
 
- goldRank goldIsFactored numGold isSpan1Cell : numFeats feat1 feat2 ...
+ 1) -inputTreeBeamRank prints the rank of each constituent in the input 
+ tree along with other info:
+
+ rank sentLen span start end edge
+
+ 2) Generate features to be used to train a beam-width prediction model of the form:
+
+ rank isBinarized numConstituents isSpan1Cell : numFeats feat1 feat2 ...
 
  where
- goldRank: The integer rank of the gold constituent in the local agenda.  If
- more than one gold constituent exists (i.e., a binary and unary entry) then the
+
+ rank: The integer rank of the input tree constituent in the local agenda.  If
+ more than one input constituent exists (i.e., a binary and unary entry) then the
  rank is the highest of the two. A value of 0 indicates that no gold constituent
  exists in the cell.
 
- goldIsFactored: 1 if the binary gold constituent is headed by a factored non-terminal, 0 otherwise
+ isBinarized: 1 if the input constituent is headed by a binarized non-terminal, 0 otherwise
 
- numGold: the number of gold constituents in the chart cell
+ numConstituents: the number of input constituents in the chart cell
 
  isSpan1Cell: 1 if chart cell spans a single word, 0 otherwise
- */
 
-/*
  TODO: 
 
  Once we start pruning the beam-width on cells, it will change
@@ -73,8 +79,7 @@ import edu.ohsu.cslu.parser.chart.Chart.Feature;
 
  */
 
-//public class BSCPBeamConfTrain extends BSCPPruneViterbi {
-public class BSCPBeamConfTrain extends BeamSearchChartParser<LeftHashGrammar, CellChart> {
+public class BSCPBeamPredictTrain extends BeamSearchChartParser<LeftHashGrammar, CellChart> {
 
     String[] featTemplate;
     List<Feature> featList;
@@ -82,7 +87,7 @@ public class BSCPBeamConfTrain extends BeamSearchChartParser<LeftHashGrammar, Ce
     GoldEdgeContainer goldEdgeChart[][];
     boolean printRankInfo = ParserDriver.inputTreeBeamRank;
 
-    public BSCPBeamConfTrain(final ParserDriver opts, final LeftHashGrammar grammar, final String featTemplate) {
+    public BSCPBeamPredictTrain(final ParserDriver opts, final LeftHashGrammar grammar, final String featTemplate) {
         super(opts, grammar);
         this.featTemplate = featTemplate.split("\\s+");
         this.featList = Chart.featureTemplateStrToEnum(featTemplate.split("\\s+"));
@@ -113,6 +118,9 @@ public class BSCPBeamConfTrain extends BeamSearchChartParser<LeftHashGrammar, Ce
         if (printRankInfo) {
             System.out.println("RANK:\tRank\tSentLen\tSpan\tStart\tEnd\tEdge");
         }
+
+        // What not use the following ???
+        // Util.getEdgesFromTree(tree, grammar, includeLeaves, startSpanIndex, endSpanIndex)
 
         // Read gold productions from input tree and put them in an array by goldEdges[start][end]
         // Note that there can be multiple edges per span when we include unary productions.
@@ -209,7 +217,6 @@ public class BSCPBeamConfTrain extends BeamSearchChartParser<LeftHashGrammar, Ce
         if (!printRankInfo) {
             // Beam-width prediction features
             final SparseBitVector cellFeats = chart.getCellFeatures(cell.start(), cell.end(), this.featList);
-            // final SparseBitVector cellFeats = chart.getCellFeatures(cell.start(), cell.end(), this.featTemplate);
 
             // goldRank goldIsFactored numGold isBaseCell : numFeats feat1 feat2 ...
             System.out.println(String.format("DSTAT: %d %d %d %d : %d %s", goldRank, bool2int(goldIsFactored),
@@ -224,141 +231,4 @@ public class BSCPBeamConfTrain extends BeamSearchChartParser<LeftHashGrammar, Ce
         }
         return 0;
     }
-
-    // @Override
-    // protected void visitCell(final short start, final short end) {
-    // final HashSetChartCell cell = chart.getCell(start, end);
-    // ChartEdge edge;
-    //
-    // // NOTE: we want the CSLUT span scores, but we don't want to block the cells
-    // // boolean onlyFactored = false;
-    // // if (cellSelector.type == CellSelector.CellSelectorType.CSLUT) {
-    // // onlyFactored = ((CSLUTBlockedCells) cellSelector).isCellOpenOnlyToFactored(start, end);
-    // // }
-    //
-    // initCell();
-    //
-    // if (end - start == 1) {
-    // // lexical and unary productions can't compete in the same agenda until their FOM
-    // // scores are changed to be comparable
-    // for (final Production lexProd : grammar.getLexicalProductionsWithChild(chart.tokens[start])) {
-    // cell.updateInside(lexProd, cell, null, lexProd.prob);
-    // for (final Production unaryProd : grammar.getUnaryProductionsWithChild(lexProd.parent)) {
-    // addEdgeToCollection(chart.new ChartEdge(unaryProd, cell));
-    // }
-    //
-    // }
-    // } else {
-    // for (int mid = start + 1; mid < end; mid++) { // mid point
-    // final HashSetChartCell leftCell = chart.getCell(start, mid);
-    // final HashSetChartCell rightCell = chart.getCell(mid, end);
-    // for (final int leftNT : leftCell.getLeftChildNTs()) {
-    // for (final int rightNT : rightCell.getRightChildNTs()) {
-    // for (final Production p : grammar.getBinaryProductionsWithChildren(leftNT, rightNT)) {
-    // // if (!onlyFactored || grammar.getNonterminal(p.parent).isFactored()) {
-    // edge = chart.new ChartEdge(p, leftCell, rightCell);
-    // addEdgeToCollection(edge);
-    // // }
-    // }
-    // }
-    // }
-    // }
-    // }
-    //
-    // addEdgeCollectionToChart(cell);
-    // }
-
-    // // for cell[i,j] that spans words w_i to w_j, we add the POS tags directly
-    // // to the inside and outside of the constituent boundaries: i-1,i,j,j+1
-    // public float[] getCellFeatures(final int start, final int end) {
-    // final List<Float> feats = new ArrayList<Float>();
-    // final int sentLen = this.currentInput.sentenceLength;
-    //
-    // // surrounding POS tags
-    // feats.addAll(getPOSIndexFeatureArray(start - 2));
-    // feats.addAll(getPOSIndexFeatureArray(start - 1));
-    // feats.addAll(getPOSIndexFeatureArray(start));
-    // feats.addAll(getPOSIndexFeatureArray(start + 1));
-    //
-    // feats.addAll(getPOSIndexFeatureArray(end - 1));
-    // feats.addAll(getPOSIndexFeatureArray(end));
-    // feats.addAll(getPOSIndexFeatureArray(end + 1));
-    // feats.addAll(getPOSIndexFeatureArray(end + 2));
-    //
-    // final int span = end - start;
-    // for (int i = 1; i <= 5; i++) {
-    // feats.add(new Float(bool2int(span == i))); // span length 1-5
-    // feats.add(new Float(bool2int(span >= i * 10))); // span > 10,20,30,40,50
-    // feats.add(new Float(bool2int(span / sentLen >= i / 5.0))); // relative span width btwn 0 and 1
-    // }
-    //
-    // // TOP cell
-    // feats.add(new Float(bool2int(span == sentLen)));
-    //
-    // // edge cells ... probably get this from <none> POS tags
-    // feats.add(new Float(bool2int(start == 0)));
-    // feats.add(new Float(bool2int(end == sentLen)));
-    //
-    // // Turn ArrayList<Float> into float[]
-    // final float[] tmp = new float[feats.size()];
-    // for (int i = 0; i < feats.size(); i++) {
-    // tmp[i] = feats.get(i);
-    // }
-    // return tmp;
-    // }
-
-    // // I can't believe we have to jump through these hoops to get a variable sized float vector
-    // private List<Float> getPOSIndexFeatureArray(final int start) {
-    // final List<Float> feats = new ArrayList<Float>(posMap.size());
-    // for (int i = 0; i < posMap.size(); i++) {
-    // feats.add(new Float(0));
-    // }
-    // feats.set(getPOSIndex(start), new Float(1));
-    // return feats;
-    // }
-
-    // private String floatArray2Str(final float[] data) {
-    // String result = "";
-    // for (final float val : data) {
-    // result += val + " ";
-    // }
-    // return result.trim();
-    // }
-
-    // private int rank2bool(final int rank) {
-    // if (rank <= 0) {
-    // return 0;
-    // }
-    // return 1;
-    // }
-
-    // private String floatArray2Str(final Float[] data) {
-    // String result = "";
-    // for (final float val : data) {
-    // // result += Math.pow(Math.E, val) + " ";
-    // result += val + " ";
-    // }
-    // return result.trim();
-    // }
-    //
-    // private int int2bool(final boolean val) {
-    // if (val == true) {
-    // return 1;
-    // }
-    // return 0;
-    // }
-
-    // public Float[] getCellFeatures(final int start, final int end) {
-    // final List<Float> feats = new LinkedList<Float>();
-    // final int span = end - start;
-    //
-    // feats.add(((CSLUTBlockedCells) cellSelector).getCurStartScore(start));
-    // feats.add(((CSLUTBlockedCells) cellSelector).getCurEndScore(end));
-    // feats.add((float) chart.size());
-    // feats.add((float) span);
-    // feats.add(span / (float) chart.size());
-    // feats.add((float) int2bool(span == 1));
-    //
-    // return feats.toArray(new Float[feats.size()]);
-    // }
 }

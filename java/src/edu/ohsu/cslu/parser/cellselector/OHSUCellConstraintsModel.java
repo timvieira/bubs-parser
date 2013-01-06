@@ -344,7 +344,7 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
             }
             if (!Float.isNaN(logTune)) {
                 final int fixedOpen = (int) (logTune * Math.log(sentLen) / Math.log(2));
-                if (isGrammarLeftFactored()) {
+                if (isGrammarLeftBinarized()) {
                     final float logThresh = computeFixedOpenConstraints(endScores, fixedOpen);
                     endThresh = Math.min(endThresh, logThresh);
                 } else {
@@ -353,7 +353,7 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
                 }
             }
             if (!Float.isNaN(linearTune)) {
-                if (isGrammarLeftFactored()) {
+                if (isGrammarLeftBinarized()) {
                     final float logThresh = computeFixedOpenConstraints(endScores, (int) linearTune);
                     endThresh = Math.min(endThresh, logThresh);
                 } else {
@@ -404,7 +404,7 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
                 return true;
             }
 
-            if (isGrammarLeftFactored()) {
+            if (isGrammarLeftBinarized()) {
                 return beginScores[start] <= beginThresh;
             }
 
@@ -422,7 +422,7 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
                 return false;
             }
 
-            if (isGrammarLeftFactored()) {
+            if (isGrammarLeftBinarized()) {
                 return endScores[end - 1] > endThresh;
             }
 
