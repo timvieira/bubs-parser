@@ -33,6 +33,8 @@ import cltool4j.BaseLogger;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.datastructs.narytree.Tree;
 import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.StringEdge;
+import edu.ohsu.cslu.grammar.StringProduction;
 import edu.ohsu.cslu.parser.chart.Chart.SimpleChartEdge;
 
 public class Util {
@@ -196,17 +198,23 @@ public class Util {
     }
 
     public static Collection<SimpleChartEdge> getEdgesFromTree(final BinaryTree<String> tree, final Grammar grammar) {
-        return getEdgesFromTree(tree, grammar, false);
+        return getEdgesFromTree(tree, grammar, false, -1, -1);
     }
 
     public static Collection<SimpleChartEdge> getEdgesFromTree(final BinaryTree<String> tree, final Grammar grammar,
-            final boolean includeLeaves) {
+            final boolean includeLeaves, final int startSpanIndex, final int endSpanIndex) {
 
         final Collection<SimpleChartEdge> edgeList = new LinkedList<SimpleChartEdge>();
         final LinkedList<Tree<String>> lexLeaves = new LinkedList<Tree<String>>();
         for (final Tree<String> leaf : tree.leafTraversal()) {
             lexLeaves.add(leaf);
         }
+        final String[] origLabels = tree.leafLabels();
+        final String[] leafIndexLabels = new String[origLabels.length];
+        for (int i = 0; i < origLabels.length; i++) {
+            leafIndexLabels[i] = String.valueOf(i);
+        }
+        tree.replaceLeafLabels(leafIndexLabels);
 
         for (final BinaryTree<String> node : tree.preOrderTraversal()) {
             if (node.isLeaf())
@@ -215,19 +223,23 @@ public class Util {
                 continue;
             }
             final SimpleChartEdge edge = new SimpleChartEdge();
-            edge.start = (short) lexLeaves.indexOf(node.leftmostLeaf());
-            edge.end = (short) (lexLeaves.indexOf(node.rightmostLeaf()) + 1);
+            edge.start = Short.valueOf(node.leftmostLeaf().label());
+            if (startSpanIndex >= 0 && edge.start != startSpanIndex)
+                continue;
+            edge.end = (short) (Short.valueOf(node.rightmostLeaf().label()) + 1);
+            if (endSpanIndex >= 0 && edge.end != endSpanIndex)
+                continue;
             if (node.children().size() == 2) {
-                edge.mid = (short) (lexLeaves.indexOf(node.children().get(0).rightmostLeaf()) + 1);
+                edge.mid = (short) (Short.valueOf(node.children().get(0).rightmostLeaf().label()) + 1);
             }
 
             final String A = node.label(), B = node.children().get(0).label();
             if (node.children().size() == 2) {
                 final String C = node.children().get(1).label();
-                System.out.println("Looking at " + A + " => " + B + " " + C + " prob="
-                        + grammar.binaryLogProbability(A, B, C));
-                System.out.println("A=" + grammar.nonTermSet.getIndex(A) + " B=" + grammar.nonTermSet.getIndex(B)
-                        + " C=" + grammar.nonTermSet.getIndex(C));
+                // System.out.println("Looking at " + A + " => " + B + " " + C + " prob="
+                // + grammar.binaryLogProbability(A, B, C));
+                // System.out.println("A=" + grammar.nonTermSet.getIndex(A) + " B=" + grammar.nonTermSet.getIndex(B)
+                // + " C=" + grammar.nonTermSet.getIndex(C));
                 if (grammar.binaryLogProbability(A, B, C) <= Float.NEGATIVE_INFINITY) {
                     BaseLogger.singleton().fine(
                             "IGNORING binary edge not in grammar: [" + edge.start + "," + edge.mid + "," + edge.end
@@ -251,6 +263,85 @@ public class Util {
                 edgeList.add(edge);
             }
         }
+
+        tree.replaceLeafLabels(origLabels);
         return edgeList;
     }
+
+    private static int getNodeIndex(final Tree<String> item, final LinkedList<Tree<String>> list) {
+        int i = 0;
+        for (final Tree<String> x : list) {
+            if (item == x && item.parent() == x.parent()) {
+                return i;
+            }
+            i++;
+        }
+        return -1;
+    }
+
+    public static Collection<StringEdge> getStringEdgesFromTree(final BinaryTree<String> tree, final Grammar grammar,
+            final boolean includeLeaves, final int startSpanIndex, final int endSpanIndex) {
+
+        final Collection<StringEdge> edgeList = new LinkedList<StringEdge>();
+        final LinkedList<Tree<String>> lexLeaves = new LinkedList<Tree<String>>();
+        // final String[] origLeafLabels = tree.leafLabels();
+        // int i = 0;
+        for (final Tree<String> leaf : tree.leafTraversal()) {
+            // leaf.setLabel(String.format("%d:%s", i, leaf.label()));
+            lexLeaves.add(leaf);
+            // i++;
+        }
+
+        for (final BinaryTree<String> node : tree.preOrderTraversal()) {
+            if (node.isLeaf())
+                continue;
+            if (!includeLeaves && node.children().get(0).isLeaf()) {
+                continue;
+            }
+
+            // final short start = (short) lexLeaves.indexOf(node.leftmostLeaf());
+            final short start = (short) getNodeIndex(node.leftmostLeaf(), lexLeaves);
+            if (startSpanIndex >= 0 && start != startSpanIndex)
+                continue;
+            // final short end = (short) (lexLeaves.indexOf(node.rightmostLeaf()) + 1);
+            final short end = (short) (getNodeIndex(node.rightmostLeaf(), lexLeaves) + 1);
+            if (endSpanIndex >= 0 && end != endSpanIndex)
+                continue;
+            short mid = -1;
+            if (node.children().size() == 2) {
+                // mid = (short) (lexLeaves.indexOf(node.children().get(0).rightmostLeaf()) + 1);
+                mid = (short) (getNodeIndex(node.children().get(0).rightmostLeaf(), lexLeaves) + 1);
+            }
+
+            String childrenStr = node.children().get(0).label();// Util.join(node.childLabels(), " ");
+            if (node.children().size() > 1) {
+                childrenStr += " " + node.children().get(1).label();
+            }
+            final StringEdge e = new StringEdge(new StringProduction(node.label(), childrenStr, 0f), start, mid, end);
+            edgeList.add(e);
+            // System.out.println("AddingGold: " + e.toString());
+        }
+        // i = 0;
+        // for (final Tree<String> leaf : tree.leafTraversal()) {
+        // leaf.setLabel(origLeafLabels[i]);
+        // i++;
+        // }
+        return edgeList;
+    }
+
+    // map [start,end] => [edge1, edge2, ...] where edge1, edge2, ... are in span [start,end]
+    public static HashMap<String, LinkedList<SimpleChartEdge>> edgeListBySpan(final Collection<SimpleChartEdge> edgeList) {
+        final HashMap<String, LinkedList<SimpleChartEdge>> edgeMap = new HashMap<String, LinkedList<SimpleChartEdge>>();
+
+        for (final SimpleChartEdge e : edgeList) {
+            final String key = String.format("%d,%d", e.start, e.end);
+            if (!edgeMap.containsKey(key)) {
+                edgeMap.put(key, new LinkedList<SimpleChartEdge>());
+            }
+            edgeMap.get(key).add(e);
+        }
+
+        return edgeMap;
+    }
+
 }
