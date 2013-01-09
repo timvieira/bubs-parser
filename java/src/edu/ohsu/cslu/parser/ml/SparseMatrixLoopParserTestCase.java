@@ -25,6 +25,7 @@ import org.junit.Before;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.ecp.ExhaustiveChartParserTestCase;
@@ -48,22 +49,26 @@ public abstract class SparseMatrixLoopParserTestCase<P extends ChartParser<? ext
     public void setUp() throws Exception {
         if (f2_21_grammar != null
                 && (f2_21_grammar.getClass() != grammarClass() || ((SparseMatrixGrammar) f2_21_grammar)
-                        .packingFunction().getClass() != LeftShiftFunction.class)) {
+                        .packingFunction().getClass() != packingFunctionClass())) {
             f2_21_grammar = null;
         }
 
         if (simpleGrammar1 != null
                 && (simpleGrammar1.getClass() != grammarClass() || ((SparseMatrixGrammar) simpleGrammar1)
-                        .packingFunction().getClass() != LeftShiftFunction.class)) {
+                        .packingFunction().getClass() != packingFunctionClass())) {
             simpleGrammar1 = null;
         }
 
         if (simpleGrammar2 != null
                 && (simpleGrammar2.getClass() != grammarClass() || ((SparseMatrixGrammar) simpleGrammar2)
-                        .packingFunction().getClass() != LeftShiftFunction.class)) {
+                        .packingFunction().getClass() != packingFunctionClass())) {
             simpleGrammar2 = null;
         }
 
         super.setUp();
+    }
+
+    protected Class<? extends PackingFunction> packingFunctionClass() {
+        return LeftShiftFunction.class;
     }
 }

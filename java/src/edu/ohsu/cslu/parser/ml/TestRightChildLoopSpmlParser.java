@@ -24,14 +24,23 @@ import org.cjunit.PerformanceTest;
 import org.junit.Test;
 
 import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.RightShiftFunction;
 
+/**
+ * Unit tests for {@link RightChildLoopSpmlParser}
+ */
 public class TestRightChildLoopSpmlParser extends SparseMatrixLoopParserTestCase<RightChildLoopSpmlParser> {
 
     @Override
     public Grammar createGrammar(final Reader grammarReader) throws Exception {
         return grammarClass().getConstructor(new Class[] { Reader.class, Class.class }).newInstance(
                 new Object[] { grammarReader, RightShiftFunction.class });
+    }
+
+    @Override
+    protected Class<? extends PackingFunction> packingFunctionClass() {
+        return RightShiftFunction.class;
     }
 
     @Override
