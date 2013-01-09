@@ -237,7 +237,7 @@ public class TestInsideOutsideCphSpmlParser {
     }
 
     @Test
-    @PerformanceTest({ "mbp", "5701" })
+    @PerformanceTest({ "mbp", "5701", "mbp2012", "2850" })
     public void profileMaxRule() throws Exception {
         final ParserDriver opts = new ParserDriver();
         opts.decodeMethod = DecodeMethod.MaxRuleProd;

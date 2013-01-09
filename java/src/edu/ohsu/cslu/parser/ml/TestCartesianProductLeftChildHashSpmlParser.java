@@ -26,7 +26,7 @@ public class TestCartesianProductLeftChildHashSpmlParser extends
 
     @Override
     @Test
-    @PerformanceTest({ "d820", "0", "mbp", "0" })
+    @PerformanceTest({ "mbp2012", "0", "mbp", "0" })
     public void profileSentences11Through20() throws Exception {
         internalProfileSentences11Through20();
     }

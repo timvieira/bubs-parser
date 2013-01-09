@@ -37,7 +37,7 @@ public class TestRowParallelCscSpmvParser extends
 
     @Override
     @Test
-    @PerformanceTest({ "mbp", "1974", "d820", "3363" })
+    @PerformanceTest({ "mbp", "1974", "mbp2012", "969" })
     public void profileSentences11Through20() throws Exception {
         internalProfileSentences11Through20();
     }

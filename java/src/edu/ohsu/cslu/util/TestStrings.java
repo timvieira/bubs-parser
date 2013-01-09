@@ -187,7 +187,7 @@ public class TestStrings {
     }
 
     @Test
-    @PerformanceTest({ "mbp", "1000", "d820", "1300" })
+    @PerformanceTest({ "mbp", "1000", "mbp2012", "1300" })
     public void profilePermuteFeatures() throws Exception {
         Strings.permuteFeatures("(%) (rate) (capped) (one-year) (adjustable) (rate) (mortgages)");
     }

@@ -31,7 +31,7 @@ public class TestECPCellCrossMatrix extends ExhaustiveChartParserTestCase<ECPCel
 
     @Override
     @Test
-    @PerformanceTest({ "mbp", "13820", "d820", "19055" })
+    @PerformanceTest({ "mbp", "13820", "mbp2012", "7352" })
     public void profileSentences11Through20() throws Exception {
         internalProfileSentences11Through20();
     }

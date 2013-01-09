@@ -202,7 +202,7 @@ public abstract class ExhaustiveChartParserTestCase<P extends ChartParser<? exte
      * @throws Exception
      */
     @Test
-    @PerformanceTest({ "mbp", "0" })
+    @PerformanceTest({ "mbp", "0", "mbp2012", "0" })
     public abstract void profileSentences11Through20() throws Exception;
 
     protected void internalProfileSentences11Through20() throws Exception {

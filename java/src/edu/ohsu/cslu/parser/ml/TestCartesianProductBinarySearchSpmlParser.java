@@ -26,7 +26,7 @@ public class TestCartesianProductBinarySearchSpmlParser extends
 
     @Override
     @Test
-    @PerformanceTest({ "mbp", "30269", "d820", "31600" })
+    @PerformanceTest({ "mbp", "30269", "mbp2012", "10280" })
     public void profileSentences11Through20() throws Exception {
         internalProfileSentences11Through20();
     }

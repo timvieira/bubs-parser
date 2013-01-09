@@ -25,7 +25,7 @@ public class TestGrammarLoopSpmlParser extends SparseMatrixLoopParserTestCase<Gr
 
     @Override
     @Test
-    @PerformanceTest({ "mbp", "7437", "d820", "10321" })
+    @PerformanceTest({ "mbp", "7437", "mbp2012", "4609" })
     public void profileSentences11Through20() throws Exception {
         internalProfileSentences11Through20();
     }

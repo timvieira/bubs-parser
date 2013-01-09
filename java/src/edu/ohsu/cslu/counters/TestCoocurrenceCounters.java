@@ -129,7 +129,7 @@ public class TestCoocurrenceCounters extends TestCase {
     }
 
     @Test
-    @PerformanceTest({ "d820", "4938" })
+    @PerformanceTest({ "mbp2012", "4938" })
     public void profileBigramCounter() throws Exception {
         final CoocurrenceCounter cc = new BigramCounter(new InputStreamReader(
                 JUnit.unitTestDataAsStream("counters/f2-21.lowercase.txt.gz")));
@@ -155,7 +155,7 @@ public class TestCoocurrenceCounters extends TestCase {
     }
 
     @Test
-    @PerformanceTest({ "d820", "19297" })
+    @PerformanceTest({ "mbp2012", "19297" })
     public void profileSententialCoocurrenceCounter() throws Exception {
         final CoocurrenceCounter cc = new SententialCoocurrenceCounter(new InputStreamReader(
                 JUnit.unitTestDataAsStream("counters/f2-21.lowercase.txt.gz")));

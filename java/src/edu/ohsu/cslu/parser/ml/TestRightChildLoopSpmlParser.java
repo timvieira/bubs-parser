@@ -45,7 +45,7 @@ public class TestRightChildLoopSpmlParser extends SparseMatrixLoopParserTestCase
 
     @Override
     @Test
-    @PerformanceTest({ "mbp", "4939", "d820", "7983" })
+    @PerformanceTest({ "mbp", "4939", "mbp2012", "2805" })
     public void profileSentences11Through20() throws Exception {
         internalProfileSentences11Through20();
     }

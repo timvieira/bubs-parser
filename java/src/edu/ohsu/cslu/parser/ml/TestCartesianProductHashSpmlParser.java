@@ -35,7 +35,7 @@ public class TestCartesianProductHashSpmlParser extends ExhaustiveChartParserTes
 
     @Override
     @Test
-    @PerformanceTest({ "mbp", "7974", "d820", "8960" })
+    @PerformanceTest({ "mbp", "7974", "mbp2012", "3914" })
     public void profileSentences11Through20() throws Exception {
         internalProfileSentences11Through20();
     }

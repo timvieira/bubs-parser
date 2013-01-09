@@ -198,7 +198,7 @@ public class TestBoundedPriorityQueue {
     }
 
     @Test
-    @PerformanceTest({ "d820", "1851" })
+    @PerformanceTest({ "mbp2012", "1851" })
     public void profileQueue() {
         // Pseudo-random numbers, but with the same initial seed, so always the same series
         final Random r = new Random(1);

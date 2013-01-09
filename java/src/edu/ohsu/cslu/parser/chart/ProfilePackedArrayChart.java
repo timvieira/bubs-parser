@@ -52,7 +52,7 @@ public class ProfilePackedArrayChart {
     }
 
     @Test
-    @PerformanceTest({ "d820", "4000" })
+    @PerformanceTest({ "mbp2012", "4000" })
     public void profileExtractBestParse() {
         final String expectedParse = "(ROOT_0 (S_0 (@S_24 (NP_25 (NP_24 (NNS_9 Views))"
                 + " (PP_34 (IN_5 on) (NP_51 (VBG_27 manufacturing) (NN_23 strength))))"

@@ -90,7 +90,7 @@ public class ProfileBoundaryInOut {
     }
 
     @Test
-    @PerformanceTest({ "mbp", "973", "d820", "3379" })
+    @PerformanceTest({ "mbp", "973", "mbp2012", "3379" })
     public void profileParentAnnotated() {
 
         for (int i = 0; i < 400; i++) {
@@ -99,7 +99,7 @@ public class ProfileBoundaryInOut {
     }
 
     @Test
-    @PerformanceTest({ "mbp", "3633", "d820", "3750" })
+    @PerformanceTest({ "mbp", "3633", "mbp2012", "3750" })
     public void profileBerkeley() {
         for (int i = 0; i < 400; i++) {
             berkeleyBio.initSentence(berkeleyParseContext, berkeleyChart);

@@ -34,7 +34,7 @@ public class TestDenseVectorOpenClSpmvParser extends
 
     @Override
     @Test
-    @PerformanceTest({ "mbp", "159794" })
+    @PerformanceTest({ "mbp", "159794", "mbp2012", "71749" })
     public void profileSentences11Through20() throws Exception {
         internalProfileSentences11Through20();
     }
