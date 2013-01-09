@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.zip.GZIPInputStream;
 
+import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthModel;
 import edu.ohsu.cslu.parser.fom.BoundaryInOut;
@@ -19,9 +20,7 @@ import edu.ohsu.cslu.parser.spmv.CscSpmvParser;
  * 
  * Usage: EmbeddedExample <grammar file> <edge selector model> <cell selector model>
  * 
- * e.g. EmbeddedExample models/berkeley-SM6.gz models/berk.boundary.gz models/berk.bcm.gz
- * 
- * @author Aaron Dunlop
+ * e.g. EmbeddedExample models/eng.sm6.gr.gz models/eng.sm6.fom.gz models/eng.sm6.bcm.gz
  */
 public class EmbeddedExample {
 
@@ -33,6 +32,9 @@ public class EmbeddedExample {
         // Instantiate a Grammar class and load in the grammar from disk
         final LeftCscSparseMatrixGrammar grammar = new LeftCscSparseMatrixGrammar(uncompressFile(args[0]));
         opts.setGrammar(grammar);
+
+        // Configure the beam model before we load it from disk
+        GlobalConfigProperties.singleton().setProperty("beamModelBias", "200,200,200,200");
 
         // Create FOMModel and CellSelectorModel instances and load models from disk
         opts.fomModel = new BoundaryInOut(FOMType.BoundaryPOS, grammar, uncompressFile(args[1]));

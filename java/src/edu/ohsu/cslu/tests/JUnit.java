@@ -23,7 +23,6 @@ import static org.junit.Assert.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -45,7 +44,6 @@ import edu.ohsu.cslu.util.Strings;
 public class JUnit {
 
     public final static String UNIT_TEST_DIR = "unit-test-data/";
-    public final static String SHARED_UNIT_TEST_DIR = "../shared-nlp-code/" + UNIT_TEST_DIR;
 
     /**
      * Returns a {@link Reader} reading the specified unit test file (from the shared unit test data directory).
@@ -68,21 +66,11 @@ public class JUnit {
      * @throws IOException If unable to find or open the file
      */
     public static InputStream unitTestDataAsStream(final String filename) throws IOException {
-        try {
-            InputStream is = new FileInputStream(UNIT_TEST_DIR + filename);
-            if (filename.endsWith(".gz")) {
-                is = new GZIPInputStream(is);
-            }
-            return is;
-        } catch (final FileNotFoundException e) {
-            // A hack to read files in the shared unit test data directory from tests run within
-            // other projects
-            InputStream is = new FileInputStream(SHARED_UNIT_TEST_DIR + filename);
-            if (filename.endsWith(".gz")) {
-                is = new GZIPInputStream(is);
-            }
-            return is;
+        InputStream is = new FileInputStream(UNIT_TEST_DIR + filename);
+        if (filename.endsWith(".gz")) {
+            is = new GZIPInputStream(is);
         }
+        return is;
     }
 
     /**
