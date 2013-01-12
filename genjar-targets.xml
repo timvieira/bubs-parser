@@ -5,18 +5,23 @@
     <taskdef classpath="${dir.build.lib}/ant-contrib-1.0b3.jar" resource="net/sf/antcontrib/antlib.xml" />
     <!-- genjar for better dependency analysis than classfileset -->
     <taskdef classpath="${dir.build.lib}/genjar.jar" resource="genjar.properties" />
-    <!-- and ANT4HG for mercurial support -->
-    <taskdef classpath="${dir.build.lib}/ant4hg.jar" resource="net/sourceforge/ant4hg/taskdefs/antlib.xml" />
 
-    <target name="hgversion" unless="source-revision">
-<!--
-        <hg cmd="log" dir="." >
-            <arg value="-rtip"/>
-        </hg>
-        <property name="source-revision" value="${ant4hg.log.revision} (${ant4hg.log.changeset})" />
--->
+    <available file=".git" type="dir" property="git.present"/>
+
+    <target name="git-revision" description="Store git revision in ${repository.version}" if="git.present">
+        <exec executable="git" outputproperty="git.revision" failifexecutionfails="false" errorproperty="">
+            <arg value="describe"/>
+            <arg value="--tags"/>
+            <arg value="--always"/>
+            <arg value="HEAD"/>
+        </exec>
+        <condition property="repository.version" value="${git.revision}" else="unknown">
+            <and>
+                <isset property="git.revision"/>
+                <length string="${git.revision}" trim="yes" length="0" when="greater"/>
+            </and>
+        </condition>
     </target>
-
     <!-- 
     ========================================================================
        Package an executable jar file.
@@ -63,7 +68,7 @@
         <property name="additional-root-classes" value="" />
         <property name="additional-file-root" value="" />
         <property name="additional-file-includes" value="none" />
-        <property name="version" value="source-revision" />
+        <property name="version" value="${repository.version}" />
         <property name="readme-file" value="none" />
         <property name="license-file" value="none" />
         <property name="default-options" value="none" />
@@ -83,14 +88,20 @@
         <if>
             <isset property="reference-lgpl-libs" />
             <then>
+                <!-- Remove absolute path, and create a space-separated version (for MANIFEST.MF) 
+                     and a comma-separated version (for <runtimeclasspath>) -->
                 <pathconvert property="path.lgpl.libs" pathsep=" ">
-                    <!-- remove absolute path -->
+                    <mapper type="flatten" />
+                    <fileset dir="${dir.lgpl.lib}" includes="*.jar" excludes="*-src.jar" />
+                </pathconvert>
+                <pathconvert property="runtimeclasspath.lgpl.libs" pathsep=",">
                     <mapper type="flatten" />
                     <fileset dir="${dir.lgpl.lib}" includes="*.jar" excludes="*-src.jar" />
                 </pathconvert>
             </then>
             <else>
                 <property name="path.lgpl.libs" value="" />
+                <property name="runtimeclasspath.lgpl.libs" value="" />
             </else>
         </if>
 
@@ -149,7 +160,7 @@
         </if>
 
         <!-- Package the jar -->
-        <genjar jarfile="${dir.dist}/${tool-name}.jar">
+        <genjar jarfile="${dir.dist}/${tool-name}.jar" index="false">
             <class name="${root-class}" />
             <classes names="${additional-root-classes}" />
             <classpath refid="classpath" />
@@ -157,7 +168,7 @@
             <manifest>
                 <attribute name="Main-Class" value="${root-class}" />
                 <attribute name="Class-Path" value="${path.lgpl.libs}" />
-                <attribute name="Source-Revision" value="${source-revision}" />
+                <attribute name="Source-Revision" value="${repository.version}" />
                 <attribute name="Build-Time" value="${build.timestamp}" />
                 <attribute name="Version" value="${version}" />
             </manifest>
@@ -170,6 +181,12 @@
 
             <!-- And any additional jars specified by the caller -->
             <zipgroupfileset dir="." includes="${additional-libs}" />
+            
+            <!-- If referencing LGPL libraries, include them in the runtime classpath in MANIFEST.MF. 
+                 At runtime, they should be depoyed in the same directory as the packaged jarfile -->
+            <runtimeclasspath>
+                <fileset dir="${dir.lgpl.lib}" includes="${runtimeclasspath.lgpl.libs}" />
+            </runtimeclasspath>
         </genjar>
 
         <if>

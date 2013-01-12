@@ -41,7 +41,7 @@
         Compile all Java code
     ========================================================================
     -->
-    <target name="compile" depends="hgversion" description="Compile Java code and tools">
+    <target name="compile" depends="git-revision" description="Compile Java code and tools">
         <!-- If the build directory doesn't already exist, create it -->
         <mkdir dir="${dir.build}" />
         <javac srcdir="${dir.src}" includes="**/*.java" destdir="${dir.build}" debug="true" includeantruntime="false">
@@ -89,14 +89,16 @@
     ========================================================================
     -->
 
-    <!-- The main parser target. Builds BUBS with all libraries (including GPL and LGPL jars).  -->
+    <!-- The main parser target. Builds BUBS with all libraries (including GPL and LGPL jars).  
+         Note that OpenCL parsing requires deploying JavaCL (javacl.jar, jnaerator.jar, and opencl4java.jar)  
+         in the same directory as parse.jar -->
     <target name="parse" depends="compile">
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.parser.ParserDriver" />
-            <param name="additional-root-classes" value="edu.ohsu.cslu.parser.cellselector.DepGraphCellSelectorModel,edu.ohsu.cslu.parser.cellselector.OHSUCellConstraintsModel,edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthModel" />
+            <param name="additional-root-classes" value="edu.ohsu.cslu.parser.cellselector.DepGraphCellSelectorModel,edu.ohsu.cslu.parser.cellselector.OHSUCellConstraintsModel,edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthModel,edu.ohsu.cslu.parser.spmv.DenseVectorOpenClSpmvParser,edu.ohsu.cslu.parser.spmv.PackedOpenClSpmvParser" />
             <param name="tool-name" value="parse" />
             <param name="heap-size" value="1500m" />
-            <param name="package-gpl-libs" value="true" />
+            <param name="reference-lgpl-libs" value="true" />
             <param name="additional-file-root" value="${dir.src}" />
             <param name="additional-file-includes" value="**/*.cl" />
             <param name="license-file" value="java/tools/license.txt" />
@@ -127,8 +129,6 @@
             <param name="root-class" value="edu.ohsu.cslu.grammar.SummarizeGrammar" />
             <param name="tool-name" value="summarize-grammar" />
             <param name="heap-size" value="1024m" />
-            <!-- TODO We currently have to include all the GPL libraries (including OpenCL4J) because all parsers are referenced statically -->
-<!--            <param name="package-gpl-libs" value="true" />-->
         </antcall>
     </target>
 
