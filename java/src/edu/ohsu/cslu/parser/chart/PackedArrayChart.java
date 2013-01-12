@@ -73,7 +73,7 @@ public class PackedArrayChart extends ParallelArrayChart {
     protected final static boolean APPROXIMATE_SUM = GlobalConfigProperties.singleton().getBooleanProperty(
             BaseIoCphSpmlParser.PROPERTY_APPROXIMATE_LOG_SUM, false);
     protected final static float SUM_DELTA = GlobalConfigProperties.singleton().getFloatProperty(
-            BaseIoCphSpmlParser.PROPERTY_LOG_SUM_DELTA, 20f);
+            BaseIoCphSpmlParser.PROPERTY_LOG_SUM_DELTA, 16f);
 
     /**
      * Parallel array storing non-terminals (parallel to {@link ParallelArrayChart#insideProbabilities},
