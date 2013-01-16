@@ -23,6 +23,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import cltool4j.BaseLogger;
+import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
@@ -81,16 +82,17 @@ import edu.ohsu.cslu.parser.chart.Chart.Feature;
 
 public class BSCPBeamPredictTrain extends BeamSearchChartParser<LeftHashGrammar, CellChart> {
 
-    String[] featTemplate;
+    String[] featTemplates;
     List<Feature> featList;
     ParseTask curTask;
     GoldEdgeContainer goldEdgeChart[][];
     boolean printRankInfo = ParserDriver.inputTreeBeamRank;
 
-    public BSCPBeamPredictTrain(final ParserDriver opts, final LeftHashGrammar grammar, final String featTemplate) {
+    public BSCPBeamPredictTrain(final ParserDriver opts, final LeftHashGrammar grammar) {
         super(opts, grammar);
-        this.featTemplate = featTemplate.split("\\s+");
-        this.featList = Chart.featureTemplateStrToEnum(featTemplate.split("\\s+"));
+        this.featTemplates = GlobalConfigProperties.singleton().getProperty(ParserDriver.OPT_DISC_FEATURE_TEMPLATES)
+                .split(",");
+        this.featList = Chart.featureTemplateStrToEnum(featTemplates);
     }
 
     @Override

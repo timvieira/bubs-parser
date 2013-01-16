@@ -145,9 +145,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     @Option(name = "-inputTreeBeamRank", hidden = true, usage = "Print rank of input tree constituents during beam-search parsing.")
     public static boolean inputTreeBeamRank = false;
 
-    @Option(name = "-inputTreeBeamFeat", hidden = true, metaVar = "FEAT_FILE", usage = "Print features for training a Beam-Width Prediction model.")
-    private String beamFeatFile = null;
-
     @Option(name = "-fom", metaVar = "FOM", usage = "Figure-of-Merit edge scoring function (name or model file)")
     private String fomTypeOrModel = "Inside";
 
@@ -160,9 +157,10 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     @Option(name = "-ccModel", hidden = true, optionalChoiceGroup = "cellselectors", metaVar = "FILE", usage = "CSLU Chart Constraints model (Roark and Hollingshead, 2008)")
     private String chartConstraintsModel = null;
 
-    @Option(name = "-lsccModel", hidden = true, // optionalChoiceGroup = "cellselectors",
-    metaVar = "FILE", usage = "CSLU Chart Constraints model (Roark and Hollingshead, 2008)")
-    private String limitedSpanChartConstraintsModel = null;
+    // Leaving this around for a bit, in case we get back to limited-span parsing, but it doesn't work currently
+    // @Option(name = "-lsccModel", hidden = true, // optionalChoiceGroup = "cellselectors",
+    // metaVar = "FILE", usage = "CSLU Chart Constraints model (Roark and Hollingshead, 2008)")
+    // private String limitedSpanChartConstraintsModel = null;
 
     @Option(name = "-pm", aliases = { "-pruningmodel" }, hidden = true, optionalChoiceGroup = "cellselectors", metaVar = "FILE", usage = "Cell selector model file")
     private File[] pruningModels = null;
@@ -238,6 +236,11 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
      */
     public final static String OPT_ALLOW_COMPLETE_ABOVE_SPAN_LIMIT = "allowCompleteAboveSpanLimit";
 
+    /**
+     * Configuration property key for discriminative training feature templates.
+     */
+    public final static String OPT_DISC_FEATURE_TEMPLATES = "featureTemplates";
+
     public static void main(final String[] args) {
         run(args);
     }
@@ -264,9 +267,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
         // map simplified parser choices to the specific research version
         if (researchParserType == null) {
             researchParserType = parserType.researchParserType;
-        }
-        if (inputTreeBeamRank || beamFeatFile != null) {
-            researchParserType = ResearchParserType.BSCPBeamConfTrain;
         }
 
         BaseLogger.singleton().info(
@@ -488,6 +488,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
             return new InsideOutsideCscSparseMatrixGrammar(grammarFile, PerfectIntPairHashPackingFunction.class);
 
         case ConstrainedCartesianProductHashMl:
+            // Don't restrict the beam for constrained parsing
+            GlobalConfigProperties.singleton().setProperty(Parser.PROPERTY_MAX_BEAM_WIDTH, "0");
             return new LeftCscSparseMatrixGrammar(grammarFile, LeftShiftFunction.class);
 
         default:
@@ -514,7 +516,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
             return parser;
 
         } catch (final Exception e) {
-            throw new IllegalArgumentException("Unsupported parser type: " + e.getMessage());
+            throw new IllegalArgumentException("Unsupported parser type: " + e.toString());
         }
     }
 
