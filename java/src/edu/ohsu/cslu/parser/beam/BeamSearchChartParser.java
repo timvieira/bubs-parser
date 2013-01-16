@@ -68,25 +68,10 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
 
     protected void setBeamTuneParamsFromOptions() {
         final ConfigProperties props = GlobalConfigProperties.singleton();
-        origBeamWidth = props.getIntProperty("maxBeamWidth");
-        if (origBeamWidth <= 0) {
-            origBeamWidth = Integer.MAX_VALUE;
-        }
-
-        origLocalBeamDelta = props.getFloatProperty("maxLocalDelta");
-        if (origLocalBeamDelta <= 0) {
-            origLocalBeamDelta = Float.POSITIVE_INFINITY;
-        }
-
-        origGlobalBeamDelta = props.getFloatProperty("maxGlobalDelta");
-        if (origGlobalBeamDelta <= 0) {
-            origGlobalBeamDelta = Float.POSITIVE_INFINITY;
-        }
-
-        origFactoredBeamWidth = props.getIntProperty("maxFactoredBeamWidth");
-        if (origFactoredBeamWidth <= 0) {
-            origFactoredBeamWidth = origBeamWidth;
-        }
+        origBeamWidth = props.getIntProperty("maxBeamWidth", Integer.MAX_VALUE);
+        origLocalBeamDelta = props.getFloatProperty("maxLocalDelta", Float.POSITIVE_INFINITY);
+        origGlobalBeamDelta = props.getFloatProperty("maxGlobalDelta", Float.POSITIVE_INFINITY);
+        origFactoredBeamWidth = props.getIntProperty("maxFactoredBeamWidth", origBeamWidth);
     }
 
     protected void setBeamTuneParams(final String beamTuneStr) {
