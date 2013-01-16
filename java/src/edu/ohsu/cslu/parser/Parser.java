@@ -388,9 +388,7 @@ public abstract class Parser<G extends Grammar> {
         private Stage[] stages;
 
         private ReparseStrategy(final String alias, final Stage... stages) {
-            if (alias != null) {
-                EnumAliasMap.singleton().addAliases(this, alias);
-            }
+            EnumAliasMap.singleton().addAliases(this, alias);
             this.stages = stages;
         }
 
