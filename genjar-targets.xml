@@ -57,7 +57,6 @@
          *  dir.bsd.lib
          *  dir.lgpl.lib
          *  dir.gpl.lib
-         *  dir.cslu.lib
          *  dir.src (if srcjar is specified)
     ========================================================================
     -->
@@ -113,25 +112,21 @@
                     <fileset dir="${dir.bsd.lib}" includes="*.jar" />
                     <fileset dir="${dir.lgpl.lib}" includes="*.jar" />
                     <fileset dir="${dir.gpl.lib}" includes="*.jar" />
-                    <fileset dir="${dir.cslu.lib}" includes="*.jar" />
                 </path>
                 <path id="sourcepath">
                     <fileset dir="${dir.bsd.lib}" includes="*-src.jar" />
                     <fileset dir="${dir.lgpl.lib}" includes="*-src.jar" />
                     <fileset dir="${dir.gpl.lib}" includes="*-src.jar" />
-                    <fileset dir="${dir.cslu.lib}" includes="*-src.jar" />
                     <pathelement location="${dir.src}" />
                 </path>
             </then>
             <else>
                 <path id="classpath">
                     <pathelement location="${dir.build}" />
-                    <fileset dir="${dir.cslu.lib}" includes="*.jar" />
                     <fileset dir="${dir.bsd.lib}" includes="*.jar" />
                 </path>
                 <path id="sourcepath">
                     <fileset dir="${dir.bsd.lib}" includes="*-src.jar" />
-                    <fileset dir="${dir.cslu.lib}" includes="*-src.jar" />
                     <pathelement location="${dir.src}" />
                 </path>
             </else>
