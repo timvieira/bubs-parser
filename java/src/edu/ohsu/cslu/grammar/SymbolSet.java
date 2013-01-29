@@ -39,13 +39,14 @@ public class SymbolSet<E> implements Object2IntSortedMap<E>, Iterable<E>, Serial
     protected ArrayList<E> list;
     private Object2IntOpenHashMap<E> map;
     private boolean finalized;
+    private int defaultReturnValue = -1;
 
     private Comparator<? super E> comparator;
 
     public SymbolSet() {
         list = new ArrayList<E>();
         map = new Object2IntOpenHashMap<E>();
-        map.defaultReturnValue(-1);
+        map.defaultReturnValue(defaultReturnValue);
         finalized = false;
     }
 
@@ -75,7 +76,7 @@ public class SymbolSet<E> implements Object2IntSortedMap<E>, Iterable<E>, Serial
      */
     public int addSymbol(final E symbol) {
         int index = map.getInt(symbol);
-        if (index != -1) {
+        if (index != defaultReturnValue) {
             return index;
         }
 
@@ -250,6 +251,10 @@ public class SymbolSet<E> implements Object2IntSortedMap<E>, Iterable<E>, Serial
         finalized = true;
     }
 
+    public boolean isFinalized() {
+        return finalized;
+    }
+
     public void unfinalize() {
         finalized = false;
     }
@@ -257,11 +262,31 @@ public class SymbolSet<E> implements Object2IntSortedMap<E>, Iterable<E>, Serial
     @Override
     public void defaultReturnValue(final int rv) {
         map.defaultReturnValue(rv);
+        this.defaultReturnValue = rv;
+    }
+
+    /**
+     * Sets the default return value of this {@link SymbolSet} to the mapped integer value of the specified symbol. If
+     * the symbol is currently unmapped and the {@link SymbolSet} is not finalized, the symbol is added.
+     * 
+     * @param symbol
+     * @throws IllegalArgumentException if the symbol is unmapped and the {@link SymbolSet} is finalized
+     */
+    public void defaultReturnValue(final E symbol) {
+        if (map.containsKey(symbol)) {
+            this.defaultReturnValue = map.getInt(symbol);
+            map.defaultReturnValue(defaultReturnValue);
+        } else if (!finalized) {
+            this.defaultReturnValue = addSymbol(symbol);
+            map.defaultReturnValue(defaultReturnValue);
+        } else {
+            throw new IllegalArgumentException(symbol + " not found in finalized SymbolSet");
+        }
     }
 
     @Override
     public int defaultReturnValue() {
-        return map.defaultReturnValue();
+        return defaultReturnValue;
     }
 
     @Override
