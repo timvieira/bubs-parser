@@ -37,7 +37,7 @@ import edu.ohsu.cslu.datastructs.Semiring;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class MutableSparseFloatVector extends BaseNumericVector implements FloatVector, LargeVector, SparseVector {
+public final class MutableSparseFloatVector extends BaseNumericVector implements FloatVector, LargeVector, SparseVector {
 
     private static final long serialVersionUID = 1L;
 
@@ -348,6 +348,11 @@ public class MutableSparseFloatVector extends BaseNumericVector implements Float
             newMap.put(key, Math.max(map.get(key), otherMap.get(key)));
         }
         return newVector;
+    }
+
+    @Override
+    public void trim() {
+        map.trim();
     }
 
     @Override

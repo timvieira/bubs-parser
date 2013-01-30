@@ -33,7 +33,7 @@ import java.util.Arrays;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class DenseIntVector extends BaseNumericVector implements IntVector {
+public final class DenseIntVector extends BaseNumericVector implements IntVector {
 
     private final static long serialVersionUID = 379752896212698724L;
 

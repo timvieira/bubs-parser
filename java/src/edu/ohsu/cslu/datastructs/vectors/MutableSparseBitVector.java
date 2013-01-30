@@ -40,7 +40,9 @@ import java.io.Writer;
  *        $Id$
  */
 
-public class MutableSparseBitVector extends BaseVector implements BitVector, SparseVector {
+public final class MutableSparseBitVector extends BaseVector implements BitVector, SparseVector {
+
+    private static final long serialVersionUID = 1L;
 
     private final IntRBTreeSet bitSet;
 
@@ -252,6 +254,10 @@ public class MutableSparseBitVector extends BaseVector implements BitVector, Spa
     @Override
     public float sum() {
         return bitSet.size();
+    }
+
+    @Override
+    public void trim() {
     }
 
     @Override

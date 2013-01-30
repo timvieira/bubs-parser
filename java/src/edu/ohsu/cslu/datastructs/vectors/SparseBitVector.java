@@ -38,7 +38,9 @@ import java.util.Arrays;
  * 
  *        $Id$
  */
-public class SparseBitVector extends BaseVector implements BitVector, SparseVector {
+public final class SparseBitVector extends BaseVector implements BitVector, SparseVector {
+
+    private static final long serialVersionUID = 1L;
 
     // Allow direct access to other classes in the same package
     final int[] elements;
@@ -137,14 +139,7 @@ public class SparseBitVector extends BaseVector implements BitVector, SparseVect
 
     @Override
     public boolean contains(final int i) {
-        // TODO Since we maintain the elements in sorted order, we could use a binary search here
-        // TODO: (nate) or you could hash the values
-        for (final int element : elements) {
-            if (element == i) {
-                return true;
-            }
-        }
-        return false;
+        return Arrays.binarySearch(elements, i) >= 0;
     }
 
     @Override
@@ -251,6 +246,10 @@ public class SparseBitVector extends BaseVector implements BitVector, SparseVect
     @Override
     public float sum() {
         return elements.length;
+    }
+
+    @Override
+    public void trim() {
     }
 
     @Override

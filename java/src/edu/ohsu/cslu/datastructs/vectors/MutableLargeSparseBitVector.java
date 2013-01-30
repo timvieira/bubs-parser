@@ -37,11 +37,11 @@ import java.io.Writer;
  * 
  * @author Aaron Dunlop
  * @since Sep 11, 2008
- * 
- *        $Id$
  */
 
-public class MutableLargeSparseBitVector extends BaseVector implements LargeBitVector, SparseVector {
+public final class MutableLargeSparseBitVector extends BaseVector implements LargeBitVector, SparseVector {
+
+    private static final long serialVersionUID = 1L;
 
     private final LongRBTreeSet bitSet;
 
@@ -118,11 +118,6 @@ public class MutableLargeSparseBitVector extends BaseVector implements LargeBitV
 
         if (!(lv instanceof BitVector)) {
             return super.elementwiseMultiply(v);
-        }
-
-        // If we're multiplying by a SparseBitVector, use SparseBitVector's implementation
-        if (lv instanceof SparseBitVector) {
-            return ((SparseBitVector) v).elementwiseMultiply(this);
         }
 
         // If we're multiplying two SparseBitVector instances, iterate through the smaller one.
@@ -371,6 +366,10 @@ public class MutableLargeSparseBitVector extends BaseVector implements LargeBitV
     @Override
     public float sum() {
         return bitSet.size();
+    }
+
+    @Override
+    public void trim() {
     }
 
     @Override

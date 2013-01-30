@@ -9,7 +9,9 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.Arrays;
 
-public class LargeSparseBitVector extends BaseVector implements LargeBitVector, SparseVector {
+public final class LargeSparseBitVector extends BaseVector implements LargeBitVector, SparseVector {
+
+    private static final long serialVersionUID = 1L;
 
     private final long[] elements;
 
@@ -93,26 +95,12 @@ public class LargeSparseBitVector extends BaseVector implements LargeBitVector, 
 
     @Override
     public boolean contains(final int i) {
-        // TODO Since we maintain the elements in sorted order, we could use a binary search here
-        // TODO: (nate) or you could hash the values
-        for (final long element : elements) {
-            if (element == i) {
-                return true;
-            }
-        }
-        return false;
+        return contains((long) i);
     }
 
     @Override
     public boolean contains(final long i) {
-        // TODO Since we maintain the elements in sorted order, we could use a binary search here
-        // TODO: (nate) or you could hash the values
-        for (final long element : elements) {
-            if (element == i) {
-                return true;
-            }
-        }
-        return false;
+        return Arrays.binarySearch(elements, i) >= 0;
     }
 
     public long longArgMax() {
@@ -283,6 +271,9 @@ public class LargeSparseBitVector extends BaseVector implements LargeBitVector, 
     @Override
     public Iterable<Long> longValueIterator() {
         return new LongArrayList(elements);
+    }
+
+    public void trim() {
     }
 
     @Override

@@ -392,4 +392,9 @@ public class LargeSparseFloatVector extends BaseNumericVector implements FloatVe
         }
         return this;
     }
+
+    @Override
+    public void trim() {
+        map.trim();
+    }
 }

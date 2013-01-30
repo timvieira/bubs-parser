@@ -35,7 +35,7 @@ import java.util.Random;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class DenseFloatVector extends BaseNumericVector implements FloatVector {
+public final class DenseFloatVector extends BaseNumericVector implements FloatVector {
 
     private final static long serialVersionUID = 379752896212698724L;
 

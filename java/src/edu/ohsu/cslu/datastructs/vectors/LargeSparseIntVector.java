@@ -40,7 +40,7 @@ import edu.ohsu.cslu.datastructs.Semiring;
  * 
  * @version $Revision$ $Date$ $Author$
  */
-public class LargeSparseIntVector extends BaseNumericVector implements IntVector, LargeVector, SparseVector {
+public final class LargeSparseIntVector extends BaseNumericVector implements IntVector, LargeVector, SparseVector {
 
     private static final long serialVersionUID = 1L;
 
@@ -272,6 +272,11 @@ public class LargeSparseIntVector extends BaseNumericVector implements IntVector
             newMap.put(key, Math.max(map.get(key), otherMap.get(key)));
         }
         return newVector;
+    }
+
+    @Override
+    public void trim() {
+        map.trim();
     }
 
     @Override
