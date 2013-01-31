@@ -34,6 +34,7 @@ import edu.ohsu.cslu.datastructs.vectors.LargeVector;
 import edu.ohsu.cslu.datastructs.vectors.MutableSparseFloatVector;
 import edu.ohsu.cslu.datastructs.vectors.MutableSparseIntVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
+import edu.ohsu.cslu.datastructs.vectors.SparseVector;
 import edu.ohsu.cslu.datastructs.vectors.Vector;
 import edu.ohsu.cslu.parser.Util;
 import edu.ohsu.cslu.util.Strings;
@@ -338,6 +339,14 @@ public class AveragedPerceptron extends Perceptron {
 
     public FloatVector rawModelWeights(final int modelIndex) {
         return rawWeights[modelIndex];
+    }
+
+    public void trim() {
+        if (avgWeights[0] instanceof SparseVector) {
+            for (final FloatVector v : avgWeights) {
+                ((SparseVector) v).trim();
+            }
+        }
     }
 
     @Override

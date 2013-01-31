@@ -21,6 +21,8 @@ package edu.ohsu.cslu.perceptron;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import org.junit.Before;
@@ -29,11 +31,12 @@ import org.junit.Test;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.grammar.Tokenizer;
-import edu.ohsu.cslu.perceptron.TrainTagger.TagSequence;
-import edu.ohsu.cslu.perceptron.TrainTagger.TaggerFeatureExtractor;
+import edu.ohsu.cslu.perceptron.Tagger.TagSequence;
+import edu.ohsu.cslu.perceptron.Tagger.TaggerFeatureExtractor;
+import edu.ohsu.cslu.tests.JUnit;
 
 /**
- * Unit tests for {@link TrainTagger}
+ * Unit tests for {@link Tagger}
  */
 public class TestTagger {
 
@@ -56,30 +59,30 @@ public class TestTagger {
         trainingCorpus = sb.toString();
 
         lexicon = new SymbolSet<String>();
-        lexicon.defaultReturnValue(TrainTagger.NULL_SYMBOL);
+        lexicon.defaultReturnValue(Tagger.NULL_SYMBOL);
 
         unkClassSet = new SymbolSet<String>();
-        unkClassSet.defaultReturnValue(TrainTagger.NULL_SYMBOL);
+        unkClassSet.defaultReturnValue(Tagger.NULL_SYMBOL);
 
         tagSet = new SymbolSet<String>();
-        tagSet.defaultReturnValue(TrainTagger.NULL_SYMBOL);
+        tagSet.defaultReturnValue(Tagger.NULL_SYMBOL);
 
-        trainingCorpusSequences = new ArrayList<TrainTagger.TagSequence>();
+        trainingCorpusSequences = new ArrayList<Tagger.TagSequence>();
         for (final String line : trainingCorpus.split("\n")) {
             trainingCorpusSequences.add(new TagSequence(line, lexicon, unkClassSet, tagSet));
         }
 
-        nullTag = tagSet.getIndex(TrainTagger.NULL_SYMBOL);
+        nullTag = tagSet.getIndex(Tagger.NULL_SYMBOL);
         dtTag = tagSet.getIndex("DT");
         nnTag = tagSet.getIndex("NN");
         rpTag = tagSet.getIndex("RP");
 
-        nullToken = lexicon.getIndex(TrainTagger.NULL_SYMBOL);
+        nullToken = lexicon.getIndex(Tagger.NULL_SYMBOL);
         thisToken = lexicon.getIndex("This");
         timeToken = lexicon.getIndex("time");
         aroundToken = lexicon.getIndex("around");
 
-        nullUnk = unkClassSet.getIndex(TrainTagger.NULL_SYMBOL);
+        nullUnk = unkClassSet.getIndex(Tagger.NULL_SYMBOL);
         thisUnk = unkClassSet.getIndex(Tokenizer.berkeleyGetSignature("This", true, lexicon));
         timeUnk = unkClassSet.getIndex(Tokenizer.berkeleyGetSignature("time", false, lexicon));
         aroundUnk = unkClassSet.getIndex(Tokenizer.berkeleyGetSignature("around", false, lexicon));
@@ -157,5 +160,17 @@ public class TestTagger {
         assertEquals(new SparseBitVector(fe.featureVectorLength, new int[] { nnTag * unkClassSet.size() + aroundUnk,
                 offset1 + thisUnk * unkClassSet.size() + timeUnk }),
                 fe.forwardFeatureVector(trainingCorpusSequences.get(0), 2));
+    }
+
+    @Test
+    public void testTraining() throws IOException {
+        final String file = "corpora/wsj/wsj_24.postagged.5";
+
+        final Tagger tagger = new Tagger();
+        tagger.trainingIterations = 100;
+        tagger.train(new BufferedReader(JUnit.unitTestDataAsReader(file)));
+        final int[] results = tagger.tag(new BufferedReader(JUnit.unitTestDataAsReader(file)));
+        // We expect to memorize the training set
+        assertEquals(1.0f, results[2] * 1.0f / results[1], .01f);
     }
 }

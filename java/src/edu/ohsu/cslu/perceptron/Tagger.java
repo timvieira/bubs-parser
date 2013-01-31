@@ -21,9 +21,11 @@ package edu.ohsu.cslu.perceptron;
 
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,7 +49,7 @@ import edu.ohsu.cslu.grammar.Tokenizer;
  * @author Aaron Dunlop
  * @since May 21, 2012
  */
-public class TrainTagger extends BaseCommandlineTool {
+public class Tagger extends BaseCommandlineTool {
 
     /**
      * Default Features:
@@ -87,43 +89,100 @@ public class TrainTagger extends BaseCommandlineTool {
      */
     private final static String DEFAULT_FEATURE_TEMPLATES = "wm2,wm1,w,wp1,wp2,um2,um1,u,up1,up2,tm3,tm2,tm1,wm2_wm1,wm1_w,w_wp1,wp1_wp2,wm2_um1,wm1_u,u_wp1,up1_wp2,wm2_wm1_w,wm1_w_wp1,w_wp1_wp2,tm3_tm2,tm2_tm1,tm1_wm1,tm1_w,wm2_tm1";
 
-    @Option(name = "-ft", metaVar = "templates or file", usage = "Feature templates (comma-delimited), or template file")
+    @Option(name = "-ti", metaVar = "iterations", usage = "Train the tagger for n iterations (Optionally tests on dev-set with '-ds' and outputs a model with '-m')")
+    int trainingIterations = 0;
+
+    @Option(name = "-ft", requires = "-ti", metaVar = "templates or file", usage = "Feature templates (comma-delimited), or template file")
     private String featureTemplates = DEFAULT_FEATURE_TEMPLATES;
 
-    @Option(name = "-i", aliases = { "--iterations" }, metaVar = "count", usage = "Iterations over training corpus")
-    private int iterations = 10;
-
-    @Option(name = "-d", metaVar = "file", usage = "Development set. If specified, test results are output after each training iteration.")
+    @Option(name = "-d", requires = "-ti", metaVar = "file", usage = "Development set. If specified, test results are output after each training iteration.")
     private File devSet;
 
-    @Option(name = "-s", metaVar = "file", usage = "Output model file (Java Serialized Object)")
-    private File outputModelFile;
+    @Option(name = "-m", metaVar = "file", usage = "Model file (Java Serialized Object)")
+    private File modelFile;
 
     final static String NULL_SYMBOL = "<null>";
 
+    private SymbolSet<String> lexicon;
+    private SymbolSet<String> unkClassSet;
+    private SymbolSet<String> tagSet;
+    private AveragedPerceptron model;
+
     @Override
     protected void run() throws Exception {
+        if (trainingIterations > 0) {
+            train(inputAsBufferedReader());
+        } else {
+            readModel(modelFile);
+            tag(inputAsBufferedReader());
+        }
+    }
+
+    protected int[] tag(final BufferedReader inputReader) throws IOException {
+        int sentences = 0, words = 0, correct = 0;
+        final TaggerFeatureExtractor fe = new TaggerFeatureExtractor(featureTemplates, lexicon, unkClassSet, tagSet);
+
+        for (final String line : inputLines(inputReader)) {
+            sentences++;
+            final TagSequence tagSequence = new TagSequence(line, lexicon, unkClassSet, tagSet);
+            final StringBuilder sb = new StringBuilder(line.length() * 2);
+
+            for (int j = 0; j < tagSequence.length; j++) {
+                tagSequence.predictedTags[j] = (short) model.classify(fe.forwardFeatureVector(tagSequence, j));
+                sb.append("(" + tagSet.getSymbol(tagSequence.predictedTags[j]) + " " + tagSequence.tokens[j] + ")");
+                if (j < tagSequence.length - 1) {
+                    sb.append(' ');
+                }
+                if (tagSequence.predictedTags[j] == tagSequence.tags[j]) {
+                    correct++;
+                }
+                words++;
+            }
+        }
+        return new int[] { sentences, words, correct };
+    }
+
+    /**
+     * Reads in a serialized tagging model from disk, including the template string, lexicon, trained perceptron, etc.
+     * Separate from {@link #tag()} for unit testing of {@link #train()} and {@link #tag()}.
+     * 
+     * @throws IOException
+     * @throws ClassNotFoundException
+     */
+    @SuppressWarnings("unchecked")
+    private void readModel(final File f) throws IOException, ClassNotFoundException {
+        final ObjectInputStream ois = new ObjectInputStream(fileAsInputStream(f));
+        featureTemplates = (String) ois.readObject();
+        lexicon = (SymbolSet<String>) ois.readObject();
+        unkClassSet = (SymbolSet<String>) ois.readObject();
+        tagSet = (SymbolSet<String>) ois.readObject();
+        model = (AveragedPerceptron) ois.readObject();
+        ois.close();
+        model.trim();
+    }
+
+    protected void train(final BufferedReader inputReader) throws IOException {
 
         final long startTime = System.currentTimeMillis();
-        final ArrayList<TagSequence> trainingCorpusSequences = new ArrayList<TrainTagger.TagSequence>();
+        final ArrayList<TagSequence> trainingCorpusSequences = new ArrayList<Tagger.TagSequence>();
         final ArrayList<BitVector[]> trainingCorpusFeatures = new ArrayList<BitVector[]>();
 
-        final ArrayList<TagSequence> devCorpusSequences = new ArrayList<TrainTagger.TagSequence>();
+        final ArrayList<TagSequence> devCorpusSequences = new ArrayList<Tagger.TagSequence>();
         final ArrayList<BitVector[]> devCorpusFeatures = new ArrayList<BitVector[]>();
 
-        final SymbolSet<String> lexicon = new SymbolSet<String>();
+        lexicon = new SymbolSet<String>();
         lexicon.defaultReturnValue(NULL_SYMBOL);
 
-        final SymbolSet<String> unkClassSet = new SymbolSet<String>();
+        unkClassSet = new SymbolSet<String>();
         unkClassSet.defaultReturnValue(NULL_SYMBOL);
 
-        final SymbolSet<String> tagSet = new SymbolSet<String>();
+        tagSet = new SymbolSet<String>();
         tagSet.defaultReturnValue(NULL_SYMBOL);
 
         //
         // Read in the training corpus and map each token
         //
-        for (final String line : inputLines()) {
+        for (final String line : inputLines(inputReader)) {
             trainingCorpusSequences.add(new TagSequence(line, lexicon, unkClassSet, tagSet));
         }
         lexicon.finalize();
@@ -156,21 +215,19 @@ public class TrainTagger extends BaseCommandlineTool {
                 devCorpusSequences.add(tagSequence);
 
                 final BitVector[] featureVectors = new BitVector[tagSequence.tags.length];
-                for (int i = 0; i < featureVectors.length; i++) {
-                    featureVectors[i] = fe.forwardFeatureVector(tagSequence, i);
+                for (int j = 0; j < featureVectors.length; j++) {
+                    featureVectors[j] = fe.forwardFeatureVector(tagSequence, j);
                 }
                 devCorpusFeatures.add(featureVectors);
             }
         }
 
-        // final Perceptron model = new Perceptron(.25f, new Perceptron.ZeroOneLoss(), tagSet.size(),
-        // fe.featureCount());
-        final AveragedPerceptron model = new AveragedPerceptron(tagSet.size(), fe.featureCount());
+        model = new AveragedPerceptron(tagSet.size(), fe.featureCount());
 
         //
         // Iterate over training corpus
         //
-        for (int i = 1; i <= iterations; i++) {
+        for (int i = 1; i <= trainingIterations; i++) {
             for (int j = 0; j < trainingCorpusFeatures.size(); j++) {
                 final TagSequence tagSequence = trainingCorpusSequences.get(j);
                 final BitVector[] featureVectors = trainingCorpusFeatures.get(j);
@@ -209,9 +266,11 @@ public class TrainTagger extends BaseCommandlineTool {
         }
 
         // Write out the model file
-        if (outputModelFile != null) {
-            final ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(outputModelFile));
+        if (modelFile != null) {
+            final ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(modelFile));
+            oos.writeObject(featureTemplates);
             oos.writeObject(lexicon);
+            oos.writeObject(unkClassSet);
             oos.writeObject(tagSet);
             oos.writeObject(model);
             oos.close();
