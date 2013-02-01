@@ -41,17 +41,46 @@ public class TreeGrep extends BaseCommandlineTool {
     @Option(name = "-ucl", metaVar = "length", usage = "Unary chain of length >= n")
     private int unaryChainLength;
 
-    @Option(name = "-mcr", usage = "Multiple children of root node")
+    @Option(name = "-mcr", usage = "Match trees containing a root node with multiple children")
     private boolean multiChildRoot;
+
+    @Option(name = "-ml", aliases={"--min-length"}, metaVar = "words", usage = "Minimum sentence length")
+    private int minLength = 0;
+
+    @Option(name = "-xl", aliases={"--max-length"}, metaVar = "words", usage = "Maximum sentence length")
+    private int maxLength = 500;
+
+    @Option(name = "-pd", aliases={"--parent-degree"}, metaVar = "children", usage = "Match trees containing at least one parent with >= n children")
+    private int parentDegree = 0;
 
     @Override
     protected void run() throws Exception {
         line: for (final String line : inputLines()) {
             final NaryTree<String> tree = NaryTree.read(line, String.class);
 
+            if (tree.leaves() > maxLength) {
+                continue line;
+            }
+
+            if (tree.leaves() < minLength) {
+                continue line;
+            }
+
             if (multiChildRoot) {
                 // Check for multi-child root
                 if (tree.children().size() < 2) {
+                    continue line;
+                }
+            }
+
+            if (parentDegree > 0) {
+                int maxChildren = 0;
+                for (final NaryTree<String> node : tree.inOrderTraversal()) {
+                    if (node.children().size() > maxChildren) {
+                        maxChildren = node.children().size();
+                    }
+                }
+                if (maxChildren < parentDegree) {
                     continue line;
                 }
             }
