@@ -19,13 +19,11 @@
 
 package edu.ohsu.cslu.perceptron;
 
-import it.unimi.dsi.fastutil.longs.LongArrayList;
-
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,10 +31,6 @@ import java.util.Arrays;
 import cltool4j.BaseCommandlineTool;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.vectors.BitVector;
-import edu.ohsu.cslu.datastructs.vectors.LargeSparseBitVector;
-import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
-import edu.ohsu.cslu.datastructs.vectors.Vector;
-import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.grammar.Tokenizer;
 
 /**
@@ -87,7 +81,7 @@ public class Tagger extends BaseCommandlineTool {
      * wm2_tm1
      * </pre>
      */
-    private final static String DEFAULT_FEATURE_TEMPLATES = "wm2,wm1,w,wp1,wp2,um2,um1,u,up1,up2,tm3,tm2,tm1,wm2_wm1,wm1_w,w_wp1,wp1_wp2,wm2_um1,wm1_u,u_wp1,up1_wp2,wm2_wm1_w,wm1_w_wp1,w_wp1_wp2,tm3_tm2,tm2_tm1,tm1_wm1,tm1_w,wm2_tm1";
+    final static String DEFAULT_FEATURE_TEMPLATES = "wm2,wm1,w,wp1,wp2,um2,um1,u,up1,up2,tm3,tm2,tm1,wm2_wm1,wm1_w,w_wp1,wp1_wp2,wm2_um1,wm1_u,u_wp1,up1_wp2,wm2_wm1_w,wm1_w_wp1,w_wp1_wp2,tm3_tm2,tm2_tm1,tm1_wm1,tm1_w,wm2_tm1";
 
     @Option(name = "-ti", metaVar = "iterations", usage = "Train the tagger for n iterations (Optionally tests on dev-set with '-ds' and outputs a model with '-m')")
     int trainingIterations = 0;
@@ -103,33 +97,43 @@ public class Tagger extends BaseCommandlineTool {
 
     final static String NULL_SYMBOL = "<null>";
 
-    private SymbolSet<String> lexicon;
-    private SymbolSet<String> unkClassSet;
-    private SymbolSet<String> tagSet;
-    private AveragedPerceptron model;
+    private TaggerModel model;
 
     @Override
     protected void run() throws Exception {
         if (trainingIterations > 0) {
             train(inputAsBufferedReader());
         } else {
-            readModel(modelFile);
+            final FileInputStream is = new FileInputStream(modelFile);
+            model = TaggerModel.read(is);
+            is.close();
+
             tag(inputAsBufferedReader());
         }
     }
 
-    protected int[] tag(final BufferedReader inputReader) throws IOException {
+    /**
+     * Tags the input sequences read from <code>input</code>
+     * 
+     * @param input
+     * @return an array containing: sentences, words, and correct tags (if the input sequences include gold tags)
+     * 
+     * @throws IOException if a read fails
+     */
+    protected int[] tag(final BufferedReader input) throws IOException {
         int sentences = 0, words = 0, correct = 0;
-        final TaggerFeatureExtractor fe = new TaggerFeatureExtractor(featureTemplates, lexicon, unkClassSet, tagSet);
+        final TaggerFeatureExtractor fe = new TaggerFeatureExtractor(featureTemplates, model);
 
-        for (final String line : inputLines(inputReader)) {
+        for (final String line : inputLines(input)) {
             sentences++;
-            final TagSequence tagSequence = new TagSequence(line, lexicon, unkClassSet, tagSet);
+            final TagSequence tagSequence = new TagSequence(line, model);
             final StringBuilder sb = new StringBuilder(line.length() * 2);
 
             for (int j = 0; j < tagSequence.length; j++) {
-                tagSequence.predictedTags[j] = (short) model.classify(fe.forwardFeatureVector(tagSequence, j));
-                sb.append("(" + tagSet.getSymbol(tagSequence.predictedTags[j]) + " " + tagSequence.tokens[j] + ")");
+                tagSequence.predictedTags[j] = (short) model.perceptronModel.classify(fe.forwardFeatureVector(
+                        tagSequence, j));
+                sb.append("(" + model.tagSet.getSymbol(tagSequence.predictedTags[j]) + " " + tagSequence.tokens[j]
+                        + ")");
                 if (j < tagSequence.length - 1) {
                     sb.append(' ');
                 }
@@ -143,25 +147,13 @@ public class Tagger extends BaseCommandlineTool {
     }
 
     /**
-     * Reads in a serialized tagging model from disk, including the template string, lexicon, trained perceptron, etc.
-     * Separate from {@link #tag()} for unit testing of {@link #train()} and {@link #tag()}.
+     * Trains a {@link TaggerModel}, optionally validating it on {@link #devSet} and writing it to {@link #modelFile} as
+     * a Java serialized object.
      * 
+     * @param input
      * @throws IOException
-     * @throws ClassNotFoundException
      */
-    @SuppressWarnings("unchecked")
-    private void readModel(final File f) throws IOException, ClassNotFoundException {
-        final ObjectInputStream ois = new ObjectInputStream(fileAsInputStream(f));
-        featureTemplates = (String) ois.readObject();
-        lexicon = (SymbolSet<String>) ois.readObject();
-        unkClassSet = (SymbolSet<String>) ois.readObject();
-        tagSet = (SymbolSet<String>) ois.readObject();
-        model = (AveragedPerceptron) ois.readObject();
-        ois.close();
-        model.trim();
-    }
-
-    protected void train(final BufferedReader inputReader) throws IOException {
+    protected void train(final BufferedReader input) throws IOException {
 
         final long startTime = System.currentTimeMillis();
         final ArrayList<TagSequence> trainingCorpusSequences = new ArrayList<Tagger.TagSequence>();
@@ -170,35 +162,25 @@ public class Tagger extends BaseCommandlineTool {
         final ArrayList<TagSequence> devCorpusSequences = new ArrayList<Tagger.TagSequence>();
         final ArrayList<BitVector[]> devCorpusFeatures = new ArrayList<BitVector[]>();
 
-        lexicon = new SymbolSet<String>();
-        lexicon.defaultReturnValue(NULL_SYMBOL);
-
-        unkClassSet = new SymbolSet<String>();
-        unkClassSet.defaultReturnValue(NULL_SYMBOL);
-
-        tagSet = new SymbolSet<String>();
-        tagSet.defaultReturnValue(NULL_SYMBOL);
-
-        //
-        // Read in the training corpus and map each token
-        //
-        for (final String line : inputLines(inputReader)) {
-            trainingCorpusSequences.add(new TagSequence(line, lexicon, unkClassSet, tagSet));
-        }
-        lexicon.finalize();
-        unkClassSet.finalize();
-        tagSet.finalize();
-
         // Read in a feature file if provided
         final File f = new File(featureTemplates);
         if (f.exists()) {
             featureTemplates = readFeatureTemplateFile(f);
         }
+        model = new TaggerModel(featureTemplates);
+
+        //
+        // Read in the training corpus and map each token
+        //
+        for (final String line : inputLines(input)) {
+            trainingCorpusSequences.add(new TagSequence(line, model));
+        }
+        model.finalizeMaps();
 
         //
         // Pre-compute all features
         //
-        final TaggerFeatureExtractor fe = new TaggerFeatureExtractor(featureTemplates, lexicon, unkClassSet, tagSet);
+        final TaggerFeatureExtractor fe = new TaggerFeatureExtractor(featureTemplates, model);
         for (final TagSequence tagSequence : trainingCorpusSequences) {
 
             final BitVector[] featureVectors = new BitVector[tagSequence.tags.length];
@@ -211,7 +193,7 @@ public class Tagger extends BaseCommandlineTool {
         // Read in the dev set and map features
         if (devSet != null) {
             for (final String line : fileLines(devSet)) {
-                final TagSequence tagSequence = new TagSequence(line, lexicon, unkClassSet, tagSet);
+                final TagSequence tagSequence = new TagSequence(line, model);
                 devCorpusSequences.add(tagSequence);
 
                 final BitVector[] featureVectors = new BitVector[tagSequence.tags.length];
@@ -222,25 +204,21 @@ public class Tagger extends BaseCommandlineTool {
             }
         }
 
-        model = new AveragedPerceptron(tagSet.size(), fe.featureCount());
+        model.perceptronModel = new AveragedPerceptron(model.tagSet.size(), fe.featureCount());
 
         //
-        // Iterate over training corpus
+        // Iterate over training corpus, training the model
         //
         for (int i = 1; i <= trainingIterations; i++) {
             for (int j = 0; j < trainingCorpusFeatures.size(); j++) {
                 final TagSequence tagSequence = trainingCorpusSequences.get(j);
-                final BitVector[] featureVectors = trainingCorpusFeatures.get(j);
 
+                final BitVector[] featureVectors = trainingCorpusFeatures.get(j);
                 for (int k = 0; k < featureVectors.length; k++) {
-                    model.train(tagSequence.tags[k], featureVectors[k]);
+                    model.perceptronModel.train(tagSequence.tags[k], featureVectors[k]);
                 }
-                if (j > 0 && j % 100 == 0) {
-                    System.out.print('.');
-                    if (j % 5000 == 0) {
-                        System.out.println(j);
-                    }
-                }
+
+                progressBar(100, 5000, j);
             }
 
             if (!devCorpusSequences.isEmpty()) {
@@ -252,7 +230,7 @@ public class Tagger extends BaseCommandlineTool {
                     final BitVector[] featureVectors = devCorpusFeatures.get(j);
 
                     for (int k = 0; k < featureVectors.length; k++) {
-                        tagSequence.predictedTags[k] = (short) model.classify(featureVectors[k]);
+                        tagSequence.predictedTags[k] = (short) model.perceptronModel.classify(featureVectors[k]);
                         if (tagSequence.predictedTags[k] == tagSequence.tags[k]) {
                             correct++;
                         }
@@ -268,10 +246,6 @@ public class Tagger extends BaseCommandlineTool {
         // Write out the model file
         if (modelFile != null) {
             final ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(modelFile));
-            oos.writeObject(featureTemplates);
-            oos.writeObject(lexicon);
-            oos.writeObject(unkClassSet);
-            oos.writeObject(tagSet);
             oos.writeObject(model);
             oos.close();
         }
@@ -327,9 +301,7 @@ public class Tagger extends BaseCommandlineTool {
         final short[] tags;
         final short[] predictedTags;
         final int length;
-        final SymbolSet<String> lexicon;
-        final SymbolSet<String> unkClassSet;
-        final SymbolSet<String> tagSet;
+        final TaggerModel model;
 
         /**
          * Constructor for tagged training sequence
@@ -337,21 +309,19 @@ public class Tagger extends BaseCommandlineTool {
          * @param mappedTokens
          * @param tags
          */
-        public TagSequence(final String[] tokens, final int[] mappedTokens, final short[] tags,
-                final SymbolSet<String> lexicon, final SymbolSet<String> unkClassSet, final SymbolSet<String> tagSet) {
+        public TagSequence(final String[] tokens, final int[] mappedTokens, final short[] tags, final TaggerModel model) {
 
             this.tokens = tokens;
             this.mappedTokens = mappedTokens;
             this.tags = tags != null ? tags : new short[tokens.length];
             this.predictedTags = new short[tokens.length];
             this.length = mappedTokens.length;
-            this.lexicon = lexicon;
-            this.unkClassSet = unkClassSet;
-            this.tagSet = tagSet;
+            this.model = model;
 
             this.mappedUnkSymbols = new int[tokens.length];
             for (int i = 0; i < tokens.length; i++) {
-                mappedUnkSymbols[i] = lexicon.addSymbol(Tokenizer.berkeleyGetSignature(tokens[i], i == 0, lexicon));
+                mappedUnkSymbols[i] = model.lexicon.addSymbol(Tokenizer.berkeleyGetSignature(tokens[i], i == 0,
+                        model.lexicon));
             }
         }
 
@@ -360,13 +330,11 @@ public class Tagger extends BaseCommandlineTool {
          * 
          * @param tokens
          */
-        public TagSequence(final String[] tokens, final int[] mappedTokens, final SymbolSet<String> lexicon,
-                final SymbolSet<String> unkClassSet, final SymbolSet<String> tagSet) {
-            this(tokens, mappedTokens, null, lexicon, unkClassSet, tagSet);
+        public TagSequence(final String[] tokens, final int[] mappedTokens, final TaggerModel model) {
+            this(tokens, mappedTokens, null, model);
         }
 
-        public TagSequence(final String sentence, final SymbolSet<String> lexicon, final SymbolSet<String> unkClassSet,
-                final SymbolSet<String> tagSet) {
+        public TagSequence(final String sentence, final TaggerModel model) {
             // If the sentence starts with '(', treat it as a tagged sequence
             if (sentence.startsWith("(")) {
                 final String[] split = sentence.replaceAll(" ?\\(", "").split("\\)");
@@ -380,22 +348,22 @@ public class Tagger extends BaseCommandlineTool {
                 for (int i = 0; i < split.length; i++) {
                     final String[] tokenAndPos = split[i].split(" ");
 
-                    if (tagSet.isFinalized()) {
-                        tags[i] = (short) tagSet.getIndex(tokenAndPos[0]);
+                    if (model.tagSet.isFinalized()) {
+                        tags[i] = (short) model.tagSet.getIndex(tokenAndPos[0]);
                     } else {
-                        tags[i] = (short) tagSet.addSymbol(tokenAndPos[0]);
+                        tags[i] = (short) model.tagSet.addSymbol(tokenAndPos[0]);
                     }
                     predictedTags[i] = tags[i];
                     tokens[i] = tokenAndPos[1];
 
-                    if (lexicon.isFinalized()) {
-                        mappedTokens[i] = lexicon.getIndex(tokenAndPos[1]);
-                        mappedUnkSymbols[i] = unkClassSet.getIndex(Tokenizer.berkeleyGetSignature(tokens[i], i == 0,
-                                lexicon));
+                    if (model.lexicon.isFinalized()) {
+                        mappedTokens[i] = model.lexicon.getIndex(tokenAndPos[1]);
+                        mappedUnkSymbols[i] = model.unkClassSet.getIndex(Tokenizer.berkeleyGetSignature(tokens[i],
+                                i == 0, model.lexicon));
                     } else {
-                        mappedTokens[i] = lexicon.addSymbol(tokenAndPos[1]);
-                        mappedUnkSymbols[i] = unkClassSet.addSymbol(Tokenizer.berkeleyGetSignature(tokens[i], i == 0,
-                                lexicon));
+                        mappedTokens[i] = model.lexicon.addSymbol(tokenAndPos[1]);
+                        mappedUnkSymbols[i] = model.unkClassSet.addSymbol(Tokenizer.berkeleyGetSignature(tokens[i],
+                                i == 0, model.lexicon));
                     }
                 }
 
@@ -412,20 +380,18 @@ public class Tagger extends BaseCommandlineTool {
 
                 for (int i = 0; i < split.length; i++) {
                     tokens[i] = split[i];
-                    if (lexicon.isFinalized()) {
-                        mappedTokens[i] = lexicon.getIndex(split[i]);
-                        mappedUnkSymbols[i] = unkClassSet.getIndex(Tokenizer.berkeleyGetSignature(tokens[i], i == 0,
-                                lexicon));
+                    if (model.lexicon.isFinalized()) {
+                        mappedTokens[i] = model.lexicon.getIndex(split[i]);
+                        mappedUnkSymbols[i] = model.unkClassSet.getIndex(Tokenizer.berkeleyGetSignature(tokens[i],
+                                i == 0, model.lexicon));
                     } else {
-                        mappedTokens[i] = lexicon.addSymbol(split[i]);
-                        mappedUnkSymbols[i] = unkClassSet.addSymbol(Tokenizer.berkeleyGetSignature(tokens[i], i == 0,
-                                lexicon));
+                        mappedTokens[i] = model.lexicon.addSymbol(split[i]);
+                        mappedUnkSymbols[i] = model.unkClassSet.addSymbol(Tokenizer.berkeleyGetSignature(tokens[i],
+                                i == 0, model.lexicon));
                     }
                 }
             }
-            this.lexicon = lexicon;
-            this.unkClassSet = unkClassSet;
-            this.tagSet = tagSet;
+            this.model = model;
         }
 
         @Override
@@ -433,9 +399,9 @@ public class Tagger extends BaseCommandlineTool {
             final StringBuilder sb = new StringBuilder(256);
             for (int i = 0; i < length; i++) {
                 sb.append('(');
-                sb.append(tagSet.getSymbol(tags[i]));
+                sb.append(model.tagSet.getSymbol(tags[i]));
                 sb.append(' ');
-                sb.append(lexicon.getSymbol(mappedTokens[i]));
+                sb.append(model.lexicon.getSymbol(mappedTokens[i]));
                 sb.append(')');
 
                 if (i < (length - 1)) {
@@ -443,232 +409,6 @@ public class Tagger extends BaseCommandlineTool {
                 }
             }
             return sb.toString();
-        }
-    }
-
-    /**
-     * Extracts features for POS tagging
-     * 
-     * We support:
-     * 
-     * <pre>
-     * Tag(i-3): tm3 
-     * Tag(i-2): tm2 
-     * Previous tag: tm1 
-     * 
-     * Word(i-2): wm2
-     * Previous word: wm1 
-     * Word: w
-     * Word(i+1): wp1
-     * Word(i+2): wp2
-     * 
-     * 1-character suffix: s1 
-     * 2-character suffix: s2
-     * 3-character suffix: s3 
-     * 4-character suffix: s4
-     * 
-     * 1-character prefix: p1 
-     * 2-character prefix: p2 
-     * 3-character prefix: p3 
-     * 4-character prefix: p4
-     * 
-     * Word includes digit: d
-     * </pre>
-     * 
-     * Default feature set (copied from Mahsa's tagger):
-     * 
-     * tm1_tm2,tm1_wm1,tm1_wm2,tm1_w,tm1_s1,tm1_s2,tm1_s3,tm1_s4,tm1_p1,tm1_p2,tm1_p3,tm1_p4,tm1_w_d
-     */
-    public static class TaggerFeatureExtractor extends FeatureExtractor<TagSequence> {
-
-        private static final long serialVersionUID = 1L;
-
-        final TemplateElement[][] templates;
-        final long[] featureOffsets;
-
-        final SymbolSet<String> lexicon;
-        final SymbolSet<String> tags;
-
-        final int nullToken, nullTag;
-        final int lexiconSize, tagSetSize, unkClassSetSize;
-        final long featureVectorLength;
-
-        public TaggerFeatureExtractor(final SymbolSet<String> lexicon, final SymbolSet<String> unkClassSet,
-                final SymbolSet<String> tagSet) {
-            this(DEFAULT_FEATURE_TEMPLATES, lexicon, unkClassSet, tagSet);
-        }
-
-        /**
-         * Constructs a {@link FeatureExtractor} using the specified feature templates
-         * 
-         * @param featureTemplates
-         * @param lexicon
-         * @param tagSet
-         */
-        public TaggerFeatureExtractor(final String featureTemplates, final SymbolSet<String> lexicon,
-                final SymbolSet<String> unkClassSet, final SymbolSet<String> tagSet) {
-
-            this.lexicon = lexicon;
-            this.lexiconSize = lexicon.size();
-            this.nullToken = lexicon.getIndex(NULL_SYMBOL);
-
-            this.tags = tagSet;
-            this.tagSetSize = tagSet.size();
-            this.unkClassSetSize = unkClassSet.size();
-            this.nullTag = tagSet.getIndex(NULL_SYMBOL);
-
-            final String[] templateStrings = featureTemplates.split(",");
-            this.templates = new TemplateElement[templateStrings.length][];
-            this.featureOffsets = new long[this.templates.length];
-
-            for (int i = 0; i < featureOffsets.length; i++) {
-                templates[i] = template(templateStrings[i]);
-            }
-
-            for (int i = 1; i < featureOffsets.length; i++) {
-                featureOffsets[i] = featureOffsets[i - 1] + templateSize(templates[i - 1]);
-                // Blow up if we wrap around Long.MAX_VALUE
-                if (featureOffsets[i] < 0) {
-                    throw new IllegalArgumentException("Feature set too large. Features limited to " + Long.MAX_VALUE);
-                }
-            }
-
-            this.featureVectorLength = featureOffsets[featureOffsets.length - 1]
-                    + templateSize(templates[templates.length - 1]);
-            if (featureVectorLength < 0) {
-                throw new IllegalArgumentException("Feature set too large. Features limited to " + Long.MAX_VALUE);
-            }
-        }
-
-        private TemplateElement[] template(final String templateString) {
-            final String[] split = templateString.split("_");
-            final TemplateElement[] template = new TemplateElement[split.length];
-            for (int i = 0; i < split.length; i++) {
-                template[i] = TemplateElement.valueOf(TemplateElement.class, split[i]);
-            }
-            return template;
-        }
-
-        private long templateSize(final TemplateElement[] template) {
-            long size = 1;
-            for (int i = 0; i < template.length; i++) {
-                switch (template[i]) {
-
-                case tm1:
-                case tm2:
-                case tm3:
-                    size *= tagSetSize;
-                    break;
-
-                case um2:
-                case um1:
-                case u:
-                case up1:
-                case up2:
-                    size *= unkClassSetSize;
-                    break;
-
-                case wm2:
-                case wm1:
-                case w:
-                case wp1:
-                case wp2:
-                    size *= lexiconSize;
-                    break;
-                }
-
-                if (size < 0) {
-                    throw new IllegalArgumentException("Feature set too large. Features limited to " + Long.MAX_VALUE);
-                }
-            }
-            return size;
-        }
-
-        @Override
-        public long featureCount() {
-            return featureVectorLength;
-        }
-
-        @Override
-        public BitVector forwardFeatureVector(final TagSequence sequence, final int tokenIndex) {
-
-            final LongArrayList featureIndices = new LongArrayList();
-
-            for (int i = 0; i < templates.length; i++) {
-                long feature = 0;
-                final TemplateElement[] template = templates[i];
-                for (int j = 0; j < template.length; j++) {
-                    final TemplateElement t = template[j];
-                    final int index = tokenIndex + t.offset;
-
-                    switch (t) {
-
-                    case tm1:
-                    case tm2:
-                    case tm3:
-                        feature *= tagSetSize;
-                        feature += ((index < 0 || index >= sequence.predictedTags.length) ? nullTag
-                                : sequence.predictedTags[index]);
-                        break;
-
-                    case um2:
-                    case um1:
-                    case u:
-                    case up1:
-                    case up2:
-                        feature *= unkClassSetSize;
-                        feature += ((index < 0 || index >= sequence.tokens.length) ? nullToken
-                                : sequence.mappedUnkSymbols[index]);
-                        break;
-
-                    case wm2:
-                    case wm1:
-                    case w:
-                    case wp1:
-                    case wp2:
-                        feature *= lexiconSize;
-                        feature += ((index < 0 || index >= sequence.tokens.length) ? nullToken
-                                : sequence.mappedTokens[index]);
-                        break;
-                    }
-                }
-                final long featureIndex = featureOffsets[i] + feature;
-                assert featureIndex >= 0 && featureIndex < featureVectorLength;
-                featureIndices.add(featureIndex);
-            }
-
-            return featureVectorLength > Integer.MAX_VALUE ? new LargeSparseBitVector(featureVectorLength,
-                    featureIndices.toLongArray()) : new SparseBitVector(featureVectorLength,
-                    featureIndices.toLongArray());
-        }
-
-        @Override
-        public Vector forwardFeatureVector(final TagSequence source, final int tokenIndex, final float[] tagScores) {
-            return null;
-        }
-
-        private enum TemplateElement {
-            tm3(-3), // Tag i-3
-            tm2(-2), // Tag i-2
-            tm1(-1), // Previous tag
-
-            wm2(-2), // Word i-2
-            wm1(-1), // Previous word (i-1)
-            w(0), // Word
-            wp1(1), // Next word (i+1)
-            wp2(2), // Word i+2
-
-            um2(-2), // Unknown word token i-2
-            um1(-1), // Unknown word token (i-1)
-            u(0), // Unknown word token
-            up1(1), // Unknown word token (i+1)
-            up2(2); // Unknown word token i+2
-
-            final int offset;
-
-            private TemplateElement(final int offset) {
-                this.offset = offset;
-            }
         }
     }
 }
