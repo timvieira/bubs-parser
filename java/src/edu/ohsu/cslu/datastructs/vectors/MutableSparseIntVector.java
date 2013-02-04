@@ -136,7 +136,9 @@ public final class MutableSparseIntVector extends BaseNumericVector implements I
     public LongSet populatedDimensions() {
         final LongSet d = new LongRBTreeSet();
         for (final int i : map.keySet()) {
-            d.add(i);
+            if (map.get(i) != 0) {
+                d.add(i);
+            }
         }
         return d;
     }

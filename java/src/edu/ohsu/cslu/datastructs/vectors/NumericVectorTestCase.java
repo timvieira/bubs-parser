@@ -19,6 +19,8 @@
 package edu.ohsu.cslu.datastructs.vectors;
 
 import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import org.junit.Test;
 
@@ -67,7 +69,7 @@ public abstract class NumericVectorTestCase<V extends NumericVector> extends Vec
     }
 
     /**
-     * Tests max(), intMax(), and argMax() methods
+     * Tests {@link NumericVector#max()}, {@link NumericVector#intMax()}, and {@link NumericVector#argMax()} functions
      * 
      * @throws Exception if something bad happens
      */
@@ -81,5 +83,22 @@ public abstract class NumericVectorTestCase<V extends NumericVector> extends Vec
         assertEquals(126f, ((NumericVector) sampleVector).max(), .01f);
         assertEquals(126, ((NumericVector) sampleVector).intMax());
         assertEquals(2, ((NumericVector) sampleVector).argMax());
+    }
+
+    @Test
+    public void testPopulatedDimensions() throws Exception {
+        assertLongSetEquals(new long[] { 0, 2, 3, 4, 5, 6, 7, 8, 9, 10 },
+                ((NumericVector) sampleVector).populatedDimensions());
+        sampleVector.set(4, 0);
+        sampleVector.set(6, 0);
+        assertLongSetEquals(new long[] { 0, 2, 3, 5, 7, 8, 9, 10 },
+                ((NumericVector) sampleVector).populatedDimensions());
+    }
+
+    private void assertLongSetEquals(final long[] expected, final LongSet actual) {
+        assertEquals("Wrong length", expected.length, actual.size());
+        for (final long l : expected) {
+            assertTrue("Expected " + l, actual.contains(l));
+        }
     }
 }

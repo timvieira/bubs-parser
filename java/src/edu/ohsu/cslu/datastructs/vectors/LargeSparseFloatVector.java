@@ -23,6 +23,7 @@ import it.unimi.dsi.fastutil.longs.Long2FloatMap;
 import it.unimi.dsi.fastutil.longs.Long2FloatOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongAVLTreeSet;
 import it.unimi.dsi.fastutil.longs.LongIterator;
+import it.unimi.dsi.fastutil.longs.LongRBTreeSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.io.IOException;
@@ -158,7 +159,13 @@ public class LargeSparseFloatVector extends BaseNumericVector implements FloatVe
 
     @Override
     public LongSet populatedDimensions() {
-        return map.keySet();
+        final LongSet d = new LongRBTreeSet();
+        for (final long l : map.keySet()) {
+            if (map.get(l) != 0) {
+                d.add(l);
+            }
+        }
+        return d;
     }
 
     @Override

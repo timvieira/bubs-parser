@@ -40,6 +40,8 @@ import edu.ohsu.cslu.util.Math;
  */
 public final class PackedIntVector extends BaseNumericVector implements IntVector {
 
+    private static final long serialVersionUID = 1L;
+
     // These 5 fields and constants must be modified to convert storage from int to long.
     // Preliminary profiling on a 32-bit machine indicates a speed hit of ~30-35%, but that might not be the
     // case on 64-bit hardware.
@@ -191,8 +193,10 @@ public final class PackedIntVector extends BaseNumericVector implements IntVecto
     @Override
     public LongSet populatedDimensions() {
         final LongSet d = new LongRBTreeSet();
-        for (long i = 0; i < length; i++) {
-            d.add(i);
+        for (int i = 0; i < length; i++) {
+            if (getBoolean(i)) {
+                d.add(i);
+            }
         }
         return d;
     }

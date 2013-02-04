@@ -23,6 +23,7 @@ import it.unimi.dsi.fastutil.longs.Long2IntMap;
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongAVLTreeSet;
 import it.unimi.dsi.fastutil.longs.LongIterator;
+import it.unimi.dsi.fastutil.longs.LongRBTreeSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.io.IOException;
@@ -166,7 +167,13 @@ public final class LargeSparseIntVector extends BaseNumericVector implements Int
 
     @Override
     public LongSet populatedDimensions() {
-        return map.keySet();
+        final LongSet d = new LongRBTreeSet();
+        for (final long l : map.keySet()) {
+            if (map.get(l) != 0) {
+                d.add(l);
+            }
+        }
+        return d;
     }
 
     public LargeSparseIntVector inPlaceAdd(final Vector v) {

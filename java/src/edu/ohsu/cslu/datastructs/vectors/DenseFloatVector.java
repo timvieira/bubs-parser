@@ -269,8 +269,10 @@ public final class DenseFloatVector extends BaseNumericVector implements FloatVe
     @Override
     public LongSet populatedDimensions() {
         final LongSet d = new LongRBTreeSet();
-        for (long i = 0; i < length; i++) {
-            d.add(i);
+        for (int i = 0; i < length; i++) {
+            if (vector[i] != 0) {
+                d.add(i);
+            }
         }
         return d;
     }
