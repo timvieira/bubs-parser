@@ -306,7 +306,7 @@ public class AveragedPerceptron extends Perceptron {
                 }
             }
         } else {
-            for (final long featIndex : rawWeights[0].populatedDimensions()) {
+            for (final long featIndex : lastAveraged.populatedDimensions()) {
                 final int intFeatIndex = (int) featIndex;
                 final int lastAvgExample = lastAveraged.getInt(intFeatIndex); // default=0
 

@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import cltool4j.BaseCommandlineTool;
+import cltool4j.BaseLogger;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.vectors.BitVector;
 import edu.ohsu.cslu.grammar.Tokenizer;
@@ -130,8 +131,7 @@ public class Tagger extends BaseCommandlineTool {
             final StringBuilder sb = new StringBuilder(line.length() * 2);
 
             for (int j = 0; j < tagSequence.length; j++) {
-                tagSequence.predictedTags[j] = (short) model.perceptronModel.classify(fe.forwardFeatureVector(
-                        tagSequence, j));
+                tagSequence.predictedTags[j] = (short) model.classify(fe.forwardFeatureVector(tagSequence, j));
                 sb.append("(" + model.tagSet.getSymbol(tagSequence.predictedTags[j]) + " " + tagSequence.tokens[j]
                         + ")");
                 if (j < tagSequence.length - 1) {
@@ -204,7 +204,7 @@ public class Tagger extends BaseCommandlineTool {
             }
         }
 
-        model.perceptronModel = new AveragedPerceptron(model.tagSet.size(), fe.featureCount());
+        model.createPerceptronModel(fe.featureCount());
 
         //
         // Iterate over training corpus, training the model
@@ -215,42 +215,58 @@ public class Tagger extends BaseCommandlineTool {
 
                 final BitVector[] featureVectors = trainingCorpusFeatures.get(j);
                 for (int k = 0; k < featureVectors.length; k++) {
-                    model.perceptronModel.train(tagSequence.tags[k], featureVectors[k]);
+                    model.train(tagSequence.tags[k], featureVectors[k]);
                 }
 
                 progressBar(100, 5000, j);
             }
 
-            if (!devCorpusSequences.isEmpty()) {
-                // Test the development set
-                int total = 0, correct = 0;
-                final long t0 = System.currentTimeMillis();
-                for (int j = 0; j < devCorpusFeatures.size(); j++) {
-                    final TagSequence tagSequence = devCorpusSequences.get(j);
-                    final BitVector[] featureVectors = devCorpusFeatures.get(j);
-
-                    for (int k = 0; k < featureVectors.length; k++) {
-                        tagSequence.predictedTags[k] = (short) model.perceptronModel.classify(featureVectors[k]);
-                        if (tagSequence.predictedTags[k] == tagSequence.tags[k]) {
-                            correct++;
-                        }
-                        total++;
-                    }
-                    Arrays.fill(tagSequence.predictedTags, (short) 0);
-                }
-                System.out.format("Iteration=%d Devset Accuracy=%.2f  Time=%d\n", i, correct * 100f / total,
-                        System.currentTimeMillis() - t0);
+            // Skip the last iteration - we'll test after we finalize below
+            if (!devCorpusSequences.isEmpty() && i < trainingIterations) {
+                testDevelopmentSet(i, devCorpusSequences, devCorpusFeatures);
             }
+        }
+
+        // Store the trained model in a memory- and cache-efficient format for tagging (we do this even if we're not
+        // writing out the serialized model, specifically so we can unit test train() and tag())
+        // model.finalizeModel();
+        if (!devCorpusSequences.isEmpty()) {
+            testDevelopmentSet(trainingIterations, devCorpusSequences, devCorpusFeatures);
         }
 
         // Write out the model file
         if (modelFile != null) {
+            // And write it to disk
             final ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(modelFile));
             oos.writeObject(model);
             oos.close();
         }
 
-        System.out.format("Time: %d seconds\n", (System.currentTimeMillis() - startTime) / 1000);
+        BaseLogger.singleton().info(
+                String.format("Time: %d seconds\n", (System.currentTimeMillis() - startTime) / 1000));
+    }
+
+    private void testDevelopmentSet(final int trainingIteration, final ArrayList<TagSequence> devCorpusSequences,
+            final ArrayList<BitVector[]> devCorpusFeatures) {
+        // Test the development set
+        int total = 0, correct = 0;
+        final long t0 = System.currentTimeMillis();
+        for (int j = 0; j < devCorpusFeatures.size(); j++) {
+            final TagSequence tagSequence = devCorpusSequences.get(j);
+            final BitVector[] featureVectors = devCorpusFeatures.get(j);
+
+            for (int k = 0; k < featureVectors.length; k++) {
+                tagSequence.predictedTags[k] = (short) model.classify(featureVectors[k]);
+                if (tagSequence.predictedTags[k] == tagSequence.tags[k]) {
+                    correct++;
+                }
+                total++;
+            }
+            Arrays.fill(tagSequence.predictedTags, (short) 0);
+        }
+        BaseLogger.singleton().info(
+                String.format("Iteration=%d Devset Accuracy=%.2f  Time=%d\n", trainingIteration,
+                        correct * 100f / total, System.currentTimeMillis() - t0));
     }
 
     /**

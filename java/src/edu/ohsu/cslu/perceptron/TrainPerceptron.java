@@ -64,7 +64,7 @@ public class TrainPerceptron extends BaseCommandlineTool {
     @Option(name = "-underLoss")
     private float underPenalty = 1;
 
-    @Option(name = "-feats", usage = "Feature template file OR feature template string: lt rt lt_lt-1 rw_rt loc ...")
+    @Option(name = "-feats", usage = "Feature template file OR feature template string: lt,rt,lt_lt-1,rw_rt,loc ...")
     public String featTemplate = null;
 
     @Option(name = "-bins", usage = "Value to Class mapping bins. ex: '0,5,10,30' ")
