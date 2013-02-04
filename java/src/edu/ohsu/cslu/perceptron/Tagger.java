@@ -229,7 +229,9 @@ public class Tagger extends BaseCommandlineTool {
 
         // Store the trained model in a memory- and cache-efficient format for tagging (we do this even if we're not
         // writing out the serialized model, specifically so we can unit test train() and tag())
-        // model.finalizeModel();
+        model.finalizeModel();
+
+        // Test on the dev-set
         if (!devCorpusSequences.isEmpty()) {
             testDevelopmentSet(trainingIterations, devCorpusSequences, devCorpusFeatures);
         }

@@ -334,6 +334,9 @@ public class AveragedPerceptron extends Perceptron {
 
     @Override
     public FloatVector modelWeights(final int modelIndex) {
+        if (lastExampleAllUpdated < trainExampleNumber) {
+            averageAllFeatures();
+        }
         return avgWeights[modelIndex];
     }
 

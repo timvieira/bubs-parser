@@ -20,7 +20,7 @@
 package edu.ohsu.cslu.perceptron;
 
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
-import it.unimi.dsi.fastutil.longs.Long2ShortOpenHashMap;
+import it.unimi.dsi.fastutil.longs.Long2ShortAVLTreeMap;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,6 +29,7 @@ import java.io.Serializable;
 
 import edu.ohsu.cslu.datastructs.vectors.BitVector;
 import edu.ohsu.cslu.datastructs.vectors.FloatVector;
+import edu.ohsu.cslu.datastructs.vectors.LargeBitVector;
 import edu.ohsu.cslu.datastructs.vectors.LargeVector;
 import edu.ohsu.cslu.datastructs.vectors.Vector;
 import edu.ohsu.cslu.grammar.SymbolSet;
@@ -95,10 +96,10 @@ class TaggerModel implements Serializable {
     public void finalizeModel() {
 
         // Count the number of non-0 weights
-        final Long2ShortOpenHashMap observedWeightCounts = new Long2ShortOpenHashMap();
+        final Long2ShortAVLTreeMap observedWeightCounts = new Long2ShortAVLTreeMap();
         for (int i = 0; i < tagSet.size(); i++) {
             for (final long feature : perceptronModel.modelWeights(i).populatedDimensions()) {
-                observedWeightCounts.add(feature, (short) 1);
+                observedWeightCounts.put(feature, (short) (observedWeightCounts.get(feature) + 1));
             }
         }
 
@@ -111,6 +112,7 @@ class TaggerModel implements Serializable {
         arraySize += observedWeightCounts.size();
 
         this.parallelArrayOffsetMap = new Long2IntOpenHashMap();
+        parallelArrayOffsetMap.defaultReturnValue(-1);
         this.parallelWeightArrayTags = new short[arraySize];
         this.parallelWeightArray = new float[arraySize];
 
@@ -149,7 +151,9 @@ class TaggerModel implements Serializable {
      */
     public static TaggerModel read(final InputStream is) throws ClassNotFoundException, IOException {
         final TaggerModel m = (TaggerModel) new ObjectInputStream(is).readObject();
-        m.perceptronModel.trim();
+        if (m.perceptronModel != null) {
+            m.perceptronModel.trim();
+        }
         return m;
     }
 
@@ -161,23 +165,58 @@ class TaggerModel implements Serializable {
         perceptronModel.train(goldClass, featureVector);
     }
 
-    public int classify(final Vector featureVector) {
+    public int classify(final BitVector featureVector) {
+
         if (parallelArrayOffsetMap == null) {
             return perceptronModel.classify(featureVector);
         }
 
-        return perceptronModel.classify(featureVector);
+        // Compute individual dot-products for each tag
+        final float[] dotProducts = new float[tagSet.size()];
 
-        // int bestClass = -1;
-        // float score, bestScore = Float.NEGATIVE_INFINITY;
-        // for (int i = 0; i < model.length; i++) {
-        // score = featureVector.dotProduct(model[i]) + bias[i];
-        // if (score > bestScore) {
-        // bestScore = score;
-        // bestClass = i;
-        // }
-        // }
-        // return bestClass;
+        // Unfortunately, we need separate cases for LargeVector and normal Vector classes
+        if (featureVector instanceof LargeVector) {
+            final LargeBitVector largeFeatureVector = (LargeBitVector) featureVector;
 
+            // Iterate over each feature
+            for (final long feature : largeFeatureVector.longValues()) {
+
+                final int offset = parallelArrayOffsetMap.get(feature);
+                // Skip any features that aren't populated in the model (those we didn't observe in the training data)
+                if (offset < 0) {
+                    continue;
+                }
+
+                // The first 'tag' position denotes the number of populated weights for this feature
+                final int end = offset + parallelWeightArrayTags[offset];
+
+                // Add each non-0 weight to the appropriate dot-product
+                for (int i = offset + 1; i <= end; i++) {
+                    dotProducts[parallelWeightArrayTags[i]] += parallelWeightArray[i];
+                }
+            }
+        } else {
+            for (final int feature : featureVector.values()) {
+                final int offset = parallelArrayOffsetMap.get(feature);
+                if (offset < 0) {
+                    continue;
+                }
+                final int end = offset + parallelWeightArrayTags[offset];
+                for (int i = offset + 1; i <= end; i++) {
+                    dotProducts[parallelWeightArrayTags[i]] += parallelWeightArray[i];
+                }
+            }
+        }
+
+        // Find the maximum dot-product
+        float max = dotProducts[0];
+        short argMax = 0;
+        for (short tag = 1; tag < dotProducts.length; tag++) {
+            if (dotProducts[tag] > max) {
+                max = dotProducts[tag];
+                argMax = tag;
+            }
+        }
+        return argMax;
     }
 }

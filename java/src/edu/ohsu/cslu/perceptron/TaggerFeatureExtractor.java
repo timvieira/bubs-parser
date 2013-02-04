@@ -19,7 +19,6 @@
 
 package edu.ohsu.cslu.perceptron;
 
-import it.unimi.dsi.fastutil.longs.LongArrayList;
 import edu.ohsu.cslu.datastructs.vectors.BitVector;
 import edu.ohsu.cslu.datastructs.vectors.LargeSparseBitVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
@@ -170,7 +169,7 @@ public class TaggerFeatureExtractor extends FeatureExtractor<TagSequence> {
     @Override
     public BitVector forwardFeatureVector(final TagSequence sequence, final int tokenIndex) {
 
-        final LongArrayList featureIndices = new LongArrayList();
+        final long[] featureIndices = new long[templates.length];
 
         for (int i = 0; i < templates.length; i++) {
             long feature = 0;
@@ -212,11 +211,11 @@ public class TaggerFeatureExtractor extends FeatureExtractor<TagSequence> {
             }
             final long featureIndex = featureOffsets[i] + feature;
             assert featureIndex >= 0 && featureIndex < featureVectorLength;
-            featureIndices.add(featureIndex);
+            featureIndices[i] = featureIndex;
         }
 
-        return featureVectorLength > Integer.MAX_VALUE ? new LargeSparseBitVector(featureVectorLength,
-                featureIndices.toLongArray()) : new SparseBitVector(featureVectorLength, featureIndices.toLongArray());
+        return featureVectorLength > Integer.MAX_VALUE ? new LargeSparseBitVector(featureVectorLength, featureIndices)
+                : new SparseBitVector(featureVectorLength, featureIndices);
     }
 
     @Override

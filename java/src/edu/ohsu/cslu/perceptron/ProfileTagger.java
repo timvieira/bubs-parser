@@ -1,0 +1,80 @@
+/*
+ * Copyright 2010-2012 Aaron Dunlop and Nathan Bodenstab
+ * 
+ * This file is part of the BUBS Parser.
+ * 
+ * The BUBS Parser is free software: you can redistribute it and/or 
+ * modify  it under the terms of the GNU Affero General Public License 
+ * as published by the Free Software Foundation, either version 3 of 
+ * the License, or (at your option) any later version.
+ * 
+ * The BUBS Parser is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public License
+ * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
+ */
+
+package edu.ohsu.cslu.perceptron;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.util.Arrays;
+
+import cltool4j.BaseCommandlineTool;
+import cltool4j.args4j.Option;
+import edu.ohsu.cslu.perceptron.Tagger.TagSequence;
+
+/**
+ * @author Aaron Dunlop
+ * @since Jan 29, 2013
+ */
+public class ProfileTagger extends BaseCommandlineTool {
+
+    @Option(name = "-m", metaVar = "file", usage = "Model file (Java Serialized Object)")
+    private File modelFile;
+
+    @Option(name = "-i", metaVar = "iterations", usage = "Iterations")
+    private int iterations;
+
+    @Override
+    protected void run() throws Exception {
+
+        final TaggerModel model = TaggerModel.read(fileAsInputStream(modelFile));
+
+        final BufferedReader br = inputAsBufferedReader();
+        br.mark(20 * 1024 * 1024);
+        int sentences = 0, words = 0, correct = 0;
+        final TaggerFeatureExtractor fe = new TaggerFeatureExtractor(model.featureTemplates, model);
+
+        final long t0 = System.currentTimeMillis();
+
+        for (int i = 0; i < iterations; i++) {
+            for (final String line : inputLines(br)) {
+                sentences++;
+                final TagSequence tagSequence = new TagSequence(line, model);
+
+                for (int j = 0; j < tagSequence.length; j++) {
+                    tagSequence.predictedTags[j] = (short) model.classify(fe.forwardFeatureVector(tagSequence, j));
+                    if (tagSequence.predictedTags[j] == tagSequence.tags[j]) {
+                        correct++;
+                    }
+                    words++;
+                }
+                Arrays.fill(tagSequence.predictedTags, (short) 0);
+            }
+            br.reset();
+        }
+
+        final long ms = System.currentTimeMillis() - t0;
+        System.out.format("Sentences: %d  Words: %d  Time(ms): %d  w/s: %.2f  Accuracy: %.2f\n", sentences, words, ms,
+                words * 1000.0 / ms, correct * 100.0 / words);
+    }
+
+    public static void main(final String[] args) {
+        run(args);
+    }
+
+}
