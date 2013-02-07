@@ -220,10 +220,19 @@
     </target>
     
 
+    <target name="countunks" depends="compile">
+        <antcall target="package-tool">
+            <param name="root-class" value="edu.ohsu.cslu.tools.CountUnks" />
+            <param name="tool-name" value="countunks" />
+        </antcall>
+    </target>
+    
+
     <target name="train-perceptron" depends="compile">
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.perceptron.TrainPerceptron" />
             <param name="tool-name" value="train-perceptron" />
+            <param name="heap-size" value="1g" />
             <param name="package-gpl-libs" value="true" />
         </antcall>
     </target>
@@ -233,6 +242,7 @@
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.parser.fom.TrainFOM" />
             <param name="tool-name" value="train-fom" />
+            <param name="heap-size" value="1g" />
             <param name="package-gpl-libs" value="true" />
             <param name="default-options" value="java/tools/parser-defaults.properties" />
         </antcall>
