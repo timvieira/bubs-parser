@@ -102,6 +102,10 @@ public class HeadPercolationRuleset {
      */
     public int headChild(final String parentProduction, final List<String> childProductions) {
         final List<CategorySet> preferences = rules.get(parentProduction);
+        if (preferences == null) {
+            throw new IllegalArgumentException("No head rule for " + parentProduction);
+        }
+
         for (final CategorySet preference : preferences) {
             switch (preference.direction) {
             case Rightmost:

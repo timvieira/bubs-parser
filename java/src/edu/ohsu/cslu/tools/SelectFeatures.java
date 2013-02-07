@@ -305,19 +305,23 @@ public class SelectFeatures extends LinewiseCommandlineTool<String> {
                             featureDelimiter));
                 }
 
-                if (node.isHeadOfTreeRoot(ruleset)) {
-                    if (headVerb) {
-                        sb.append(FeatureClass.HeadVerb);
+                try {
+                    if (node.isHeadOfTreeRoot(ruleset)) {
+                        if (headVerb) {
+                            sb.append(FeatureClass.HeadVerb);
+                            sb.append(featureDelimiter);
+                        }
+                        // Switch feature tag to after_head
+                        headPosition = 1;
+                    } else if (beforeHead && headPosition == 0) {
+                        sb.append(FeatureClass.BeforeHead);
+                        sb.append(featureDelimiter);
+                    } else if (afterHead && headPosition == 1) {
+                        sb.append(FeatureClass.AfterHead);
                         sb.append(featureDelimiter);
                     }
-                    // Switch feature tag to after_head
-                    headPosition = 1;
-                } else if (beforeHead && headPosition == 0) {
-                    sb.append(FeatureClass.BeforeHead);
-                    sb.append(featureDelimiter);
-                } else if (afterHead && headPosition == 1) {
-                    sb.append(FeatureClass.AfterHead);
-                    sb.append(featureDelimiter);
+                } catch (final IllegalArgumentException ignore) {
+                    // If we don't have a ruleset for this language, skip these features
                 }
 
                 if (firstVerbPos != null) {
