@@ -223,7 +223,12 @@ public final class BoundaryInOut extends FigureOfMeritModel {
         // See Caraballo/Charniak 1998 for (what I think is) their inside/outside solution
         // to the same (or a similar) problem.
         while ((line = inStream.readLine()) != null) {
-            tree = ParseTree.readBracketFormat(line);
+            try {
+                tree = ParseTree.readBracketFormat(line);
+            } catch (final RuntimeException e) {
+                // Skip malformed trees, including INFO output from parse runs
+                continue;
+            }
             if (tree.isBinaryTree() == false) {
                 // System.err.println("ERROR: Training trees must be binarized exactly as used in decoding grammar");
                 // System.exit(1);

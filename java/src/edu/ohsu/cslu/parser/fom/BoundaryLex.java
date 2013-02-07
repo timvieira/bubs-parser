@@ -113,6 +113,7 @@ public final class BoundaryLex extends FigureOfMeritModel {
                         // If MAP is going to be used, all MAP lines must occur before LB or RB lines
                         if (classToLexMap == null) {
                             classToLexMap = new HashMap<String, LinkedList<Integer>>();
+                            classToLexMap.put(Grammar.nullSymbolStr, new LinkedList<Integer>());
                         }
                         final String cls = tokens[3];
                         if (!classToLexMap.containsKey(cls)) {
@@ -129,8 +130,7 @@ public final class BoundaryLex extends FigureOfMeritModel {
                             if (classToLexMap != null) {
                                 for (final int lexIndex : classToLexMap.get(tokens[2])) {
                                     // map prob to all lex entries that are mapped to this class for faster retrieval
-                                    // during
-                                    // parsing
+                                    // during parsing
                                     unkLBLogProb[lexIndex] = score;
                                 }
                             } else {
@@ -268,7 +268,12 @@ public final class BoundaryLex extends FigureOfMeritModel {
         }
 
         while ((line = inStream.readLine()) != null) {
-            tree = ParseTree.readBracketFormat(line);
+            try {
+                tree = ParseTree.readBracketFormat(line);
+            } catch (final RuntimeException e) {
+                // Skip malformed trees, including any INFO output from a parsing run
+                continue;
+            }
             if (tree.isBinaryTree() == false) {
                 TreeTools.binarizeTree(tree, grammar.binarization() == Binarization.RIGHT, grammar.horizontalMarkov,
                         grammar.verticalMarkov, false, grammar.grammarFormat);

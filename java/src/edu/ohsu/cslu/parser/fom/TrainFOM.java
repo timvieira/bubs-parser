@@ -39,19 +39,21 @@ public class TrainFOM extends BaseCommandlineTool {
     private boolean writeCounts = false;
 
     @Option(name = "-smooth", metaVar = "N", usage = "Apply add-N smoothing to model")
-    private float smoothingCount = (float) 0.0;
+    private float smoothingCount = 0.5f;
 
     @Option(name = "-prune", metaVar = "N", usage = "Prune entries with count less than N")
     private int pruneCount = 0;
 
+    // TODO Convert to 'File' and read with cltool4j functions
     @Option(name = "-lexCounts", metaVar = "FILE", usage = "Lines <word> <count> for all lexical entries")
     private String lexCountFile = null;
 
+    // TODO Convert to 'File' and read with cltool4j functions
     @Option(name = "-lexMap", metaVar = "FILE", usage = "Lines <word> <class> for all lexical entries")
     private String lexMapFile = null;
 
     @Option(name = "-unkThresh", metaVar = "N", usage = "Convert lexical items to UNK with frequency <= N")
-    private int unkThresh = 0;
+    private int unkThresh = 5;
 
     @Option(name = "-posNgramOrder", metaVar = "N", usage = "POS n-gram order for feature extraction (only Boundary)")
     private int posNgramOrder = 2;
