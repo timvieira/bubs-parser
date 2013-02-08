@@ -47,7 +47,10 @@ public final class BoundaryLex extends FigureOfMeritModel {
     private int lexToClassMap[] = null;
     private HashMap<String, LinkedList<Integer>> classToLexMap = null;
     private SymbolSet<String> wordClasses;
-    // private Tokenizer fomTokenizer = null; // old way to map lex
+
+    // TODO In most cases, we learn these probabilities for word clusters, but we store them
+    // repeatedly for each word. We should add a sentence-level initialization (like
+    // BoundaryPOS), map tokens to classes, and store the learned parameters only once.
 
     // Model params learned from training data
     private final float leftBoundaryLogProb[][], rightBoundaryLogProb[][];
@@ -122,6 +125,8 @@ public final class BoundaryLex extends FigureOfMeritModel {
                         classToLexMap.get(cls).add(grammar.mapLexicalEntry(tokens[1]));
                     } else if (tokens[0].equals("UNK")) {
                         if (tokens[1].equals("RB")) {
+                            // This should really probably be conditioned on rare-word distributions, not just
+                            // the last entry in the model file for each specific non-terminal
                             final int ntIndex = grammar.mapNonterminal(tokens[2]);
                             unkRBLogProb[ntIndex] = Float.parseFloat(tokens[3]);
                         } else { // LB
@@ -183,22 +188,6 @@ public final class BoundaryLex extends FigureOfMeritModel {
         return classToLexMap.get(classStr);
     }
 
-    // private int getClassIndex(final String classStr) {
-    // // if classes are going to be used, lexMap has to be fully populated
-    // // before using this function.
-    // if (lexMap == null) {
-    // return grammar.mapLexicalEntry(classStr);
-    // }
-    // return wordClasses.getIndex(classStr);
-    // }
-
-    // private int getClassIndex(final int lexIndex) {
-    // if (lexMap == null) {
-    // return lexIndex;
-    // }
-    // return lexMap[lexIndex];
-    // }
-
     private int getNonTermIndex(final String nt) {
         final int i = grammar.mapNonterminal(nt);
         if (i < 0) {
@@ -206,14 +195,6 @@ public final class BoundaryLex extends FigureOfMeritModel {
         }
         return i;
     }
-
-    // private int getLexIndex(final String lex) {
-    // final int i = grammar.mapLexicalEntry(lex);
-    // if (i < 0) {
-    // throw new RuntimeException("ERROR: lexical entry '" + lex + "' from FOM model not found in grammar.");
-    // }
-    // return i;
-    // }
 
     private void parseLexMapFile(final String file, final Tokenizer tokenizer, final String defaultClass)
             throws IOException {
@@ -423,17 +404,6 @@ public final class BoundaryLex extends FigureOfMeritModel {
 
         @Override
         public float calcFOM(final int start, final int end, final short nt, final float insideProbability) {
-            // String left = Grammar.nullSymbolStr;
-            // if (start > 0) {
-            // left = grammar.mapLexicalEntry(tokens[start - 1]);
-            // }
-            // String right = Grammar.nullSymbolStr;
-            // if (end < tokens.length) {
-            // right = grammar.mapLexicalEntry(tokens[end]);
-            // }
-            // System.out.println(grammar.mapNonterminal(nt) + "[" + start + "," + end + "]: left[" + left + "]="
-            // + outsideLeft(start, nt) + " right[" + right + "]=" + outsideRight(end, nt));
-
             return normInside(start, end, insideProbability) + outsideLeft(start, nt) + outsideRight(end, nt);
         }
 
