@@ -24,13 +24,14 @@ import org.junit.runners.Suite;
 import edu.ohsu.cslu.counters.AllCounterTests;
 import edu.ohsu.cslu.datastructs.AllDataStructureTests;
 import edu.ohsu.cslu.grammar.TestGrammarFormatType;
+import edu.ohsu.cslu.hash.AllHashTests;
 import edu.ohsu.cslu.util.AllUtilTests;
 
 /**
- * The entire regression suite for common code.
+ * The entire regression suite for common code (counters, datastructs, etc.).
  */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({ AllCounterTests.class, AllDataStructureTests.class, TestGrammarFormatType.class,
-        AllUtilTests.class })
+        AllHashTests.class, AllUtilTests.class })
 public class AllCommonTests {
 }

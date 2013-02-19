@@ -158,6 +158,28 @@ public final class MutableSparseFloatVector extends BaseNumericVector implements
     }
 
     @Override
+    public float max() {
+        float max = Float.NEGATIVE_INFINITY;
+        for (final float x : map.values()) {
+            if (x > max) {
+                max = x;
+            }
+        }
+        return max;
+    }
+
+    @Override
+    public float min() {
+        float min = Float.POSITIVE_INFINITY;
+        for (final float x : map.values()) {
+            if (x < min) {
+                min = x;
+            }
+        }
+        return min;
+    }
+
+    @Override
     public LongSet populatedDimensions() {
         final LongSet d = new LongRBTreeSet();
         for (final int i : map.keySet()) {

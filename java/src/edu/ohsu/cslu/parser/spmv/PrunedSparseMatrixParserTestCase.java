@@ -43,7 +43,7 @@ import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.SparseMatrixParser;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.ecp.ChartParserTestCase;
-import edu.ohsu.cslu.parser.fom.BoundaryInOut;
+import edu.ohsu.cslu.parser.fom.BoundaryPosModel;
 import edu.ohsu.cslu.parser.fom.FigureOfMeritModel.FOMType;
 import edu.ohsu.cslu.tests.JUnit;
 
@@ -65,7 +65,7 @@ public abstract class PrunedSparseMatrixParserTestCase<G extends SparseMatrixGra
         final G grammar = createGrammar(JUnit.unitTestDataAsReader("grammars/eng.R2.gr.gz"),
                 PerfectIntPairHashPackingFunction.class);
         final ParserDriver opts = new ParserDriver();
-        opts.fomModel = new BoundaryInOut(FOMType.BoundaryPOS, grammar, new BufferedReader(
+        opts.fomModel = new BoundaryPosModel(FOMType.BoundaryPOS, grammar, new BufferedReader(
                 JUnit.unitTestDataAsReader("fom/eng.R2.fom.gz")));
 
         final ConfigProperties props = GlobalConfigProperties.singleton();

@@ -93,7 +93,7 @@ public class TestTransitionParserFeatureExtractor {
         stack.push(arcs[0]);
 
         // Features when the stack contains 2 words
-        BitVector features = fe.forwardFeatureVector(new NivreParserContext(stack, arcs, 0), 1);
+        BitVector features = fe.featureVector(new NivreParserContext(stack, arcs, 0), 1);
         assertTrue(features.contains(lexicon.getIndex("dog")));
         assertTrue(features.contains(lexiconSize + lexicon.getIndex("the")));
         assertTrue(features.contains(lexiconSize * 2 + lexicon.getIndex(DependencyGraph.NULL) * lexiconSize
@@ -101,14 +101,14 @@ public class TestTransitionParserFeatureExtractor {
 
         // A version when the stack contains 2 words
         stack.push(arcs[1]);
-        features = fe.forwardFeatureVector(new NivreParserContext(stack, arcs, 1), 2);
+        features = fe.featureVector(new NivreParserContext(stack, arcs, 1), 2);
         assertTrue(features.contains(lexicon.getIndex("barked")));
         assertTrue(features.contains(lexiconSize + lexicon.getIndex("dog")));
         assertTrue(features.contains(lexiconSize * 2 + lexicon.getIndex("the") * lexiconSize + lexicon.getIndex("dog")));
 
         // A version when all words have been pushed onto the stack
         stack.push(arcs[2]);
-        features = fe.forwardFeatureVector(new NivreParserContext(stack, arcs, 2), 3);
+        features = fe.featureVector(new NivreParserContext(stack, arcs, 2), 3);
         assertTrue(features.contains(lexicon.getIndex(DependencyGraph.ROOT.token)));
         assertTrue(features.contains(lexiconSize + lexicon.getIndex("barked")));
         assertTrue(features.contains(lexiconSize * 2 + lexicon.getIndex("dog") * lexiconSize
@@ -116,7 +116,7 @@ public class TestTransitionParserFeatureExtractor {
 
         // And using lookahead into the buffer
         fe = new TransitionParserFeatureExtractor("i0w,s0w,s0w_i0w", lexicon, pos, labels);
-        features = fe.forwardFeatureVector(new NivreParserContext(stack, arcs, 2), 3);
+        features = fe.featureVector(new NivreParserContext(stack, arcs, 2), 3);
         assertTrue(features.contains(lexicon.getIndex(DependencyGraph.ROOT.token)));
         assertTrue(features.contains(lexiconSize + lexicon.getIndex("barked")));
         assertTrue(features.contains(lexiconSize * 2 + lexicon.getIndex("barked") * lexiconSize
@@ -135,7 +135,7 @@ public class TestTransitionParserFeatureExtractor {
         stack.push(arcs[0]);
 
         // Features when the stack contains only 1 word
-        BitVector features = fe.forwardFeatureVector(new NivreParserContext(stack, arcs, 0), 1);
+        BitVector features = fe.featureVector(new NivreParserContext(stack, arcs, 0), 1);
         assertTrue(features.contains(pos.getIndex("NN")));
         assertTrue(features.contains(posSetSize + pos.getIndex("DT")));
         assertTrue(features.contains(posSetSize * 2 + pos.getIndex(DependencyGraph.NULL) * lexiconSize
@@ -143,21 +143,21 @@ public class TestTransitionParserFeatureExtractor {
 
         // A version when the stack contains 2 words
         stack.push(arcs[1]);
-        features = fe.forwardFeatureVector(new NivreParserContext(stack, arcs, 1), 2);
+        features = fe.featureVector(new NivreParserContext(stack, arcs, 1), 2);
         assertTrue(features.contains(pos.getIndex("VBD")));
         assertTrue(features.contains(posSetSize + pos.getIndex("NN")));
         assertTrue(features.contains(posSetSize * 2 + pos.getIndex("DT") * lexiconSize + lexicon.getIndex("dog")));
 
         // A version when all words have been pushed onto the stack
         stack.push(arcs[2]);
-        features = fe.forwardFeatureVector(new NivreParserContext(stack, arcs, 2), 3);
+        features = fe.featureVector(new NivreParserContext(stack, arcs, 2), 3);
         assertTrue(features.contains(pos.getIndex(DependencyGraph.ROOT.pos)));
         assertTrue(features.contains(posSetSize + pos.getIndex("VBD")));
         assertTrue(features.contains(posSetSize * 2 + pos.getIndex("NN") * lexiconSize + lexicon.getIndex("barked")));
 
         // And using lookahead into the buffer
         fe = new TransitionParserFeatureExtractor("i0t,s0t,s0t_i0t", lexicon, pos, labels);
-        features = fe.forwardFeatureVector(new NivreParserContext(stack, arcs, 2), 3);
+        features = fe.featureVector(new NivreParserContext(stack, arcs, 2), 3);
         assertTrue(features.contains(pos.getIndex(DependencyGraph.ROOT.pos)));
         assertTrue(features.contains(posSetSize + pos.getIndex("VBD")));
         assertTrue(features.contains(posSetSize * 2 + pos.getIndex("VBD") * posSetSize
@@ -175,7 +175,7 @@ public class TestTransitionParserFeatureExtractor {
         final LinkedList<Arc> stack = new LinkedList<Arc>();
         stack.push(arcs[0]);
 
-        BitVector features = fe.forwardFeatureVector(new NivreParserContext(stack, arcs, 0), 1);
+        BitVector features = fe.featureVector(new NivreParserContext(stack, arcs, 0), 1);
         assertTrue(features.contains(pos.getIndex(DependencyGraph.NULL)));
         assertTrue(features.contains(posSetSize + pos.getIndex(DependencyGraph.NULL)));
         assertTrue(features.contains(posSetSize * 2 + pos.getIndex("VBD")));
@@ -184,7 +184,7 @@ public class TestTransitionParserFeatureExtractor {
         stack.push(arcs[2]);
         fe = new TransitionParserFeatureExtractor("s1m1w,s11w", lexicon, pos, labels);
         assertEquals(lexiconSize * 2, fe.featureVectorLength);
-        features = fe.forwardFeatureVector(new NivreParserContext(stack, arcs, 2), 3);
+        features = fe.featureVector(new NivreParserContext(stack, arcs, 2), 3);
         assertTrue(features.contains(lexicon.getIndex("the")));
         assertTrue(features.contains(lexiconSize + lexicon.getIndex("barked")));
     }
@@ -209,7 +209,7 @@ public class TestTransitionParserFeatureExtractor {
         // 'dog' -> barked
         arcs[1].predictedHead = 3;
 
-        final BitVector features = fe.forwardFeatureVector(new NivreParserContext(stack, arcs, 2), 3);
+        final BitVector features = fe.featureVector(new NivreParserContext(stack, arcs, 2), 3);
         assertTrue(features.contains(pos.getIndex("NN")));
         assertTrue(features.contains(posSetSize + pos.getIndex("DT")));
         assertTrue(features.contains(posSetSize * 2 + pos.getIndex("NN")));
@@ -230,7 +230,7 @@ public class TestTransitionParserFeatureExtractor {
 
         // Features when the stack contains 2 words that are not sequential (1 word has
         // already been reduced between the two)
-        final BitVector features = fe.forwardFeatureVector(new NivreParserContext(stack, arcs, 1), 2);
+        final BitVector features = fe.featureVector(new NivreParserContext(stack, arcs, 1), 2);
         assertTrue(features.contains(pos.getIndex("DT") * posSetSize + pos.getIndex("VBD")));
         assertTrue(features.contains(posSetSize * posSetSize + TransitionParserFeatureExtractor.DISTANCE_2));
     }

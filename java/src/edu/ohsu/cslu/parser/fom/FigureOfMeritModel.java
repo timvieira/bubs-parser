@@ -30,14 +30,17 @@ import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser.ResearchParserType;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.Chart;
-import edu.ohsu.cslu.parser.fom.BoundaryInOut.BoundaryInOutSelector;
-import edu.ohsu.cslu.parser.fom.NGramOutside.NGramSelector;
 import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.PackingFunctionType;
 
 /**
- * Represents a figure of merit model and creates instances using that model (see {@link FigureOfMerit} ).
- * Implementations may constrain parse forest population (for agenda parsers) or cell population (for chart parsers) by
- * lexical analysis of the sentence or other outside information.
+ * Represents a local prioritization model (for historical reasons, also known as a 'figure of merit'). A prioritization
+ * model ranks constituents within a chart cell. A simple implementation ({@link InsideProb}) ranks by inside
+ * probability. Most effective models also incorporate some heuristic estimate of the outside probability as well, thus
+ * reranking candidate labels and (hopefully) allowing effective beam-search with a narrower beam.
+ * 
+ * This model creates instances using that model (see {@link FigureOfMerit}). Implementations may constrain parse forest
+ * population (for agenda parsers) or cell population (for chart parsers) by lexical analysis of the sentence or other
+ * outside information.
  * 
  * Implementations of this model class should be thread-safe; i.e., after reading in or initializing the model, it must
  * be safe to call {@link #createFOM()} simultaneously from multiple threads. Note that the {@link FigureOfMerit}
@@ -47,13 +50,12 @@ import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.PackingFunctionType;
 public abstract class FigureOfMeritModel {
 
     protected FOMType type;
-    public NGramOutside ngramOutsideModel = null;
     float normInsideTune = GlobalConfigProperties.singleton().getFloatProperty("normInsideTune", 0);
 
     // float ngramOutsideTune = GlobalConfigProperties.singleton().getFloatProperty("ngramOutsideTune");
 
     static public enum FOMType {
-        Inside, BoundaryPOS, BoundaryLex, Prior, InsideWithFwdBkwd, WeightedFeatures, Discriminative, Ngram
+        Inside, BoundaryPOS, BoundaryLex, Discriminative;
     }
 
     public FigureOfMeritModel(final FOMType type) {
@@ -77,19 +79,9 @@ public abstract class FigureOfMeritModel {
 
     public abstract class FigureOfMerit implements Serializable {
 
-        /**
-         * 1-best POS tags as generated during FOM initialization (e.g., using a generative forward-backward pass as in
-         * {@link BoundaryInOutSelector})
-         */
-        public short[] fomTags = null;
-
         private static final long serialVersionUID = 1L;
-        protected NGramSelector ngramOutsideSelector = null;
 
         public FigureOfMerit() {
-            if (ngramOutsideModel != null) {
-                ngramOutsideSelector = ngramOutsideModel.new NGramSelector();
-            }
         }
 
         public float calcFOM(final int start, final int end, final short parent, final float insideProbability) {
@@ -101,17 +93,10 @@ public abstract class FigureOfMeritModel {
         }
 
         public void initSentence(final ParseTask parseTask, final Chart chart) {
-            if (ngramOutsideModel != null) {
-                ngramOutsideSelector.initSentence(parseTask, chart);
-            }
         }
 
         protected float normInside(final int start, final int end, final float insideProb) {
-            if (ngramOutsideModel != null) {
-                // anything other than ngramOutsideTune == 1 is bad
-                // return insideProb + ngramOutsideTune * ngramOutsideSelector.outside(start, end);
-                return insideProb + ngramOutsideSelector.outside(start, end);
-            } else if (ParserDriver.geometricInsideNorm) {
+            if (ParserDriver.geometricInsideNorm) {
                 // Geometric mean normalization (used by C&C)
                 // non-log: sqrt(span, insideProb)
                 return insideProb / (end - start);

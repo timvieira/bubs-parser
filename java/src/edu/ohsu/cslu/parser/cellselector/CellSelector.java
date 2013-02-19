@@ -26,6 +26,7 @@ import java.util.Iterator;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.datastructs.vectors.DenseIntVector;
 import edu.ohsu.cslu.parser.ChartParser;
+import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.cellselector.DepGraphCellSelectorModel.DepGraphCellSelector;
 
 /**
@@ -44,6 +45,7 @@ public abstract class CellSelector implements Iterator<short[]> {
     // TODO: If we really need a parser instance to call parser.waitForActiveTasks(), then
     // this should be passed in when the model is created, not at each sentence init.
     protected ChartParser<?, ?> parser;
+    protected ParseTask parseTask;
 
     protected DenseIntVector maxSpan = null;
 
@@ -54,8 +56,9 @@ public abstract class CellSelector implements Iterator<short[]> {
         return new short[] { cellIndices[nextCell << 1], cellIndices[(nextCell++ << 1) + 1] };
     }
 
-    public void initSentence(final ChartParser<?, ?> p) {
+    public void initSentence(final ChartParser<?, ?> p, final ParseTask task) {
         this.parser = p;
+        this.parseTask = task;
         nextCell = 0;
     }
 
@@ -205,8 +208,7 @@ public abstract class CellSelector implements Iterator<short[]> {
      * implementations (e.g. {@link DepGraphCellSelector}) identify subsequence spans and constrain the final chart to
      * be consistent with those bracketings. E.g., if an NP-chunker has identified noun phrases, we must build a
      * complete NP covering the identified span, but we need not consider larger spans that include part (and not all)
-     * of that NP. {@link #isCellOpen(short, short)} implements the former constraint, and this method implements the
-     * latter.
+     * of that NP.
      * 
      * @param start
      * @param end

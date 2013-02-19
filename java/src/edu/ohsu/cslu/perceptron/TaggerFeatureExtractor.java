@@ -22,9 +22,8 @@ package edu.ohsu.cslu.perceptron;
 import edu.ohsu.cslu.datastructs.vectors.BitVector;
 import edu.ohsu.cslu.datastructs.vectors.LargeSparseBitVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
-import edu.ohsu.cslu.datastructs.vectors.Vector;
+import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.SymbolSet;
-import edu.ohsu.cslu.perceptron.Tagger.TagSequence;
 
 /**
  * Extracts features for POS tagging
@@ -32,32 +31,24 @@ import edu.ohsu.cslu.perceptron.Tagger.TagSequence;
  * We support:
  * 
  * <pre>
- * Tag(i-3): tm3 
- * Tag(i-2): tm2 
- * Previous tag: tm1 
+ * tm3    Tag i-3
+ * tm2    Tag i-2
+ * tm1    Previous tag
  * 
- * Word(i-2): wm2
- * Previous word: wm1 
- * Word: w
- * Word(i+1): wp1
- * Word(i+2): wp2
+ * wm2    Word i-2
+ * wm1    Previous word (i-1)
+ * w      Word
+ * wp1    Next word (i+1)
+ * wp2    Word i+2
  * 
- * 1-character suffix: s1 
- * 2-character suffix: s2
- * 3-character suffix: s3 
- * 4-character suffix: s4
- * 
- * 1-character prefix: p1 
- * 2-character prefix: p2 
- * 3-character prefix: p3 
- * 4-character prefix: p4
- * 
- * Word includes digit: d
+ * um2    Unknown word token i-2
+ * um1    Unknown word token (i-1)
+ * u      Unknown word token
+ * up1    Unknown word token (i+1)
+ * up2    Unknown word token i+2
  * </pre>
  * 
- * Default feature set (copied from Mahsa's tagger):
- * 
- * tm1_tm2,tm1_wm1,tm1_wm2,tm1_w,tm1_s1,tm1_s2,tm1_s3,tm1_s4,tm1_p1,tm1_p2,tm1_p3,tm1_p4,tm1_w_d
+ * Unknown word features use the standard Berkeley UNK classes
  */
 public class TaggerFeatureExtractor extends FeatureExtractor<TagSequence> {
 
@@ -73,26 +64,25 @@ public class TaggerFeatureExtractor extends FeatureExtractor<TagSequence> {
     final int lexiconSize, tagSetSize, unkClassSetSize;
     final long featureVectorLength;
 
-    public TaggerFeatureExtractor(final TaggerModel model) {
-        this(Tagger.DEFAULT_FEATURE_TEMPLATES, model);
-    }
-
     /**
      * Constructs a {@link FeatureExtractor} using the specified feature templates
      * 
      * @param featureTemplates
-     * @param model
+     * @param lexicon
+     * @param unkClassSet
+     * @param tagSet
      */
-    public TaggerFeatureExtractor(final String featureTemplates, final TaggerModel model) {
+    public TaggerFeatureExtractor(final String featureTemplates, final SymbolSet<String> lexicon,
+            final SymbolSet<String> unkClassSet, final SymbolSet<String> tagSet) {
 
-        this.lexicon = model.lexicon;
+        this.lexicon = lexicon;
         this.lexiconSize = lexicon.size();
-        this.nullToken = lexicon.getIndex(Tagger.NULL_SYMBOL);
+        this.nullToken = lexicon.getIndex(Grammar.nullSymbolStr);
 
-        this.tags = model.tagSet;
+        this.tags = tagSet;
         this.tagSetSize = tags.size();
-        this.unkClassSetSize = model.unkClassSet.size();
-        this.nullTag = tags.getIndex(Tagger.NULL_SYMBOL);
+        this.unkClassSetSize = unkClassSet.size();
+        this.nullTag = tags.getIndex(Grammar.nullSymbolStr);
 
         final String[] templateStrings = featureTemplates.split(",");
         this.templates = new TaggerFeatureExtractor.TemplateElement[templateStrings.length][];
@@ -115,6 +105,11 @@ public class TaggerFeatureExtractor extends FeatureExtractor<TagSequence> {
         if (featureVectorLength < 0) {
             throw new IllegalArgumentException("Feature set too large. Features limited to " + Long.MAX_VALUE);
         }
+    }
+
+    @Override
+    public int templateCount() {
+        return templates.length;
     }
 
     private TaggerFeatureExtractor.TemplateElement[] template(final String templateString) {
@@ -162,12 +157,12 @@ public class TaggerFeatureExtractor extends FeatureExtractor<TagSequence> {
     }
 
     @Override
-    public long featureCount() {
+    public long vectorLength() {
         return featureVectorLength;
     }
 
     @Override
-    public BitVector forwardFeatureVector(final TagSequence sequence, final int tokenIndex) {
+    public BitVector featureVector(final TagSequence sequence, final int position) {
 
         final long[] featureIndices = new long[templates.length];
 
@@ -176,7 +171,7 @@ public class TaggerFeatureExtractor extends FeatureExtractor<TagSequence> {
             final TaggerFeatureExtractor.TemplateElement[] template = templates[i];
             for (int j = 0; j < template.length; j++) {
                 final TaggerFeatureExtractor.TemplateElement t = template[j];
-                final int index = tokenIndex + t.offset;
+                final int index = position + t.offset;
 
                 switch (t) {
 
@@ -194,7 +189,7 @@ public class TaggerFeatureExtractor extends FeatureExtractor<TagSequence> {
                 case up1:
                 case up2:
                     feature *= unkClassSetSize;
-                    feature += ((index < 0 || index >= sequence.tokens.length) ? nullToken
+                    feature += ((index < 0 || index >= sequence.mappedTokens.length) ? nullToken
                             : sequence.mappedUnkSymbols[index]);
                     break;
 
@@ -204,7 +199,7 @@ public class TaggerFeatureExtractor extends FeatureExtractor<TagSequence> {
                 case wp1:
                 case wp2:
                     feature *= lexiconSize;
-                    feature += ((index < 0 || index >= sequence.tokens.length) ? nullToken
+                    feature += ((index < 0 || index >= sequence.mappedTokens.length) ? nullToken
                             : sequence.mappedTokens[index]);
                     break;
                 }
@@ -216,11 +211,6 @@ public class TaggerFeatureExtractor extends FeatureExtractor<TagSequence> {
 
         return featureVectorLength > Integer.MAX_VALUE ? new LargeSparseBitVector(featureVectorLength, featureIndices)
                 : new SparseBitVector(featureVectorLength, featureIndices);
-    }
-
-    @Override
-    public Vector forwardFeatureVector(final TagSequence source, final int tokenIndex, final float[] tagScores) {
-        return null;
     }
 
     private enum TemplateElement {

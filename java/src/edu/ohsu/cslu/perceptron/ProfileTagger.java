@@ -25,7 +25,6 @@ import java.util.Arrays;
 
 import cltool4j.BaseCommandlineTool;
 import cltool4j.args4j.Option;
-import edu.ohsu.cslu.perceptron.Tagger.TagSequence;
 
 /**
  * @author Aaron Dunlop
@@ -42,22 +41,24 @@ public class ProfileTagger extends BaseCommandlineTool {
     @Override
     protected void run() throws Exception {
 
-        final TaggerModel model = TaggerModel.read(fileAsInputStream(modelFile));
+        final Tagger t = new Tagger();
+        t.readModel(fileAsInputStream(modelFile));
 
         final BufferedReader br = inputAsBufferedReader();
         br.mark(20 * 1024 * 1024);
         int sentences = 0, words = 0, correct = 0;
-        final TaggerFeatureExtractor fe = new TaggerFeatureExtractor(model.featureTemplates, model);
+        final TaggerFeatureExtractor fe = new TaggerFeatureExtractor(t.featureTemplates, t.lexicon, t.unkClassSet,
+                t.tagSet);
 
         final long t0 = System.currentTimeMillis();
 
         for (int i = 0; i < iterations; i++) {
             for (final String line : inputLines(br)) {
                 sentences++;
-                final TagSequence tagSequence = new TagSequence(line, model);
+                final TagSequence tagSequence = new TagSequence(line, t.lexicon, t.unkClassSet, t.tagSet);
 
                 for (int j = 0; j < tagSequence.length; j++) {
-                    tagSequence.predictedTags[j] = (short) model.classify(fe.forwardFeatureVector(tagSequence, j));
+                    tagSequence.predictedTags[j] = (short) t.classify(fe.featureVector(tagSequence, j));
                     if (tagSequence.predictedTags[j] == tagSequence.tags[j]) {
                         correct++;
                     }

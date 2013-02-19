@@ -34,12 +34,12 @@ import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.Parser.DecodeMethod;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
-import edu.ohsu.cslu.parser.fom.BoundaryInOut.BoundaryInOutSelector;
+import edu.ohsu.cslu.parser.fom.BoundaryPosModel.BoundaryPosFom;
 import edu.ohsu.cslu.parser.fom.FigureOfMeritModel.FOMType;
 import edu.ohsu.cslu.tests.JUnit;
 
 /**
- * Profiles the {@link BoundaryInOut} edge-selector.
+ * Profiles the {@link BoundaryPosModel} edge-selector.
  * 
  * @author Aaron Dunlop
  */
@@ -47,10 +47,10 @@ import edu.ohsu.cslu.tests.JUnit;
 public class ProfileBoundaryInOut {
 
     private static SparseMatrixGrammar parentAnnotatedGrammar;
-    private static BoundaryInOutSelector parentAnnotatedBio;
+    private static BoundaryPosFom parentAnnotatedBio;
 
     private static SparseMatrixGrammar berkeleyGrammar;
-    private static BoundaryInOutSelector berkeleyBio;
+    private static BoundaryPosFom berkeleyBio;
 
     private PackedArrayChart parentAnnotatedChart;
     private PackedArrayChart berkeleyChart;
@@ -64,17 +64,17 @@ public class ProfileBoundaryInOut {
             parentAnnotatedGrammar = new LeftCscSparseMatrixGrammar(
                     JUnit.unitTestDataAsReader("grammars/eng.R2.P1.gr.gz"));
         }
-        final BoundaryInOut parentBioModel = new BoundaryInOut(FOMType.BoundaryPOS, parentAnnotatedGrammar,
+        final BoundaryPosModel parentBioModel = new BoundaryPosModel(FOMType.BoundaryPOS, parentAnnotatedGrammar,
                 new BufferedReader(JUnit.unitTestDataAsReader("fom/eng.R2.P1.fom.gz")));
 
-        parentAnnotatedBio = (BoundaryInOutSelector) parentBioModel.createFOM();
+        parentAnnotatedBio = (BoundaryPosFom) parentBioModel.createFOM();
 
         if (berkeleyGrammar == null) {
             berkeleyGrammar = new LeftCscSparseMatrixGrammar(JUnit.unitTestDataAsReader("../models/eng.sm6.gr.gz"));
         }
-        final BoundaryInOut berkeleyBioModel = new BoundaryInOut(FOMType.BoundaryPOS, berkeleyGrammar,
+        final BoundaryPosModel berkeleyBioModel = new BoundaryPosModel(FOMType.BoundaryPOS, berkeleyGrammar,
                 new BufferedReader(JUnit.unitTestDataAsReader("../models/eng.sm6.fom.gz")));
-        berkeleyBio = (BoundaryInOutSelector) berkeleyBioModel.createFOM();
+        berkeleyBio = (BoundaryPosFom) berkeleyBioModel.createFOM();
     }
 
     @Before

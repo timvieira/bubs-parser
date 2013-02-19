@@ -103,7 +103,7 @@ public class BeamSearchChartParser<G extends LeftHashGrammar, C extends CellChar
         final long endTimeMS = System.currentTimeMillis();
         parseTask.fomInitMs = endTimeMS - startTimeMS;
 
-        cellSelector.initSentence(this);
+        cellSelector.initSentence(this, parseTask);
         parseTask.ccInitMs = System.currentTimeMillis() - endTimeMS;
     }
 

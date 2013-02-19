@@ -83,10 +83,10 @@ public abstract class ChartParser<G extends Grammar, C extends Chart> extends Pa
 
         if (collectDetailedStatistics) {
             final long t2 = System.currentTimeMillis();
-            cellSelector.initSentence(this);
+            cellSelector.initSentence(this, parseTask);
             parseTask.ccInitMs = System.currentTimeMillis() - t2;
         } else {
-            cellSelector.initSentence(this);
+            cellSelector.initSentence(this, parseTask);
         }
     }
 

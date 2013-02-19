@@ -31,6 +31,7 @@ import cltool4j.BaseLogger;
 import cltool4j.ConfigProperties;
 import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.parser.ChartParser;
+import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.Util;
 import edu.ohsu.cslu.parser.chart.Chart;
@@ -311,8 +312,8 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
         float beginThresh, endThresh, unaryThresh;
 
         @Override
-        public void initSentence(final ChartParser<?, ?> p) {
-            super.initSentence(p);
+        public void initSentence(final ChartParser<?, ?> p, final ParseTask task) {
+            super.initSentence(p, task);
             // might have to hash the sentence number for the grid
             initSentence(p.chart, p.chart.parseTask.sentence);
         }

@@ -23,8 +23,11 @@ import it.unimi.dsi.fastutil.shorts.ShortArrayList;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.TreeSet;
 
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
+import edu.ohsu.cslu.parser.cellselector.CellSelectorModel;
+import edu.ohsu.cslu.parser.fom.FigureOfMeritModel;
 
 /**
  * Represents a Probabilistic Context Free Grammar (PCFG). Such grammars may be built up programatically or may be
@@ -70,6 +73,33 @@ public abstract class Grammar implements Serializable {
 
     // == Grammar Basics ==
     public SymbolSet<String> lexSet = new SymbolSet<String>();
+
+    /**
+     * Unknown-word classes for all entries in {@link #lexSet}. Used by some {@link FigureOfMeritModel} and
+     * {@link CellSelectorModel} implementations (primarily for discriminative feature extraction). Lazy-initialized on
+     * the first access.
+     */
+    private SymbolSet<String> unkClassSet;
+
+    /**
+     * Coarse (unsplit) non-terminal vocabulary. Used by some {@link FigureOfMeritModel} and {@link CellSelectorModel}
+     * implementations (primarily for discriminative feature extraction). Lazy-initialized on the first access.
+     */
+    private SymbolSet<String> coarseVocabulary;
+
+    /**
+     * Preterminal set (parts-of-speech). Used by some {@link FigureOfMeritModel} and {@link CellSelectorModel}
+     * implementations (primarily for discriminative feature extraction). Lazy-initialized on the first access.
+     */
+    private SymbolSet<String> posSymbolSet;
+
+    /**
+     * Coarse (unsplit) preterminal set (parts-of-speech). Used by some {@link FigureOfMeritModel} and
+     * {@link CellSelectorModel} implementations (primarily for discriminative feature extraction). Lazy-initialized on
+     * the first access.
+     */
+    private SymbolSet<String> coarsePosSymbolSet;
+
     public Tokenizer tokenizer = new Tokenizer(lexSet);
     // TODO This field should really be final, but it's initialized in subclass constructors
     public Vocabulary nonTermSet;
@@ -299,12 +329,117 @@ public abstract class Grammar implements Serializable {
     public abstract String getStats();
 
     /**
-     * Convenience method
+     * Convenience method. Returns the integer mapping for the null token in the non-terminal set (see also
+     * {@link #nullToken()}, which returns an analogous mapping from the lexicon).
      * 
      * @return the index of the null symbol
      */
     public short nullSymbol() {
         return (short) nonTermSet.getIndex(nullSymbolStr);
+    }
+
+    /**
+     * Convenience method. Returns the integer mapping for the null token in the lexicon (see also {@link #nullSymbol()}
+     * , which returns an analogous mapping from the non-terminal set).
+     * 
+     * @return the index of the null symbol in the lexicon
+     */
+    public int nullToken() {
+        return lexSet.getIndex(nullSymbolStr);
+    }
+
+    /**
+     * @return Unknown-word classes for all entries in {@link #lexSet}. Used by some {@link FigureOfMeritModel} and
+     *         {@link CellSelectorModel} implementations (primarily for discriminative feature extraction). The returned
+     *         set does <em>not</em> contain special UNK tokens for sentence-initial words.
+     */
+    public SymbolSet<String> unkClassSet() {
+
+        if (unkClassSet == null) {
+            unkClassSet = new SymbolSet<String>();
+            unkClassSet.addSymbol(nullSymbolStr);
+            unkClassSet.defaultReturnValue(nullSymbolStr);
+
+            for (final String token : lexSet) {
+                unkClassSet.addSymbol(Tokenizer.berkeleyGetSignature(token, false, lexSet));
+                unkClassSet.addSymbol(Tokenizer.berkeleyGetSignature(token, true, lexSet));
+            }
+        }
+        return unkClassSet;
+    }
+
+    /**
+     * @return Coarse (unsplit) non-terminal vocabulary. Used by some {@link FigureOfMeritModel} and
+     *         {@link CellSelectorModel} implementations (primarily for discriminative feature extraction).
+     */
+    public SymbolSet<String> coarseVocabulary() {
+
+        if (coarseVocabulary == null) {
+            // Grammar implementations differ in the order they store their vocabularies. To ensure the coarse
+            // representation is consistent, first populate a temporary sorted set.
+            final TreeSet<String> tmp = new TreeSet<String>();
+            for (final String nt : nonTermSet) {
+                tmp.add(grammarFormat.getBaseNT(nt, false));
+            }
+
+            coarseVocabulary = new SymbolSet<String>();
+            coarseVocabulary.addSymbol(nullSymbolStr);
+            coarseVocabulary.defaultReturnValue(nullSymbolStr);
+            for (final String coarseNt : tmp) {
+                coarseVocabulary.addSymbol(coarseNt);
+            }
+
+        }
+        return coarseVocabulary;
+    }
+
+    /**
+     * @return Preterminal set (parts-of-speech). Used by some {@link FigureOfMeritModel} and {@link CellSelectorModel}
+     *         implementations (primarily for discriminative feature extraction).
+     */
+    public SymbolSet<String> posSymbolSet() {
+        if (posSymbolSet == null) {
+            // Grammar implementations differ in the order they store their vocabularies. To ensure that this
+            // representation is consistent, first populate a temporary sorted set.
+            final TreeSet<String> tmp = new TreeSet<String>();
+            for (final short posIndex : posSet) {
+                tmp.add(nonTermSet.getSymbol(posIndex));
+            }
+
+            posSymbolSet = new SymbolSet<String>();
+            posSymbolSet.addSymbol(nullSymbolStr);
+            posSymbolSet.defaultReturnValue(nullSymbolStr);
+
+            for (final String pos : tmp) {
+                posSymbolSet.addSymbol(pos);
+            }
+        }
+        return posSymbolSet;
+    }
+
+    /**
+     * @return Coarse (unsplit) preterminal set (parts-of-speech). Used by some {@link FigureOfMeritModel} and
+     *         {@link CellSelectorModel} implementations (primarily for discriminative feature extraction).
+     */
+    public SymbolSet<String> coarsePosSymbolSet() {
+
+        if (coarsePosSymbolSet == null) {
+            // Grammar implementations differ in the order they store their vocabularies. To ensure that the coarse
+            // representation is consistent, first populate a temporary sorted set.
+            final TreeSet<String> tmp = new TreeSet<String>();
+            for (final short posIndex : posSet) {
+                tmp.add(grammarFormat.getBaseNT(nonTermSet.getSymbol(posIndex), false));
+            }
+
+            coarsePosSymbolSet = new SymbolSet<String>();
+            coarsePosSymbolSet.addSymbol(nullSymbolStr);
+            coarsePosSymbolSet.defaultReturnValue(nullSymbolStr);
+
+            for (final String coarsePos : tmp) {
+                coarsePosSymbolSet.addSymbol(coarsePos);
+            }
+        }
+        return coarsePosSymbolSet;
     }
 
     /**

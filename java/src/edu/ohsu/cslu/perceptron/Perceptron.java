@@ -241,7 +241,7 @@ public class Perceptron extends Classifier {
     }
 
     /**
-     * An imbalanced loss function
+     * An unbalanced loss function
      */
     public static class BiasedLoss extends LossFunction {
 

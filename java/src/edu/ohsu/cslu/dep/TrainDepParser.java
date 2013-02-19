@@ -101,11 +101,11 @@ public class TrainDepParser extends BaseCommandlineTool {
         // At each step, we have 3 possible actions (shift, reduce-left, reduce-right), but we divide them into 2
         // classifiers - one to decide between shift and reduce, and one to select reduce direction. For the moment, we
         // use the same feature-set for both.
-        final AveragedPerceptron shiftReduceClassifier = new AveragedPerceptron(2, fe.featureCount());
-        final AveragedPerceptron reduceDirectionClassifier = new AveragedPerceptron(2, fe.featureCount());
+        final AveragedPerceptron shiftReduceClassifier = new AveragedPerceptron(2, fe.vectorLength());
+        final AveragedPerceptron reduceDirectionClassifier = new AveragedPerceptron(2, fe.vectorLength());
         // Label arcs, with a third classifier
         final AveragedPerceptron labelClassifier = classifyLabels ? new AveragedPerceptron(labels.size(),
-                fe.featureCount()) : null;
+                fe.vectorLength()) : null;
 
         final TransitionDepParser parser = new TransitionDepParser(fe, shiftReduceClassifier,
                 reduceDirectionClassifier, labelClassifier, tokens, pos, labels);
@@ -123,7 +123,7 @@ public class TrainDepParser extends BaseCommandlineTool {
 
                     for (int step = 0, i = 0; step < derivation.length; step++) {
                         final NivreParserContext context = new NivreParserContext(stack, arcs, i);
-                        final BitVector featureVector = fe.forwardFeatureVector(context, i);
+                        final BitVector featureVector = fe.featureVector(context, i);
 
                         switch (derivation[step]) {
 

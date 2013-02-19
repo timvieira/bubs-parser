@@ -22,6 +22,7 @@ package edu.ohsu.cslu.parser.cellselector;
 import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.parser.ChartParser;
+import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.ParserDriver;
 
 /**
@@ -54,8 +55,8 @@ public class LimitedSpanTraversalModel implements CellSelectorModel {
     public class LimitedSpanTraversal extends CellSelector {
 
         @Override
-        public void initSentence(final ChartParser<?, ?> p) {
-            super.initSentence(p);
+        public void initSentence(final ChartParser<?, ?> p, final ParseTask task) {
+            super.initSentence(p, task);
 
             sentenceLength = (short) p.chart.size();
 

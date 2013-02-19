@@ -26,7 +26,6 @@ import java.util.List;
 import edu.ohsu.cslu.datastructs.vectors.BitVector;
 import edu.ohsu.cslu.datastructs.vectors.LargeSparseBitVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
-import edu.ohsu.cslu.datastructs.vectors.Vector;
 import edu.ohsu.cslu.dep.DependencyGraph.Arc;
 import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.grammar.Tokenizer;
@@ -140,6 +139,11 @@ public class TransitionParserFeatureExtractor extends FeatureExtractor<NivrePars
         return template;
     }
 
+    @Override
+    public int templateCount() {
+        return templates.length;
+    }
+
     private long templateSize(final TemplateElement[] template) {
         long size = 1;
         for (int i = 0; i < template.length; i++) {
@@ -208,12 +212,12 @@ public class TransitionParserFeatureExtractor extends FeatureExtractor<NivrePars
     }
 
     @Override
-    public long featureCount() {
+    public long vectorLength() {
         return featureVectorLength;
     }
 
     @Override
-    public BitVector forwardFeatureVector(final NivreParserContext source, final int tokenIndex) {
+    public BitVector featureVector(final NivreParserContext source, final int tokenIndex) {
 
         final LongArrayList featureIndices = new LongArrayList();
 
@@ -529,11 +533,6 @@ public class TransitionParserFeatureExtractor extends FeatureExtractor<NivrePars
             return nullToken;
         }
         return tokens.getIndex(Tokenizer.berkeleyGetSignature(arcs[i].token, i == 0, tokens));
-    }
-
-    @Override
-    public Vector forwardFeatureVector(final NivreParserContext source, final int tokenIndex, final float[] tagScores) {
-        return null;
     }
 
     private enum TemplateElement {

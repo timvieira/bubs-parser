@@ -47,7 +47,7 @@ public class TransitionDepParser implements Serializable {
 
         final int totalSteps = parse.size() * 2 - 1;
         for (int step = 0, i = 0; step < totalSteps; step++) {
-            final BitVector featureVector = featureExtractor.forwardFeatureVector(new NivreParserContext(stack,
+            final BitVector featureVector = featureExtractor.featureVector(new NivreParserContext(stack,
                     parse.arcs, i), i);
 
             ParserAction action = null;

@@ -20,8 +20,8 @@ package edu.ohsu.cslu.perceptron;
 
 import java.io.Serializable;
 
+import edu.ohsu.cslu.datastructs.vectors.BitVector;
 import edu.ohsu.cslu.datastructs.vectors.NumericVector;
-import edu.ohsu.cslu.datastructs.vectors.Vector;
 
 /**
  * Extracts features from a training example as a {@link NumericVector} suitable for use with a {@link Perceptron}.
@@ -29,68 +29,35 @@ import edu.ohsu.cslu.datastructs.vectors.Vector;
  * Subclasses will generally be instantiated with a sequence of tokens (e.g. a sentence), and consumers will call a
  * <code>featureVector</code> method for each token.
  * 
- * TODO This class is currently specific to sequence tagging tasks; could it be generalized to other tagging or
- * regression tasks?
+ * TODO Consider merging with {@link Sequence}. It seems like a sequence should probably be able to extract its own
+ * features (and, when instantiated with training or test data, its own gold tags).
+ * 
+ * @param <I> the type of sequence or other input that features will be extracted from
  * 
  * @author Aaron Dunlop
  * @since Oct 15, 2010
  */
-public abstract class FeatureExtractor<T> implements Serializable {
+public abstract class FeatureExtractor<I> implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     /**
      * @return the length of the feature vectors produced by this extractor
      */
-    public abstract long featureCount();
+    public abstract long vectorLength();
 
     /**
-     * Returns a feature vector suitable for use with a {@link Perceptron}. If previous or subsequent tags are
-     * incorporated into the model as features, this method will generally be used during training, when the
-     * {@link FeatureExtractor} instance was constructed with gold-standard tagging information. At test time,
-     * {@link #forwardFeatureVector(Object, int, float[])} will be used instead.
-     * 
-     * @param source
-     * @param tokenIndex The index of the token for which features should be extracted
-     * @return a feature vector suitable for use with a {@link Perceptron}.
+     * @return the number of feature templates - i.e., the number of features which will populated in each vector
+     *         produced by this extractor.
      */
-    public abstract Vector forwardFeatureVector(T source, int tokenIndex);
+    public abstract int templateCount();
 
     /**
-     * Returns a feature vector suitable for use with a {@link Perceptron}, incorporating previous or subsequent tags
-     * into the model as features.
+     * Returns a feature vector suitable for use with a {@link Perceptron}.
      * 
-     * @param source
-     * @param tokenIndex The index of the token for which features should be extracted
-     * @param tagScores The tag scores for previous tokens.
+     * @param input
+     * @param position The position in the input for which features should be extracted
      * @return a feature vector suitable for use with a {@link Perceptron}.
      */
-    public abstract Vector forwardFeatureVector(T source, int tokenIndex, float[] tagScores);
-
-    /**
-     * Returns a feature vector suitable for use in backward estimation with a {@link Perceptron}. If subsequent tags
-     * are incorporated into the model as features, this method will generally be used during training, when the
-     * {@link FeatureExtractor} instance was constructed with gold-standard tagging information. At test time,
-     * {@link #backwardFeatureVector(Object, int, float[])} will be used instead.
-     * 
-     * @param source
-     * @param tokenIndex The index of the token for which features should be extracted
-     * @return a feature vector suitable for use with a {@link Perceptron}.
-     */
-    public Vector backwardFeatureVector(final T source, final int tokenIndex) {
-        throw new UnsupportedOperationException("Backward-pass is not supported by " + getClass());
-    }
-
-    /**
-     * Returns a feature vector suitable for use in backward estimation with a {@link Perceptron}, incorporating
-     * subsequent tags into the model as features.
-     * 
-     * @param source
-     * @param tokenIndex The index of the token for which features should be extracted
-     * @param tagScores The tag scores for previous tokens.
-     * @return a feature vector suitable for use with a {@link Perceptron}.
-     */
-    public Vector backwardFeatureVector(final T source, final int tokenIndex, final float[] tagScores) {
-        throw new UnsupportedOperationException("Backward-pass is not supported by " + getClass());
-    }
+    public abstract BitVector featureVector(I input, int position);
 }

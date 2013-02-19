@@ -61,18 +61,17 @@ import edu.ohsu.cslu.parser.Parser.ReparseStrategy;
 import edu.ohsu.cslu.parser.Parser.ResearchParserType;
 import edu.ohsu.cslu.parser.cellselector.CellConstraintsComboModel;
 import edu.ohsu.cslu.parser.cellselector.CellSelectorModel;
+import edu.ohsu.cslu.parser.cellselector.CompleteClosureModel;
 import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
 import edu.ohsu.cslu.parser.cellselector.LimitedSpanTraversalModel;
 import edu.ohsu.cslu.parser.cellselector.OHSUCellConstraintsModel;
 import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthModel;
 import edu.ohsu.cslu.parser.chart.Chart.RecoveryStrategy;
-import edu.ohsu.cslu.parser.fom.BoundaryInOut;
 import edu.ohsu.cslu.parser.fom.BoundaryLex;
+import edu.ohsu.cslu.parser.fom.BoundaryPosModel;
 import edu.ohsu.cslu.parser.fom.FigureOfMeritModel;
 import edu.ohsu.cslu.parser.fom.FigureOfMeritModel.FOMType;
 import edu.ohsu.cslu.parser.fom.InsideProb;
-import edu.ohsu.cslu.parser.fom.NGramOutside;
-import edu.ohsu.cslu.parser.fom.PriorFOM;
 import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser;
 import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.PackingFunctionType;
 import edu.ohsu.cslu.util.Evalb.BracketEvaluator;
@@ -157,6 +156,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     @Option(name = "-ccModel", hidden = true, optionalChoiceGroup = "cellselectors", metaVar = "FILE", usage = "CSLU Chart Constraints model (Roark and Hollingshead, 2008)")
     private String chartConstraintsModel = null;
 
+    @Option(name = "-ccClassifier", hidden = true, optionalChoiceGroup = "cellselectors", metaVar = "FILE", usage = "Complete closure classifier model (Java Serialized)")
+    private File completeClosureClassifierFile = null;
+
     // Leaving this around for a bit, in case we get back to limited-span parsing, but it doesn't work currently
     // @Option(name = "-lsccModel", hidden = true, // optionalChoiceGroup = "cellselectors",
     // metaVar = "FILE", usage = "CSLU Chart Constraints model (Roark and Hollingshead, 2008)")
@@ -171,9 +173,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     @Option(name = "-head-rules", hidden = true, metaVar = "ruleset or file", usage = "Enables head-finding using a Charniak-style head-finding ruleset. Specify ruleset as 'charniak' or a rule file. Ignored if -binary is specified.")
     private String headRules = null;
     private HeadPercolationRuleset headPercolationRuleset = null;
-
-    @Option(name = "-ngramOutsideModel", metaVar = "FILE", usage = "N-gram model for inside normalization.  Only needed for agenda parsers")
-    private String ngramOutsideModelFileName = null;
 
     @Option(name = "-geometricInsideNorm", hidden = true, usage = "Use the geometric mean of the Inside score. Only needed for agenda parsers")
     public static boolean geometricInsideNorm = false;
@@ -322,13 +321,11 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
                         BaseLogger.singleton().fine("FOM coarse grammar stats: " + coarseGrammar.getStats());
                         fomGrammar = coarseGrammar;
                     }
-                    fomModel = new BoundaryInOut(FOMType.BoundaryPOS, fomGrammar, fileAsBufferedReader(fomTypeOrModel));
+                    fomModel = new BoundaryPosModel(FOMType.BoundaryPOS, fomGrammar,
+                            fileAsBufferedReader(fomTypeOrModel));
 
                 } else if (fomType.equals("BoundaryLex")) {
                     fomModel = new BoundaryLex(FOMType.BoundaryLex, grammar, fileAsBufferedReader(fomTypeOrModel));
-
-                } else if (fomType.equals("Prior")) {
-                    fomModel = new PriorFOM(FOMType.Prior, grammar, fileAsBufferedReader(fomTypeOrModel));
 
                 } else {
                     throw new IllegalArgumentException("FOM model type '" + fomType + "' in file " + fomTypeOrModel
@@ -364,8 +361,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
                 cellSelectorModel = new LimitedSpanTraversalModel(maxSubtreeSpan);
             }
 
-            if (ngramOutsideModelFileName != null) {
-                fomModel.ngramOutsideModel = new NGramOutside(grammar, fileAsBufferedReader(ngramOutsideModelFileName));
+            if (completeClosureClassifierFile != null) {
+                cellSelectorModel = new CompleteClosureModel(completeClosureClassifierFile, grammar);
             }
         }
 

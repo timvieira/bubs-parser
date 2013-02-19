@@ -101,12 +101,10 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
             final StringWriter prefix = new StringWriter();
             prefix.write("#define UNARY_PRODUCTION " + Production.UNARY_PRODUCTION + '\n');
             prefix.write("#define LEXICAL_PRODUCTION " + Production.LEXICAL_PRODUCTION + '\n');
-            prefix.write("#define PACKING_SHIFT " + ((LeftShiftFunction) grammar.packingFunction()).shift
-                    + '\n');
+            prefix.write("#define PACKING_SHIFT " + ((LeftShiftFunction) grammar.packingFunction()).shift + '\n');
             prefix.write("#define MAX_PACKED_LEXICAL_PRODUCTION "
                     + ((LeftShiftFunction) grammar.packingFunction()).maxPackedLexicalProduction + '\n');
-            prefix.write("#define PACKING_SHIFT " + ((LeftShiftFunction) grammar.packingFunction()).shift
-                    + '\n');
+            prefix.write("#define PACKING_SHIFT " + ((LeftShiftFunction) grammar.packingFunction()).shift + '\n');
             prefix.write(grammar.packingFunction().openClPackDefine() + '\n');
             prefix.write(grammar.packingFunction().openClUnpackLeftChild() + '\n');
 
@@ -141,14 +139,14 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
         clCsrUnaryProbabilities = OpenClUtils.copyToDevice(clQueue, grammar.csrUnaryProbabilities, CLMem.Usage.Input);
 
         // And for cross-product storage
-        clCartesianProductProbabilities0 = context.createFloatBuffer(CLMem.Usage.InputOutput, grammar
-                .packingFunction().packedArraySize());
-        clCartesianProductMidpoints0 = context.createShortBuffer(CLMem.Usage.InputOutput, grammar
-                .packingFunction().packedArraySize());
-        clCartesianProductProbabilities1 = context.createFloatBuffer(CLMem.Usage.InputOutput, grammar
-                .packingFunction().packedArraySize());
-        clCartesianProductMidpoints1 = context.createShortBuffer(CLMem.Usage.InputOutput, grammar
-                .packingFunction().packedArraySize());
+        clCartesianProductProbabilities0 = context.createFloatBuffer(CLMem.Usage.InputOutput, grammar.packingFunction()
+                .packedArraySize());
+        clCartesianProductMidpoints0 = context.createShortBuffer(CLMem.Usage.InputOutput, grammar.packingFunction()
+                .packedArraySize());
+        clCartesianProductProbabilities1 = context.createFloatBuffer(CLMem.Usage.InputOutput, grammar.packingFunction()
+                .packedArraySize());
+        clCartesianProductMidpoints1 = context.createShortBuffer(CLMem.Usage.InputOutput, grammar.packingFunction()
+                .packedArraySize());
     }
 
     @Override
@@ -171,7 +169,7 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
     @Override
     public BinaryTree<String> findBestParse(final ParseTask parseTask) {
         initSentence(parseTask);
-        cellSelector.initSentence(this);
+        cellSelector.initSentence(this, parseTask);
 
         // For most parsers, we populate lexical entries during parsing, but for OpenCL parsers, we have to do it
         // ahead-of-time so we can copy them to the GPU chart storage
@@ -312,8 +310,8 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
         // Fill the buffer with negative infinity
         fillFloatKernel.setArgs(clCartesianProductProbabilities0, grammar.packingFunction().packedArraySize(),
                 Float.NEGATIVE_INFINITY);
-        final int globalWorkSize = edu.ohsu.cslu.util.Math.roundUp(
-                grammar.packingFunction().packedArraySize(), LOCAL_WORK_SIZE);
+        final int globalWorkSize = edu.ohsu.cslu.util.Math.roundUp(grammar.packingFunction().packedArraySize(),
+                LOCAL_WORK_SIZE);
         fillFloatKernel.enqueueNDRange(clQueue, new int[] { globalWorkSize }, new int[] { LOCAL_WORK_SIZE });
         clQueue.finish();
 
@@ -334,8 +332,8 @@ public abstract class OpenClSpmvParser<C extends ParallelArrayChart> extends
             t0 = System.currentTimeMillis();
 
             // Initialize the target cartesian product array
-            fillFloatKernel.setArgs(clCartesianProductProbabilities1, grammar.packingFunction()
-                    .packedArraySize(), Float.NEGATIVE_INFINITY);
+            fillFloatKernel.setArgs(clCartesianProductProbabilities1, grammar.packingFunction().packedArraySize(),
+                    Float.NEGATIVE_INFINITY);
             fillFloatKernel.enqueueNDRange(clQueue, new int[] { globalWorkSize }, new int[] { LOCAL_WORK_SIZE });
             clQueue.finish();
 

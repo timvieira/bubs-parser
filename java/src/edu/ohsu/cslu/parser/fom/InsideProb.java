@@ -26,7 +26,7 @@ package edu.ohsu.cslu.parser.fom;
 
 public final class InsideProb extends FigureOfMeritModel {
 
-    public final static FigureOfMerit INSTANCE = new InsideProb().new InsideProbSelector();
+    public final static FigureOfMerit INSTANCE = new InsideProb().new InsideProbFom();
 
     public InsideProb() {
         super(FOMType.Inside);
@@ -37,7 +37,7 @@ public final class InsideProb extends FigureOfMeritModel {
         return INSTANCE;
     }
 
-    public class InsideProbSelector extends FigureOfMerit {
+    public class InsideProbFom extends FigureOfMerit {
 
         private static final long serialVersionUID = 1L;
 

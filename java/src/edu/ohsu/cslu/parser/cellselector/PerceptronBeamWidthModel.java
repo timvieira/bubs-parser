@@ -28,6 +28,7 @@ import cltool4j.ConfigProperties;
 import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.parser.ChartParser;
+import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.Util;
 import edu.ohsu.cslu.parser.chart.Chart;
@@ -102,8 +103,8 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
         private boolean onlyFactored[][];
 
         @Override
-        public void initSentence(final ChartParser<?, ?> p) {
-            super.initSentence(p);
+        public void initSentence(final ChartParser<?, ?> p, final ParseTask task) {
+            super.initSentence(p, task);
 
             int guessBeamWidth, guessClass;
             final int n = parser.chart.parseTask.sentenceLength();

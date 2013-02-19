@@ -26,11 +26,9 @@ import edu.ohsu.cslu.perceptron.BeginConstituentFeatureExtractor.Sentence;
 
 /**
  * Extracts features for classifying whether a lexical item can begin a multiword constituent. Depends only on lexical
- * items (as mapped by the supplied {@link Grammar}) and on prior tags (gold in training, predicted at test time).
+ * items (as mapped by the supplied {@link Grammar}) and on prior tags.
  * 
  * TODO Add suffix features as well
- * 
- * TODO For the previous tags, do we use the predicted tags (as we will at test time) or the gold tags?
  * 
  * @author Aaron Dunlop
  * @since Oct 15, 2010
@@ -41,7 +39,7 @@ public class BeginConstituentFeatureExtractor extends FeatureExtractor<Sentence>
 
     private final Grammar grammar;
     private final int markovOrder;
-    private final int featureCount;
+    private final int vectorLength;
 
     private final SymbolSet<String> twoCharacterSuffixes = new SymbolSet<String>();
     private final SymbolSet<String> threeCharacterSuffixes = new SymbolSet<String>();
@@ -55,13 +53,19 @@ public class BeginConstituentFeatureExtractor extends FeatureExtractor<Sentence>
             twoCharacterSuffixes.addSymbol(token.substring(token.length() - 2));
             threeCharacterSuffixes.addSymbol(token.substring(token.length() - 3));
         }
-        this.featureCount = grammar.numLexSymbols() * windowSize + markovOrder * 2 + twoCharacterSuffixes.size()
+        this.vectorLength = grammar.numLexSymbols() * windowSize + markovOrder * 2 + twoCharacterSuffixes.size()
                 + threeCharacterSuffixes.size();
     }
 
     @Override
-    public long featureCount() {
-        return featureCount;
+    public long vectorLength() {
+        return vectorLength;
+    }
+
+    @Override
+    public int templateCount() {
+        // TODO Fix this
+        return 0;
     }
 
     /**
@@ -92,7 +96,6 @@ public class BeginConstituentFeatureExtractor extends FeatureExtractor<Sentence>
      * @param tagScores
      * @return a feature vector representing the specified token and tags
      */
-    @Override
     public SparseBitVector forwardFeatureVector(final Sentence source, final int tokenIndex, final float[] tagScores) {
         final Sentence s = source;
         final int windowSize = markovOrder * 2 + 1;
@@ -122,11 +125,11 @@ public class BeginConstituentFeatureExtractor extends FeatureExtractor<Sentence>
             }
         }
 
-        return new SparseBitVector(featureCount, vector);
+        return new SparseBitVector(vectorLength, vector);
     }
 
     @Override
-    public SparseBitVector forwardFeatureVector(final Sentence source, final int tokenIndex) {
+    public SparseBitVector featureVector(final Sentence source, final int tokenIndex) {
         return null;
     }
 

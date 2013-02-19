@@ -29,6 +29,7 @@ import edu.ohsu.cslu.grammar.Tokenizer;
 import edu.ohsu.cslu.parser.Parser.DecodeMethod;
 import edu.ohsu.cslu.parser.Parser.InputFormat;
 import edu.ohsu.cslu.parser.chart.Chart.RecoveryStrategy;
+import edu.ohsu.cslu.parser.fom.BoundaryPosModel.BoundaryPosFom;
 import edu.ohsu.cslu.parser.fom.FigureOfMeritModel.FigureOfMerit;
 import edu.ohsu.cslu.parser.fom.InsideProb;
 import edu.ohsu.cslu.util.Evalb.BracketEvaluator;
@@ -52,6 +53,9 @@ public class ParseTask {
     /** Gold tags */
     public final int[] inputTags;
     public final String[] stringInputTags;
+
+    /** 1-best POS tags, as populated by {@link BoundaryPosFom} or a discriminative tagger */
+    public short[] posTags;
 
     public final Grammar grammar;
     public final DecodeMethod decodeMethod;

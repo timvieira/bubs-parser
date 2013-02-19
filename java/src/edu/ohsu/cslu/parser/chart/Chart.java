@@ -882,8 +882,7 @@ public abstract class Chart {
         if (tokenIndex < 0 || tokenIndex >= parseTask.sentenceLength()) {
             return grammar.posIndexMap[grammar.nullSymbol()];
         }
-        // parseTask.
-        return parseTask.figureOfMerit.fomTags[tokenIndex];
+        return parseTask.posTags[tokenIndex];
     }
 
     private int getWordFeat(final int tokIndex) {

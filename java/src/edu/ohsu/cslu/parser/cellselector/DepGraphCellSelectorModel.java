@@ -86,8 +86,8 @@ public class DepGraphCellSelectorModel implements CellSelectorModel {
         }
 
         @Override
-        public void initSentence(final ChartParser<?, ?> p) {
-            super.initSentence(p);
+        public void initSentence(final ChartParser<?, ?> p, final ParseTask task) {
+            super.initSentence(p, task);
             sentenceLength = p.chart.size();
             cellIndices = openCells(p.chart.parseTask);
             openCells = cellIndices.length / 2;

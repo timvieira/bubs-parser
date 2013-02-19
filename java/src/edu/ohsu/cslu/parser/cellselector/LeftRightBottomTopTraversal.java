@@ -19,6 +19,7 @@
 package edu.ohsu.cslu.parser.cellselector;
 
 import edu.ohsu.cslu.parser.ChartParser;
+import edu.ohsu.cslu.parser.ParseTask;
 
 /**
  * Traverses each chart row sequentially from from left to right, beginning at the bottom (span-1) row and working
@@ -44,8 +45,8 @@ public class LeftRightBottomTopTraversal extends CellSelector {
 
     // TODO: shouldn't all of this move into the constructor since we create a new one for each sentence?
     @Override
-    public void initSentence(final ChartParser<?, ?> p) {
-        super.initSentence(p);
+    public void initSentence(final ChartParser<?, ?> p, final ParseTask task) {
+        super.initSentence(p, task);
         final short sentenceLength = (short) p.chart.size();
 
         openCells = sentenceLength * (sentenceLength + 1) / 2;

@@ -19,6 +19,7 @@
 package edu.ohsu.cslu.lela;
 
 import edu.ohsu.cslu.parser.ChartParser;
+import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.cellselector.CellSelectorModel;
 import edu.ohsu.cslu.parser.ml.ConstrainedChartParser;
@@ -41,8 +42,8 @@ public class ConstrainedCellSelector extends CellSelector {
     };
 
     @Override
-    public void initSentence(final ChartParser<?, ?> p) {
-        super.initSentence(p);
+    public void initSentence(final ChartParser<?, ?> p, final ParseTask task) {
+        super.initSentence(p, task);
         final short[][] constrainingChartOpenCells = ((ConstrainedChartParser) p).constrainingChart().openCells;
         this.cellIndices = new short[constrainingChartOpenCells.length * 2];
         for (short i = 0; i < constrainingChartOpenCells.length; i++) {

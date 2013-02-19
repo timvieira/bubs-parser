@@ -29,8 +29,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
+import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.grammar.Tokenizer;
-import edu.ohsu.cslu.perceptron.Tagger.TagSequence;
 import edu.ohsu.cslu.tests.JUnit;
 
 /**
@@ -40,7 +41,9 @@ public class TestTagger {
 
     private String trainingCorpus;
 
-    private TaggerModel model = null;
+    private SymbolSet<String> lexicon = new SymbolSet<String>();
+    private SymbolSet<String> unkClassSet = new SymbolSet<String>();
+    private SymbolSet<String> tagSet = new SymbolSet<String>();
 
     private ArrayList<TagSequence> trainingCorpusSequences = null;
 
@@ -50,108 +53,107 @@ public class TestTagger {
 
     @Before
     public void setUp() {
-        model = new TaggerModel("");
+        this.lexicon.defaultReturnValue(Grammar.nullSymbolStr);
+        this.unkClassSet.defaultReturnValue(Grammar.nullSymbolStr);
+        this.tagSet.defaultReturnValue(Grammar.nullSymbolStr);
 
         final StringBuilder sb = new StringBuilder();
         sb.append("(DT This) (NN time) (RP around) (, ,) (PRP they) (VBP 're) (VBG moving) (RB even) (RBR faster) (. .)");
         trainingCorpus = sb.toString();
 
-        trainingCorpusSequences = new ArrayList<Tagger.TagSequence>();
+        trainingCorpusSequences = new ArrayList<TagSequence>();
         for (final String line : trainingCorpus.split("\n")) {
-            trainingCorpusSequences.add(new TagSequence(line, model));
+            trainingCorpusSequences.add(new TagSequence(line, lexicon, unkClassSet, tagSet));
         }
 
-        nullTag = model.tagSet.getIndex(Tagger.NULL_SYMBOL);
-        dtTag = model.tagSet.getIndex("DT");
-        nnTag = model.tagSet.getIndex("NN");
-        rpTag = model.tagSet.getIndex("RP");
+        nullTag = tagSet.getIndex(Grammar.nullSymbolStr);
+        dtTag = tagSet.getIndex("DT");
+        nnTag = tagSet.getIndex("NN");
+        rpTag = tagSet.getIndex("RP");
 
-        nullToken = model.lexicon.getIndex(Tagger.NULL_SYMBOL);
-        thisToken = model.lexicon.getIndex("This");
-        timeToken = model.lexicon.getIndex("time");
-        aroundToken = model.lexicon.getIndex("around");
+        nullToken = lexicon.getIndex(Grammar.nullSymbolStr);
+        thisToken = lexicon.getIndex("This");
+        timeToken = lexicon.getIndex("time");
+        aroundToken = lexicon.getIndex("around");
 
-        nullUnk = model.unkClassSet.getIndex(Tagger.NULL_SYMBOL);
-        thisUnk = model.unkClassSet.getIndex(Tokenizer.berkeleyGetSignature("This", true, model.lexicon));
-        timeUnk = model.unkClassSet.getIndex(Tokenizer.berkeleyGetSignature("time", false, model.lexicon));
-        aroundUnk = model.unkClassSet.getIndex(Tokenizer.berkeleyGetSignature("around", false, model.lexicon));
+        nullUnk = unkClassSet.getIndex(Grammar.nullSymbolStr);
+        thisUnk = unkClassSet.getIndex(Tokenizer.berkeleyGetSignature("This", true, lexicon));
+        timeUnk = unkClassSet.getIndex(Tokenizer.berkeleyGetSignature("time", false, lexicon));
+        aroundUnk = unkClassSet.getIndex(Tokenizer.berkeleyGetSignature("around", false, lexicon));
     }
 
+    @Test
     public void testSymbolSets() {
         // tagSet includes <null>; lexicon includes <null> and UNK classes
-        assertEquals(11, model.tagSet.size());
-        assertEquals(16, model.lexicon.size());
+        assertEquals(11, tagSet.size());
+        assertEquals(11, lexicon.size());
+        assertEquals(6, unkClassSet.size());
     }
 
     @Test
     public void testUnigramFeatureExtractor() {
 
         // A trivially simple feature extractor
-        final TaggerFeatureExtractor fe = new TaggerFeatureExtractor("tm1,w", model);
-        final int offset1 = model.tagSet.size();
+        final TaggerFeatureExtractor fe = new TaggerFeatureExtractor("tm1,w", lexicon, unkClassSet, tagSet);
+        final int offset1 = tagSet.size();
 
         assertEquals(new SparseBitVector(fe.featureVectorLength, new int[] { nullTag, offset1 + thisToken }),
-                fe.forwardFeatureVector(trainingCorpusSequences.get(0), 0));
+                fe.featureVector(trainingCorpusSequences.get(0), 0));
         assertEquals(new SparseBitVector(fe.featureVectorLength, new int[] { dtTag, offset1 + timeToken }),
-                fe.forwardFeatureVector(trainingCorpusSequences.get(0), 1));
+                fe.featureVector(trainingCorpusSequences.get(0), 1));
     }
 
     @Test
     public void testBigramFeatureExtractor() {
 
-        final TaggerFeatureExtractor fe = new TaggerFeatureExtractor("tm1_w,tm2_tm1", model);
-        final int offset1 = model.tagSet.size() * model.lexicon.size();
+        final TaggerFeatureExtractor fe = new TaggerFeatureExtractor("tm1_w,tm2_tm1", lexicon, unkClassSet, tagSet);
+        final int offset1 = tagSet.size() * lexicon.size();
 
-        assertEquals(new SparseBitVector(fe.featureVectorLength, new int[] {
-                nullTag * model.lexicon.size() + thisToken, offset1 + nullTag * model.tagSet.size() + nullTag }),
-                fe.forwardFeatureVector(trainingCorpusSequences.get(0), 0));
+        assertEquals(new SparseBitVector(fe.featureVectorLength, new int[] { nullTag * lexicon.size() + thisToken,
+                offset1 + nullTag * tagSet.size() + nullTag }), fe.featureVector(trainingCorpusSequences.get(0), 0));
 
-        assertEquals(new SparseBitVector(fe.featureVectorLength, new int[] { dtTag * model.lexicon.size() + timeToken,
-                offset1 + nullTag * model.tagSet.size() + dtTag }),
-                fe.forwardFeatureVector(trainingCorpusSequences.get(0), 1));
+        assertEquals(new SparseBitVector(fe.featureVectorLength, new int[] { dtTag * lexicon.size() + timeToken,
+                offset1 + nullTag * tagSet.size() + dtTag }), fe.featureVector(trainingCorpusSequences.get(0), 1));
 
-        assertEquals(new SparseBitVector(fe.featureVectorLength, new int[] {
-                nnTag * model.lexicon.size() + aroundToken, offset1 + dtTag * model.tagSet.size() + nnTag }),
-                fe.forwardFeatureVector(trainingCorpusSequences.get(0), 2));
+        assertEquals(new SparseBitVector(fe.featureVectorLength, new int[] { nnTag * lexicon.size() + aroundToken,
+                offset1 + dtTag * tagSet.size() + nnTag }), fe.featureVector(trainingCorpusSequences.get(0), 2));
     }
 
     @Test
     public void testTrigramFeatureExtractor() {
 
-        final TaggerFeatureExtractor fe = new TaggerFeatureExtractor("tm2_tm1,tm2_tm1_w", model);
+        final TaggerFeatureExtractor fe = new TaggerFeatureExtractor("tm2_tm1,tm2_tm1_w", lexicon, unkClassSet, tagSet);
 
-        final int offset1 = model.tagSet.size() * model.tagSet.size();
-        assertEquals(new SparseBitVector(fe.featureVectorLength, new int[] { nullTag * model.tagSet.size() + nullTag,
-                offset1 + (nullTag * model.tagSet.size() + nullTag) * model.lexicon.size() + thisToken }),
-                fe.forwardFeatureVector(trainingCorpusSequences.get(0), 0));
+        final int offset1 = tagSet.size() * tagSet.size();
+        assertEquals(new SparseBitVector(fe.featureVectorLength, new int[] { nullTag * tagSet.size() + nullTag,
+                offset1 + (nullTag * tagSet.size() + nullTag) * lexicon.size() + thisToken }),
+                fe.featureVector(trainingCorpusSequences.get(0), 0));
 
-        assertEquals(new SparseBitVector(fe.featureVectorLength, new int[] { nullTag * model.tagSet.size() + dtTag,
-                offset1 + (nullTag * model.tagSet.size() + dtTag) * model.lexicon.size() + timeToken }),
-                fe.forwardFeatureVector(trainingCorpusSequences.get(0), 1));
+        assertEquals(new SparseBitVector(fe.featureVectorLength, new int[] { nullTag * tagSet.size() + dtTag,
+                offset1 + (nullTag * tagSet.size() + dtTag) * lexicon.size() + timeToken }),
+                fe.featureVector(trainingCorpusSequences.get(0), 1));
 
-        assertEquals(new SparseBitVector(fe.featureVectorLength, new int[] { dtTag * model.tagSet.size() + nnTag,
-                offset1 + (dtTag * model.tagSet.size() + nnTag) * model.lexicon.size() + aroundToken }),
-                fe.forwardFeatureVector(trainingCorpusSequences.get(0), 2));
+        assertEquals(new SparseBitVector(fe.featureVectorLength, new int[] { dtTag * tagSet.size() + nnTag,
+                offset1 + (dtTag * tagSet.size() + nnTag) * lexicon.size() + aroundToken }),
+                fe.featureVector(trainingCorpusSequences.get(0), 2));
     }
 
     @Test
     public void testUnkClasses() {
-        final TaggerFeatureExtractor fe = new TaggerFeatureExtractor("tm1_u,um2_um1", model);
-        final int offset1 = model.tagSet.size() * model.unkClassSet.size();
+        final TaggerFeatureExtractor fe = new TaggerFeatureExtractor("tm1_u,um2_um1", lexicon, unkClassSet, tagSet);
+        final int offset1 = tagSet.size() * unkClassSet.size();
 
-        assertEquals(
-                new SparseBitVector(fe.featureVectorLength, new int[] { nullTag * model.unkClassSet.size() + thisUnk,
-                        offset1 + nullTag * model.unkClassSet.size() + nullTag }),
-                fe.forwardFeatureVector(trainingCorpusSequences.get(0), 0));
+        assertEquals(new SparseBitVector(fe.featureVectorLength, new int[] { nullTag * unkClassSet.size() + thisUnk,
+                offset1 + nullTag * unkClassSet.size() + nullTag }),
+                fe.featureVector(trainingCorpusSequences.get(0), 0));
 
-        assertEquals(new SparseBitVector(fe.featureVectorLength, new int[] {
-                dtTag * model.unkClassSet.size() + timeUnk, offset1 + nullUnk * model.unkClassSet.size() + thisUnk }),
-                fe.forwardFeatureVector(trainingCorpusSequences.get(0), 1));
+        assertEquals(new SparseBitVector(fe.featureVectorLength, new int[] { dtTag * unkClassSet.size() + timeUnk,
+                offset1 + nullUnk * unkClassSet.size() + thisUnk }),
+                fe.featureVector(trainingCorpusSequences.get(0), 1));
 
-        assertEquals(
-                new SparseBitVector(fe.featureVectorLength, new int[] { nnTag * model.unkClassSet.size() + aroundUnk,
-                        offset1 + thisUnk * model.unkClassSet.size() + timeUnk }),
-                fe.forwardFeatureVector(trainingCorpusSequences.get(0), 2));
+        assertEquals(new SparseBitVector(fe.featureVectorLength, new int[] { nnTag * unkClassSet.size() + aroundUnk,
+                offset1 + thisUnk * unkClassSet.size() + timeUnk }),
+                fe.featureVector(trainingCorpusSequences.get(0), 2));
     }
 
     @Test
@@ -161,7 +163,7 @@ public class TestTagger {
         final Tagger tagger = new Tagger();
         tagger.trainingIterations = 100;
         tagger.train(new BufferedReader(JUnit.unitTestDataAsReader(file)));
-        final int[] results = tagger.tag(new BufferedReader(JUnit.unitTestDataAsReader(file)));
+        final int[] results = tagger.classify(new BufferedReader(JUnit.unitTestDataAsReader(file)));
         // We expect to memorize the training set
         assertEquals(1.0f, results[2] * 1.0f / results[1], .01f);
     }

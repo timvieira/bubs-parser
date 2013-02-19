@@ -34,7 +34,7 @@ import cltool4j.BaseLogger;
 import cltool4j.GlobalConfigProperties;
 import cltool4j.args4j.Argument;
 import cltool4j.args4j.Option;
-import edu.ohsu.cslu.parser.fom.BoundaryInOut;
+import edu.ohsu.cslu.parser.fom.BoundaryPosModel;
 import edu.ohsu.cslu.parser.fom.FigureOfMeritModel.FOMType;
 import edu.ohsu.cslu.parser.fom.FigureOfMeritModel.FigureOfMerit;
 
@@ -104,7 +104,7 @@ public class SerializeModel extends BaseCommandlineTool {
                     : new BufferedReader(new FileReader(fomModelFileName));
             switch (fomType) {
             case BoundaryPOS:
-                fom = new BoundaryInOut(FOMType.BoundaryPOS, g, fomModelReader).createFOM();
+                fom = new BoundaryPosModel(FOMType.BoundaryPOS, g, fomModelReader).createFOM();
                 break;
             default:
                 throw new UnsupportedOperationException("FOM type not supported");

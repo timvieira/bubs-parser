@@ -108,12 +108,12 @@ public class EvalDepClassifiers extends BaseCommandlineTool {
         // classifiers - one to decide between shift and reduce, and one to select reduce direction. For the moment, we
         // use the same feature-set for both.
         final AveragedPerceptron shiftReduceClassifier = new AveragedPerceptron(alpha, new Perceptron.ZeroOneLoss(), 2,
-                fe.featureCount());
+                fe.vectorLength());
         final AveragedPerceptron reduceDirectionClassifier = new AveragedPerceptron(alpha,
-                new Perceptron.ZeroOneLoss(), 2, fe.featureCount());
+                new Perceptron.ZeroOneLoss(), 2, fe.vectorLength());
         // Label arcs, with a third classifier
         final AveragedPerceptron labelClassifier = classifyLabels ? new AveragedPerceptron(alpha,
-                new Perceptron.ZeroOneLoss(), labels.size(), fe.featureCount()) : null;
+                new Perceptron.ZeroOneLoss(), labels.size(), fe.vectorLength()) : null;
         final TransitionDepParser parser = new TransitionDepParser(fe, shiftReduceClassifier,
                 reduceDirectionClassifier, labelClassifier, tokens, pos, labels);
 
@@ -131,7 +131,7 @@ public class EvalDepClassifiers extends BaseCommandlineTool {
 
                     for (int step = 0, i = 0; step < derivation.length; step++) {
                         final NivreParserContext context = new NivreParserContext(stack, arcs, i);
-                        final BitVector featureVector = fe.forwardFeatureVector(context, i);
+                        final BitVector featureVector = fe.featureVector(context, i);
 
                         switch (derivation[step]) {
 
@@ -200,7 +200,7 @@ public class EvalDepClassifiers extends BaseCommandlineTool {
 
                     for (int step = 0, i = 0; step < derivation.length; step++) {
                         final NivreParserContext context = new NivreParserContext(stack, arcs, i);
-                        final BitVector featureVector = fe.forwardFeatureVector(context, i);
+                        final BitVector featureVector = fe.featureVector(context, i);
                         final ScoredClassification srClassification = shiftReduceClassifier
                                 .scoredClassify(featureVector);
 
@@ -403,7 +403,7 @@ public class EvalDepClassifiers extends BaseCommandlineTool {
 
             final int totalSteps = example.size() * 2 - 1;
             for (int step = 0, i = 0; step < totalSteps; step++) {
-                final BitVector featureVector = parser.featureExtractor.forwardFeatureVector(new NivreParserContext(
+                final BitVector featureVector = parser.featureExtractor.featureVector(new NivreParserContext(
                         stack, example.arcs, i), i);
 
                 ParserAction action = null;

@@ -52,7 +52,7 @@ public class ConstrainedViterbiParser extends Constrained2SplitInsideOutsidePars
         // Initialize the chart
         chart = new Constrained2SplitChart(c, grammar);
         chart.parseTask = new ParseTask(c.tokens, grammar);
-        cellSelector.initSentence(this);
+        cellSelector.initSentence(this, chart.parseTask);
 
         // Compute inside probabilities
         insidePass();

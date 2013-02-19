@@ -939,7 +939,13 @@ public class NaryTree<E> implements Tree<E>, Serializable {
      */
     public static <T> NaryTree<T> read(final String string, final Class<T> type) {
         try {
-            return read(new StringReader(string), type);
+            final StringReader r = new StringReader(string);
+            final NaryTree<T> tree = read(r, type);
+            if (r.read() >= 0) {
+                // We expect a single tree, but we didn't consume the entire string; this may be bracketed text
+                throw new IllegalArgumentException("Badly-formatted tree");
+            }
+            return tree;
         } catch (final IOException e) {
             // A StringReader shouldn't ever throw an IOException
             throw new RuntimeException(e);

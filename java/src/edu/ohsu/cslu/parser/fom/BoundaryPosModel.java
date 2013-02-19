@@ -45,7 +45,7 @@ import edu.ohsu.cslu.util.Strings;
  * 
  * @author Nathan Bodenstab
  */
-public final class BoundaryInOut extends FigureOfMeritModel {
+public final class BoundaryPosModel extends FigureOfMeritModel {
 
     private Grammar grammar;
     private CoarseGrammar coarseGrammar = null;
@@ -62,7 +62,7 @@ public final class BoundaryInOut extends FigureOfMeritModel {
     final short[] NULL_LIST;
     final float[] NULL_PROBABILITIES;
 
-    public BoundaryInOut(final FOMType type, final Grammar grammar, final BufferedReader modelStream)
+    public BoundaryPosModel(final FOMType type, final Grammar grammar, final BufferedReader modelStream)
             throws IOException {
 
         super(type);
@@ -103,9 +103,7 @@ public final class BoundaryInOut extends FigureOfMeritModel {
     public FigureOfMerit createFOM() {
         switch (type) {
         case BoundaryPOS:
-            return new BoundaryInOutSelector(grammar);
-        case InsideWithFwdBkwd:
-            return new InsideWithFwdBkwd();
+            return new BoundaryPosFom(grammar);
         default:
             BaseLogger.singleton().info("ERROR: FOMType " + type + " not supported.");
             System.exit(1);
@@ -354,7 +352,7 @@ public final class BoundaryInOut extends FigureOfMeritModel {
         return nonTerm;
     }
 
-    public class BoundaryInOutSelector extends FigureOfMerit {
+    public class BoundaryPosFom extends FigureOfMerit {
 
         private static final long serialVersionUID = 1L;
 
@@ -368,7 +366,7 @@ public final class BoundaryInOut extends FigureOfMeritModel {
         // private int bestPOSTag[];
         ParseTask parseTask;
 
-        public BoundaryInOutSelector(final Grammar grammar) {
+        public BoundaryPosFom(final Grammar grammar) {
             this.grammarPhraseSet = grammar.phraseSet;
         }
 
@@ -423,6 +421,7 @@ public final class BoundaryInOut extends FigureOfMeritModel {
          */
         @Override
         public void initSentence(final ParseTask task, final Chart chart) {
+            this.parseTask = task;
             final int sentLen = task.sentenceLength();
             final int fbSize = sentLen + 2;
             final int posSize = grammar.maxPOSIndex() + 1;
@@ -579,13 +578,13 @@ public final class BoundaryInOut extends FigureOfMeritModel {
             // from the input will already be in place. Otherwise, fill in the tags array
             // with the 1-best result from this forward-backwards run.
             if (ParserDriver.parseFromInputTags == false) {
-                this.fomTags = new short[sentLen];
+                parseTask.posTags = new short[sentLen];
                 // track backpointers to extract best POS sequence
                 // start at the end of the sentence with the nullSymbol and trace backwards
                 short bestPOS = nullSymbol;
                 for (int i = sentLen - 1; i >= 0; i--) {
                     bestPOS = backPointer[i + 2][bestPOS];
-                    this.fomTags[i] = grammar.posIndexMap[bestPOS];
+                    parseTask.posTags[i] = grammar.posIndexMap[bestPOS];
                 }
             }
         }
@@ -597,7 +596,7 @@ public final class BoundaryInOut extends FigureOfMeritModel {
     // Boundary FOM, so instead of writing lots more code and creating new model files,
     // we are simply hi-jacking all of that and overwriting the calcFOM() function to
     // ignore most of the work that is done during setup.
-    public class InsideWithFwdBkwd extends BoundaryInOutSelector {
+    public class InsideWithFwdBkwd extends BoundaryPosFom {
 
         private static final long serialVersionUID = 1L;
 

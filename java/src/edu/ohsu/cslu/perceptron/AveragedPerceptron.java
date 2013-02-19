@@ -53,7 +53,7 @@ public class AveragedPerceptron extends Perceptron {
 
     private static final long serialVersionUID = 1L;
 
-    private FloatVector[] avgWeights = null;
+    FloatVector[] avgWeights = null;
     private IntVector lastAveraged = null; // same for every model since we update all at once
     private int lastExampleAllUpdated = 0;
 

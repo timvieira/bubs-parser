@@ -20,6 +20,7 @@
 package edu.ohsu.cslu.parser.cellselector;
 
 import edu.ohsu.cslu.parser.ChartParser;
+import edu.ohsu.cslu.parser.ParseTask;
 
 /**
  * @author Nathan Bodenstab
@@ -51,9 +52,9 @@ public class CellConstraintsComboModel implements CellSelectorModel {
         }
 
         @Override
-        public void initSentence(final ChartParser<?, ?> p) {
+        public void initSentence(final ChartParser<?, ?> p, final ParseTask task) {
             for (int i = 0; i < numModels; i++) {
-                constraints[i].initSentence(p);
+                constraints[i].initSentence(p, task);
             }
 
             // this.cellIndices = constraints[1].cellIndices;

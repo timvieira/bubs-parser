@@ -88,7 +88,7 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
         final LinkedList<ChartCell> topDownTraversal = new LinkedList<ChartCell>();
 
         initSentence(parseTask);
-        cellSelector.initSentence(this);
+        cellSelector.initSentence(this, parseTask);
         figureOfMerit.initSentence(parseTask, chart);
 
         while (cellSelector.hasNext()) {

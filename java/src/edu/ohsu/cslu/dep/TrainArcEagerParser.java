@@ -122,10 +122,10 @@ public class TrainArcEagerParser extends BaseCommandlineTool {
         // At each step, we have 3 possible actions (shift, reduce-left, reduce-right), but we divide them into 2
         // classifiers - one to decide between shift and reduce, and one to select reduce direction. For the moment, we
         // use the same feature-set for both.
-        final AveragedPerceptron actionClassifier = new AveragedPerceptron(4, fe.featureCount());
+        final AveragedPerceptron actionClassifier = new AveragedPerceptron(4, fe.vectorLength());
         // Label arcs, with a third classifier
         final AveragedPerceptron labelClassifier = classifyLabels ? new AveragedPerceptron(labels.size(),
-                fe.featureCount()) : null;
+                fe.vectorLength()) : null;
 
         final ArcEagerParser parser = new ArcEagerParser(fe, actionClassifier, labelClassifier, tokens, pos, labels);
         //
@@ -142,7 +142,7 @@ public class TrainArcEagerParser extends BaseCommandlineTool {
 
                     for (int step = 0, next = 0; step < derivation.length; step++) {
                         final NivreParserContext context = new NivreParserContext(stack, arcs, next);
-                        final BitVector featureVector = fe.forwardFeatureVector(context, next);
+                        final BitVector featureVector = fe.featureVector(context, next);
 
                         switch (derivation[step]) {
 

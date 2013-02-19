@@ -75,7 +75,7 @@ public class ConstrainedSplitInsideOutsideParser extends
         }
 
         chart.parseTask = new ParseTask(c.tokens, grammar);
-        cellSelector.initSentence(this);
+        cellSelector.initSentence(this, chart.parseTask);
 
         // Compute inside and outside probabilities
         insidePass();
