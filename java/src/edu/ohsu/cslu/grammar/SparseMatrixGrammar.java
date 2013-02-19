@@ -1214,9 +1214,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
 
     @Override
     public Collection<Production> getUnaryProductionsWithChild(final int child) {
-
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     /**

@@ -188,11 +188,6 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
     protected int[] populatedBinaryColumnIndices(final Collection<Production> productions, final PackingFunction pf) {
         final IntSet populatedBinaryColumnIndices = new IntOpenHashSet(productions.size() / 10);
         for (final Production p : productions) {
-            // TODO Remove
-            final int packed = pf.pack((short) p.leftChild, (short) p.rightChild);
-            if (packed < 0) {
-                System.err.println("Error");
-            }
             populatedBinaryColumnIndices.add(pf.pack((short) p.leftChild, (short) p.rightChild));
         }
         final int[] sortedPopulatedBinaryColumnIndices = populatedBinaryColumnIndices.toIntArray();

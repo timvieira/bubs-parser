@@ -29,6 +29,30 @@ import edu.ohsu.cslu.datastructs.vectors.NumericVector;
  * Subclasses will generally be instantiated with a sequence of tokens (e.g. a sentence), and consumers will call a
  * <code>featureVector</code> method for each token.
  * 
+ * Most subclasses use an {@link Enum} to define individual feature templates (for example, see
+ * {@link TaggerFeatureExtractor} and {@link ConstituentBoundaryFeatureExtractor}). Feature templates can be combined,
+ * separated with underscores. Feature templates can be specified in a single string, separated by commas; or in a
+ * feature file (see {@link ClassifierTool#readFeatureTemplateFile(java.io.File)}. The semantics of feature templates
+ * vary somewhat across {@link FeatureExtractor} implementations and their associated {@link Enum}s, but common patterns
+ * include:
+ * 
+ * <ul>
+ * <li>t: POS tag</li>
+ * <li>w: Word / token</li>
+ * <li>u: Unknown-word (UNK) token</li>
+ * <li>m#: Minus-# (e.g., tm1 = tag(i-1))</li>
+ * <li>p#: Plus-#</li>
+ * <li>l: Left (e.g. lum1 = UNK-token 1 word before the left boundary)</li>
+ * <li>r: Right
+ * </ul>
+ * 
+ * Other examples:
+ * <ul>
+ * <li>rwp1: Word to the right of the right boundary</li>
+ * <li>tm2_tm1: Bitag feature including tag(i-2) and tag(i-1)</li>
+ * <li>tm1_w: Word/tag feature including tag(i-1) and word(i)</li>
+ * </ul>
+ * 
  * TODO Consider merging with {@link Sequence}. It seems like a sequence should probably be able to extract its own
  * features (and, when instantiated with training or test data, its own gold tags).
  * 

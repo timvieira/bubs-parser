@@ -311,8 +311,7 @@ public class SymbolSet<E> implements Object2IntSortedMap<E>, Iterable<E>, Serial
 
     @Override
     public ObjectSortedSet<E> keySet() {
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override

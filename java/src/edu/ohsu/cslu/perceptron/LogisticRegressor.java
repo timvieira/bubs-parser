@@ -12,6 +12,7 @@ import edu.ohsu.cslu.datastructs.vectors.FloatVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.parser.Util;
 
+// TODO Unused. Remove?
 public class LogisticRegressor implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -94,6 +95,7 @@ public class LogisticRegressor implements Serializable {
         file.close();
     }
 
+    @SuppressWarnings("null")
     public static LogisticRegressor read(final BufferedReader inStream) throws NumberFormatException, IOException {
         LogisticRegressor regressor = null;
         String line;

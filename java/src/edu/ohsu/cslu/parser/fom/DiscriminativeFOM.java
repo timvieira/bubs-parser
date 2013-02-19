@@ -148,7 +148,9 @@ public class DiscriminativeFOM extends FigureOfMeritModel {
     public class DiscriminativeFOMSelector extends FigureOfMerit {
 
         private static final long serialVersionUID = 1L;
+        @SuppressWarnings("unused")
         private Grammar grammar;
+        @SuppressWarnings("unused")
         private Chart chart;
 
         @Override

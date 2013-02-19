@@ -63,9 +63,9 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
     @Option(name = "-gf", metaVar = "format", requires = "-bin", usage = "Grammar format")
     protected GrammarFormatType grammarFormat;
 
-    // TODO Mark this option as requiring '-g'. It's faster to debugging training without reading a grammar, but the
-    // output model won't be useful if lexicon and vocabulary indices don't match
-    @Option(name = "-ptti", metaVar = "iterations", usage = "Train a POS tagger for n iterations. If specified, a POS-tagger will be trained before the complete-closure model.")
+    // Training a POS-tagger requires an input grammar - we can test without it, but the output model won't be useful if
+    // lexicon and vocabulary indices don't match
+    @Option(name = "-ptti", metaVar = "iterations", requires = "-g", usage = "Train a POS tagger for n iterations. If specified, a POS-tagger will be trained before the complete-closure model.")
     private int posTaggerTrainingIterations = 0;
 
     @Option(name = "-ptft", requires = "-ptti", metaVar = "templates or file", usage = "POS-tagger feature templates (comma-delimited), or template file")
@@ -161,7 +161,18 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
     @Override
     protected void run() throws Exception {
         if (trainingIterations > 0) {
-            // TODO Read in grammar and POS tagger here if specified
+
+            if (grammarFile != null) {
+                BaseLogger.singleton().info("Reading grammar file...");
+                final Grammar g = new LeftCscSparseMatrixGrammar(fileAsBufferedReader(grammarFile));
+                init(g);
+
+            } else {
+                this.lexicon = new SymbolSet<String>();
+                this.unkClassSet = new SymbolSet<String>();
+                this.vocabulary = new SymbolSet<String>();
+            }
+
             train(inputAsBufferedReader());
         } else {
             readModel(new FileInputStream(modelFile));
@@ -197,19 +208,9 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
         return result;
     }
 
+    @SuppressWarnings("null")
     @Override
     protected void train(final BufferedReader input) throws IOException {
-
-        if (grammarFile != null) {
-            BaseLogger.singleton().info("Reading grammar file...");
-            final Grammar g = new LeftCscSparseMatrixGrammar(fileAsBufferedReader(grammarFile));
-            init(g);
-
-        } else {
-            this.lexicon = new SymbolSet<String>();
-            this.unkClassSet = new SymbolSet<String>();
-            this.vocabulary = new SymbolSet<String>();
-        }
 
         this.lexicon.defaultReturnValue(Grammar.nullSymbolStr);
         this.unkClassSet.defaultReturnValue(Grammar.nullSymbolStr);
@@ -258,7 +259,9 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
 
         featureExtractor = new ConstituentBoundaryFeatureExtractor(featureTemplates, lexicon, unkClassSet, vocabulary);
 
-        // Tag the training sequences
+        //
+        // Tag the training sequences with the trained POS tagger
+        //
         if (posTagger != null) {
             BaseLogger.singleton().info("Tagging training corpus with the new POS tagger model");
             for (int i = 0; i < trainingCorpusSequences.size(); i++) {
@@ -308,13 +311,18 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
             outputDevsetAccuracy(trainingIterations, classify(devCorpusSequences));
         }
 
+        //
+        // Search for a bias that satisfies the requested precision or recall
+        //
         if (targetPrecision != 0) {
             precisionBiasSearch(devCorpusSequences, featureExtractor);
         } else if (targetNegativeRecall != 0) {
             negativeRecallBiasSearch(devCorpusSequences, featureExtractor);
         }
 
+        //
         // Write out the model file to disk
+        //
         if (modelFile != null) {
             if (posTagger == null) {
                 // A complete-closure model without an associated tagger isn't useful for downstream processing)
