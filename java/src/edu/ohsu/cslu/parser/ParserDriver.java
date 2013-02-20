@@ -345,6 +345,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
             PerceptronBeamWidthModel beamConstraints = null;
             if (beamModelFileName != null) {
                 beamConstraints = new PerceptronBeamWidthModel(fileAsBufferedReader(beamModelFileName));
+                cellSelectorModel = beamConstraints;
             } else if (pruningModels != null && pruningModels.length > 0) {
                 final ObjectInputStream ois = new ObjectInputStream(fileAsInputStream(pruningModels[0]));
                 cellSelectorModel = (CellSelectorModel) ois.readObject();
