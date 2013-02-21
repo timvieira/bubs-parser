@@ -27,11 +27,6 @@ import edu.berkeley.nlp.util.Counter;
  */
 public class Corpus {
 
-    public enum TreeBankType {
-        BROWN, WSJ, CHINESE, GERMAN, SPANISH, FRENCH, CONLL, SINGLEFILE
-    }
-
-    public static TreeBankType myTreebank = TreeBankType.WSJ;
     public static boolean keepFunctionLabels;
 
     ArrayList<Tree<String>> trainTrees = new ArrayList<Tree<String>>();
@@ -46,27 +41,27 @@ public class Corpus {
      * 
      * @param fraction The fraction of training data to use. In the range [0,1].
      */
-    public Corpus(String path, TreeBankType treebank, double fraction, boolean onlyTest) {
-        this(path, treebank, fraction, onlyTest, -1, false, false);
+    public Corpus(final String path, final double fraction, final boolean onlyTest) {
+        this(path, fraction, onlyTest, -1, false, false);
     }
 
-    public Corpus(String path, TreeBankType treebank, double fraction, boolean onlyTest, int skipSection,
-            boolean skipBilingual, boolean keepFunctionLabels) {
-        this(path, treebank, onlyTest, skipSection, skipBilingual, keepFunctionLabels);
-        int beforeSize = trainTrees.size();
+    public Corpus(final String path, final double fraction, final boolean onlyTest, final int skipSection,
+            final boolean skipBilingual, final boolean keepFunctionLabels) {
+        this(path, onlyTest, skipSection, skipBilingual, keepFunctionLabels);
+        final int beforeSize = trainTrees.size();
         if (fraction < 0) {
-            int startIndex = (int) Math.ceil(beforeSize * -1.0 * fraction);
+            final int startIndex = (int) Math.ceil(beforeSize * -1.0 * fraction);
             trainTrees = new ArrayList<Tree<String>>(trainTrees.subList(startIndex, trainTrees.size()));
         } else if (fraction < 1) {
-            int endIndex = (int) Math.ceil(beforeSize * fraction);
+            final int endIndex = (int) Math.ceil(beforeSize * fraction);
             trainTrees = new ArrayList<Tree<String>>(trainTrees.subList(0, endIndex));
         }
         int nTrainingWords = 0;
-        for (Tree<String> tree : trainTrees) {
+        for (final Tree<String> tree : trainTrees) {
             nTrainingWords += tree.getYield().size();
         }
         System.out.println("In training set we have # of words: " + nTrainingWords);
-        int afterSize = trainTrees.size();
+        final int afterSize = trainTrees.size();
         System.out.println("reducing number of training trees from " + beforeSize + " to " + afterSize);
     }
 
@@ -74,17 +69,16 @@ public class Corpus {
      * Load the WSJ, Brown, and Chinese corpora from the given locations. If any is null, don't load it. If all are
      * null, use the dummy sentence. Don't load the English corpora if we load the Chinese one.
      */
-    private Corpus(String path, TreeBankType treebank, boolean onlyTest, int skipSection, boolean skipBilingual,
-            boolean keepFunctionLabel) {
-        myTreebank = treebank;
-        boolean dummy = path == null;
+    private Corpus(final String path, final boolean onlyTest, final int skipSection, final boolean skipBilingual,
+            final boolean keepFunctionLabel) {
+        final boolean dummy = path == null;
         keepFunctionLabels = keepFunctionLabel;
         if (dummy) {
             System.out.println("Loading one dummy sentence into training set only.");
             Trees.PennTreeReader reader;
             Tree<String> tree;
-            int exampleNumber = 8;
-            List<String> sentences = new ArrayList<String>();
+            final int exampleNumber = 8;
+            final List<String> sentences = new ArrayList<String>();
             switch (exampleNumber) {
             case 0:
                 // Joshua Goodman's example
@@ -194,12 +188,12 @@ public class Corpus {
             default:
 
             }
-            for (String sentence : sentences) {
+            for (final String sentence : sentences) {
                 reader = new Trees.PennTreeReader(new StringReader(sentence));
                 tree = reader.next();
-                Trees.TreeTransformer<String> treeTransformer = (keepFunctionLabels) ? new Trees.FunctionLabelRetainingTreeNormalizer()
+                final Trees.TreeTransformer<String> treeTransformer = (keepFunctionLabels) ? new Trees.FunctionLabelRetainingTreeNormalizer()
                         : new Trees.StandardTreeNormalizer();
-                Tree<String> normalizedTree = treeTransformer.transformTree(tree);
+                final Tree<String> normalizedTree = treeTransformer.transformTree(tree);
                 tree = normalizedTree;
                 trainTrees.add(tree);
                 devTestTrees.add(tree);
@@ -209,38 +203,9 @@ public class Corpus {
         // load from at least one corpus
         else {
             try {
-                // load from chinese if possible
-                if (myTreebank == TreeBankType.CHINESE) {
-                    System.out.println("Loading CHINESE data!");
-                    loadChinese(path, skipBilingual);
-                }
-                // load from WSJ & Brown only if no Chinese
-                else if (myTreebank == TreeBankType.WSJ) {
-                    System.out.println("Loading ENGLISH WSJ data!");
-                    loadWSJ(path, onlyTest, skipSection);
-                    /*
-                     * if (pathBrown!=null && !pathBrown.equals("null")) { loadBrown(pathBrown); }
-                     */
-                } else if (myTreebank == TreeBankType.GERMAN) {
-                    System.out.println("Loading GERMAN data!");
-                    loadGerman(path);
-                } else if (myTreebank == TreeBankType.BROWN) {
-                    System.out.println("Loading BROWN data!");
-                    loadBrown(path);
-                } else if (myTreebank == TreeBankType.SPANISH) {
-                    System.out.println("Loading SPANISH data!");
-                    loadSpanish(path);
-                } else if (myTreebank == TreeBankType.FRENCH) {
-                    System.out.println("Loading FRENCH data!");
-                    loadCONLL(path, true);
-                } else if (myTreebank == TreeBankType.CONLL) {
-                    System.out.println("Loading CoNLL converted data!");
-                    loadCONLL(path, false);
-                } else if (myTreebank == TreeBankType.SINGLEFILE) {
-                    System.out.println("Loading data from single file!");
-                    loadSingleFile(path);
-                }
-            } catch (Exception e) {
+                System.out.println("Loading data from single file!");
+                loadSingleFile(path);
+            } catch (final Exception e) {
                 System.out.println("Error loading trees!");
                 System.out.println(e.getStackTrace().toString());
                 throw new Error(e.getMessage(), e);
@@ -248,82 +213,20 @@ public class Corpus {
         }
     }
 
-    /**
-     * @param pathChinese
-     * @param skipBilingual
-     * @throws Exception
-     */
-    private void loadChinese(String pathChinese, boolean skipBilingual) throws Exception {
-        System.out.print("Loading Chinese treebank trees...");
-        if (!skipBilingual) {
-            trainTrees.addAll(readTrees(pathChinese, 1, 25, Charset.forName("GB18030")));
-            trainTrees.addAll(readTrees(pathChinese, 26, 270, Charset.forName("GB18030")));
-        }
-        trainTrees.addAll(readTrees(pathChinese, 400, 1151, Charset.forName("GB18030")));
-
-        devTestTrees.addAll(readTrees(pathChinese, 301, 325, Charset.forName("GB18030")));
-        validationTrees.addAll(readTrees(pathChinese, 301, 325, Charset.forName("GB18030")));
-        finalTestTrees.addAll(readTrees(pathChinese, 271, 300, Charset.forName("GB18030")));
-        System.out.print(""
-                + (trainTrees.size() + " " + validationTrees.size() + " " + devTestTrees.size() + " " + finalTestTrees
-                        .size()) + " trees...");
-        System.out.println("done");
-    }
-
-    /**
-     * @param pathBrown
-     * @throws Exception
-     */
-    private void loadBrown(String pathBrown) throws Exception {
-        String[] sections = { "cf", "cg", "ck", "cl", "cm", "cn", "cp", "cr" };
-        int[] sectionTrainCounts = new int[sections.length];
-        // read in each section at a time
-        for (int i = 0; i < sections.length; i++) {
-            List<Tree<String>> sectionTrainTrees = new ArrayList<Tree<String>>();
-            List<Tree<String>> sectionValidationTrees = new ArrayList<Tree<String>>();
-            List<Tree<String>> sectionDevTestTrees = new ArrayList<Tree<String>>();
-            List<Tree<String>> sectionFinalTestTrees = new ArrayList<Tree<String>>();
-
-            String sectionPath = pathBrown + "/" + sections[i];
-            List<Tree<String>> sectionTrees = readTrees(sectionPath, 0, 1000, Charset.defaultCharset());
-            splitTrainValidTest(sectionTrees, sectionTrainTrees, sectionValidationTrees, sectionDevTestTrees,
-                    sectionFinalTestTrees);
-            trainTrees.addAll(sectionTrainTrees);
-            validationTrees.addAll(sectionValidationTrees);
-            devTestTrees.addAll(sectionDevTestTrees);
-            finalTestTrees.addAll(sectionFinalTestTrees);
-            sectionTrainCounts[i] = sectionTrainTrees.size();
-            System.out.println("I read " + sectionTrainCounts[i] + " training trees from section " + sections[i]);
-        }
-    }
-
-    private void loadSpanish(String path) throws Exception {
-        System.out.print("Loading Spanish trees...");
-        trainTrees.addAll(readTrees(path, 1, 1, Charset.defaultCharset())); // was
-                                                                            // 200,
-                                                                            // 2099
-        validationTrees.addAll(readTrees(path, 2, 279, Charset.defaultCharset())); // was
-                                                                                   // 2100,
-                                                                                   // 2199
-        devTestTrees.addAll(readTrees(path, 2, 279, Charset.defaultCharset()));
-        finalTestTrees.addAll(readTrees(path, 2, 279, Charset.defaultCharset()));
-        System.out.println("done");
-    }
-
-    private void loadSingleFile(String path) throws Exception {
+    private void loadSingleFile(final String path) throws Exception {
         System.out.print("Loading trees from single file...");
-        InputStreamReader inputData = new InputStreamReader(new FileInputStream(path), "UTF-8");
-        PennTreeReader treeReader = new PennTreeReader(inputData);
+        final InputStreamReader inputData = new InputStreamReader(new FileInputStream(path), "UTF-8");
+        final PennTreeReader treeReader = new PennTreeReader(inputData);
 
         while (treeReader.hasNext()) {
             trainTrees.add(treeReader.next());
         }
 
-        Trees.TreeTransformer<String> treeTransformer = (keepFunctionLabels) ? new Trees.FunctionLabelRetainingTreeNormalizer()
+        final Trees.TreeTransformer<String> treeTransformer = (keepFunctionLabels) ? new Trees.FunctionLabelRetainingTreeNormalizer()
                 : new Trees.StandardTreeNormalizer();
-        ArrayList<Tree<String>> normalizedTreeList = new ArrayList<Tree<String>>();
-        for (Tree<String> tree : trainTrees) {
-            Tree<String> normalizedTree = treeTransformer.transformTree(tree);
+        final ArrayList<Tree<String>> normalizedTreeList = new ArrayList<Tree<String>>();
+        for (final Tree<String> tree : trainTrees) {
+            final Tree<String> normalizedTree = treeTransformer.transformTree(tree);
             normalizedTreeList.add(normalizedTree);
         }
         if (normalizedTreeList.size() == 0) {
@@ -338,23 +241,23 @@ public class Corpus {
         // Integer.MAX_VALUE,Charset.defaultCharset()));
     }
 
-    private void loadCONLL(String path, boolean useLatinEncoding) throws Exception {
-        Charset charSet = (useLatinEncoding) ? Charset.forName("ISO8859_1") : Charset.forName("UTF-8");
+    private void loadCONLL(final String path, final boolean useLatinEncoding) throws Exception {
+        final Charset charSet = (useLatinEncoding) ? Charset.forName("ISO8859_1") : Charset.forName("UTF-8");
 
         System.out.print("Loading CoNLL trees...");
         trainTrees = readAndPreprocessTrees(path, 1, 1, charSet);
         validationTrees = readAndPreprocessTrees(path, 2, 2, charSet);
         devTestTrees = readAndPreprocessTrees(path, 2, 2, charSet);
         finalTestTrees = readAndPreprocessTrees(path, 3, 3, charSet);
-        for (Tree t : trainTrees) {
+        for (final Tree t : trainTrees) {
             if (t.getChildren().size() != 1)
                 System.out.println("Malformed v: " + t);
         }
-        for (Tree t : devTestTrees) {
+        for (final Tree t : devTestTrees) {
             if (t.getChildren().size() != 1)
                 System.out.println("Malformed v: " + t);
         }
-        for (Tree t : finalTestTrees) {
+        for (final Tree t : finalTestTrees) {
             if (t.getChildren().size() != 1)
                 System.out.println("Malformed t: " + t);
         }
@@ -369,15 +272,16 @@ public class Corpus {
      * @return
      * @throws Exception
      */
-    private ArrayList<Tree<String>> readAndPreprocessTrees(String path, int i, int j, Charset charSet) throws Exception {
-        List<Tree<String>> tmp = new ArrayList<Tree<String>>();
-        ArrayList<Tree<String>> tmp2 = new ArrayList<Tree<String>>();
+    private ArrayList<Tree<String>> readAndPreprocessTrees(final String path, final int i, final int j,
+            final Charset charSet) throws Exception {
+        final List<Tree<String>> tmp = new ArrayList<Tree<String>>();
+        final ArrayList<Tree<String>> tmp2 = new ArrayList<Tree<String>>();
         tmp.addAll(readTrees(path, i, j, charSet));
         for (Tree t : tmp) {
             if (!t.getLabel().equals("ROOT")) {
-                List<Tree<String>> childrenList = new ArrayList<Tree<String>>(1);
+                final List<Tree<String>> childrenList = new ArrayList<Tree<String>>(1);
                 childrenList.add(t);
-                Tree<String> rootedTree = new Tree<String>("ROOT", childrenList);
+                final Tree<String> rootedTree = new Tree<String>("ROOT", childrenList);
                 t = rootedTree;
             }
             tmp2.add(t);
@@ -385,70 +289,16 @@ public class Corpus {
         return tmp2;
     }
 
-    /**
-     * @param pathWSJ
-     * @throws Exception
-     */
-    private void loadWSJ(String pathWSJ, boolean onlyTest, int skipSection) throws Exception {
-        System.out.print("Loading WSJ trees...");
-        if (!onlyTest) {
-            if (skipSection == -1)
-                trainTrees.addAll(readTrees(pathWSJ, 200, 2199, Charset.defaultCharset())); // was 200, 2199
-            else {
-                System.out.println("Skipping section " + skipSection + ".");
-                if (skipSection == 2) {
-                    trainTrees.addAll(readTrees(pathWSJ, 300, 2199, Charset.defaultCharset())); // was 200, 2199
-                } else if (skipSection == 21) {
-                    trainTrees.addAll(readTrees(pathWSJ, 200, 2099, Charset.defaultCharset())); // was 200, 2199
-                } else {
-                    int middle = skipSection * 100;
-                    trainTrees.addAll(readTrees(pathWSJ, 200, middle - 1, Charset.defaultCharset())); // was 200, 2199
-                    trainTrees.addAll(readTrees(pathWSJ, middle + 100, 2199, Charset.defaultCharset())); // was 200,
-                                                                                                         // 2199
-                }
-
-            }
-            validationTrees.addAll(readTrees(pathWSJ, 2100, 2199, Charset.defaultCharset())); // was 2100, 2199
-        }
-
-        devTestTrees.addAll(readTrees(pathWSJ, 2200, 2299, Charset.defaultCharset()));
-        finalTestTrees.addAll(readTrees(pathWSJ, 2300, 2399, Charset.defaultCharset()));
-        System.out.println("done");
-    }
-
-    private void loadGerman(String path) throws Exception {
-        System.out.print("Loading German trees...");
-        List<Tree<String>> tmp = readTrees(path, 1, 3, Charset.forName("UTF-8"));
-        int i = 0;
-        for (Tree<String> tree : tmp) {
-            List<Tree<String>> childrenList = new ArrayList<Tree<String>>(1);
-            tree.setLabel("PSEUDO");
-            childrenList.add(tree);
-            Tree<String> rootedTree = new Tree<String>("ROOT", childrenList);
-            tree = rootedTree;
-            if (i < 18602) {
-                trainTrees.add(tree);
-            } else if (i > 19601) {
-                finalTestTrees.add(tree);
-            } else {
-                validationTrees.add(tree);
-                devTestTrees.add(tree);
-            }
-            i++;
-        }
-        System.out.println("done.\nThere are " + trainTrees.size() + " " + devTestTrees.size() + " "
-                + finalTestTrees.size() + " trees.");
-    }
-
-    public static List<Tree<String>> readTrees(String basePath, int low, int high, Charset charset) throws Exception {
-        Collection<Tree<String>> trees = PennTreebankReader.readTrees(basePath, low, high, charset);
+    public static List<Tree<String>> readTrees(final String basePath, final int low, final int high,
+            final Charset charset) throws Exception {
+        final Collection<Tree<String>> trees = PennTreebankReader.readTrees(basePath, low, high, charset);
         // System.out.println("in readTrees");
         // normalize trees
-        Trees.TreeTransformer<String> treeTransformer = (keepFunctionLabels) ? new Trees.FunctionLabelRetainingTreeNormalizer()
+        final Trees.TreeTransformer<String> treeTransformer = (keepFunctionLabels) ? new Trees.FunctionLabelRetainingTreeNormalizer()
                 : new Trees.StandardTreeNormalizer();
-        List<Tree<String>> normalizedTreeList = new ArrayList<Tree<String>>();
-        for (Tree<String> tree : trees) {
-            Tree<String> normalizedTree = treeTransformer.transformTree(tree);
+        final List<Tree<String>> normalizedTreeList = new ArrayList<Tree<String>>();
+        for (final Tree<String> tree : trees) {
+            final Tree<String> normalizedTree = treeTransformer.transformTree(tree);
             normalizedTreeList.add(normalizedTree);
         }
         if (normalizedTreeList.size() == 0) {
@@ -466,8 +316,9 @@ public class Corpus {
      * @param validationTrees
      * @param sectionTestTrees
      */
-    public static void splitTrainValidTest(List<Tree<String>> sectionTrees, List<Tree<String>> trainTrees,
-            List<Tree<String>> validationTrees, List<Tree<String>> devTestTrees, List<Tree<String>> finalTestTrees) {
+    public static void splitTrainValidTest(final List<Tree<String>> sectionTrees, final List<Tree<String>> trainTrees,
+            final List<Tree<String>> validationTrees, final List<Tree<String>> devTestTrees,
+            final List<Tree<String>> finalTestTrees) {
         final int CYCLE_SIZE = 10;
         for (int i = 0; i < sectionTrees.size(); i++) {
             if (i % CYCLE_SIZE < 7) {
@@ -482,10 +333,10 @@ public class Corpus {
         }
     }
 
-    public static List<Tree<String>> filterTreesForConditional(List<Tree<String>> trees, boolean filterAllUnaries,
-            boolean filterStupidFrickinWHNP, boolean justCollapseUnaryChains) {
-        List<Tree<String>> filteredTrees = new ArrayList<Tree<String>>(trees.size());
-        OUTER: for (Tree<String> tree : trees) {
+    public static List<Tree<String>> filterTreesForConditional(final List<Tree<String>> trees,
+            final boolean filterAllUnaries, final boolean filterStupidFrickinWHNP, final boolean justCollapseUnaryChains) {
+        final List<Tree<String>> filteredTrees = new ArrayList<Tree<String>>(trees.size());
+        OUTER: for (final Tree<String> tree : trees) {
             if (tree.getYield().size() == 1)
                 continue;
             if (tree.hasUnaryChain()) {
@@ -497,7 +348,7 @@ public class Corpus {
                     continue;
             }
             if (filterStupidFrickinWHNP) {
-                for (Tree<String> n : tree.getNonTerminals()) {
+                for (final Tree<String> n : tree.getNonTerminals()) {
                     // if (n.getLabel().equals("@WHNP^g") ||
                     // (n.getLabel().equals("WHNP") && n.getChildren().size() >
                     // 1))
@@ -512,17 +363,18 @@ public class Corpus {
         return filteredTrees;
     }
 
-    public static List<Tree<String>> binarizeAndFilterTrees(List<Tree<String>> trees, int verticalAnnotations,
-            int horizontalAnnotations, int sentenceMaxLength, Binarization binarization, boolean manualAnnotation,
-            boolean VERBOSE) {
+    public static List<Tree<String>> binarizeAndFilterTrees(final List<Tree<String>> trees,
+            final int verticalAnnotations, final int horizontalAnnotations, final int sentenceMaxLength,
+            final Binarization binarization, final boolean manualAnnotation, final boolean VERBOSE) {
         return binarizeAndFilterTrees(trees, verticalAnnotations, horizontalAnnotations, sentenceMaxLength,
                 binarization, manualAnnotation, VERBOSE, false);
     }
 
-    public static List<Tree<String>> binarizeAndFilterTrees(List<Tree<String>> trees, int verticalAnnotations,
-            int horizontalAnnotations, int sentenceMaxLength, Binarization binarization, boolean manualAnnotation,
-            boolean VERBOSE, boolean markUnaryParents) {
-        List<Tree<String>> binarizedTrees = new ArrayList<Tree<String>>();
+    public static List<Tree<String>> binarizeAndFilterTrees(final List<Tree<String>> trees,
+            final int verticalAnnotations, final int horizontalAnnotations, final int sentenceMaxLength,
+            final Binarization binarization, final boolean manualAnnotation, final boolean VERBOSE,
+            final boolean markUnaryParents) {
+        final List<Tree<String>> binarizedTrees = new ArrayList<Tree<String>>();
         System.out.print("Binarizing and annotating trees...");
 
         if (VERBOSE)
@@ -530,8 +382,8 @@ public class Corpus {
                     + horizontalAnnotations);
 
         int i = 0;
-        for (Tree<String> tree : trees) {
-            List<String> testSentence = tree.getYield();
+        for (final Tree<String> tree : trees) {
+            final List<String> testSentence = tree.getYield();
             i++;
             if (testSentence.size() > sentenceMaxLength)
                 continue;
@@ -583,21 +435,21 @@ public class Corpus {
         return finalTestTrees;
     }
 
-    public static List<Tree<String>> makePosTrees(List<Tree<String>> trees) {
+    public static List<Tree<String>> makePosTrees(final List<Tree<String>> trees) {
         System.out.print("Making POS-trees...");
-        List<Tree<String>> posTrees = new ArrayList<Tree<String>>();
-        for (Tree<String> tree : trees) {
+        final List<Tree<String>> posTrees = new ArrayList<Tree<String>>();
+        for (final Tree<String> tree : trees) {
             posTrees.add(makePosTree(tree));
         }
         System.out.print(" done.\n");
         return posTrees;
     }
 
-    public static Tree<String> makePosTree(Tree<String> tree) {
-        List<Tree<String>> terminals = tree.getTerminals();
-        List<String> preTerminals = tree.getPreTerminalYield();
+    public static Tree<String> makePosTree(final Tree<String> tree) {
+        final List<Tree<String>> terminals = tree.getTerminals();
+        final List<String> preTerminals = tree.getPreTerminalYield();
 
-        int n = preTerminals.size();
+        final int n = preTerminals.size();
         String label = "STOP"; // preTerminals.get(n-1);
 
         List<Tree<String>> tmpChildList = new ArrayList<Tree<String>>();
@@ -625,22 +477,23 @@ public class Corpus {
         return posTree;
     }
 
-    public static void replaceRareWords(StateSetTreeList trainTrees, SimpleLexicon lexicon, int threshold) {
-        Counter<String> wordCounts = new Counter<String>();
-        for (Tree<StateSet> tree : trainTrees) {
-            List<StateSet> words = tree.getYield();
-            for (StateSet word : words) {
-                String wordString = word.getWord();
+    public static void replaceRareWords(final StateSetTreeList trainTrees, final SimpleLexicon lexicon,
+            final int threshold) {
+        final Counter<String> wordCounts = new Counter<String>();
+        for (final Tree<StateSet> tree : trainTrees) {
+            final List<StateSet> words = tree.getYield();
+            for (final StateSet word : words) {
+                final String wordString = word.getWord();
                 wordCounts.incrementCount(wordString, 1.0);
                 lexicon.wordIndexer.add(wordString);
             }
         }
         // replace the rare words and also add the others to the appropriate
         // numberers
-        for (Tree<StateSet> tree : trainTrees) {
-            List<StateSet> words = tree.getYield();
+        for (final Tree<StateSet> tree : trainTrees) {
+            final List<StateSet> words = tree.getYield();
             int ind = 0;
-            for (StateSet word : words) {
+            for (final StateSet word : words) {
                 String sig = word.getWord();
                 if (wordCounts.getCount(sig) <= threshold) {
                     sig = lexicon.getSignature(word.getWord(), ind);
@@ -651,21 +504,22 @@ public class Corpus {
         }
     }
 
-    public static void replaceRareWords(List<Tree<String>> trainTrees, SimpleLexicon lexicon, int threshold) {
-        Counter<String> wordCounts = new Counter<String>();
-        for (Tree<String> tree : trainTrees) {
-            List<String> words = tree.getYield();
-            for (String word : words) {
+    public static void replaceRareWords(final List<Tree<String>> trainTrees, final SimpleLexicon lexicon,
+            final int threshold) {
+        final Counter<String> wordCounts = new Counter<String>();
+        for (final Tree<String> tree : trainTrees) {
+            final List<String> words = tree.getYield();
+            for (final String word : words) {
                 wordCounts.incrementCount(word, 1.0);
                 lexicon.wordIndexer.add(word);
             }
         }
         // replace the rare words and also add the others to the appropriate
         // numberers
-        for (Tree<String> tree : trainTrees) {
-            List<Tree<String>> words = tree.getTerminals();
+        for (final Tree<String> tree : trainTrees) {
+            final List<Tree<String>> words = tree.getTerminals();
             int ind = 0;
-            for (Tree<String> word : words) {
+            for (final Tree<String> word : words) {
                 String sig = word.getLabel();
                 if (wordCounts.getCount(sig) <= threshold) {
                     sig = lexicon.getSignature(word.getLabel(), ind);
@@ -676,11 +530,11 @@ public class Corpus {
         }
     }
 
-    public static void lowercaseWords(List<Tree<String>> trainTrees) {
-        for (Tree<String> tree : trainTrees) {
-            List<Tree<String>> words = tree.getTerminals();
-            for (Tree<String> word : words) {
-                String lWord = word.getLabel().toLowerCase();
+    public static void lowercaseWords(final List<Tree<String>> trainTrees) {
+        for (final Tree<String> tree : trainTrees) {
+            final List<Tree<String>> words = tree.getTerminals();
+            for (final Tree<String> word : words) {
+                final String lWord = word.getLabel().toLowerCase();
                 word.setLabel(lWord);
             }
         }

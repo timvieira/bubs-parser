@@ -5,7 +5,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
-import edu.berkeley.nlp.PCFGLA.Corpus.TreeBankType;
 import edu.berkeley.nlp.PCFGLA.smoothing.NoSmoothing;
 import edu.berkeley.nlp.PCFGLA.smoothing.SmoothAcrossParentBits;
 import edu.berkeley.nlp.PCFGLA.smoothing.Smoother;
@@ -41,9 +40,6 @@ public class GrammarTrainer {
 
         @Option(name = "-baseline", usage = "Just read of the MLE baseline grammar")
         public boolean baseline = false;
-
-        @Option(name = "-treebank", usage = "Language:  WSJ, CHNINESE, GERMAN, CONLL, SINGLEFILE (Default: ENGLISH)")
-        public TreeBankType treebank = TreeBankType.WSJ;
 
         @Option(name = "-splitMaxIt", usage = "Maximum number of EM iterations after splitting (Default: 50)")
         public int splitMaxIterations = 50;
@@ -129,9 +125,6 @@ public class GrammarTrainer {
         @Option(name = "-simpleLexicon", usage = "Use the simple generative lexicon")
         public boolean simpleLexicon = false;
 
-        @Option(name = "-featurizedLexicon", usage = "Use the featurized lexicon")
-        public boolean featurizedLexicon = false;
-
         @Option(name = "-skipSection", usage = "Skips a particular section of the WSJ training corpus (Needed for training Mark Johnsons reranker")
         public int skipSection = -1;
 
@@ -153,7 +146,7 @@ public class GrammarTrainer {
 
         final String path = opts.path;
         // int lang = opts.lang;
-        System.out.println("Loading trees from " + path + " and using language " + opts.treebank);
+        System.out.println("Loading trees from " + path);
 
         final double trainingFractionToKeep = opts.trainingFractionToKeep;
 
@@ -203,8 +196,8 @@ public class GrammarTrainer {
         final boolean allowMoreSubstatesThanCounts = false;
         final boolean findClosedUnaryPaths = opts.findClosedUnaryPaths;
 
-        Corpus corpus = new Corpus(path, opts.treebank, trainingFractionToKeep, false, opts.skipSection,
-                opts.skipBilingual, opts.keepFunctionLabels);
+        Corpus corpus = new Corpus(path, trainingFractionToKeep, false, opts.skipSection, opts.skipBilingual,
+                opts.keepFunctionLabels);
         List<Tree<String>> trainTrees = Corpus.binarizeAndFilterTrees(corpus.getTrainTrees(), VERTICAL_MARKOVIZATION,
                 HORIZONTAL_MARKOVIZATION, maxSentenceLength, binarization, manualAnnotation, VERBOSE);
         List<Tree<String>> validationTrees = Corpus.binarizeAndFilterTrees(corpus.getValidationTrees(),
@@ -331,20 +324,13 @@ public class GrammarTrainer {
             Corpus.replaceRareWords(trainStateSetTrees, new SimpleLexicon(numSubStatesArray, -1), opts.rare);
         }
 
-        final Featurizer feat = new SimpleFeaturizer(opts.rare, opts.reallyRare);
         // If we're training without loading a split grammar, then we run once
         // without splitting.
         if (splitGrammarFile == null) {
             grammar = new Grammar(numSubStatesArray, findClosedUnaryPaths, new NoSmoothing(), null, filter);
-            // these two lines crash the compiler. dunno why.
-            Lexicon tmp_lexicon = // (opts.featurizedLexicon) ?
-            // new FeaturizedLexicon(numSubStatesArray,feat,trainStateSetTrees)
-            // :
-            (opts.simpleLexicon) ? new SimpleLexicon(numSubStatesArray, -1, smoothParams, new NoSmoothing(), filter,
-                    trainStateSetTrees) : new SophisticatedLexicon(numSubStatesArray,
+            final Lexicon tmp_lexicon = (opts.simpleLexicon) ? new SimpleLexicon(numSubStatesArray, -1, smoothParams,
+                    new NoSmoothing(), filter, trainStateSetTrees) : new SophisticatedLexicon(numSubStatesArray,
                     SophisticatedLexicon.DEFAULT_SMOOTHING_CUTOFF, smoothParams, new NoSmoothing(), filter);
-            if (opts.featurizedLexicon)
-                tmp_lexicon = new FeaturizedLexicon(numSubStatesArray, feat, trainStateSetTrees);
             int n = 0;
             boolean secondHalf = false;
             for (final Tree<StateSet> stateSetTree : trainStateSetTrees) {
@@ -354,8 +340,6 @@ public class GrammarTrainer {
             lexicon = (opts.simpleLexicon) ? new SimpleLexicon(numSubStatesArray, -1, smoothParams, new NoSmoothing(),
                     filter, trainStateSetTrees) : new SophisticatedLexicon(numSubStatesArray,
                     SophisticatedLexicon.DEFAULT_SMOOTHING_CUTOFF, smoothParams, new NoSmoothing(), filter);
-            if (opts.featurizedLexicon)
-                lexicon = new FeaturizedLexicon(numSubStatesArray, feat, trainStateSetTrees);
             for (final Tree<StateSet> stateSetTree : trainStateSetTrees) {
                 secondHalf = (n++ > nTrees / 2.0);
                 lexicon.trainTree(stateSetTree, randomness, tmp_lexicon, secondHalf, false, opts.rare);
@@ -428,14 +412,10 @@ public class GrammarTrainer {
 
                 // retrain lexicon to finish the lexicon merge (updates the
                 // unknown words model)...
-                if (opts.featurizedLexicon) {
-                    lexicon = new FeaturizedLexicon(newNumSubStatesArray, feat, trainStateSetTrees);
-                } else
-                    lexicon = (opts.simpleLexicon) ? new SimpleLexicon(newNumSubStatesArray, -1, smoothParams,
-                            maxLexicon.getSmoother(), filter, trainStateSetTrees)
-                            : new SophisticatedLexicon(newNumSubStatesArray,
-                                    SophisticatedLexicon.DEFAULT_SMOOTHING_CUTOFF, maxLexicon.getSmoothingParams(),
-                                    maxLexicon.getSmoother(), maxLexicon.getPruningThreshold());
+                lexicon = (opts.simpleLexicon) ? new SimpleLexicon(newNumSubStatesArray, -1, smoothParams,
+                        maxLexicon.getSmoother(), filter, trainStateSetTrees) : new SophisticatedLexicon(
+                        newNumSubStatesArray, SophisticatedLexicon.DEFAULT_SMOOTHING_CUTOFF,
+                        maxLexicon.getSmoothingParams(), maxLexicon.getSmoother(), maxLexicon.getPruningThreshold());
                 final boolean updateOnlyLexicon = true;
                 final double trainingLikelihood = GrammarTrainer.doOneEStep(grammar, maxLexicon, null, lexicon,
                         trainStateSetTrees, updateOnlyLexicon, opts.rare);
@@ -481,15 +461,10 @@ public class GrammarTrainer {
                 System.out.print("Calculating training likelihood...");
                 grammar = new Grammar(grammar.numSubStates, grammar.findClosedPaths, grammar.smoother, grammar,
                         grammar.threshold);
-                if (opts.featurizedLexicon)
-                    lexicon = lexicon.copyLexicon();
-                // lexicon = new
-                // FeaturizedLexicon(numSubStatesArray,feat,trainStateSetTrees);
-                else
-                    lexicon = (opts.simpleLexicon) ? new SimpleLexicon(grammar.numSubStates, -1, smoothParams,
-                            lexicon.getSmoother(), filter, trainStateSetTrees) : new SophisticatedLexicon(
-                            grammar.numSubStates, SophisticatedLexicon.DEFAULT_SMOOTHING_CUTOFF,
-                            lexicon.getSmoothingParams(), lexicon.getSmoother(), lexicon.getPruningThreshold());
+                lexicon = (opts.simpleLexicon) ? new SimpleLexicon(grammar.numSubStates, -1, smoothParams,
+                        lexicon.getSmoother(), filter, trainStateSetTrees) : new SophisticatedLexicon(
+                        grammar.numSubStates, SophisticatedLexicon.DEFAULT_SMOOTHING_CUTOFF,
+                        lexicon.getSmoothingParams(), lexicon.getSmoother(), lexicon.getPruningThreshold());
                 final boolean updateOnlyLexicon = false;
                 final double trainingLikelihood = doOneEStep(previousGrammar, previousLexicon, grammar, lexicon,
                         trainStateSetTrees, updateOnlyLexicon, opts.rare); // The training LL of

@@ -63,9 +63,9 @@ public class SimpleLexicon implements java.io.Serializable, Lexicon {
     public void optimize() {
         for (int tag = 0; tag < expectedCounts.length; tag++) {
             for (int substate = 0; substate < numSubStates[tag]; substate++) {
-                double mass = ArrayUtil.sum(expectedCounts[tag][substate]);
+                final double mass = ArrayUtil.sum(expectedCounts[tag][substate]);
 
-                double normalizer = (mass == 0) ? 0 : 1.0 / mass;
+                final double normalizer = (mass == 0) ? 0 : 1.0 / mass;
                 for (int word = 0; word < expectedCounts[tag][substate].length; word++) {
                     scores[tag][substate][word] = expectedCounts[tag][substate][word] * normalizer;
                 }
@@ -76,7 +76,7 @@ public class SimpleLexicon implements java.io.Serializable, Lexicon {
         if (smoother != null) {
             for (short tag = 0; tag < expectedCounts.length; tag++) {
                 for (int word = 0; word < expectedCounts[tag][0].length; word++) {
-                    double[] res = new double[numSubStates[tag]];
+                    final double[] res = new double[numSubStates[tag]];
                     for (int substate = 0; substate < numSubStates[tag]; substate++) {
                         res[substate] = scores[tag][substate][word];
                     }
@@ -96,32 +96,32 @@ public class SimpleLexicon implements java.io.Serializable, Lexicon {
      * @param numSubStates
      */
     @SuppressWarnings("unchecked")
-    public SimpleLexicon(short[] numSubStates, int smoothingCutoff, double[] smoothParam, Smoother smoother,
-            double threshold, StateSetTreeList trainTrees) {
+    public SimpleLexicon(final short[] numSubStates, final int smoothingCutoff, final double[] smoothParam,
+            final Smoother smoother, final double threshold, final StateSetTreeList trainTrees) {
         this(numSubStates, threshold);
         init(trainTrees);
     }
 
-    public SimpleLexicon(short[] numSubStates, double threshold) {
+    public SimpleLexicon(final short[] numSubStates, final double threshold) {
         this.numSubStates = numSubStates;
         this.threshold = threshold;
         this.wordIndexer = new Indexer<String>();
         this.numStates = numSubStates.length;
         this.isLogarithmMode = false;
-        if (Corpus.myTreebank != Corpus.TreeBankType.WSJ || Corpus.myTreebank == Corpus.TreeBankType.BROWN)
-            unknownLevel = 4;
+        unknownLevel = 4;
 
     }
 
-    public double[] score(String word, short tag, int pos, boolean noSmoothing, boolean isSignature) {
-        StateSet stateSet = new StateSet(tag, (short) 1, word, (short) pos, (short) (pos + 1));
+    public double[] score(final String word, final short tag, final int pos, final boolean noSmoothing,
+            final boolean isSignature) {
+        final StateSet stateSet = new StateSet(tag, (short) 1, word, (short) pos, (short) (pos + 1));
         stateSet.wordIndex = -2;
         stateSet.sigIndex = -2;
         return score(stateSet, tag, noSmoothing, isSignature);
     }
 
-    public double[] score(StateSet stateSet, short tag, boolean noSmoothing, boolean isSignature) {
-        double[] res = new double[numSubStates[tag]];
+    public double[] score(final StateSet stateSet, final short tag, final boolean noSmoothing, final boolean isSignature) {
+        final double[] res = new double[numSubStates[tag]];
         int globalWordIndex = stateSet.wordIndex;
         if (globalWordIndex == -2)
             globalWordIndex = stateSet.wordIndex = wordIndexer.indexOf(stateSet.getWord());
@@ -135,7 +135,7 @@ public class SimpleLexicon implements java.io.Serializable, Lexicon {
             return res;
         }
 
-        int tagSpecificWordIndex = tagWordIndexer[tag].indexOf(globalWordIndex);
+        final int tagSpecificWordIndex = tagWordIndexer[tag].indexOf(globalWordIndex);
         if (tagSpecificWordIndex == -1) {
             if (isLogarithmMode)
                 Arrays.fill(res, Double.NEGATIVE_INFINITY);// -80??Double.NEGATIVE_INFINITY);
@@ -153,8 +153,8 @@ public class SimpleLexicon implements java.io.Serializable, Lexicon {
     /**
      * Trains this lexicon on the Collection of trees.
      */
-    public void trainTree(Tree<StateSet> trainTree, double randomness, Lexicon oldLexicon, boolean secondHalf,
-            boolean noSmoothing, int unusedUnkThreshold) {
+    public void trainTree(final Tree<StateSet> trainTree, final double randomness, final Lexicon oldLexicon,
+            final boolean secondHalf, final boolean noSmoothing, final int unusedUnkThreshold) {
         // scan data
         // for all substates that the word's preterminal tag has
         double sentenceScore = 0;
@@ -165,26 +165,26 @@ public class SimpleLexicon implements java.io.Serializable, Lexicon {
                 return;
             }
         }
-        int sentenceScale = trainTree.getLabel().getIScale();
+        final int sentenceScale = trainTree.getLabel().getIScale();
 
-        List<StateSet> words = trainTree.getYield();
-        List<StateSet> tags = trainTree.getPreTerminalYield();
+        final List<StateSet> words = trainTree.getYield();
+        final List<StateSet> tags = trainTree.getPreTerminalYield();
         // for all words in sentence
         for (int position = 0; position < words.size(); position++) {
 
-            int nSubStates = tags.get(position).numSubStates();
-            short tag = tags.get(position).getState();
+            final int nSubStates = tags.get(position).numSubStates();
+            final short tag = tags.get(position).getState();
 
-            String word = words.get(position).getWord();
-            int globalWordIndex = wordIndexer.indexOf(word);
-            int tagSpecificWordIndex = tagWordIndexer[tag].indexOf(globalWordIndex);
+            final String word = words.get(position).getWord();
+            final int globalWordIndex = wordIndexer.indexOf(word);
+            final int tagSpecificWordIndex = tagWordIndexer[tag].indexOf(globalWordIndex);
 
             double[] oldLexiconScores = null;
             if (randomness == -1)
                 oldLexiconScores = oldLexicon.score(word, tag, position, noSmoothing, false);
 
-            StateSet currentState = tags.get(position);
-            double scale = ScalingTools.calcScaleFactor(currentState.getOScale() - sentenceScale) / sentenceScore;
+            final StateSet currentState = tags.get(position);
+            final double scale = ScalingTools.calcScaleFactor(currentState.getOScale() - sentenceScale) / sentenceScore;
 
             for (short substate = 0; substate < nSubStates; substate++) {
                 double weight = 1;
@@ -214,18 +214,18 @@ public class SimpleLexicon implements java.io.Serializable, Lexicon {
 
     }
 
-    public void setUseVarDP(boolean useVarDP) {
+    public void setUseVarDP(final boolean useVarDP) {
         this.useVarDP = useVarDP;
     }
 
     /*
      * assume that rare words have been replaced by their signature
      */
-    public void init(StateSetTreeList trainTrees) {
-        for (Tree<StateSet> tree : trainTrees) {
-            List<StateSet> words = tree.getYield();
-            for (StateSet word : words) {
-                String sig = word.getWord();
+    public void init(final StateSetTreeList trainTrees) {
+        for (final Tree<StateSet> tree : trainTrees) {
+            final List<StateSet> words = tree.getYield();
+            for (final StateSet word : words) {
+                final String sig = word.getWord();
                 wordIndexer.add(sig);
             }
         }
@@ -234,12 +234,12 @@ public class SimpleLexicon implements java.io.Serializable, Lexicon {
             tagWordIndexer[tag] = new IntegerIndexer(wordIndexer.size());
         }
         wordCounter = new int[wordIndexer.size()];
-        for (Tree<StateSet> tree : trainTrees) {
-            List<StateSet> tags = tree.getPreTerminalYield();
-            List<StateSet> words = tree.getYield();
+        for (final Tree<StateSet> tree : trainTrees) {
+            final List<StateSet> tags = tree.getPreTerminalYield();
+            final List<StateSet> words = tree.getYield();
             int ind = 0;
-            for (StateSet word : words) {
-                String sig = word.getWord();
+            for (final StateSet word : words) {
+                final String sig = word.getWord();
                 wordCounter[wordIndexer.indexOf(sig)]++;
                 tagWordIndexer[tags.get(ind).getState()].add(wordIndexer.indexOf(sig));
                 ind++;
@@ -256,7 +256,7 @@ public class SimpleLexicon implements java.io.Serializable, Lexicon {
     }
 
     public SimpleLexicon copyLexicon() {
-        SimpleLexicon copy = new SimpleLexicon(numSubStates, threshold);
+        final SimpleLexicon copy = new SimpleLexicon(numSubStates, threshold);
         copy.expectedCounts = new double[numStates][][];
         copy.scores = ArrayUtil.clone(scores);// new double[numStates][][];
         copy.tagWordIndexer = new IntegerIndexer[numStates];
@@ -307,12 +307,12 @@ public class SimpleLexicon implements java.io.Serializable, Lexicon {
      * @return
      */
     @SuppressWarnings("unchecked")
-    public SimpleLexicon splitAllStates(int[] counts, boolean moreSubstatesThanCounts, int mode) {
-        SimpleLexicon splitLex = this.copyLexicon();
+    public SimpleLexicon splitAllStates(final int[] counts, final boolean moreSubstatesThanCounts, final int mode) {
+        final SimpleLexicon splitLex = this.copyLexicon();
 
-        short[] newNumSubStates = new short[numSubStates.length];
+        final short[] newNumSubStates = new short[numSubStates.length];
         newNumSubStates[0] = 1; // never split ROOT
-        Random random = GrammarTrainer.RANDOM;
+        final Random random = GrammarTrainer.RANDOM;
         for (short i = 1; i < numSubStates.length; i++) {
             // don't split a state into more substates than times it was
             // actaully seen
@@ -324,10 +324,10 @@ public class SimpleLexicon implements java.io.Serializable, Lexicon {
             // }
         }
         splitLex.numSubStates = newNumSubStates;
-        double[][][] newScores = new double[scores.length][][];
-        double[][][] newExpCounts = new double[scores.length][][];
+        final double[][][] newScores = new double[scores.length][][];
+        final double[][][] newExpCounts = new double[scores.length][][];
         for (int tag = 0; tag < expectedCounts.length; tag++) {
-            int nTagWords = tagWordIndexer[tag].size();
+            final int nTagWords = tagWordIndexer[tag].size();
             // if (nWords==0) continue;
             newScores[tag] = new double[newNumSubStates[tag]][nTagWords];
             newExpCounts[tag] = new double[newNumSubStates[tag]][nTagWords];
@@ -357,9 +357,9 @@ public class SimpleLexicon implements java.io.Serializable, Lexicon {
      * @param loc Its position in the sentence (mainly so sentence-initial capitalized words can be treated differently)
      * @return A String that is its signature (equivalence class)
      */
-    public String getNewSignature(String word, int loc) {
+    public String getNewSignature(final String word, final int loc) {
         // int unknownLevel = Options.get().useUnknownWordSignatures;
-        StringBuffer sb = new StringBuffer("UNK");
+        final StringBuffer sb = new StringBuffer("UNK");
         switch (unknownLevel) {
 
         case 5: {
@@ -369,13 +369,13 @@ public class SimpleLexicon implements java.io.Serializable, Lexicon {
             // { -NUM, 0 } +
             // { -DASH, 0 } +
             // { -last lowered char(s) if known discriminating suffix, 0}
-            int wlen = word.length();
+            final int wlen = word.length();
             int numCaps = 0;
             boolean hasDigit = false;
             boolean hasDash = false;
             boolean hasLower = false;
             for (int i = 0; i < wlen; i++) {
-                char ch = word.charAt(i);
+                final char ch = word.charAt(i);
                 if (Character.isDigit(ch)) {
                     hasDigit = true;
                 } else if (ch == '-') {
@@ -391,8 +391,8 @@ public class SimpleLexicon implements java.io.Serializable, Lexicon {
                     }
                 }
             }
-            char ch0 = word.charAt(0);
-            String lowered = word.toLowerCase();
+            final char ch0 = word.charAt(0);
+            final String lowered = word.toLowerCase();
             if (Character.isUpperCase(ch0) || Character.isTitleCase(ch0)) {
                 if (loc == 0 && numCaps == 1) {
                     sb.append("-INITC");
@@ -415,7 +415,7 @@ public class SimpleLexicon implements java.io.Serializable, Lexicon {
             }
             if (lowered.endsWith("s") && wlen >= 3) {
                 // here length 3, so you don't miss out on ones like 80s
-                char ch2 = lowered.charAt(wlen - 2);
+                final char ch2 = lowered.charAt(wlen - 2);
                 // not -ess suffixes or greek/latin -us, -is
                 if (ch2 != 's' && ch2 != 'i' && ch2 != 'u') {
                     sb.append("-s");
@@ -462,7 +462,7 @@ public class SimpleLexicon implements java.io.Serializable, Lexicon {
             boolean hasPeriod = false;
             boolean hasComma = false;
             for (int i = 0; i < word.length(); i++) {
-                char ch = word.charAt(i);
+                final char ch = word.charAt(i);
                 if (Character.isDigit(ch)) {
                     hasDigit = true;
                 } else {
@@ -519,7 +519,7 @@ public class SimpleLexicon implements java.io.Serializable, Lexicon {
             if (word.length() > 3) {
                 // don't do for very short words: "yes" isn't an "-es" word
                 // try doing to lower for further densening and skipping digits
-                char ch = word.charAt(word.length() - 1);
+                final char ch = word.charAt(word.length() - 1);
                 if (Character.isLetter(ch)) {
                     sb.append("-");
                     sb.append(Character.toLowerCase(ch));
@@ -537,7 +537,7 @@ public class SimpleLexicon implements java.io.Serializable, Lexicon {
             char newClass;
             int num = 0;
             for (int i = 0; i < word.length(); i++) {
-                char ch = word.charAt(i);
+                final char ch = word.charAt(i);
                 if (Character.isUpperCase(ch) || Character.isTitleCase(ch)) {
                     if (loc == 0) {
                         newClass = 'S';
@@ -569,7 +569,7 @@ public class SimpleLexicon implements java.io.Serializable, Lexicon {
             if (word.length() > 3) {
                 // don't do for very short words: "yes" isn't an "-es" word
                 // try doing to lower for further densening and skipping digits
-                char ch = Character.toLowerCase(word.charAt(word.length() - 1));
+                final char ch = Character.toLowerCase(word.charAt(word.length() - 1));
                 sb.append('-');
                 sb.append(ch);
             }
@@ -585,7 +585,7 @@ public class SimpleLexicon implements java.io.Serializable, Lexicon {
             boolean hasNonDigit = false;
             boolean hasLower = false;
             for (int i = 0; i < word.length(); i++) {
-                char ch = word.charAt(i);
+                final char ch = word.charAt(i);
                 if (Character.isDigit(ch)) {
                     hasDigit = true;
                 } else {
@@ -622,7 +622,7 @@ public class SimpleLexicon implements java.io.Serializable, Lexicon {
             } else if (word.length() > 3) {
                 // don't do for very short words: "yes" isn't an "-es" word
                 // try doing to lower for further densening and skipping digits
-                char ch = word.charAt(word.length() - 1);
+                final char ch = word.charAt(word.length() - 1);
                 sb.append(Character.toLowerCase(ch));
             }
             // no suffix = short non-number, non-alphabetic
@@ -654,10 +654,10 @@ public class SimpleLexicon implements java.io.Serializable, Lexicon {
 
     @Override
     public String toString() {
-        StringBuffer sb = new StringBuffer();
-        Numberer tagNumberer = Numberer.getGlobalNumberer("tags");
+        final StringBuffer sb = new StringBuffer();
+        final Numberer tagNumberer = Numberer.getGlobalNumberer("tags");
         for (int tag = 0; tag < expectedCounts.length; tag++) {
-            String tagS = (String) tagNumberer.object(tag);
+            final String tagS = (String) tagNumberer.object(tag);
             if (tagWordIndexer[tag].size() == 0)
                 continue;
             for (int word = 0; word < scores[tag][0].length; word++) {
@@ -675,7 +675,7 @@ public class SimpleLexicon implements java.io.Serializable, Lexicon {
      * @param lowered
      * @return
      */
-    private boolean isKnown(String word) {
+    private boolean isKnown(final String word) {
         return wordIndexer.indexOf(word) != -1;
     }
 
@@ -683,13 +683,13 @@ public class SimpleLexicon implements java.io.Serializable, Lexicon {
      * Returns the index of the signature of the word numbered wordIndex, where the signature is the String
      * representation of unknown word features. Caches the last signature index returned.
      */
-    public String getSignature(String word, int sentencePosition) {
+    public String getSignature(final String word, final int sentencePosition) {
         if (word.equals(lastWordToSignaturize) && sentencePosition == lastSentencePosition) {
             // System.err.println("Signature: cache mapped " + wordIndex +
             // " to " + lastSignatureIndex);
             return lastSignature;
         } else {
-            String uwSig = getNewSignature(word, sentencePosition);
+            final String uwSig = getNewSignature(word, sentencePosition);
             lastSignature = uwSig;
             lastSentencePosition = sentencePosition;
             lastWordToSignaturize = word;
@@ -701,23 +701,23 @@ public class SimpleLexicon implements java.io.Serializable, Lexicon {
      * @param mergeThesePairs
      * @param mergeWeights
      */
-    public void mergeStates(boolean[][][] mergeThesePairs, double[][] mergeWeights) {
-        short[] newNumSubStates = new short[numSubStates.length];
-        short[][] mapping = new short[numSubStates.length][];
+    public void mergeStates(final boolean[][][] mergeThesePairs, final double[][] mergeWeights) {
+        final short[] newNumSubStates = new short[numSubStates.length];
+        final short[][] mapping = new short[numSubStates.length][];
         // invariant: if partners[state][substate][0] == substate, it's the 1st
         // one
-        short[][][] partners = new short[numSubStates.length][][];
+        final short[][][] partners = new short[numSubStates.length][][];
         Grammar.calculateMergeArrays(mergeThesePairs, newNumSubStates, mapping, partners, numSubStates);
 
-        double[][][] newScores = new double[scores.length][][];
+        final double[][][] newScores = new double[scores.length][][];
         for (int tag = 0; tag < expectedCounts.length; tag++) {
-            int nTagWords = tagWordIndexer[tag].size();
+            final int nTagWords = tagWordIndexer[tag].size();
             newScores[tag] = new double[newNumSubStates[tag]][nTagWords];
             if (numSubStates[tag] == 1)
                 continue;
             for (int word = 0; word < expectedCounts[tag][0].length; word++) {
                 for (int i = 0; i < numSubStates[tag]; i = i + 2) {
-                    int nSplit = partners[tag][i].length;
+                    final int nSplit = partners[tag][i].length;
                     if (nSplit == 2) {
                         double mergeWeightSum = mergeWeights[tag][partners[tag][i][0]]
                                 + mergeWeights[tag][partners[tag][i][1]];
@@ -739,7 +739,7 @@ public class SimpleLexicon implements java.io.Serializable, Lexicon {
         }
     }
 
-    public void removeUnlikelyTags(double threshold, double exponent) {
+    public void removeUnlikelyTags(final double threshold, final double exponent) {
         for (int tag = 0; tag < scores.length; tag++) {
             for (int word = 0; word < scores[tag].length; word++) {
                 for (int substate = 0; substate < scores[tag][word].length; substate++) {
@@ -762,14 +762,14 @@ public class SimpleLexicon implements java.io.Serializable, Lexicon {
     // return logarithmMode;
     // }
 
-    public SimpleLexicon projectLexicon(double[] condProbs, int[][] mapping, int[][] toSubstateMapping) {
-        short[] newNumSubStates = new short[numSubStates.length];
+    public SimpleLexicon projectLexicon(final double[] condProbs, final int[][] mapping, final int[][] toSubstateMapping) {
+        final short[] newNumSubStates = new short[numSubStates.length];
         for (int state = 0; state < numSubStates.length; state++) {
             newNumSubStates[state] = (short) toSubstateMapping[state][0];
         }
-        SimpleLexicon newLexicon = this.copyLexicon();
+        final SimpleLexicon newLexicon = this.copyLexicon();
 
-        double[][][] newScores = new double[scores.length][][];
+        final double[][][] newScores = new double[scores.length][][];
 
         for (short tag = 0; tag < expectedCounts.length; tag++) {
             newScores[tag] = new double[newNumSubStates[tag]][expectedCounts[tag][0].length];
@@ -805,7 +805,7 @@ public class SimpleLexicon implements java.io.Serializable, Lexicon {
      * @see edu.berkeley.nlp.HDPPCFG.LexiconInterface#logarithmMode()
      */
 
-    public void setSmoother(Smoother smoother) {
+    public void setSmoother(final Smoother smoother) {
         this.smoother = smoother;
     }
 
@@ -818,7 +818,7 @@ public class SimpleLexicon implements java.io.Serializable, Lexicon {
      * 
      * @see edu.berkeley.nlp.PCFGLA.Lexicon#scoreSignature(java.lang.String, short, int)
      */
-    public double[] scoreSignature(StateSet stateSet, int tag) {
+    public double[] scoreSignature(final StateSet stateSet, final int tag) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -828,17 +828,17 @@ public class SimpleLexicon implements java.io.Serializable, Lexicon {
      * 
      * @see edu.berkeley.nlp.PCFGLA.Lexicon#scoreWord(java.lang.String, short)
      */
-    public double[] scoreWord(StateSet stateSet, int tag) {
+    public double[] scoreWord(final StateSet stateSet, final int tag) {
         // TODO Auto-generated method stub
         return null;
     }
 
-    public void labelTrees(StateSetTreeList trainTrees) {
-        for (Tree<StateSet> tree : trainTrees) {
-            List<StateSet> words = tree.getYield();
+    public void labelTrees(final StateSetTreeList trainTrees) {
+        for (final Tree<StateSet> tree : trainTrees) {
+            final List<StateSet> words = tree.getYield();
             // List<StateSet> tags = tree.getPreTerminalYield();
             // int ind = 0;
-            for (StateSet word : words) {
+            for (final StateSet word : words) {
                 word.wordIndex = wordIndexer.indexOf(word.getWord());
                 word.sigIndex = -1;
                 // short tag = tags.get(ind).getState();
@@ -863,7 +863,7 @@ public class SimpleLexicon implements java.io.Serializable, Lexicon {
         private int[] indexFrom;
         private int n;
 
-        IntegerIndexer(int capacity) {
+        IntegerIndexer(final int capacity) {
             indexTo = new int[capacity];
             indexFrom = new int[capacity];
             Arrays.fill(indexTo, -1);
@@ -871,7 +871,7 @@ public class SimpleLexicon implements java.io.Serializable, Lexicon {
             n = 0;
         }
 
-        public void add(int i) {
+        public void add(final int i) {
             if (i == -1)
                 return;
             if (indexTo[i] == -1) {
@@ -881,14 +881,14 @@ public class SimpleLexicon implements java.io.Serializable, Lexicon {
             }
         }
 
-        public int get(int i) {
+        public int get(final int i) {
             if (i < indexFrom.length)
                 return indexFrom[i];
             else
                 return -1;
         }
 
-        public int indexOf(int i) {
+        public int indexOf(final int i) {
             if (i < indexTo.length)
                 return indexTo[i];
             else
@@ -900,7 +900,7 @@ public class SimpleLexicon implements java.io.Serializable, Lexicon {
         }
 
         public IntegerIndexer copy() {
-            IntegerIndexer copy = new IntegerIndexer(indexFrom.length);
+            final IntegerIndexer copy = new IntegerIndexer(indexFrom.length);
             copy.n = n;
             copy.indexFrom = this.indexFrom.clone();
             copy.indexTo = this.indexTo.clone();
@@ -913,7 +913,7 @@ public class SimpleLexicon implements java.io.Serializable, Lexicon {
      * 
      * @see edu.berkeley.nlp.PCFGLA.Lexicon#computeScores()
      */
-    public void explicitlyComputeScores(int finalLevel) {
+    public void explicitlyComputeScores(final int finalLevel) {
         // TODO Auto-generated method stub
 
     }
@@ -922,7 +922,7 @@ public class SimpleLexicon implements java.io.Serializable, Lexicon {
         return null;
     }
 
-    public void tieRareWordStats(int threshold) {
+    public void tieRareWordStats(final int threshold) {
         return;
     }
 

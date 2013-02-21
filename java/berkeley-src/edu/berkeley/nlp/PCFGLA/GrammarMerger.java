@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import edu.berkeley.nlp.PCFGLA.Corpus.TreeBankType;
 import edu.berkeley.nlp.syntax.StateSet;
 import edu.berkeley.nlp.syntax.Tree;
 import edu.berkeley.nlp.util.ArrayUtil;
@@ -107,7 +106,7 @@ public class GrammarMerger {
         if (filter > 0)
             System.out.println("Will remove rules with prob under " + filter);
 
-        final Corpus corpus = new Corpus(path, TreeBankType.WSJ, trainingFractionToKeep, false);
+        final Corpus corpus = new Corpus(path, trainingFractionToKeep, false);
         // int nTrees = corpus.getTrainTrees().size();
         // binarize trees
         final List<Tree<String>> trainTrees = Corpus.binarizeAndFilterTrees(corpus.getTrainTrees(), v_markov, h_markov,

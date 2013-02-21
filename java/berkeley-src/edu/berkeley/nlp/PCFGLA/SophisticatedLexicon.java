@@ -387,8 +387,6 @@ public class SophisticatedLexicon implements java.io.Serializable, Lexicon {
         }
         this.threshold = threshold;
         this.wordNumberer = Numberer.getGlobalNumberer("words");
-        if (!(Corpus.myTreebank == Corpus.TreeBankType.WSJ || Corpus.myTreebank == Corpus.TreeBankType.BROWN || Corpus.myTreebank == Corpus.TreeBankType.SINGLEFILE))
-            unknownLevel = 4;
     }
 
     public void printTagCounter(final Numberer tagNumberer) {
@@ -914,50 +912,50 @@ public class SophisticatedLexicon implements java.io.Serializable, Lexicon {
 
             } else {
 
-                // test against simple Chinese lexical constants
-                if (Corpus.myTreebank == Corpus.TreeBankType.CHINESE) {
-                    final Numberer tagNumberer = Numberer.getGlobalNumberer("tags");
-                    double prob;
-                    if (word.matches(ChineseLexicon.dateMatch)) {
-                        // EncodingPrintWriter.out.println("Date match for " +
-                        // word,encoding);
-                        if (tag == tagNumberer.number("NT")) { // (tag.equals("NT"))
-                                                               // {
-                            prob = 1.0;
-                        } else {
-                            prob = 0.0;
-                        }
-                        Arrays.fill(resultArray, prob);
-                        return resultArray;
-                    } else if (word.matches(ChineseLexicon.numberMatch)) {
-                        // EncodingPrintWriter.out.println("Number match for " +
-                        // word,encoding);
-                        if (tag == tagNumberer.number("CD") /* tag.equals("CD") */
-                                && (!word.matches(ChineseLexicon.ordinalMatch))) {
-                            prob = 1.0;
-                        } else if (tag == tagNumberer.number("OD") /*
-                                                                    * tag.equals ("OD")
-                                                                    */
-                                && word.matches(ChineseLexicon.ordinalMatch)) {
-                            prob = 1.0;
-                        } else {
-                            prob = 0.0;
-                        }
-                        Arrays.fill(resultArray, prob);
-                        return resultArray;
-                    } else if (word.matches(ChineseLexicon.properNameMatch)) {
-                        // EncodingPrintWriter.out.println("Proper name match for "
-                        // + word,encoding);
-                        if (tag == tagNumberer.number("NR")) { // tag.equals("NR"))
-                                                               // {
-                            prob = 1.0;
-                        } else {
-                            prob = 0.0;
-                        }
-                        Arrays.fill(resultArray, prob);
-                        return resultArray;
-                    }
-                }
+                // // test against simple Chinese lexical constants
+                // if (Corpus.myTreebank == Corpus.TreeBankType.CHINESE) {
+                // final Numberer tagNumberer = Numberer.getGlobalNumberer("tags");
+                // double prob;
+                // if (word.matches(ChineseLexicon.dateMatch)) {
+                // // EncodingPrintWriter.out.println("Date match for " +
+                // // word,encoding);
+                // if (tag == tagNumberer.number("NT")) { // (tag.equals("NT"))
+                // // {
+                // prob = 1.0;
+                // } else {
+                // prob = 0.0;
+                // }
+                // Arrays.fill(resultArray, prob);
+                // return resultArray;
+                // } else if (word.matches(ChineseLexicon.numberMatch)) {
+                // // EncodingPrintWriter.out.println("Number match for " +
+                // // word,encoding);
+                // if (tag == tagNumberer.number("CD") /* tag.equals("CD") */
+                // && (!word.matches(ChineseLexicon.ordinalMatch))) {
+                // prob = 1.0;
+                // } else if (tag == tagNumberer.number("OD") /*
+                // * tag.equals ("OD")
+                // */
+                // && word.matches(ChineseLexicon.ordinalMatch)) {
+                // prob = 1.0;
+                // } else {
+                // prob = 0.0;
+                // }
+                // Arrays.fill(resultArray, prob);
+                // return resultArray;
+                // } else if (word.matches(ChineseLexicon.properNameMatch)) {
+                // // EncodingPrintWriter.out.println("Proper name match for "
+                // // + word,encoding);
+                // if (tag == tagNumberer.number("NR")) { // tag.equals("NR"))
+                // // {
+                // prob = 1.0;
+                // } else {
+                // prob = 0.0;
+                // }
+                // Arrays.fill(resultArray, prob);
+                // return resultArray;
+                // }
+                // }
 
                 // unknown word model for P(T|S)
                 final String sig = (isSignature) ? word : getCachedSignature(word, loc);

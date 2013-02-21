@@ -10,5 +10,5 @@ package edu.berkeley.nlp.PCFGLA;
  * 
  */
 public enum Binarization {
-    LEFT, RIGHT, PARENT, HEAD
+    LEFT, RIGHT
 }
