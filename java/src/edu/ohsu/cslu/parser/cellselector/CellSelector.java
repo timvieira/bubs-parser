@@ -36,6 +36,10 @@ import edu.ohsu.cslu.parser.cellselector.DepGraphCellSelectorModel.DepGraphCellS
  */
 public abstract class CellSelector implements Iterator<short[]> {
 
+    /**
+     * Enables constraints (if any) implemented by this {@link CellSelector}. If the parse fails, constraints may be
+     * disabled on later reparsing passes.
+     */
     protected boolean constraintsEnabled = true;
 
     protected short[] cellIndices;
@@ -60,6 +64,10 @@ public abstract class CellSelector implements Iterator<short[]> {
         this.parser = p;
         this.parseTask = task;
         nextCell = 0;
+
+        // Enable constraints at sentence initialization - if parsing fails, we may disable them for a later reparsing
+        // pass
+        this.constraintsEnabled = true;
     }
 
     /**
