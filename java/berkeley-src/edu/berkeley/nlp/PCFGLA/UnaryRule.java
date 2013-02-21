@@ -4,7 +4,6 @@ import java.util.Random;
 
 import edu.berkeley.nlp.util.ArrayUtil;
 import edu.berkeley.nlp.util.Numberer;
-import edu.berkeley.nlp.util.StringUtils;
 
 /**
  * Unary Rules (with ints for parent and child)
@@ -24,28 +23,28 @@ public class UnaryRule extends Rule implements java.io.Serializable, Comparable 
      * '\\'); // System.out.println("fields:\n" + fields[0] + "\n" + fields[2] + "\n" + fields[3]); this.parent =
      * n.number(fields[0]); this.child = n.number(fields[2]); this.score = Double.parseDouble(fields[3]); }
      */
-    public UnaryRule(short pState, short cState, double[][] scores) {
+    public UnaryRule(final short pState, final short cState, final double[][] scores) {
         this.parentState = pState;
         this.childState = cState;
         this.scores = scores;
     }
 
-    public UnaryRule(short pState, short cState) {
+    public UnaryRule(final short pState, final short cState) {
         this.parentState = pState;
         this.childState = cState;
         // this.scores = new double[1][1];
     }
 
     /** Copy constructor */
-    public UnaryRule(UnaryRule u) {
+    public UnaryRule(final UnaryRule u) {
         this(u.parentState, u.childState, ArrayUtil.copy(u.scores));
     }
 
-    public UnaryRule(UnaryRule u, double[][] newScores) {
+    public UnaryRule(final UnaryRule u, final double[][] newScores) {
         this(u.parentState, u.childState, newScores);
     }
 
-    public UnaryRule(short pState, short cState, short pSubStates, short cSubStates) {
+    public UnaryRule(final short pState, final short cState, final short pSubStates, final short cSubStates) {
         this.parentState = pState;
         this.childState = cState;
         this.scores = new double[cSubStates][pSubStates];
@@ -62,12 +61,12 @@ public class UnaryRule extends Rule implements java.io.Serializable, Comparable 
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
         if (this == o) {
             return true;
         }
         if (o instanceof UnaryRule) {
-            UnaryRule ur = (UnaryRule) o;
+            final UnaryRule ur = (UnaryRule) o;
             if (parentState == ur.parentState && childState == ur.childState) {
                 return true;
             }
@@ -75,8 +74,8 @@ public class UnaryRule extends Rule implements java.io.Serializable, Comparable 
         return false;
     }
 
-    public int compareTo(Object o) {
-        UnaryRule ur = (UnaryRule) o;
+    public int compareTo(final Object o) {
+        final UnaryRule ur = (UnaryRule) o;
         if (parentState < ur.parentState) {
             return -1;
         }
@@ -96,7 +95,7 @@ public class UnaryRule extends Rule implements java.io.Serializable, Comparable 
 
     @Override
     public String toString() {
-        Numberer n = Numberer.getGlobalNumberer("tags");
+        final Numberer n = Numberer.getGlobalNumberer("tags");
         String cState = (String) n.object(childState);
         if (cState.endsWith("^g"))
             cState = cState.substring(0, cState.length() - 2);
@@ -105,12 +104,12 @@ public class UnaryRule extends Rule implements java.io.Serializable, Comparable 
             pState = pState.substring(0, pState.length() - 2);
         if (scores == null)
             return pState + " -> " + cState + "\n";
-        StringBuilder sb = new StringBuilder();
+        final StringBuilder sb = new StringBuilder();
         for (int cS = 0; cS < scores.length; cS++) {
             if (scores[cS] == null)
                 continue;
             for (int pS = 0; pS < scores[cS].length; pS++) {
-                double p = scores[cS][pS];
+                final double p = scores[cS][pS];
                 if (p > 0)
                     sb.append(pState + "_" + pS + " -> " + cState + "_" + cS + " " + p + "\n");
             }
@@ -118,23 +117,16 @@ public class UnaryRule extends Rule implements java.io.Serializable, Comparable 
         return sb.toString();
     }
 
-    public String toString_old() {
-        Numberer n = Numberer.getGlobalNumberer("tags");
-        return "\"" + StringUtils.escapeString(n.object(parentState).toString(), charsToEscape, '\\') + "\" -> \""
-                + StringUtils.escapeString(n.object(childState).toString(), charsToEscape, '\\') + "\" "
-                + ArrayUtil.toString(scores);
-    }
-
     public short getChildState() {
         return childState;
     }
 
-    public void setScore(int pS, int cS, double score) {
+    public void setScore(final int pS, final int cS, final double score) {
         // sets the score for a particular combination of substates
         scores[cS][pS] = score;
     }
 
-    public double getScore(int pS, int cS) {
+    public double getScore(final int pS, final int cS) {
         // gets the score for a particular combination of substates
         if (scores[cS] == null) {
             if (logarithmMode)
@@ -144,7 +136,7 @@ public class UnaryRule extends Rule implements java.io.Serializable, Comparable 
         return scores[cS][pS];
     }
 
-    public void setScores2(double[][] scores) {
+    public void setScores2(final double[][] scores) {
         this.scores = scores;
     }
 
@@ -155,7 +147,7 @@ public class UnaryRule extends Rule implements java.io.Serializable, Comparable 
         return scores;
     }
 
-    public void setNodes(short pState, short cState) {
+    public void setNodes(final short pState, final short cState) {
         this.parentState = pState;
         this.childState = cState;
     }
@@ -165,8 +157,8 @@ public class UnaryRule extends Rule implements java.io.Serializable, Comparable 
     /**
      * @return
      */
-    public UnaryRule splitRule(short[] numSubStates, short[] newNumSubStates, Random random, double randomness,
-            boolean doNotNormalize, int mode) {
+    public UnaryRule splitRule(final short[] numSubStates, final short[] newNumSubStates, final Random random,
+            final double randomness, final boolean doNotNormalize, final int mode) {
         // when splitting on parent, never split on ROOT parent
         short parentSplitFactor = this.getParentState() == 0 ? (short) 1 : (short) 2;
         if (newNumSubStates[this.parentState] == numSubStates[this.parentState]) {
@@ -176,8 +168,8 @@ public class UnaryRule extends Rule implements java.io.Serializable, Comparable 
         if (newNumSubStates[this.childState] == numSubStates[this.childState]) {
             childSplitFactor = 1;
         }
-        double[][] oldScores = this.getScores2();
-        double[][] newScores = new double[newNumSubStates[this.childState]][];
+        final double[][] oldScores = this.getScores2();
+        final double[][] newScores = new double[newNumSubStates[this.childState]][];
 
         // for all current substates
         for (short cS = 0; cS < oldScores.length; cS++) {
@@ -185,15 +177,15 @@ public class UnaryRule extends Rule implements java.io.Serializable, Comparable 
                 continue;
 
             for (short c = 0; c < childSplitFactor; c++) {
-                short newCS = (short) (childSplitFactor * cS + c);
+                final short newCS = (short) (childSplitFactor * cS + c);
                 newScores[newCS] = new double[newNumSubStates[this.parentState]];
             }
 
             for (short pS = 0; pS < oldScores[cS].length; pS++) {
-                double score = oldScores[cS][pS];
+                final double score = oldScores[cS][pS];
                 // split on parent
                 for (short p = 0; p < parentSplitFactor; p++) {
-                    double divFactor = (doNotNormalize) ? 1.0 : childSplitFactor;
+                    final double divFactor = (doNotNormalize) ? 1.0 : childSplitFactor;
                     double randomComponent = score / divFactor * randomness / 100 * (random.nextDouble() - 0.5);
                     // split on child
                     for (short c = 0; c < childSplitFactor; c++) {
@@ -205,9 +197,9 @@ public class UnaryRule extends Rule implements java.io.Serializable, Comparable 
                         }
                         // divide score by divFactor because we're splitting
                         // each rule in 1/divFactor
-                        short newPS = (short) (parentSplitFactor * pS + p);
-                        short newCS = (short) (childSplitFactor * cS + c);
-                        double splitFactor = (doNotNormalize) ? 1.0 : childSplitFactor;
+                        final short newPS = (short) (parentSplitFactor * pS + p);
+                        final short newCS = (short) (childSplitFactor * cS + c);
+                        final double splitFactor = (doNotNormalize) ? 1.0 : childSplitFactor;
                         newScores[newCS][newPS] = (score / splitFactor + randomComponent);
                         // sparsifier.splitUnaryWeight(
                         // oldRule.getParentState(), cS,

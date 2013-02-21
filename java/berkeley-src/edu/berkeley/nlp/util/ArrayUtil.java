@@ -1,6 +1,5 @@
 package edu.berkeley.nlp.util;
 
-import java.io.IOException;
 import java.text.NumberFormat;
 import java.util.Arrays;
 
@@ -11,51 +10,51 @@ public class ArrayUtil {
 
     // ARITHMETIC FUNCTIONS
 
-    public static double[] add(double[] a, double c) {
-        double[] result = new double[a.length];
+    public static double[] add(final double[] a, final double c) {
+        final double[] result = new double[a.length];
         for (int i = 0; i < a.length; i++) {
             result[i] = a[i] + c;
         }
         return result;
     }
 
-    public static double[] add(double[] a, double[] b) {
-        double[] result = new double[a.length];
+    public static double[] add(final double[] a, final double[] b) {
+        final double[] result = new double[a.length];
         for (int i = 0; i < a.length; i++) {
             result[i] = a[i] + b[i];
         }
         return result;
     }
 
-    public static int[] add(int[] a, int c) {
-        int[] result = new int[a.length];
+    public static int[] add(final int[] a, final int c) {
+        final int[] result = new int[a.length];
         for (int i = 0; i < a.length; i++) {
             result[i] = a[i] + c;
         }
         return result;
     }
 
-    public static float[] add(float[] a, float[] b) {
-        float[] result = new float[a.length];
+    public static float[] add(final float[] a, final float[] b) {
+        final float[] result = new float[a.length];
         for (int i = 0; i < a.length; i++) {
             result[i] = a[i] + b[i];
         }
         return result;
     }
 
-    public static void addInPlace(double[] a, double b) {
+    public static void addInPlace(final double[] a, final double b) {
         for (int i = 0; i < a.length; i++) {
             a[i] += b;
         }
     }
 
-    public static void addInPlace(double[] a, double[] b) {
+    public static void addInPlace(final double[] a, final double[] b) {
         for (int i = 0; i < a.length; i++) {
             a[i] += b[i];
         }
     }
 
-    public static void addInPlace(double[][] a, double[][] b) {
+    public static void addInPlace(final double[][] a, final double[][] b) {
         if (a == null || b == null)
             return;
         if (a.length != b.length)
@@ -68,7 +67,7 @@ public class ArrayUtil {
         }
     }
 
-    public static void addInPlace(double[][][] a, double[][][] b) {
+    public static void addInPlace(final double[][][] a, final double[][][] b) {
         if (a == null || b == null)
             return;
         if (a.length != b.length)
@@ -80,7 +79,7 @@ public class ArrayUtil {
         }
     }
 
-    public static void addInPlace(double[][][][] a, double[][][][] b) {
+    public static void addInPlace(final double[][][][] a, final double[][][][] b) {
         if (a == null || b == null)
             return;
         if (a.length != b.length)
@@ -92,7 +91,7 @@ public class ArrayUtil {
         }
     }
 
-    public static void addInPlace(int[] a, int[] b) {
+    public static void addInPlace(final int[] a, final int[] b) {
         if (a == null || b == null)
             return;
         if (a.length != b.length)
@@ -102,7 +101,7 @@ public class ArrayUtil {
         }
     }
 
-    public static void addInPlace(int[][] a, int[][] b) {
+    public static void addInPlace(final int[][] a, final int[][] b) {
         if (a == null || b == null)
             return;
         if (a.length != b.length)
@@ -112,7 +111,7 @@ public class ArrayUtil {
         }
     }
 
-    public static void addInPlace(long[] a, long[] b) {
+    public static void addInPlace(final long[] a, final long[] b) {
         if (a == null || b == null)
             return;
         if (a.length != b.length)
@@ -122,7 +121,7 @@ public class ArrayUtil {
         }
     }
 
-    public static double approxLogSum(double[] logInputs, int leng) {
+    public static double approxLogSum(final double[] logInputs, final int leng) {
 
         if (leng == 0) {
             throw new IllegalArgumentException();
@@ -137,7 +136,7 @@ public class ArrayUtil {
         }
         boolean haveTerms = false;
         double intermediate = 0.0;
-        double cutoff = max - SloppyMath.LOGTOLERANCE;
+        final double cutoff = max - SloppyMath.LOGTOLERANCE;
         // we avoid rearranging the array and so test indices each time!
         for (int i = 0; i < leng; i++) {
             if (i != maxIdx && logInputs[i] > cutoff) {
@@ -155,7 +154,7 @@ public class ArrayUtil {
     /**
      * @return the index of the max value; if max is a tie, returns the first one.
      */
-    public static int argmax(double[] a) {
+    public static int argmax(final double[] a) {
         double max = Double.NEGATIVE_INFINITY;
         int argmax = 0;
         for (int i = 0; i < a.length; i++) {
@@ -170,7 +169,7 @@ public class ArrayUtil {
     /**
      * @return the index of the max value; if max is a tie, returns the first one.
      */
-    public static int argmax(float[] a) {
+    public static int argmax(final float[] a) {
         float max = Float.NEGATIVE_INFINITY;
         int argmax = 0;
         for (int i = 0; i < a.length; i++) {
@@ -185,7 +184,7 @@ public class ArrayUtil {
     /**
      * @return the index of the max value; if max is a tie, returns the first one.
      */
-    public static int argmax(short[] a) {
+    public static int argmax(final short[] a) {
         float max = Short.MIN_VALUE;
         int argmax = 0;
         for (int i = 0; i < a.length; i++) {
@@ -200,7 +199,7 @@ public class ArrayUtil {
     /**
      * @return the index of the max value; if max is a tie, returns the first one.
      */
-    public static int argmin(double[] a) {
+    public static int argmin(final double[] a) {
         double min = Double.POSITIVE_INFINITY;
         int argmin = 0;
         for (int i = 0; i < a.length; i++) {
@@ -215,7 +214,7 @@ public class ArrayUtil {
     /**
      * @return the index of the max value; if max is a tie, returns the first one.
      */
-    public static int argmin(float[] a) {
+    public static int argmin(final float[] a) {
         float min = Float.POSITIVE_INFINITY;
         int argmin = 0;
         for (int i = 0; i < a.length; i++) {
@@ -230,7 +229,7 @@ public class ArrayUtil {
     /**
      * @return the index of the max value; if max is a tie, returns the first one.
      */
-    public static int argmin(int[] a) {
+    public static int argmin(final int[] a) {
         int min = Integer.MAX_VALUE;
         int argmin = 0;
         for (int i = 0; i < a.length; i++) {
@@ -244,12 +243,12 @@ public class ArrayUtil {
 
     // CASTS
 
-    public static double average(double[] a) {
-        double total = sum(a);
+    public static double average(final double[] a) {
+        final double total = sum(a);
         return total / a.length;
     }
 
-    public static void booleanAndInPlace(boolean[] array, boolean[] other) {
+    public static void booleanAndInPlace(final boolean[] array, final boolean[] other) {
         if (array == null)
             return;
         for (int i = 0; i < array.length; ++i) {
@@ -257,7 +256,7 @@ public class ArrayUtil {
         }
     }
 
-    public static void booleanAndInPlace(boolean[][] array, boolean[][] other) {
+    public static void booleanAndInPlace(final boolean[][] array, final boolean[][] other) {
         if (array == null)
             return;
         for (int i = 0; i < array.length; ++i) {
@@ -265,7 +264,7 @@ public class ArrayUtil {
         }
     }
 
-    public static void booleanAndInPlace(boolean[][][] array, boolean[][][] other) {
+    public static void booleanAndInPlace(final boolean[][][] array, final boolean[][][] other) {
         if (array == null)
             return;
         for (int i = 0; i < array.length; ++i) {
@@ -273,8 +272,8 @@ public class ArrayUtil {
         }
     }
 
-    public static boolean[][] clone(boolean[][] a) {
-        boolean[][] res = new boolean[a.length][];
+    public static boolean[][] clone(final boolean[][] a) {
+        final boolean[][] res = new boolean[a.length][];
         for (int i = 0; i < a.length; i++) {
             if (a[i] != null)
                 res[i] = a[i].clone();
@@ -282,8 +281,8 @@ public class ArrayUtil {
         return res;
     }
 
-    public static boolean[][][] clone(boolean[][][] a) {
-        boolean[][][] res = new boolean[a.length][][];
+    public static boolean[][][] clone(final boolean[][][] a) {
+        final boolean[][][] res = new boolean[a.length][][];
         for (int i = 0; i < a.length; i++) {
             if (a[i] != null)
                 res[i] = clone(a[i]);
@@ -291,16 +290,16 @@ public class ArrayUtil {
         return res;
     }
 
-    public static boolean[][][][] clone(boolean[][][][] a) {
-        boolean[][][][] res = new boolean[a.length][][][];
+    public static boolean[][][][] clone(final boolean[][][][] a) {
+        final boolean[][][][] res = new boolean[a.length][][][];
         for (int i = 0; i < a.length; i++) {
             res[i] = clone(a[i]);
         }
         return res;
     }
 
-    public static double[][] clone(double[][] a) {
-        double[][] res = new double[a.length][];
+    public static double[][] clone(final double[][] a) {
+        final double[][] res = new double[a.length][];
         for (int i = 0; i < a.length; i++) {
             if (a[i] != null)
                 res[i] = a[i].clone();
@@ -310,8 +309,8 @@ public class ArrayUtil {
 
     // LINEAR ALGEBRAIC FUNCTIONS
 
-    public static int[][][] clone(int[][][] a) {
-        int[][][] res = new int[a.length][][];
+    public static int[][][] clone(final int[][][] a) {
+        final int[][][] res = new int[a.length][][];
         for (int i = 0; i < a.length; i++) {
             if (a[i] != null)
                 res[i] = clone(a[i]);
@@ -319,8 +318,8 @@ public class ArrayUtil {
         return res;
     }
 
-    public static double[][][] clone(double[][][] a) {
-        double[][][] res = new double[a.length][][];
+    public static double[][][] clone(final double[][][] a) {
+        final double[][][] res = new double[a.length][][];
         for (int i = 0; i < a.length; i++) {
             if (a[i] != null)
                 res[i] = clone(a[i]);
@@ -328,25 +327,25 @@ public class ArrayUtil {
         return res;
     }
 
-    public static double[][][][] clone(double[][][][] a) {
-        double[][][][] res = new double[a.length][][][];
+    public static double[][][][] clone(final double[][][][] a) {
+        final double[][][][] res = new double[a.length][][][];
         for (int i = 0; i < a.length; i++) {
             res[i] = clone(a[i]);
         }
         return res;
     }
 
-    public static int[] clone(int[] original) {
+    public static int[] clone(final int[] original) {
         // TODO Sort out which of these we should use.
         // return Arrays.copyOf(original, original.length);
         // return original.clone();
-        int[] copy = new int[original.length];
+        final int[] copy = new int[original.length];
         System.arraycopy(original, 0, copy, 0, original.length);
         return copy;
     }
 
-    public static int[][] clone(int[][] a) {
-        int[][] res = new int[a.length][];
+    public static int[][] clone(final int[][] a) {
+        final int[][] res = new int[a.length][];
         for (int i = 0; i < a.length; i++) {
             if (a[i] != null)
                 res[i] = clone(a[i]);
@@ -354,42 +353,42 @@ public class ArrayUtil {
         return res;
     }
 
-    public static short[] clone(short[] original) {
+    public static short[] clone(final short[] original) {
         // TODO Sort out which of these we should use.
         // return Arrays.copyOf(original, original.length);
         // return original.clone();
-        short[] copy = new short[original.length];
+        final short[] copy = new short[original.length];
         System.arraycopy(original, 0, copy, 0, original.length);
         return copy;
     }
 
-    public static double[] clone(double[] original) {
-        double[] copy = new double[original.length];
+    public static double[] clone(final double[] original) {
+        final double[] copy = new double[original.length];
         System.arraycopy(original, 0, copy, 0, original.length);
         return copy;
     }
 
-    public static double[] copy(double[] mat) {
+    public static double[] copy(final double[] mat) {
         if (mat == null) {
             return null;
         }
-        int m = mat.length;
-        double[] newMat = new double[m];
+        final int m = mat.length;
+        final double[] newMat = new double[m];
         System.arraycopy(mat, 0, newMat, 0, mat.length);
         return newMat;
     }
 
-    public static double[][] copy(double[][] mat) {
-        int m = mat.length;
-        double[][] newMat = new double[m][];
+    public static double[][] copy(final double[][] mat) {
+        final int m = mat.length;
+        final double[][] newMat = new double[m][];
         for (int r = 0; r < m; r++)
             newMat[r] = copy(mat[r]);
         return newMat;
     }
 
-    public static double[][][] copy(double[][][] mat) {
-        int m = mat.length;
-        double[][][] newMat = new double[m][][];
+    public static double[][][] copy(final double[][][] mat) {
+        final int m = mat.length;
+        final double[][][] newMat = new double[m][][];
         for (int r = 0; r < m; r++)
             newMat[r] = copy(mat[r]);
         return newMat;
@@ -397,24 +396,24 @@ public class ArrayUtil {
 
     // PRINTING FUNCTIONS
 
-    public static double[][][][] copy(double[][][][] mat) {
-        int m = mat.length;
-        double[][][][] newMat = new double[m][][][];
+    public static double[][][][] copy(final double[][][][] mat) {
+        final int m = mat.length;
+        final double[][][][] newMat = new double[m][][][];
         for (int r = 0; r < m; r++)
             newMat[r] = copy(mat[r]);
         return newMat;
     }
 
-    public static float[] doubleArrayToFloatArray(double a[]) {
-        float[] result = new float[a.length];
+    public static float[] doubleArrayToFloatArray(final double a[]) {
+        final float[] result = new float[a.length];
         for (int i = 0; i < a.length; i++) {
             result[i] = (float) a[i];
         }
         return result;
     }
 
-    public static float[][] doubleArrayToFloatArray(double a[][]) {
-        float[][] result = new float[a.length][];
+    public static float[][] doubleArrayToFloatArray(final double a[][]) {
+        final float[][] result = new float[a.length][];
         for (int i = 0; i < a.length; i++) {
             result[i] = new float[a[i].length];
             for (int j = 0; j < a[i].length; j++) {
@@ -424,15 +423,15 @@ public class ArrayUtil {
         return result;
     }
 
-    public static double[] exp(double[] a) {
-        double[] result = new double[a.length];
+    public static double[] exp(final double[] a) {
+        final double[] result = new double[a.length];
         for (int i = 0; i < a.length; i++) {
             result[i] = Math.exp(a[i]);
         }
         return result;
     }
 
-    public static void expInPlace(double[] a) {
+    public static void expInPlace(final double[] a) {
         for (int i = 0; i < a.length; i++) {
             a[i] = Math.exp(a[i]);
         }
@@ -440,214 +439,219 @@ public class ArrayUtil {
 
     // SAMPLE ANALYSIS
 
-    public static void fill(boolean[][] a, boolean val) {
+    public static void fill(final boolean[][] a, final boolean val) {
         for (int i = 0; i < a.length; i++) {
             if (a[i] != null)
                 Arrays.fill(a[i], val);
         }
     }
 
-    public static void fill(boolean[][] a, int until1, int until2, boolean val) {
+    public static void fill(final boolean[][] a, final int until1, final int until2, final boolean val) {
         for (int i = 0; i < until1; ++i) {
             Arrays.fill(a[i], 0, until2 == Integer.MAX_VALUE ? a[i].length : until2, val);
         }
     }
 
-    public static void fill(boolean[][][] a, boolean val) {
+    public static void fill(final boolean[][][] a, final boolean val) {
         for (int i = 0; i < a.length; i++) {
             if (a[i] != null)
                 fill(a[i], val);
         }
     }
 
-    public static void fill(boolean[][][] a, int until, boolean val) {
+    public static void fill(final boolean[][][] a, final int until, final boolean val) {
         for (int i = 0; i < until; i++) {
             fill(a[i], val);
         }
     }
 
-    public static void fill(boolean[][][] a, int until1, int until2, boolean val) {
+    public static void fill(final boolean[][][] a, final int until1, final int until2, final boolean val) {
         for (int i = 0; i < until1; i++) {
             fill(a[i], until2, Integer.MAX_VALUE, val);
         }
     }
 
-    public static void fill(boolean[][][] a, int until1, int until2, int until3, boolean val) {
+    public static void fill(final boolean[][][] a, final int until1, final int until2, final int until3,
+            final boolean val) {
         for (int i = 0; i < until1; i++) {
             fill(a[i], until2, until3, val);
         }
     }
 
-    public static void fill(boolean[][][][] a, boolean val) {
+    public static void fill(final boolean[][][][] a, final boolean val) {
         for (int i = 0; i < a.length; i++) {
             fill(a[i], val);
         }
     }
 
-    public static void fill(boolean[][][][] a, int until1, int until2, int until3, int until4, boolean val) {
+    public static void fill(final boolean[][][][] a, final int until1, final int until2, final int until3,
+            final int until4, final boolean val) {
         for (int i = 0; i < until1; i++) {
             fill(a[i], until2, until3, until4, val);
         }
     }
 
-    public static void fill(double[][] a, double val) {
+    public static void fill(final double[][] a, final double val) {
         for (int i = 0; i < a.length; i++) {
             Arrays.fill(a[i], val);
         }
     }
 
-    public static void fill(double[][] a, int until1, int until2, double val) {
+    public static void fill(final double[][] a, final int until1, final int until2, final double val) {
         for (int i = 0; i < until1; ++i) {
             Arrays.fill(a[i], 0, until2 == Integer.MAX_VALUE ? a[i].length : until2, val);
         }
     }
 
-    public static void fill(double[][][] a, double val) {
+    public static void fill(final double[][][] a, final double val) {
         for (int i = 0; i < a.length; i++) {
             fill(a[i], val);
         }
     }
 
-    public static void fill(double[][][] a, int until1, int until2, double val) {
+    public static void fill(final double[][][] a, final int until1, final int until2, final double val) {
         for (int i = 0; i < until1; i++) {
             fill(a[i], until2, Integer.MAX_VALUE, val);
         }
     }
 
-    public static void fill(double[][][] a, int until1, int until2, int until3, double val) {
+    public static void fill(final double[][][] a, final int until1, final int until2, final int until3, final double val) {
         for (int i = 0; i < until1; i++) {
             fill(a[i], until2, until3, val);
         }
     }
 
-    public static void fill(double[][][][] a, double val) {
+    public static void fill(final double[][][][] a, final double val) {
         for (int i = 0; i < a.length; i++) {
             fill(a[i], val);
         }
     }
 
-    public static void fill(double[][][][] a, int until1, int until2, int until3, int until4, double val) {
+    public static void fill(final double[][][][] a, final int until1, final int until2, final int until3,
+            final int until4, final double val) {
         for (int i = 0; i < until1; i++) {
             fill(a[i], until2, until3, until4, val);
         }
     }
 
-    public static void fill(double[][][][][] a, double val) {
+    public static void fill(final double[][][][][] a, final double val) {
         for (int i = 0; i < a.length; i++) {
             fill(a[i], val);
         }
     }
 
-    public static void fill(float[][] a, float val) {
+    public static void fill(final float[][] a, final float val) {
         for (int i = 0; i < a.length; i++) {
             Arrays.fill(a[i], val);
         }
     }
 
-    public static void fill(float[][][] a, float val) {
+    public static void fill(final float[][][] a, final float val) {
         for (int i = 0; i < a.length; i++) {
             fill(a[i], val);
         }
     }
 
-    public static void fill(float[][][][] a, float val) {
+    public static void fill(final float[][][][] a, final float val) {
         for (int i = 0; i < a.length; i++) {
             fill(a[i], val);
         }
     }
 
-    public static void fill(float[][][][][] a, float val) {
+    public static void fill(final float[][][][][] a, final float val) {
         for (int i = 0; i < a.length; i++) {
             fill(a[i], val);
         }
     }
 
-    public static void fill(int[][] a, int val) {
+    public static void fill(final int[][] a, final int val) {
         fill(a, a.length, a[0].length, val);
     }
 
-    public static void fill(int[][] a, int until1, int until2, int val) {
+    public static void fill(final int[][] a, final int until1, final int until2, final int val) {
         for (int i = 0; i < until1; ++i) {
             Arrays.fill(a[i], 0, until2, val);
         }
     }
 
-    public static void fill(int[][][] a, int until1, int until2, int until3, int val) {
+    public static void fill(final int[][][] a, final int until1, final int until2, final int until3, final int val) {
         for (int i = 0; i < until1; i++) {
             fill(a[i], until2, until3, val);
         }
     }
 
-    public static void fill(double[][][] a, int until, double val) {
+    public static void fill(final double[][][] a, final int until, final double val) {
         for (int i = 0; i < until; i++) {
             fill(a[i], val);
         }
     }
 
-    public static void fill(int[][][] a, int until, int val) {
+    public static void fill(final int[][][] a, final int until, final int val) {
         for (int i = 0; i < until; i++) {
             fill(a[i], val);
         }
     }
 
-    public static void fill(int[][][] a, int val) {
+    public static void fill(final int[][][] a, final int val) {
         for (int i = 0; i < a.length; i++) {
             fill(a[i], val);
         }
     }
 
-    public static void fill(int[][][][] a, int until1, int until2, int until3, int until4, int val) {
+    public static void fill(final int[][][][] a, final int until1, final int until2, final int until3,
+            final int until4, final int val) {
         for (int i = 0; i < until1; i++) {
             fill(a[i], until2, until3, until4, val);
         }
     }
 
-    public static void fill(Object[][] a, int until1, int until2, Object val) {
+    public static void fill(final Object[][] a, final int until1, final int until2, final Object val) {
         for (int i = 0; i < until1; ++i) {
             Arrays.fill(a[i], 0, until2 == Integer.MAX_VALUE ? a[i].length : until2, val);
         }
     }
 
-    public static void fill(Object[][][] a, int until1, int until2, int until3, Object val) {
+    public static void fill(final Object[][][] a, final int until1, final int until2, final int until3, final Object val) {
         for (int i = 0; i < until1; ++i) {
             fill(a[i], until2 == Integer.MAX_VALUE ? a[i].length : until2, until3, val);
         }
     }
 
-    public static void fill(Object[][][][] a, int until1, int until2, int until3, int until4, Object val) {
+    public static void fill(final Object[][][][] a, final int until1, final int until2, final int until3,
+            final int until4, final Object val) {
         for (int i = 0; i < until1; ++i) {
             fill(a[i], until2 == Integer.MAX_VALUE ? a[i].length : until2, until3, until4, val);
         }
     }
 
-    public static <T> void fill(T[] array, Generator<T> gen) {
+    public static <T> void fill(final T[] array, final Generator<T> gen) {
         for (int i = 0; i < array.length; ++i) {
             array[i] = gen.generate(i);
         }
     }
 
-    public static <T> void fill(T[][] array, Generator<T> gen) {
+    public static <T> void fill(final T[][] array, final Generator<T> gen) {
         for (int i = 0; i < array.length; ++i) {
             ArrayUtil.fill(array[i], gen);
         }
     }
 
-    public static <T> void fill(T[][][] array, Generator<T> gen) {
+    public static <T> void fill(final T[][][] array, final Generator<T> gen) {
         for (int i = 0; i < array.length; ++i) {
             ArrayUtil.fill(array[i], gen);
         }
     }
 
-    public static double[] floatArrayToDoubleArray(float a[]) {
-        double[] result = new double[a.length];
+    public static double[] floatArrayToDoubleArray(final float a[]) {
+        final double[] result = new double[a.length];
         for (int i = 0; i < a.length; i++) {
             result[i] = a[i];
         }
         return result;
     }
 
-    public static double[][] floatArrayToDoubleArray(float a[][]) {
-        double[][] result = new double[a.length][];
+    public static double[][] floatArrayToDoubleArray(final float a[][]) {
+        final double[][] result = new double[a.length][];
         for (int i = 0; i < a.length; i++) {
             result[i] = new double[a[i].length];
             for (int j = 0; j < a[i].length; j++) {
@@ -657,7 +661,7 @@ public class ArrayUtil {
         return result;
     }
 
-    public static boolean hasInfinite(double[] a) {
+    public static boolean hasInfinite(final double[] a) {
         for (int i = 0; i < a.length; i++) {
             if (Double.isInfinite(a[i]))
                 return true;
@@ -665,7 +669,7 @@ public class ArrayUtil {
         return false;
     }
 
-    public static boolean hasNaN(double[] a) {
+    public static boolean hasNaN(final double[] a) {
         for (int i = 0; i < a.length; i++) {
             if (Double.isNaN(a[i]))
                 return true;
@@ -675,7 +679,7 @@ public class ArrayUtil {
 
     // UTILITIES
 
-    public static double innerProduct(double[] a, double[] b) {
+    public static double innerProduct(final double[] a, final double[] b) {
         double result = 0.0;
         for (int i = 0; i < a.length; i++) {
             result += a[i] * b[i];
@@ -683,7 +687,7 @@ public class ArrayUtil {
         return result;
     }
 
-    public static double innerProduct(float[] a, float[] b) {
+    public static double innerProduct(final float[] a, final float[] b) {
         double result = 0.0;
         for (int i = 0; i < a.length; i++) {
             result += a[i] * b[i];
@@ -691,9 +695,9 @@ public class ArrayUtil {
         return result;
     }
 
-    public static double[] inverse(double[] a) {
+    public static double[] inverse(final double[] a) {
 
-        double[] retVal = new double[a.length];
+        final double[] retVal = new double[a.length];
         for (int i = 0; i < a.length; ++i) {
 
             retVal[i] = (a[i] == 0.0) ? 0 : // Double.POSITIVE_INFINITY :
@@ -703,17 +707,17 @@ public class ArrayUtil {
         return retVal;
     }
 
-    public static double klDivergence(double[] from, double[] to) {
+    public static double klDivergence(final double[] from, final double[] to) {
         double kl = 0.0;
-        double tot = sum(from);
-        double tot2 = sum(to);
+        final double tot = sum(from);
+        final double tot2 = sum(to);
         // System.out.println("tot is " + tot + " tot2 is " + tot2);
         for (int i = 0; i < from.length; i++) {
             if (from[i] == 0.0) {
                 continue;
             }
-            double num = from[i] / tot;
-            double num2 = to[i] / tot2;
+            final double num = from[i] / tot;
+            final double num2 = to[i] / tot2;
             // System.out.println("num is " + num + " num2 is " + num2);
             kl += num * (Math.log(num / num2) / Math.log(2.0));
         }
@@ -721,29 +725,15 @@ public class ArrayUtil {
 
     }
 
-    public static double[][] load2DMatrixFromFile(String filename) throws IOException {
-        String s = StringUtils.slurpFile(filename);
-        String[] rows = s.split("[\r\n]+");
-        double[][] result = new double[rows.length][];
-        for (int i = 0; i < result.length; i++) {
-            String[] columns = rows[i].split("\\s+");
-            result[i] = new double[columns.length];
-            for (int j = 0; j < result[i].length; j++) {
-                result[i][j] = Double.parseDouble(columns[j]);
-            }
-        }
-        return result;
-    }
-
-    public static double[] log(double[] a) {
-        double[] result = new double[a.length];
+    public static double[] log(final double[] a) {
+        final double[] result = new double[a.length];
         for (int i = 0; i < a.length; i++) {
             result[i] = Math.log(a[i]);
         }
         return result;
     }
 
-    public static void logInPlace(double[] a) {
+    public static void logInPlace(final double[] a) {
         for (int i = 0; i < a.length; i++) {
             a[i] = Math.log(a[i]);
         }
@@ -753,11 +743,11 @@ public class ArrayUtil {
      * Makes the values in this array sum to 1.0. Does it in place. If the total is 0.0, sets a to the uniform
      * distribution.
      */
-    public static void logNormalize(double[] a) {
-        double logTotal = logSum(a);
+    public static void logNormalize(final double[] a) {
+        final double logTotal = logSum(a);
         if (logTotal == Double.NEGATIVE_INFINITY) {
             // to avoid NaN values
-            double v = -Math.log(a.length);
+            final double v = -Math.log(a.length);
             for (int i = 0; i < a.length; i++) {
                 a[i] = v;
             }
@@ -774,7 +764,7 @@ public class ArrayUtil {
      * @param logInputs An array of numbers [log(x1), ..., log(xn)]
      * @return log(x1 + ... + xn)
      */
-    public static double logSum(double[] logInputs) {
+    public static double logSum(final double[] logInputs) {
         return logSum(logInputs, logInputs.length);
         // int leng = logInputs.length;
         // if (leng == 0) {
@@ -805,7 +795,7 @@ public class ArrayUtil {
         // }
     }
 
-    public static double logSum(double[] logInputs, int leng) {
+    public static double logSum(final double[] logInputs, final int leng) {
 
         if (leng == 0) {
             throw new IllegalArgumentException();
@@ -820,7 +810,7 @@ public class ArrayUtil {
         }
         boolean haveTerms = false;
         double intermediate = 0.0;
-        double cutoff = max - SloppyMath.LOGTOLERANCE;
+        final double cutoff = max - SloppyMath.LOGTOLERANCE;
         // we avoid rearranging the array and so test indices each time!
         for (int i = 0; i < leng; i++) {
             if (i != maxIdx && logInputs[i] > cutoff) {
@@ -843,8 +833,8 @@ public class ArrayUtil {
      * @param logInputs An array of numbers [log(x1), ..., log(xn)]
      * @return log(x1 + ... + xn)
      */
-    public static float logSum(float[] logInputs) {
-        int leng = logInputs.length;
+    public static float logSum(final float[] logInputs) {
+        final int leng = logInputs.length;
         if (leng == 0) {
             throw new IllegalArgumentException();
         }
@@ -858,7 +848,7 @@ public class ArrayUtil {
         }
         boolean haveTerms = false;
         double intermediate = 0.0f;
-        float cutoff = (float) (max - SloppyMath.LOGTOLERANCE);
+        final float cutoff = (float) (max - SloppyMath.LOGTOLERANCE);
         // we avoid rearranging the array and so test indices each time!
         for (int i = 0; i < leng; i++) {
             if (i != maxIdx && logInputs[i] > cutoff) {
@@ -873,19 +863,19 @@ public class ArrayUtil {
         }
     }
 
-    public static double max(double[] a) {
+    public static double max(final double[] a) {
         return a[argmax(a)];
     }
 
-    public static float max(float[] a) {
+    public static float max(final float[] a) {
         return a[argmax(a)];
     }
 
-    public static float max(short[] a) {
+    public static float max(final short[] a) {
         return a[argmax(a)];
     }
 
-    public static int max(int[] a) {
+    public static int max(final int[] a) {
         int max = Integer.MIN_VALUE;
         for (int i = 0; i < a.length; i++) {
             if (a[i] > max) {
@@ -895,7 +885,7 @@ public class ArrayUtil {
         return max;
     }
 
-    public static int max(Integer[] a) {
+    public static int max(final Integer[] a) {
         int max = Integer.MIN_VALUE;
         for (int i = 0; i < a.length; i++) {
             if (a[i] > max) {
@@ -905,27 +895,27 @@ public class ArrayUtil {
         return max;
     }
 
-    public static double mean(double[] a) {
+    public static double mean(final double[] a) {
         return sum(a) / a.length;
     }
 
-    public static double min(double[] a) {
+    public static double min(final double[] a) {
         return a[argmin(a)];
     }
 
-    public static float min(float[] a) {
+    public static float min(final float[] a) {
         return a[argmin(a)];
     }
 
-    public static int min(int[] a) {
+    public static int min(final int[] a) {
         return a[argmin(a)];
     }
 
     /**
      * Scales the values in this array by c.
      */
-    public static double[] multiply(double[] a, double c) {
-        double[] result = new double[a.length];
+    public static double[] multiply(final double[] a, final double c) {
+        final double[] result = new double[a.length];
         for (int i = 0; i < a.length; i++) {
             result[i] = a[i] * c;
         }
@@ -935,8 +925,8 @@ public class ArrayUtil {
     /**
      * Scales the values in this array by c.
      */
-    public static double[][] multiply(double[][] a, double c) {
-        double[][] result = new double[a.length][a[0].length];
+    public static double[][] multiply(final double[][] a, final double c) {
+        final double[][] result = new double[a.length][a[0].length];
         for (int i = 0; i < a.length; i++) {
             for (int j = 0; j < a[0].length; j++) {
                 result[i][j] = a[i][j] * c;
@@ -948,8 +938,8 @@ public class ArrayUtil {
     /**
      * Scales the values in this array by c.
      */
-    public static float[] multiply(float[] a, float c) {
-        float[] result = new float[a.length];
+    public static float[] multiply(final float[] a, final float c) {
+        final float[] result = new float[a.length];
         for (int i = 0; i < a.length; i++) {
             result[i] = a[i] * c;
         }
@@ -959,7 +949,7 @@ public class ArrayUtil {
     /**
      * Scales in place the values in this array by c.
      */
-    public static void multiplyInPlace(double[] a, double c) {
+    public static void multiplyInPlace(final double[] a, final double c) {
         for (int i = 0; i < a.length; i++) {
             a[i] = a[i] * c;
         }
@@ -971,7 +961,7 @@ public class ArrayUtil {
      * @param a
      * @return Euclidean norm of a
      */
-    public static double norm(double[] a) {
+    public static double norm(final double[] a) {
         double squaredSum = 0;
         for (int i = 0; i < a.length; i++) {
             squaredSum += a[i] * a[i];
@@ -987,7 +977,7 @@ public class ArrayUtil {
      * @param a
      * @return Euclidean norm of a
      */
-    public static double norm(float[] a) {
+    public static double norm(final float[] a) {
         double squaredSum = 0;
         for (int i = 0; i < a.length; i++) {
             squaredSum += a[i] * a[i];
@@ -1001,7 +991,7 @@ public class ArrayUtil {
      * @param a
      * @return 1-norm of a
      */
-    public static double norm_1(double[] a) {
+    public static double norm_1(final double[] a) {
         double sum = 0;
         for (int i = 0; i < a.length; i++) {
             sum += (a[i] < 0 ? -a[i] : a[i]);
@@ -1015,7 +1005,7 @@ public class ArrayUtil {
      * @param a
      * @return 1-norm of a
      */
-    public static double norm_1(float[] a) {
+    public static double norm_1(final float[] a) {
         double sum = 0;
         for (int i = 0; i < a.length; i++) {
             sum += (a[i] < 0 ? -a[i] : a[i]);
@@ -1029,7 +1019,7 @@ public class ArrayUtil {
      * @param a
      * @return inf-norm of a
      */
-    public static double norm_inf(double[] a) {
+    public static double norm_inf(final double[] a) {
         double max = Double.NEGATIVE_INFINITY;
         for (int i = 0; i < a.length; i++) {
             if (Math.abs(a[i]) > max) {
@@ -1045,7 +1035,7 @@ public class ArrayUtil {
      * @param a
      * @return inf-norm of a
      */
-    public static double norm_inf(float[] a) {
+    public static double norm_inf(final float[] a) {
         double max = Double.NEGATIVE_INFINITY;
         for (int i = 0; i < a.length; i++) {
             if (Math.abs(a[i]) > max) {
@@ -1059,16 +1049,16 @@ public class ArrayUtil {
      * Makes the values in this array sum to 1.0. Does it in place. If the total is 0.0, sets a to the uniform
      * distribution.
      */
-    public static void normalize(double[] a) {
-        double total = sum(a);
+    public static void normalize(final double[] a) {
+        final double total = sum(a);
         if (total == 0.0) {
             throw new RuntimeException("Can't normalize an array with sum 0.0");
         }
         scale(a, 1.0 / total); // divide each value by total
     }
 
-    public static void normalize(double[][] a) {
-        double total = sum(a);
+    public static void normalize(final double[][] a) {
+        final double total = sum(a);
         if (total == 0.0) {
             throw new RuntimeException("Can't normalize an array with sum 0.0");
         }
@@ -1081,19 +1071,19 @@ public class ArrayUtil {
      * Makes the values in this array sum to 1.0. Does it in place. If the total is 0.0, sets a to the uniform
      * distribution.
      */
-    public static void normalize(float[] a) {
-        float total = sum(a);
+    public static void normalize(final float[] a) {
+        final float total = sum(a);
         if (total == 0.0) {
             throw new RuntimeException("Can't normalize an array with sum 0.0");
         }
         scale(a, 1.0F / total); // divide each value by total
     }
 
-    public static double[][] outerProduct(double[] a, double[] b) {
+    public static double[][] outerProduct(final double[] a, final double[] b) {
         if (a.length != b.length) {
             return null;
         }
-        double[][] retVal = new double[a.length][a.length];
+        final double[][] retVal = new double[a.length][a.length];
         for (int i = 0; i < a.length; ++i) {
             for (int j = 0; j < a.length; ++j) {
                 retVal[i][j] = a[i] * b[j];
@@ -1102,11 +1092,11 @@ public class ArrayUtil {
         return retVal;
     }
 
-    public static double[] pairwiseAdd(double[] a, double[] b) {
+    public static double[] pairwiseAdd(final double[] a, final double[] b) {
         if (a.length != b.length) {
             throw new RuntimeException();
         }
-        double[] result = new double[a.length];
+        final double[] result = new double[a.length];
         for (int i = 0; i < result.length; i++) {
             result[i] = a[i] + b[i];
         }
@@ -1116,11 +1106,11 @@ public class ArrayUtil {
     /**
      * Assumes that both arrays have same length.
      */
-    public static double[] pairwiseMultiply(double[] a, double[] b) {
+    public static double[] pairwiseMultiply(final double[] a, final double[] b) {
         if (a.length != b.length) {
             throw new RuntimeException();
         }
-        double[] result = new double[a.length];
+        final double[] result = new double[a.length];
         for (int i = 0; i < result.length; i++) {
             result[i] = a[i] * b[i];
         }
@@ -1130,7 +1120,7 @@ public class ArrayUtil {
     /**
      * Puts the result in the result array. Assumes that all arrays have same length.
      */
-    public static void pairwiseMultiply(double[] a, double[] b, double[] result) {
+    public static void pairwiseMultiply(final double[] a, final double[] b, final double[] result) {
         if (a.length != b.length) {
             throw new RuntimeException();
         }
@@ -1142,11 +1132,11 @@ public class ArrayUtil {
     /**
      * Assumes that both arrays have same length.
      */
-    public static float[] pairwiseMultiply(float[] a, float[] b) {
+    public static float[] pairwiseMultiply(final float[] a, final float[] b) {
         if (a.length != b.length) {
             throw new RuntimeException();
         }
-        float[] result = new float[a.length];
+        final float[] result = new float[a.length];
         for (int i = 0; i < result.length; i++) {
             result[i] = a[i] * b[i];
         }
@@ -1156,7 +1146,7 @@ public class ArrayUtil {
     /**
      * Puts the result in the result array. Assumes that all arrays have same length.
      */
-    public static void pairwiseMultiply(float[] a, float[] b, float[] result) {
+    public static void pairwiseMultiply(final float[] a, final float[] b, final float[] result) {
         if (a.length != b.length) {
             throw new RuntimeException();
         }
@@ -1168,8 +1158,8 @@ public class ArrayUtil {
     /**
      * Scales the values in this array by c.
      */
-    public static double[] pow(double[] a, double c) {
-        double[] result = new double[a.length];
+    public static double[] pow(final double[] a, final double c) {
+        final double[] result = new double[a.length];
         for (int i = 0; i < a.length; i++) {
             result[i] = Math.pow(a[i], c);
         }
@@ -1179,8 +1169,8 @@ public class ArrayUtil {
     /**
      * Scales the values in this array by c.
      */
-    public static float[] pow(float[] a, float c) {
-        float[] result = new float[a.length];
+    public static float[] pow(final float[] a, final float c) {
+        final float[] result = new float[a.length];
         for (int i = 0; i < a.length; i++) {
             result[i] = (float) Math.pow(a[i], c);
         }
@@ -1190,7 +1180,7 @@ public class ArrayUtil {
     /**
      * Scales the values in this array by c.
      */
-    public static void powInPlace(double[] a, double c) {
+    public static void powInPlace(final double[] a, final double c) {
         for (int i = 0; i < a.length; i++) {
             a[i] = Math.pow(a[i], c);
         }
@@ -1199,16 +1189,16 @@ public class ArrayUtil {
     /**
      * Scales the values in this array by c.
      */
-    public static void powInPlace(float[] a, float c) {
+    public static void powInPlace(final float[] a, final float c) {
         for (int i = 0; i < a.length; i++) {
             a[i] = (float) Math.pow(a[i], c);
         }
     }
 
-    public static double product(double[] a) {
+    public static double product(final double[] a) {
         double retVal = 1.0;
 
-        for (double d : a) {
+        for (final double d : a) {
 
             retVal *= d;
 
@@ -1217,7 +1207,7 @@ public class ArrayUtil {
         return retVal;
     }
 
-    public static boolean[] reallocArray(boolean[] array, int minLength) {
+    public static boolean[] reallocArray(final boolean[] array, final int minLength) {
         if (array == null || array.length < minLength) {
             return new boolean[minLength];
         }
@@ -1225,14 +1215,14 @@ public class ArrayUtil {
 
     }
 
-    public static boolean[] reallocArray(boolean[] array, int minLength, boolean fillVal) {
-        boolean[] newArray = reallocArray(array, minLength);
+    public static boolean[] reallocArray(final boolean[] array, final int minLength, final boolean fillVal) {
+        final boolean[] newArray = reallocArray(array, minLength);
         Arrays.fill(newArray, fillVal);
         return newArray;
 
     }
 
-    public static boolean[][] reallocArray(boolean[][] array, int minLength1, int minLength2) {
+    public static boolean[][] reallocArray(final boolean[][] array, final int minLength1, final int minLength2) {
         if (array == null || array.length < minLength1) {
             return new boolean[minLength1][minLength2];
         }
@@ -1240,14 +1230,16 @@ public class ArrayUtil {
 
     }
 
-    public static boolean[][] reallocArray(boolean[][] array, int minLength1, int minLength2, boolean fillVal) {
-        boolean[][] newArray = reallocArray(array, minLength1, minLength2);
+    public static boolean[][] reallocArray(final boolean[][] array, final int minLength1, final int minLength2,
+            final boolean fillVal) {
+        final boolean[][] newArray = reallocArray(array, minLength1, minLength2);
         ArrayUtil.fill(newArray, minLength1, minLength2, fillVal);
         return newArray;
 
     }
 
-    public static boolean[][][] reallocArray(boolean[][][] array, int minLength1, int minLength2, int minLength3) {
+    public static boolean[][][] reallocArray(final boolean[][][] array, final int minLength1, final int minLength2,
+            final int minLength3) {
         if (array == null || array.length < minLength1) {
             return new boolean[minLength1][minLength2][minLength3];
         }
@@ -1255,16 +1247,16 @@ public class ArrayUtil {
 
     }
 
-    public static boolean[][][] reallocArray(boolean[][][] array, int minLength1, int minLength2, int minLength3,
-            boolean fillVal) {
-        boolean[][][] newArray = reallocArray(array, minLength1, minLength2, minLength3);
+    public static boolean[][][] reallocArray(final boolean[][][] array, final int minLength1, final int minLength2,
+            final int minLength3, final boolean fillVal) {
+        final boolean[][][] newArray = reallocArray(array, minLength1, minLength2, minLength3);
         ArrayUtil.fill(newArray, minLength1, minLength2, minLength3, fillVal);
         return newArray;
 
     }
 
-    public static boolean[][][][] reallocArray(boolean[][][][] array, int minLength1, int minLength2, int minLength3,
-            int minLength4) {
+    public static boolean[][][][] reallocArray(final boolean[][][][] array, final int minLength1, final int minLength2,
+            final int minLength3, final int minLength4) {
         if (array == null || array.length < minLength1 || array[0].length < minLength2
                 || array[0][0].length < minLength3 || array[0][0][0].length < minLength4) {
             return new boolean[minLength1][minLength2][minLength3][minLength4];
@@ -1273,9 +1265,9 @@ public class ArrayUtil {
 
     }
 
-    public static boolean[][][][] reallocArray(boolean[][][][] array, int minLength1, int minLength2, int minLength3,
-            int minLength4, boolean fillVal) {
-        boolean[][][][] newArray = reallocArray(array, minLength1, minLength2, minLength3, minLength4);
+    public static boolean[][][][] reallocArray(final boolean[][][][] array, final int minLength1, final int minLength2,
+            final int minLength3, final int minLength4, final boolean fillVal) {
+        final boolean[][][][] newArray = reallocArray(array, minLength1, minLength2, minLength3, minLength4);
         ArrayUtil.fill(newArray, minLength1, minLength2, minLength3, minLength4, fillVal);
         return newArray;
 
@@ -1289,7 +1281,7 @@ public class ArrayUtil {
      * @param minLength
      * @return
      */
-    public static double[] reallocArray(double[] array, int minLength) {
+    public static double[] reallocArray(final double[] array, final int minLength) {
         if (array == null || array.length < minLength) {
             return new double[minLength];
         }
@@ -1297,14 +1289,14 @@ public class ArrayUtil {
 
     }
 
-    public static double[] reallocArray(double[] array, int minLength, double fillVal) {
-        double[] newArray = reallocArray(array, minLength);
+    public static double[] reallocArray(final double[] array, final int minLength, final double fillVal) {
+        final double[] newArray = reallocArray(array, minLength);
         Arrays.fill(newArray, fillVal);
         return newArray;
 
     }
 
-    public static double[][] reallocArray(double[][] array, int minLength1, int minLength2) {
+    public static double[][] reallocArray(final double[][] array, final int minLength1, final int minLength2) {
         if (array == null || array.length < minLength1) {
             return new double[minLength1][minLength2];
         }
@@ -1312,14 +1304,16 @@ public class ArrayUtil {
 
     }
 
-    public static double[][] reallocArray(double[][] array, int minLength1, int minLength2, double fillVal) {
-        double[][] newArray = reallocArray(array, minLength1, minLength2);
+    public static double[][] reallocArray(final double[][] array, final int minLength1, final int minLength2,
+            final double fillVal) {
+        final double[][] newArray = reallocArray(array, minLength1, minLength2);
         ArrayUtil.fill(newArray, minLength1, minLength2, fillVal);
         return newArray;
 
     }
 
-    public static double[][][] reallocArray(double[][][] array, int minLength1, int minLength2, int minLength3) {
+    public static double[][][] reallocArray(final double[][][] array, final int minLength1, final int minLength2,
+            final int minLength3) {
         if (array == null || array.length < minLength1) {
             return new double[minLength1][minLength2][minLength3];
         }
@@ -1327,16 +1321,16 @@ public class ArrayUtil {
 
     }
 
-    public static double[][][] reallocArray(double[][][] array, int minLength1, int minLength2, int minLength3,
-            double fillVal) {
-        double[][][] newArray = reallocArray(array, minLength1, minLength2, minLength3);
+    public static double[][][] reallocArray(final double[][][] array, final int minLength1, final int minLength2,
+            final int minLength3, final double fillVal) {
+        final double[][][] newArray = reallocArray(array, minLength1, minLength2, minLength3);
         ArrayUtil.fill(newArray, minLength1, minLength2, minLength3, fillVal);
         return newArray;
 
     }
 
-    public static double[][][][] reallocArray(double[][][][] array, int minLength1, int minLength2, int minLength3,
-            int minLength4) {
+    public static double[][][][] reallocArray(final double[][][][] array, final int minLength1, final int minLength2,
+            final int minLength3, final int minLength4) {
         if (array == null || array.length < minLength1 || array[0].length < minLength2
                 || array[0][0].length < minLength3 || array[0][0][0].length < minLength4) {
             return new double[minLength1][minLength2][minLength3][minLength4];
@@ -1345,15 +1339,15 @@ public class ArrayUtil {
 
     }
 
-    public static double[][][][] reallocArray(double[][][][] array, int minLength1, int minLength2, int minLength3,
-            int minLength4, double fillVal) {
-        double[][][][] newArray = reallocArray(array, minLength1, minLength2, minLength3, minLength4);
+    public static double[][][][] reallocArray(final double[][][][] array, final int minLength1, final int minLength2,
+            final int minLength3, final int minLength4, final double fillVal) {
+        final double[][][][] newArray = reallocArray(array, minLength1, minLength2, minLength3, minLength4);
         ArrayUtil.fill(newArray, minLength1, minLength2, minLength3, minLength4, fillVal);
         return newArray;
 
     }
 
-    public static int[] reallocArray(int[] array, int minLength) {
+    public static int[] reallocArray(final int[] array, final int minLength) {
         if (array == null || array.length < minLength) {
             return new int[minLength];
         }
@@ -1361,14 +1355,14 @@ public class ArrayUtil {
 
     }
 
-    public static int[] reallocArray(int[] array, int minLength, int fillVal) {
-        int[] newArray = reallocArray(array, minLength);
+    public static int[] reallocArray(final int[] array, final int minLength, final int fillVal) {
+        final int[] newArray = reallocArray(array, minLength);
         Arrays.fill(newArray, fillVal);
         return newArray;
 
     }
 
-    public static int[][] reallocArray(int[][] array, int minLength1, int minLength2) {
+    public static int[][] reallocArray(final int[][] array, final int minLength1, final int minLength2) {
         if (array == null || array.length < minLength1) {
             return new int[minLength1][minLength2];
         }
@@ -1376,14 +1370,16 @@ public class ArrayUtil {
 
     }
 
-    public static int[][] reallocArray(int[][] array, int minLength1, int minLength2, int fillVal) {
-        int[][] newArray = reallocArray(array, minLength1, minLength2);
+    public static int[][] reallocArray(final int[][] array, final int minLength1, final int minLength2,
+            final int fillVal) {
+        final int[][] newArray = reallocArray(array, minLength1, minLength2);
         ArrayUtil.fill(newArray, minLength1, minLength2, fillVal);
         return newArray;
 
     }
 
-    public static int[][][] reallocArray(int[][][] array, int minLength1, int minLength2, int minLength3) {
+    public static int[][][] reallocArray(final int[][][] array, final int minLength1, final int minLength2,
+            final int minLength3) {
         if (array == null || array.length < minLength1) {
             return new int[minLength1][minLength2][minLength3];
         }
@@ -1391,15 +1387,16 @@ public class ArrayUtil {
 
     }
 
-    public static int[][][] reallocArray(int[][][] array, int minLength1, int minLength2, int minLength3, int fillVal) {
-        int[][][] newArray = reallocArray(array, minLength1, minLength2, minLength3);
+    public static int[][][] reallocArray(final int[][][] array, final int minLength1, final int minLength2,
+            final int minLength3, final int fillVal) {
+        final int[][][] newArray = reallocArray(array, minLength1, minLength2, minLength3);
         ArrayUtil.fill(newArray, minLength1, minLength2, minLength3, fillVal);
         return newArray;
 
     }
 
-    public static int[][][][] reallocArray(int[][][][] array, int minLength1, int minLength2, int minLength3,
-            int minLength4) {
+    public static int[][][][] reallocArray(final int[][][][] array, final int minLength1, final int minLength2,
+            final int minLength3, final int minLength4) {
         if (array == null || array.length < minLength1 || array[0].length < minLength2
                 || array[0][0].length < minLength3 || array[0][0][0].length < minLength4) {
             return new int[minLength1][minLength2][minLength3][minLength4];
@@ -1408,15 +1405,15 @@ public class ArrayUtil {
 
     }
 
-    public static int[][][][] reallocArray(int[][][][] array, int minLength1, int minLength2, int minLength3,
-            int minLength4, int fillVal) {
-        int[][][][] newArray = reallocArray(array, minLength1, minLength2, minLength3, minLength4);
+    public static int[][][][] reallocArray(final int[][][][] array, final int minLength1, final int minLength2,
+            final int minLength3, final int minLength4, final int fillVal) {
+        final int[][][][] newArray = reallocArray(array, minLength1, minLength2, minLength3, minLength4);
         ArrayUtil.fill(newArray, minLength1, minLength2, minLength3, minLength4, fillVal);
         return newArray;
 
     }
 
-    public static <T> T[] reallocArray(T[] array, int minLength, Class<T> klass, Generator<T> gen) {
+    public static <T> T[] reallocArray(T[] array, final int minLength, final Class<T> klass, final Generator<T> gen) {
         if (array == null || array.length < minLength) {
             array = ListUtils.newArray(minLength, klass, gen);
         }
@@ -1427,7 +1424,7 @@ public class ArrayUtil {
 
     }
 
-    public static <T> T[][] reallocArray(T[][] array, int minLength1, final int minLength2, final Class<T> klass,
+    public static <T> T[][] reallocArray(T[][] array, final int minLength1, final int minLength2, final Class<T> klass,
             final Generator<T> gen) {
 
         if (array == null || array.length < minLength1 || array[0].length < minLength2) {
@@ -1436,7 +1433,7 @@ public class ArrayUtil {
 
         fill(array, new Generator<T[]>() {
 
-            public T[] generate(int i) {
+            public T[] generate(final int i) {
                 return ListUtils.newArray(minLength2, klass, gen);
             }
 
@@ -1449,7 +1446,7 @@ public class ArrayUtil {
     /**
      * Scales the values in this array by b. Does it in place.
      */
-    public static void scale(double[] a, double b) {
+    public static void scale(final double[] a, final double b) {
         for (int i = 0; i < a.length; i++) {
             a[i] = a[i] * b;
         }
@@ -1458,13 +1455,13 @@ public class ArrayUtil {
     /**
      * Scales the values in this array by b. Does it in place.
      */
-    public static void scale(float[] a, double b) {
+    public static void scale(final float[] a, final double b) {
         for (int i = 0; i < a.length; i++) {
             a[i] = (float) (a[i] * b);
         }
     }
 
-    public static void setToLogDeterministic(double[] a, int i) {
+    public static void setToLogDeterministic(final double[] a, final int i) {
         for (int j = 0; j < a.length; j++) {
             if (j == i) {
                 a[j] = 0.0;
@@ -1474,7 +1471,7 @@ public class ArrayUtil {
         }
     }
 
-    public static void setToLogDeterministic(float[] a, int i) {
+    public static void setToLogDeterministic(final float[] a, final int i) {
         for (int j = 0; j < a.length; j++) {
             if (j == i) {
                 a[j] = 0.0F;
@@ -1487,34 +1484,34 @@ public class ArrayUtil {
     /**
      * Shifts the values in this array by b. Does it in place.
      */
-    public static void shift(double[] a, double b) {
+    public static void shift(final double[] a, final double b) {
         for (int i = 0; i < a.length; i++) {
             a[i] = a[i] + b;
         }
     }
 
-    public static double standardErrorOfMean(double[] a) {
+    public static double standardErrorOfMean(final double[] a) {
         return stdev(a) / Math.sqrt(a.length);
     }
 
-    public static double stdev(double[] a) {
+    public static double stdev(final double[] a) {
         return Math.sqrt(variance(a));
     }
 
-    public static int[] subArray(int[] a, int from, int to) {
-        int[] result = new int[to - from];
+    public static int[] subArray(final int[] a, final int from, final int to) {
+        final int[] result = new int[to - from];
         System.arraycopy(a, from, result, 0, to - from);
         return result;
     }
 
-    public static double[] subArray(double[] a, int from, int to) {
-        double[] result = new double[to - from];
+    public static double[] subArray(final double[] a, final int from, final int to) {
+        final double[] result = new double[to - from];
         System.arraycopy(a, from, result, 0, to - from);
         return result;
     }
 
-    public static double[][] subMatrix(double[][] ds, int i, int ni, int j, int nj) {
-        double[][] retVal = new double[ni][nj];
+    public static double[][] subMatrix(final double[][] ds, final int i, final int ni, final int j, final int nj) {
+        final double[][] retVal = new double[ni][nj];
         for (int k = i; k < i + ni; ++k) {
             for (int l = j; l < j + nj; ++l) {
                 retVal[k - i][l - j] = ds[k][l];
@@ -1523,8 +1520,8 @@ public class ArrayUtil {
         return retVal;
     }
 
-    public static double[] subtract(double[] a, double[] b) {
-        double[] c = new double[a.length];
+    public static double[] subtract(final double[] a, final double[] b) {
+        final double[] c = new double[a.length];
 
         for (int i = 0; i < a.length; i++) {
             c[i] = a[i] - b[i];
@@ -1532,7 +1529,7 @@ public class ArrayUtil {
         return c;
     }
 
-    public static void subtract(double[] a, double[] b, double[] scratch) {
+    public static void subtract(final double[] a, final double[] b, final double[] scratch) {
         assert b != null;
         assert a.length == b.length;
         for (int i = 0; i < a.length; ++i) {
@@ -1540,15 +1537,15 @@ public class ArrayUtil {
         }
     }
 
-    public static void multiply(double[] a, double b, double[] scratch) {
+    public static void multiply(final double[] a, final double b, final double[] scratch) {
         assert a != null;
         for (int i = 0; i < a.length; ++i) {
             scratch[i] = a[i] * b;
         }
     }
 
-    public static float[] subtract(float[] a, float[] b) {
-        float[] c = new float[a.length];
+    public static float[] subtract(final float[] a, final float[] b) {
+        final float[] c = new float[a.length];
 
         for (int i = 0; i < a.length; i++) {
             c[i] = a[i] - b[i];
@@ -1556,7 +1553,7 @@ public class ArrayUtil {
         return c;
     }
 
-    public static double sum(double[] a) {
+    public static double sum(final double[] a) {
         if (a == null) {
             return 0.0;
         }
@@ -1567,7 +1564,7 @@ public class ArrayUtil {
         return result;
     }
 
-    public static double sum(double[][] a) {
+    public static double sum(final double[][] a) {
         if (a == null) {
             return 0.0;
         }
@@ -1578,7 +1575,7 @@ public class ArrayUtil {
         return result;
     }
 
-    public static double sum(double[][][] a) {
+    public static double sum(final double[][][] a) {
         if (a == null) {
             return 0.0;
         }
@@ -1589,7 +1586,7 @@ public class ArrayUtil {
         return result;
     }
 
-    public static double sum(double[] a, int len) {
+    public static double sum(final double[] a, final int len) {
         double result = 0.0;
         for (int i = 0; i < len; i++) {
             result += a[i];
@@ -1597,7 +1594,7 @@ public class ArrayUtil {
         return result;
     }
 
-    public static float sum(float[] a) {
+    public static float sum(final float[] a) {
         float result = 0.0F;
         for (int i = 0; i < a.length; i++) {
             result += a[i];
@@ -1605,7 +1602,7 @@ public class ArrayUtil {
         return result;
     }
 
-    public static int sum(int[] a) {
+    public static int sum(final int[] a) {
         int result = 0;
         for (int i = 0; i < a.length; i++) {
             result += a[i];
@@ -1613,7 +1610,7 @@ public class ArrayUtil {
         return result;
     }
 
-    public static long sum(long[] a) {
+    public static long sum(final long[] a) {
         int result = 0;
         for (int i = 0; i < a.length; i++) {
             result += a[i];
@@ -1621,17 +1618,17 @@ public class ArrayUtil {
         return result;
     }
 
-    public static double sumSquaredError(double[] a) {
-        double mean = mean(a);
+    public static double sumSquaredError(final double[] a) {
+        final double mean = mean(a);
         double result = 0.0;
         for (int i = 0; i < a.length; i++) {
-            double diff = a[i] - mean;
+            final double diff = a[i] - mean;
             result += (diff * diff);
         }
         return result;
     }
 
-    public static String toString(boolean[][] a) {
+    public static String toString(final boolean[][] a) {
         String s = "[";
         for (int i = 0; i < a.length; i++) {
             s = s.concat(Arrays.toString(a[i]) + ", ");
@@ -1639,16 +1636,16 @@ public class ArrayUtil {
         return s + "]";
     }
 
-    public static String toString(byte[] a) {
+    public static String toString(final byte[] a) {
         return toString(a, null);
     }
 
-    public static String toString(byte[] a, NumberFormat nf) {
+    public static String toString(final byte[] a, final NumberFormat nf) {
         if (a == null)
             return null;
         if (a.length == 0)
             return "[]";
-        StringBuffer b = new StringBuffer();
+        final StringBuffer b = new StringBuffer();
         b.append("[");
         for (int i = 0; i < a.length - 1; i++) {
             String s;
@@ -1671,16 +1668,16 @@ public class ArrayUtil {
         return b.toString();
     }
 
-    public static String toString(double[] a) {
+    public static String toString(final double[] a) {
         return toString(a, null);
     }
 
-    public static String toString(double[] a, NumberFormat nf) {
+    public static String toString(final double[] a, final NumberFormat nf) {
         if (a == null)
             return null;
         if (a.length == 0)
             return "[]";
-        StringBuffer b = new StringBuffer();
+        final StringBuffer b = new StringBuffer();
         b.append("[");
         for (int i = 0; i < a.length - 1; i++) {
             String s;
@@ -1703,17 +1700,17 @@ public class ArrayUtil {
         return b.toString();
     }
 
-    public static String toString(double[][] counts) {
+    public static String toString(final double[][] counts) {
         return toString(counts, 10, null, null, NumberFormat.getInstance(), false);
     }
 
-    public static String toString(double[][] counts, int cellSize, Object[] rowLabels, Object[] colLabels,
-            NumberFormat nf, boolean printTotals) {
+    public static String toString(final double[][] counts, final int cellSize, final Object[] rowLabels,
+            final Object[] colLabels, final NumberFormat nf, final boolean printTotals) {
         if (counts == null)
             return null;
         // first compute row totals and column totals
-        double[] rowTotals = new double[counts.length];
-        double[] colTotals = new double[counts[0].length]; // assume it's square
+        final double[] rowTotals = new double[counts.length];
+        final double[] colTotals = new double[counts[0].length]; // assume it's square
         double total = 0.0;
         for (int i = 0; i < counts.length; i++) {
             for (int j = 0; j < counts[i].length; j++) {
@@ -1722,7 +1719,7 @@ public class ArrayUtil {
                 total += counts[i][j];
             }
         }
-        StringBuffer result = new StringBuffer();
+        final StringBuffer result = new StringBuffer();
         // column labels
         if (colLabels != null) {
             result.append(StringUtils.padLeft("", cellSize));
@@ -1769,7 +1766,7 @@ public class ArrayUtil {
         return result.toString();
     }
 
-    public static String toString(double[][][] a) {
+    public static String toString(final double[][][] a) {
         String s = "[";
         for (int i = 0; i < a.length; i++) {
             s = s.concat(toString(a[i]) + ", ");
@@ -1777,16 +1774,16 @@ public class ArrayUtil {
         return s + "]";
     }
 
-    public static String toString(float[] a) {
+    public static String toString(final float[] a) {
         return toString(a, null);
     }
 
-    public static String toString(float[] a, NumberFormat nf) {
+    public static String toString(final float[] a, final NumberFormat nf) {
         if (a == null)
             return null;
         if (a.length == 0)
             return "[]";
-        StringBuffer b = new StringBuffer();
+        final StringBuffer b = new StringBuffer();
         b.append("[");
         for (int i = 0; i < a.length - 1; i++) {
             String s;
@@ -1807,19 +1804,15 @@ public class ArrayUtil {
         b.append(s);
         b.append(']');
         return b.toString();
-    }
-
-    public static String toString(float[][] counts) {
-        return toString(counts, 10, null, null, NumberFormat.getIntegerInstance(), false);
     }
 
     // CASTS
 
-    public static String toString(float[][] counts, int cellSize, Object[] rowLabels, Object[] colLabels,
-            NumberFormat nf, boolean printTotals) {
+    public static String toString(final float[][] counts, final int cellSize, final Object[] rowLabels,
+            final Object[] colLabels, final NumberFormat nf, final boolean printTotals) {
         // first compute row totals and column totals
-        double[] rowTotals = new double[counts.length];
-        double[] colTotals = new double[counts[0].length]; // assume it's square
+        final double[] rowTotals = new double[counts.length];
+        final double[] colTotals = new double[counts[0].length]; // assume it's square
         double total = 0.0;
         for (int i = 0; i < counts.length; i++) {
             for (int j = 0; j < counts[i].length; j++) {
@@ -1828,7 +1821,7 @@ public class ArrayUtil {
                 total += counts[i][j];
             }
         }
-        StringBuffer result = new StringBuffer();
+        final StringBuffer result = new StringBuffer();
         // column labels
         if (colLabels != null) {
             result.append(StringUtils.padLeft("", cellSize));
@@ -1875,24 +1868,16 @@ public class ArrayUtil {
         return result.toString();
     }
 
-    public static String toString(float[][][] a) {
-        String s = "[";
-        for (int i = 0; i < a.length; i++) {
-            s = s.concat(toString(a[i]) + ", ");
-        }
-        return s + "]";
-    }
-
-    public static String toString(int[] a) {
+    public static String toString(final int[] a) {
         return toString(a, null);
     }
 
-    public static String toString(int[] a, NumberFormat nf) {
+    public static String toString(final int[] a, final NumberFormat nf) {
         if (a == null)
             return null;
         if (a.length == 0)
             return "[]";
-        StringBuffer b = new StringBuffer();
+        final StringBuffer b = new StringBuffer();
         b.append("[");
         for (int i = 0; i < a.length - 1; i++) {
             String s;
@@ -1917,15 +1902,15 @@ public class ArrayUtil {
 
     // ARITHMETIC FUNCTIONS
 
-    public static String toString(int[][] counts) {
+    public static String toString(final int[][] counts) {
         return toString(counts, 10, null, null, NumberFormat.getInstance(), false);
     }
 
-    public static String toString(int[][] counts, int cellSize, Object[] rowLabels, Object[] colLabels,
-            NumberFormat nf, boolean printTotals) {
+    public static String toString(final int[][] counts, final int cellSize, final Object[] rowLabels,
+            final Object[] colLabels, final NumberFormat nf, final boolean printTotals) {
         // first compute row totals and column totals
-        int[] rowTotals = new int[counts.length];
-        int[] colTotals = new int[counts[0].length]; // assume it's square
+        final int[] rowTotals = new int[counts.length];
+        final int[] colTotals = new int[counts[0].length]; // assume it's square
         int total = 0;
         for (int i = 0; i < counts.length; i++) {
             for (int j = 0; j < counts[i].length; j++) {
@@ -1934,7 +1919,7 @@ public class ArrayUtil {
                 total += counts[i][j];
             }
         }
-        StringBuffer result = new StringBuffer();
+        final StringBuffer result = new StringBuffer();
         // column labels
         if (colLabels != null) {
             result.append(StringUtils.padLeft("", cellSize));
@@ -1982,11 +1967,11 @@ public class ArrayUtil {
         return result.toString();
     }
 
-    public static double variance(double[] a) {
+    public static double variance(final double[] a) {
         return sumSquaredError(a) / (a.length - 1);
     }
 
-    private static void printMatrix(double[][] a) {
+    private static void printMatrix(final double[][] a) {
         final int len = 5;
         for (int i = 0; i < len; ++i) {
             System.out.print("[");
@@ -1997,8 +1982,8 @@ public class ArrayUtil {
         }
     }
 
-    public static <T> boolean hasNull(T[] array) {
-        for (T t : array) {
+    public static <T> boolean hasNull(final T[] array) {
+        for (final T t : array) {
             if (t == null)
                 return true;
         }

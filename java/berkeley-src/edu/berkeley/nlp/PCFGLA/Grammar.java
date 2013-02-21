@@ -18,7 +18,6 @@ import edu.berkeley.nlp.math.SloppyMath;
 import edu.berkeley.nlp.syntax.StateSet;
 import edu.berkeley.nlp.syntax.Tree;
 import edu.berkeley.nlp.util.ArrayUtil;
-import edu.berkeley.nlp.util.CollectionUtils;
 import edu.berkeley.nlp.util.CounterMap;
 import edu.berkeley.nlp.util.Numberer;
 import edu.berkeley.nlp.util.PriorityQueue;
@@ -121,7 +120,7 @@ public class Grammar implements java.io.Serializable {
         ArrayUtil.fill(closedViterbiPaths, 0);
     }
 
-    public void addBinary(BinaryRule br) {
+    public void addBinary(final BinaryRule br) {
         // System.out.println("BG adding rule " + br);
         binaryRulesWithParent[br.parentState].add(br);
         binaryRulesWithLC[br.leftChildState].add(br);
@@ -130,7 +129,7 @@ public class Grammar implements java.io.Serializable {
         binaryRuleMap.put(br, br);
     }
 
-    public void addUnary(UnaryRule ur) {
+    public void addUnary(final UnaryRule ur) {
         // System.out.println(" UG adding rule " + ur);
         // closeRulesUnderMax(ur);
         if (!unaryRulesWithParent[ur.parentState].contains(ur)) {
@@ -154,7 +153,7 @@ public class Grammar implements java.io.Serializable {
     // }
     //
     @SuppressWarnings("unchecked")
-    public List<UnaryRule> getUnaryRulesByParent(int state) {
+    public List<UnaryRule> getUnaryRulesByParent(final int state) {
         if (state >= unaryRulesWithParent.length) {
             return Collections.EMPTY_LIST;
         }
@@ -167,7 +166,7 @@ public class Grammar implements java.io.Serializable {
     }
 
     @SuppressWarnings("unchecked")
-    public List<BinaryRule> getBinaryRulesByLeftChild(int state) {
+    public List<BinaryRule> getBinaryRulesByLeftChild(final int state) {
         // System.out.println("getBinaryRulesByLeftChild not supported anymore.");
         // return null;
         if (state >= binaryRulesWithLC.length) {
@@ -177,7 +176,7 @@ public class Grammar implements java.io.Serializable {
     }
 
     @SuppressWarnings("unchecked")
-    public List<BinaryRule> getBinaryRulesByRightChild(int state) {
+    public List<BinaryRule> getBinaryRulesByRightChild(final int state) {
         // System.out.println("getBinaryRulesByRightChild not supported anymore.");
         // return null;
         if (state >= binaryRulesWithRC.length) {
@@ -187,7 +186,7 @@ public class Grammar implements java.io.Serializable {
     }
 
     @SuppressWarnings("unchecked")
-    public List<UnaryRule> getUnaryRulesByChild(int state) {
+    public List<UnaryRule> getUnaryRulesByChild(final int state) {
         // System.out.println("getUnaryRulesByChild not supported anymore.");
         // return null;
         if (state >= unaryRulesWithC.length) {
@@ -208,20 +207,20 @@ public class Grammar implements java.io.Serializable {
         return null;// sb.toString();
     }
 
-    public void writeData(Writer w) throws IOException {
+    public void writeData(final Writer w) throws IOException {
         finalLevel = (short) (Math.log(numSubStates[1]) / Math.log(2));
-        PrintWriter out = new PrintWriter(w);
+        final PrintWriter out = new PrintWriter(w);
         for (int state = 0; state < numStates; state++) {
-            BinaryRule[] parentRules = this.splitRulesWithP(state);
+            final BinaryRule[] parentRules = this.splitRulesWithP(state);
             for (int i = 0; i < parentRules.length; i++) {
-                BinaryRule r = parentRules[i];
+                final BinaryRule r = parentRules[i];
                 out.print(r.toString());
             }
         }
         for (int state = 0; state < numStates; state++) {
-            UnaryRule[] unaries = this.getClosedViterbiUnaryRulesByParent(state);
+            final UnaryRule[] unaries = this.getClosedViterbiUnaryRulesByParent(state);
             for (int r = 0; r < unaries.length; r++) {
-                UnaryRule ur = unaries[r];
+                final UnaryRule ur = unaries[r];
                 out.print(ur.toString());
             }
         }
@@ -231,20 +230,20 @@ public class Grammar implements java.io.Serializable {
     @Override
     public String toString() {
         // splitRules();
-        StringBuilder sb = new StringBuilder();
-        List<String> ruleStrings = new ArrayList<String>();
+        final StringBuilder sb = new StringBuilder();
+        final List<String> ruleStrings = new ArrayList<String>();
         for (int state = 0; state < numStates; state++) {
-            BinaryRule[] parentRules = this.splitRulesWithP(state);
+            final BinaryRule[] parentRules = this.splitRulesWithP(state);
             for (int i = 0; i < parentRules.length; i++) {
-                BinaryRule r = parentRules[i];
+                final BinaryRule r = parentRules[i];
                 ruleStrings.add(r.toString());
             }
         }
         for (int state = 0; state < numStates; state++) {
-            UnaryRule[] unaries = this.getClosedSumUnaryRulesByParent(state);
+            final UnaryRule[] unaries = this.getClosedSumUnaryRulesByParent(state);
             // this.getClosedSumUnaryRulesByParent(state);//
             for (int r = 0; r < unaries.length; r++) {
-                UnaryRule ur = unaries[r];
+                final UnaryRule ur = unaries[r];
                 ruleStrings.add(ur.toString());
             }
             // UnaryRule[] unaries2 =
@@ -254,7 +253,8 @@ public class Grammar implements java.io.Serializable {
             // ruleStrings.add(ur.toString());
             // }
         }
-        for (String ruleString : CollectionUtils.sort(ruleStrings)) {
+        Collections.sort(ruleStrings);
+        for (final String ruleString : ruleStrings) {
             sb.append(ruleString);
             // sb.append("\n");
         }
@@ -264,10 +264,10 @@ public class Grammar implements java.io.Serializable {
     public int getNumberOfRules() {
         int nRules = 0;
         for (int state = 0; state < numStates; state++) {
-            BinaryRule[] parentRules = this.splitRulesWithP(state);
+            final BinaryRule[] parentRules = this.splitRulesWithP(state);
             for (int i = 0; i < parentRules.length; i++) {
-                BinaryRule bRule = parentRules[i];
-                double[][][] scores = bRule.getScores2();
+                final BinaryRule bRule = parentRules[i];
+                final double[][][] scores = bRule.getScores2();
                 for (int j = 0; j < scores.length; j++) {
                     for (int k = 0; k < scores[j].length; k++) {
                         if (scores[j][k] != null) {
@@ -276,14 +276,14 @@ public class Grammar implements java.io.Serializable {
                     }
                 }
             }
-            UnaryRule[] unaries = this.getClosedSumUnaryRulesByParent(state);
+            final UnaryRule[] unaries = this.getClosedSumUnaryRulesByParent(state);
             for (int r = 0; r < unaries.length; r++) {
-                UnaryRule uRule = unaries[r];
+                final UnaryRule uRule = unaries[r];
                 // List<UnaryRule> unaries = this.getUnaryRulesByParent(state);
                 // for (UnaryRule uRule : unaries){
                 if (uRule.childState == uRule.parentState)
                     continue;
-                double[][] scores = uRule.getScores2();
+                final double[][] scores = uRule.getScores2();
                 for (int j = 0; j < scores.length; j++) {
                     if (scores[j] != null) {
                         nRules += scores[j].length;
@@ -297,20 +297,20 @@ public class Grammar implements java.io.Serializable {
     public void printUnaryRules() {
         // System.out.println("BY PARENT");
         for (int state1 = 0; state1 < numStates; state1++) {
-            List<UnaryRule> unaries = this.getUnaryRulesByParent(state1);
-            for (UnaryRule uRule : unaries) {
-                UnaryRule uRule2 = unaryRuleMap.get(uRule);
+            final List<UnaryRule> unaries = this.getUnaryRulesByParent(state1);
+            for (final UnaryRule uRule : unaries) {
+                final UnaryRule uRule2 = unaryRuleMap.get(uRule);
                 if (!uRule.getScores2().equals(uRule2.getScores2()))
                     System.out.print("BY PARENT:\n" + uRule + "" + uRule2 + "\n");
             }
         }
         // System.out.println("VITERBI CLOSED");
         for (int state1 = 0; state1 < numStates; state1++) {
-            UnaryRule[] unaries = this.getClosedViterbiUnaryRulesByParent(state1);
+            final UnaryRule[] unaries = this.getClosedViterbiUnaryRulesByParent(state1);
             for (int r = 0; r < unaries.length; r++) {
-                UnaryRule uRule = unaries[r];
+                final UnaryRule uRule = unaries[r];
                 // System.out.print(uRule);
-                UnaryRule uRule2 = unaryRuleMap.get(uRule);
+                final UnaryRule uRule2 = unaryRuleMap.get(uRule);
                 if (unariesAreNotEqual(uRule, uRule2))
                     System.out.print("VITERBI CLOSED:\n" + uRule + "" + uRule2 + "\n");
             }
@@ -324,10 +324,10 @@ public class Grammar implements java.io.Serializable {
         // System.out.println("AND NOW THE BINARIES");
         // System.out.println("BY PARENT");
         for (int state1 = 0; state1 < numStates; state1++) {
-            BinaryRule[] parentRules = this.splitRulesWithP(state1);
+            final BinaryRule[] parentRules = this.splitRulesWithP(state1);
             for (int i = 0; i < parentRules.length; i++) {
-                BinaryRule bRule = parentRules[i];
-                BinaryRule bRule2 = binaryRuleMap.get(bRule);
+                final BinaryRule bRule = parentRules[i];
+                final BinaryRule bRule2 = binaryRuleMap.get(bRule);
                 if (!bRule.getScores2().equals(bRule2.getScores2()))
                     System.out.print("BINARY: " + bRule + "" + bRule2 + "\n");
             }
@@ -339,7 +339,7 @@ public class Grammar implements java.io.Serializable {
 
     }
 
-    public boolean unariesAreNotEqual(UnaryRule u1, UnaryRule u2) {
+    public boolean unariesAreNotEqual(final UnaryRule u1, final UnaryRule u2) {
         // two cases:
         // 1. u2 is null and u1 is a selfRule
         if (u2 == null) {
@@ -348,8 +348,8 @@ public class Grammar implements java.io.Serializable {
              * double[][] s1 = u1.getScores2(); for (int i=0; i<s1.length; i++){ if (s1[i][i] != 1.0) return true; }
              */
         } else { // compare all entries
-            double[][] s1 = u1.getScores2();
-            double[][] s2 = u2.getScores2();
+            final double[][] s1 = u1.getScores2();
+            final double[][] s2 = u2.getScores2();
             for (int i = 0; i < s1.length; i++) {
                 if (s1[i] == null || s2[i] == null)
                     continue;
@@ -396,11 +396,11 @@ public class Grammar implements java.io.Serializable {
             closedViterbiRulesWithParent[s] = new ArrayList<UnaryRule>();
             closedViterbiRulesWithChild[s] = new ArrayList<UnaryRule>();
 
-            double[][] scores = new double[numSubStates[s]][numSubStates[s]];
+            final double[][] scores = new double[numSubStates[s]][numSubStates[s]];
             for (int i = 0; i < scores.length; i++) {
                 scores[i][i] = 1;
             }
-            UnaryRule selfR = new UnaryRule(s, s, scores);
+            final UnaryRule selfR = new UnaryRule(s, s, scores);
             // relaxSumRule(selfR);
             relaxViterbiRule(selfR);
         }
@@ -472,7 +472,8 @@ public class Grammar implements java.io.Serializable {
      *            split recursively. These parameters are intialized if oldGrammar is null.
      */
     @SuppressWarnings("unchecked")
-    public Grammar(short[] nSubStates, boolean findClosedPaths, Smoother smoother, Grammar oldGrammar, double thresh) {
+    public Grammar(final short[] nSubStates, final boolean findClosedPaths, final Smoother smoother,
+            final Grammar oldGrammar, final double thresh) {
         this.tagNumberer = Numberer.getGlobalNumberer("tags");
         this.findClosedPaths = findClosedPaths;
         this.smoother = smoother;
@@ -494,7 +495,7 @@ public class Grammar implements java.io.Serializable {
                 hasAnySplits = hasAnySplits || numSubStates[tag] > 1;
             }
             for (int tag = 0; tag < numStates; tag++) {
-                ArrayList<Tree<Short>> children = new ArrayList<Tree<Short>>(numSubStates[tag]);
+                final ArrayList<Tree<Short>> children = new ArrayList<Tree<Short>>(numSubStates[tag]);
                 if (hasAnySplits) {
                     for (short substate = 0; substate < numSubStates[tag]; substate++) {
                         children.add(substate, new Tree<Short>(substate));
@@ -506,46 +507,46 @@ public class Grammar implements java.io.Serializable {
         init();
     }
 
-    public void setSmoother(Smoother smoother) {
+    public void setSmoother(final Smoother smoother) {
         this.smoother = smoother;
     }
 
-    public static double generateMMTRandomNumber(Random r) {
+    public static double generateMMTRandomNumber(final Random r) {
         double f = r.nextDouble();
         f = f * 2 - 1;
         f = f * Math.log(3);
         return Math.exp(f);
     }
 
-    public void optimize(double randomness) {
+    public void optimize(final double randomness) {
         // System.out.print("Optimizing Grammar...");
         init();
         // checkNumberOfSubstates();
         if (randomness > 0.0) {
-            Random random = GrammarTrainer.RANDOM;
+            final Random random = GrammarTrainer.RANDOM;
             // switch (randomInitializationType ) {
             // case INITIALIZE_WITH_SMALL_RANDOMIZATION:
             // add randomness
-            for (UnaryRule unaryRule : unaryRuleCounter.keySet()) {
-                double[][] unaryCounts = unaryRuleCounter.getCount(unaryRule);
+            for (final UnaryRule unaryRule : unaryRuleCounter.keySet()) {
+                final double[][] unaryCounts = unaryRuleCounter.getCount(unaryRule);
                 for (int i = 0; i < unaryCounts.length; i++) {
                     if (unaryCounts[i] == null)
                         unaryCounts[i] = new double[numSubStates[unaryRule.getParentState()]];
                     for (int j = 0; j < unaryCounts[i].length; j++) {
-                        double r = random.nextDouble() * randomness;
+                        final double r = random.nextDouble() * randomness;
                         unaryCounts[i][j] += r;
                     }
                 }
                 unaryRuleCounter.setCount(unaryRule, unaryCounts);
             }
-            for (BinaryRule binaryRule : binaryRuleCounter.keySet()) {
-                double[][][] binaryCounts = binaryRuleCounter.getCount(binaryRule);
+            for (final BinaryRule binaryRule : binaryRuleCounter.keySet()) {
+                final double[][][] binaryCounts = binaryRuleCounter.getCount(binaryRule);
                 for (int i = 0; i < binaryCounts.length; i++) {
                     for (int j = 0; j < binaryCounts[i].length; j++) {
                         if (binaryCounts[i][j] == null)
                             binaryCounts[i][j] = new double[numSubStates[binaryRule.getParentState()]];
                         for (int k = 0; k < binaryCounts[i][j].length; k++) {
-                            double r = random.nextDouble() * randomness;
+                            final double r = random.nextDouble() * randomness;
                             binaryCounts[i][j][k] += r;
                         }
                     }
@@ -596,7 +597,7 @@ public class Grammar implements java.io.Serializable {
         // System.out.println("done.");
     }
 
-    public void removeUnlikelyRules(double thresh, double power) {
+    public void removeUnlikelyRules(final double thresh, double power) {
         // System.out.print("Removing everything below "+thresh+" and rasiing rules to the "
         // +power+"th power... ");
         if (isLogarithmMode())
@@ -604,7 +605,7 @@ public class Grammar implements java.io.Serializable {
         int total = 0, removed = 0;
         for (int state = 0; state < numStates; state++) {
             for (int r = 0; r < splitRulesWithP[state].length; r++) {
-                BinaryRule rule = splitRulesWithP[state][r];
+                final BinaryRule rule = splitRulesWithP[state][r];
                 for (int lC = 0; lC < rule.scores.length; lC++) {
                     for (int rC = 0; rC < rule.scores[lC].length; rC++) {
                         if (rule.scores[lC][rC] == null)
@@ -628,7 +629,7 @@ public class Grammar implements java.io.Serializable {
                 }
                 splitRulesWithP[state][r] = rule;
             }
-            for (UnaryRule rule : unaryRulesWithParent[state]) {
+            for (final UnaryRule rule : unaryRulesWithParent[state]) {
                 for (int c = 0; c < rule.scores.length; c++) {
                     if (rule.scores[c] == null)
                         continue;
@@ -652,7 +653,7 @@ public class Grammar implements java.io.Serializable {
         // System.out.print("done.\nRemoved "+removed+" out of "+total+" rules.\n");
     }
 
-    public void smooth(boolean noNormalize) {
+    public void smooth(final boolean noNormalize) {
         smoother.smooth(unaryRuleCounter, binaryRuleCounter);
         if (!noNormalize)
             normalize();
@@ -663,8 +664,8 @@ public class Grammar implements java.io.Serializable {
         // }
 
         // compress and add the rules
-        for (UnaryRule unaryRule : unaryRuleCounter.keySet()) {
-            double[][] unaryCounts = unaryRuleCounter.getCount(unaryRule);
+        for (final UnaryRule unaryRule : unaryRuleCounter.keySet()) {
+            final double[][] unaryCounts = unaryRuleCounter.getCount(unaryRule);
             for (int i = 0; i < unaryCounts.length; i++) {
                 if (unaryCounts[i] == null)
                     continue;
@@ -684,8 +685,8 @@ public class Grammar implements java.io.Serializable {
             addUnary(unaryRule);
         }
         computePairsOfUnaries();
-        for (BinaryRule binaryRule : binaryRuleCounter.keySet()) {
-            double[][][] binaryCounts = binaryRuleCounter.getCount(binaryRule);
+        for (final BinaryRule binaryRule : binaryRuleCounter.keySet()) {
+            final double[][][] binaryCounts = binaryRuleCounter.getCount(binaryRule);
             for (int i = 0; i < binaryCounts.length; i++) {
                 for (int j = 0; j < binaryCounts[i].length; j++) {
                     if (binaryCounts[i][j] == null)
@@ -741,12 +742,12 @@ public class Grammar implements java.io.Serializable {
         // tally the parent counts
         tallyParentCounts();
         // turn the rule scores into fractions
-        for (UnaryRule unaryRule : unaryRuleCounter.keySet()) {
-            double[][] unaryCounts = unaryRuleCounter.getCount(unaryRule);
-            int parentState = unaryRule.getParentState();
-            int nParentSubStates = numSubStates[parentState];
-            int nChildStates = numSubStates[unaryRule.childState];
-            double[] parentCount = new double[nParentSubStates];
+        for (final UnaryRule unaryRule : unaryRuleCounter.keySet()) {
+            final double[][] unaryCounts = unaryRuleCounter.getCount(unaryRule);
+            final int parentState = unaryRule.getParentState();
+            final int nParentSubStates = numSubStates[parentState];
+            final int nChildStates = numSubStates[unaryRule.childState];
+            final double[] parentCount = new double[nParentSubStates];
             for (int i = 0; i < nParentSubStates; i++) {
                 parentCount[i] = symbolCounter.getCount(parentState, i);
             }
@@ -769,11 +770,11 @@ public class Grammar implements java.io.Serializable {
             }
             unaryRuleCounter.setCount(unaryRule, unaryCounts);
         }
-        for (BinaryRule binaryRule : binaryRuleCounter.keySet()) {
-            double[][][] binaryCounts = binaryRuleCounter.getCount(binaryRule);
-            int parentState = binaryRule.parentState;
-            int nParentSubStates = numSubStates[parentState];
-            double[] parentCount = new double[nParentSubStates];
+        for (final BinaryRule binaryRule : binaryRuleCounter.keySet()) {
+            final double[][][] binaryCounts = binaryRuleCounter.getCount(binaryRule);
+            final int parentState = binaryRule.parentState;
+            final int nParentSubStates = numSubStates[parentState];
+            final double[] parentCount = new double[nParentSubStates];
             for (int i = 0; i < nParentSubStates; i++) {
                 parentCount[i] = symbolCounter.getCount(parentState, i);
             }
@@ -919,10 +920,10 @@ public class Grammar implements java.io.Serializable {
      * Check number of substates
      */
     public void checkNumberOfSubstates() {
-        for (UnaryRule unaryRule : unaryRuleCounter.keySet()) {
-            double[][] unaryCounts = unaryRuleCounter.getCount(unaryRule);
-            int nParentSubStates = numSubStates[unaryRule.parentState];
-            int nChildSubStates = numSubStates[unaryRule.childState];
+        for (final UnaryRule unaryRule : unaryRuleCounter.keySet()) {
+            final double[][] unaryCounts = unaryRuleCounter.getCount(unaryRule);
+            final int nParentSubStates = numSubStates[unaryRule.parentState];
+            final int nChildSubStates = numSubStates[unaryRule.childState];
             if (unaryCounts.length != nChildSubStates) {
                 System.out.println("Unary Rule " + unaryRule + " should have " + nChildSubStates + " childsubstates.");
             }
@@ -931,11 +932,11 @@ public class Grammar implements java.io.Serializable {
                         .println("Unary Rule " + unaryRule + " should have " + nParentSubStates + " parentsubstates.");
             }
         }
-        for (BinaryRule binaryRule : binaryRuleCounter.keySet()) {
-            double[][][] binaryCounts = binaryRuleCounter.getCount(binaryRule);
-            int nParentSubStates = numSubStates[binaryRule.parentState];
-            int nLeftChildSubStates = numSubStates[binaryRule.leftChildState];
-            int nRightChildSubStates = numSubStates[binaryRule.rightChildState];
+        for (final BinaryRule binaryRule : binaryRuleCounter.keySet()) {
+            final double[][][] binaryCounts = binaryRuleCounter.getCount(binaryRule);
+            final int nParentSubStates = numSubStates[binaryRule.parentState];
+            final int nLeftChildSubStates = numSubStates[binaryRule.leftChildState];
+            final int nRightChildSubStates = numSubStates[binaryRule.rightChildState];
             if (binaryCounts.length != nLeftChildSubStates) {
                 System.out.println("Unary Rule " + binaryRule + " should have " + nLeftChildSubStates
                         + " left childsubstates.");
@@ -960,19 +961,19 @@ public class Grammar implements java.io.Serializable {
      */
     private void tallyParentCounts() {
         symbolCounter = new CounterMap<Integer, Integer>();
-        for (UnaryRule unaryRule : unaryRuleCounter.keySet()) {
-            double[][] unaryCounts = unaryRuleCounter.getCount(unaryRule);
-            int parentState = unaryRule.getParentState();
+        for (final UnaryRule unaryRule : unaryRuleCounter.keySet()) {
+            final double[][] unaryCounts = unaryRuleCounter.getCount(unaryRule);
+            final int parentState = unaryRule.getParentState();
             isGrammarTag[parentState] = true;
             if (unaryRule.childState == parentState)
                 continue;
-            int nParentSubStates = numSubStates[parentState];
-            double[] sum = new double[nParentSubStates];
+            final int nParentSubStates = numSubStates[parentState];
+            final double[] sum = new double[nParentSubStates];
             for (int j = 0; j < unaryCounts.length; j++) {
                 if (unaryCounts[j] == null)
                     continue;
                 for (int i = 0; i < nParentSubStates; i++) {
-                    double val = unaryCounts[j][i];
+                    final double val = unaryCounts[j][i];
                     // if (val>=threshold)
                     sum[i] += val;
                 }
@@ -982,18 +983,18 @@ public class Grammar implements java.io.Serializable {
             }
 
         }
-        for (BinaryRule binaryRule : binaryRuleCounter.keySet()) {
-            double[][][] binaryCounts = binaryRuleCounter.getCount(binaryRule);
-            int parentState = binaryRule.parentState;
+        for (final BinaryRule binaryRule : binaryRuleCounter.keySet()) {
+            final double[][][] binaryCounts = binaryRuleCounter.getCount(binaryRule);
+            final int parentState = binaryRule.parentState;
             isGrammarTag[parentState] = true;
-            int nParentSubStates = numSubStates[parentState];
-            double[] sum = new double[nParentSubStates];
+            final int nParentSubStates = numSubStates[parentState];
+            final double[] sum = new double[nParentSubStates];
             for (int j = 0; j < binaryCounts.length; j++) {
                 for (int k = 0; k < binaryCounts[j].length; k++) {
                     if (binaryCounts[j][k] == null)
                         continue;
                     for (int i = 0; i < nParentSubStates; i++) {
-                        double val = binaryCounts[j][k][i];
+                        final double val = binaryCounts[j][k][i];
                         // if (val>=threshold)
                         sum[i] += val;
                     }
@@ -1005,13 +1006,13 @@ public class Grammar implements java.io.Serializable {
         }
     }
 
-    public void tallyStateSetTree(Tree<StateSet> tree, Grammar old_grammar) {
+    public void tallyStateSetTree(final Tree<StateSet> tree, final Grammar old_grammar) {
         // Check that the top node is not split (it has only one substate)
         if (tree.isLeaf())
             return;
         if (tree.isPreTerminal())
             return;
-        StateSet node = tree.getLabel();
+        final StateSet node = tree.getLabel();
         if (node.numSubStates() != 1) {
             System.err.println("The top symbol is split!");
             System.out.println(tree);
@@ -1019,8 +1020,8 @@ public class Grammar implements java.io.Serializable {
         }
         // The inside score of its only substate is the (log) probability of the
         // tree
-        double tree_score = node.getIScore(0);
-        int tree_scale = node.getIScale();
+        final double tree_score = node.getIScore(0);
+        final int tree_scale = node.getIScale();
         if (tree_score == 0) {
             System.out.println("Something is wrong with this tree. I will skip it.");
             return;
@@ -1028,15 +1029,16 @@ public class Grammar implements java.io.Serializable {
         tallyStateSetTree(tree, tree_score, tree_scale, old_grammar);
     }
 
-    public void tallyStateSetTree(Tree<StateSet> tree, double tree_score, double tree_scale, Grammar old_grammar) {
+    public void tallyStateSetTree(final Tree<StateSet> tree, double tree_score, final double tree_scale,
+            final Grammar old_grammar) {
         if (tree.isLeaf())
             return;
         if (tree.isPreTerminal())
             return;
-        List<Tree<StateSet>> children = tree.getChildren();
-        StateSet parent = tree.getLabel();
-        short parentState = parent.getState();
-        int nParentSubStates = numSubStates[parentState];
+        final List<Tree<StateSet>> children = tree.getChildren();
+        final StateSet parent = tree.getLabel();
+        final short parentState = parent.getState();
+        final int nParentSubStates = numSubStates[parentState];
         switch (children.size()) {
         case 0:
             // This is a leaf (a preterminal node, if we count the words
@@ -1044,12 +1046,12 @@ public class Grammar implements java.io.Serializable {
             // nothing to do
             break;
         case 1:
-            StateSet child = children.get(0).getLabel();
-            short childState = child.getState();
-            int nChildSubStates = numSubStates[childState];
-            UnaryRule urule = new UnaryRule(parentState, childState);
-            double[][] oldUScores = old_grammar.getUnaryScore(urule); // rule
-                                                                      // score
+            final StateSet child = children.get(0).getLabel();
+            final short childState = child.getState();
+            final int nChildSubStates = numSubStates[childState];
+            final UnaryRule urule = new UnaryRule(parentState, childState);
+            final double[][] oldUScores = old_grammar.getUnaryScore(urule); // rule
+            // score
             double[][] ucounts = unaryRuleCounter.getCount(urule);
             if (ucounts == null)
                 ucounts = new double[nChildSubStates][];
@@ -1060,21 +1062,21 @@ public class Grammar implements java.io.Serializable {
             for (short i = 0; i < nChildSubStates; i++) {
                 if (oldUScores[i] == null)
                     continue;
-                double cIS = child.getIScore(i);
+                final double cIS = child.getIScore(i);
                 if (cIS == 0)
                     continue;
                 if (ucounts[i] == null)
                     ucounts[i] = new double[nParentSubStates];
                 for (short j = 0; j < nParentSubStates; j++) {
-                    double pOS = parent.getOScore(j); // Parent outside score
+                    final double pOS = parent.getOScore(j); // Parent outside score
                     if (pOS == 0)
                         continue;
-                    double rS = oldUScores[i][j];
+                    final double rS = oldUScores[i][j];
                     if (rS == 0)
                         continue;
                     if (tree_score == 0)
                         tree_score = 1;
-                    double logRuleCount = (rS * cIS / tree_score) * scalingFactor * pOS;
+                    final double logRuleCount = (rS * cIS / tree_score) * scalingFactor * pOS;
                     ucounts[i][j] += logRuleCount;
                 }
             }
@@ -1082,14 +1084,14 @@ public class Grammar implements java.io.Serializable {
             unaryRuleCounter.setCount(urule, ucounts);
             break;
         case 2:
-            StateSet leftChild = children.get(0).getLabel();
-            short lChildState = leftChild.getState();
-            StateSet rightChild = children.get(1).getLabel();
-            short rChildState = rightChild.getState();
-            int nLeftChildSubStates = numSubStates[lChildState];
-            int nRightChildSubStates = numSubStates[rChildState];
+            final StateSet leftChild = children.get(0).getLabel();
+            final short lChildState = leftChild.getState();
+            final StateSet rightChild = children.get(1).getLabel();
+            final short rChildState = rightChild.getState();
+            final int nLeftChildSubStates = numSubStates[lChildState];
+            final int nRightChildSubStates = numSubStates[rChildState];
             // new double[nLeftChildSubStates][nRightChildSubStates][];
-            BinaryRule brule = new BinaryRule(parentState, lChildState, rChildState);
+            final BinaryRule brule = new BinaryRule(parentState, lChildState, rChildState);
             double[][][] oldBScores = old_grammar.getBinaryScore(brule); // rule
                                                                          // score
             if (oldBScores == null) {
@@ -1108,29 +1110,29 @@ public class Grammar implements java.io.Serializable {
             // System.out.println("p: "+parent.getOScale()+" l: "+leftChild.getIScale()+" r:"+rightChild.getIScale()+" t:"+tree_scale);
             // }
             for (short i = 0; i < nLeftChildSubStates; i++) {
-                double lcIS = leftChild.getIScore(i);
+                final double lcIS = leftChild.getIScore(i);
                 if (lcIS == 0)
                     continue;
                 for (short j = 0; j < nRightChildSubStates; j++) {
                     if (oldBScores[i][j] == null)
                         continue;
-                    double rcIS = rightChild.getIScore(j);
+                    final double rcIS = rightChild.getIScore(j);
                     if (rcIS == 0)
                         continue;
                     // allocate parent array
                     if (bcounts[i][j] == null)
                         bcounts[i][j] = new double[nParentSubStates];
                     for (short k = 0; k < nParentSubStates; k++) {
-                        double pOS = parent.getOScore(k); // Parent outside
-                                                          // score
+                        final double pOS = parent.getOScore(k); // Parent outside
+                        // score
                         if (pOS == 0)
                             continue;
-                        double rS = oldBScores[i][j][k];
+                        final double rS = oldBScores[i][j][k];
                         if (rS == 0)
                             continue;
                         if (tree_score == 0)
                             tree_score = 1;
-                        double logRuleCount = (rS * lcIS / tree_score) * rcIS * scalingFactor * pOS;
+                        final double logRuleCount = (rS * lcIS / tree_score) * rcIS * scalingFactor * pOS;
                         /*
                          * if (logRuleCount == 0) { System.out.println("rS "+rS+", lcIS "
                          * +lcIS+", rcIS "+rcIS+", tree_score "+tree_score+
@@ -1147,50 +1149,50 @@ public class Grammar implements java.io.Serializable {
             throw new Error("Malformed tree: more than two children");
         }
 
-        for (Tree<StateSet> child : children) {
+        for (final Tree<StateSet> child : children) {
             tallyStateSetTree(child, tree_score, tree_scale, old_grammar);
         }
     }
 
-    public void tallyUninitializedStateSetTree(Tree<StateSet> tree) {
+    public void tallyUninitializedStateSetTree(final Tree<StateSet> tree) {
         if (tree.isLeaf())
             return;
         // the lexicon handles preterminal nodes
         if (tree.isPreTerminal())
             return;
-        List<Tree<StateSet>> children = tree.getChildren();
-        StateSet parent = tree.getLabel();
-        short parentState = parent.getState();
-        int nParentSubStates = parent.numSubStates(); // numSubStates[parentState];
+        final List<Tree<StateSet>> children = tree.getChildren();
+        final StateSet parent = tree.getLabel();
+        final short parentState = parent.getState();
+        final int nParentSubStates = parent.numSubStates(); // numSubStates[parentState];
         switch (children.size()) {
         case 0:
             // This is a leaf (a preterminal node, if we count the words
             // themselves), nothing to do
             break;
         case 1:
-            StateSet child = children.get(0).getLabel();
-            short childState = child.getState();
-            int nChildSubStates = child.numSubStates(); // numSubStates[childState];
-            double[][] counts = new double[nChildSubStates][nParentSubStates];
-            UnaryRule urule = new UnaryRule(parentState, childState, counts);
+            final StateSet child = children.get(0).getLabel();
+            final short childState = child.getState();
+            final int nChildSubStates = child.numSubStates(); // numSubStates[childState];
+            final double[][] counts = new double[nChildSubStates][nParentSubStates];
+            final UnaryRule urule = new UnaryRule(parentState, childState, counts);
             unaryRuleCounter.incrementCount(urule, 1.0);
             break;
         case 2:
-            StateSet leftChild = children.get(0).getLabel();
-            short lChildState = leftChild.getState();
-            StateSet rightChild = children.get(1).getLabel();
-            short rChildState = rightChild.getState();
-            int nLeftChildSubStates = leftChild.numSubStates(); // numSubStates[lChildState];
-            int nRightChildSubStates = rightChild.numSubStates();// numSubStates[rChildState];
-            double[][][] bcounts = new double[nLeftChildSubStates][nRightChildSubStates][nParentSubStates];
-            BinaryRule brule = new BinaryRule(parentState, lChildState, rChildState, bcounts);
+            final StateSet leftChild = children.get(0).getLabel();
+            final short lChildState = leftChild.getState();
+            final StateSet rightChild = children.get(1).getLabel();
+            final short rChildState = rightChild.getState();
+            final int nLeftChildSubStates = leftChild.numSubStates(); // numSubStates[lChildState];
+            final int nRightChildSubStates = rightChild.numSubStates();// numSubStates[rChildState];
+            final double[][][] bcounts = new double[nLeftChildSubStates][nRightChildSubStates][nParentSubStates];
+            final BinaryRule brule = new BinaryRule(parentState, lChildState, rChildState, bcounts);
             binaryRuleCounter.incrementCount(brule, 1.0);
             break;
         default:
             throw new Error("Malformed tree: more than two children");
         }
 
-        for (Tree<StateSet> child : children) {
+        for (final Tree<StateSet> child : children) {
             tallyUninitializedStateSetTree(child);
         }
     }
@@ -1259,7 +1261,7 @@ public class Grammar implements java.io.Serializable {
         }
     }
 
-    public UnaryRule[] getClosedSumUnaryRulesByParent(int state) {
+    public UnaryRule[] getClosedSumUnaryRulesByParent(final int state) {
         if (closedSumRulesWithP == null) {
             makeCRArrays();
         }
@@ -1269,7 +1271,7 @@ public class Grammar implements java.io.Serializable {
         return closedSumRulesWithP[state];
     }
 
-    public UnaryRule[] getClosedSumUnaryRulesByChild(int state) {
+    public UnaryRule[] getClosedSumUnaryRulesByChild(final int state) {
         if (closedSumRulesWithC == null) {
             makeCRArrays();
         }
@@ -1279,7 +1281,7 @@ public class Grammar implements java.io.Serializable {
         return closedSumRulesWithC[state];
     }
 
-    public UnaryRule[] getClosedViterbiUnaryRulesByParent(int state) {
+    public UnaryRule[] getClosedViterbiUnaryRulesByParent(final int state) {
         if (closedViterbiRulesWithP == null) {
             makeCRArrays();
         }
@@ -1289,7 +1291,7 @@ public class Grammar implements java.io.Serializable {
         return closedViterbiRulesWithP[state];
     }
 
-    public UnaryRule[] getClosedViterbiUnaryRulesByChild(int state) {
+    public UnaryRule[] getClosedViterbiUnaryRulesByChild(final int state) {
         if (closedViterbiRulesWithC == null) {
             makeCRArrays();
         }
@@ -1301,10 +1303,10 @@ public class Grammar implements java.io.Serializable {
 
     @SuppressWarnings("unchecked")
     public void purgeRules() {
-        Map bR = new HashMap();
-        Map bR2 = new HashMap();
-        for (Iterator i = bestSumRulesUnderMax.keySet().iterator(); i.hasNext();) {
-            UnaryRule ur = (UnaryRule) i.next();
+        final Map bR = new HashMap();
+        final Map bR2 = new HashMap();
+        for (final Iterator i = bestSumRulesUnderMax.keySet().iterator(); i.hasNext();) {
+            final UnaryRule ur = (UnaryRule) i.next();
             if ((ur.parentState != ur.childState)) {
                 bR.put(ur, ur);
                 bR2.put(ur, ur);
@@ -1315,8 +1317,8 @@ public class Grammar implements java.io.Serializable {
     }
 
     @SuppressWarnings("unchecked")
-    public List<short[]> getBestViterbiPath(short pState, short np, short cState, short cp) {
-        ArrayList<short[]> path = new ArrayList<short[]>();
+    public List<short[]> getBestViterbiPath(final short pState, final short np, final short cState, final short cp) {
+        final ArrayList<short[]> path = new ArrayList<short[]>();
         short[] state = new short[2];
         state[0] = pState;
         state[1] = np;
@@ -1347,20 +1349,20 @@ public class Grammar implements java.io.Serializable {
     }
 
     @SuppressWarnings("unchecked")
-    private void closeRulesUnderMax(UnaryRule ur) {
-        short pState = ur.parentState;
-        int nPSubStates = numSubStates[pState];
-        short cState = ur.childState;
-        double[][] uScores = ur.getScores2();
+    private void closeRulesUnderMax(final UnaryRule ur) {
+        final short pState = ur.parentState;
+        final int nPSubStates = numSubStates[pState];
+        final short cState = ur.childState;
+        final double[][] uScores = ur.getScores2();
         // do all sum rules
         for (int i = 0; i < closedSumRulesWithChild[pState].size(); i++) {
-            UnaryRule pr = closedSumRulesWithChild[pState].get(i);
+            final UnaryRule pr = closedSumRulesWithChild[pState].get(i);
             for (int j = 0; j < closedSumRulesWithParent[cState].size(); j++) {
-                short parentState = pr.parentState;
-                int nParentSubStates = numSubStates[parentState];
-                UnaryRule cr = closedSumRulesWithParent[cState].get(j);
-                UnaryRule resultR = new UnaryRule(parentState, cr.getChildState());
-                double[][] scores = new double[numSubStates[cr.getChildState()]][nParentSubStates];
+                final short parentState = pr.parentState;
+                final int nParentSubStates = numSubStates[parentState];
+                final UnaryRule cr = closedSumRulesWithParent[cState].get(j);
+                final UnaryRule resultR = new UnaryRule(parentState, cr.getChildState());
+                final double[][] scores = new double[numSubStates[cr.getChildState()]][nParentSubStates];
                 for (int np = 0; np < scores[0].length; np++) {
                     for (int cp = 0; cp < scores.length; cp++) {
                         // sum over intermediate substates
@@ -1380,22 +1382,23 @@ public class Grammar implements java.io.Serializable {
         }
         // do viterbi rules also
         for (short i = 0; i < closedViterbiRulesWithChild[pState].size(); i++) {
-            UnaryRule pr = closedViterbiRulesWithChild[pState].get(i);
+            final UnaryRule pr = closedViterbiRulesWithChild[pState].get(i);
             for (short j = 0; j < closedViterbiRulesWithParent[cState].size(); j++) {
-                UnaryRule cr = closedViterbiRulesWithParent[cState].get(j);
-                short parentState = pr.parentState;
-                int nParentSubStates = numSubStates[parentState];
-                UnaryRule resultR = new UnaryRule(parentState, cr.getChildState());
-                double[][] scores = new double[numSubStates[cr.getChildState()]][nParentSubStates];
-                short[][] intermediateSubState1 = new short[nParentSubStates][numSubStates[cr.getChildState()]];
-                short[][] intermediateSubState2 = new short[nParentSubStates][numSubStates[cr.getChildState()]];
+                final UnaryRule cr = closedViterbiRulesWithParent[cState].get(j);
+                final short parentState = pr.parentState;
+                final int nParentSubStates = numSubStates[parentState];
+                final UnaryRule resultR = new UnaryRule(parentState, cr.getChildState());
+                final double[][] scores = new double[numSubStates[cr.getChildState()]][nParentSubStates];
+                final short[][] intermediateSubState1 = new short[nParentSubStates][numSubStates[cr.getChildState()]];
+                final short[][] intermediateSubState2 = new short[nParentSubStates][numSubStates[cr.getChildState()]];
                 for (int np = 0; np < scores[0].length; np++) {
                     for (int cp = 0; cp < scores.length; cp++) {
                         // sum over intermediate substates
                         double max = 0;
                         for (short unp = 0; unp < nPSubStates; unp++) {
                             for (short ucp = 0; ucp < uScores.length; ucp++) {
-                                double score = pr.getScore(np, unp) * cr.getScore(ucp, cp) * ur.getScore(unp, ucp);
+                                final double score = pr.getScore(np, unp) * cr.getScore(ucp, cp)
+                                        * ur.getScore(unp, ucp);
                                 if (score > max) {
                                     max = score;
                                     intermediateSubState1[np][cp] = unp;
@@ -1413,14 +1416,14 @@ public class Grammar implements java.io.Serializable {
         }
     }
 
-    public int getUnaryIntermediate(short start, short end) {
+    public int getUnaryIntermediate(final short start, final short end) {
         return closedSumPaths[start][end];
     }
 
     @SuppressWarnings("unchecked")
-    private boolean relaxSumRule(UnaryRule ur, int intState1, int intState2) {
+    private boolean relaxSumRule(final UnaryRule ur, final int intState1, final int intState2) {
         // TODO: keep track of path
-        UnaryRule bestR = (UnaryRule) bestSumRulesUnderMax.get(ur);
+        final UnaryRule bestR = (UnaryRule) bestSumRulesUnderMax.get(ur);
         if (bestR == null) {
             bestSumRulesUnderMax.put(ur, ur);
             closedSumRulesWithParent[ur.parentState].add(ur);
@@ -1447,27 +1450,27 @@ public class Grammar implements java.io.Serializable {
             for (short childState = 0; childState < numStates; childState++) {
                 if (parentState == childState)
                     continue;
-                int nParentSubStates = numSubStates[parentState];
-                int nChildSubStates = numSubStates[childState];
-                UnaryRule resultRsum = new UnaryRule(parentState, childState);
-                UnaryRule resultRmax = new UnaryRule(parentState, childState);
-                double[][] scoresSum = new double[nChildSubStates][nParentSubStates];
-                double[][] scoresMax = new double[nChildSubStates][nParentSubStates];
+                final int nParentSubStates = numSubStates[parentState];
+                final int nChildSubStates = numSubStates[childState];
+                final UnaryRule resultRsum = new UnaryRule(parentState, childState);
+                final UnaryRule resultRmax = new UnaryRule(parentState, childState);
+                final double[][] scoresSum = new double[nChildSubStates][nParentSubStates];
+                final double[][] scoresMax = new double[nChildSubStates][nParentSubStates];
                 double maxSumScore = -1;
                 short bestSumIntermed = -1;
                 short bestMaxIntermed = -2;
                 for (int i = 0; i < unaryRulesWithParent[parentState].size(); i++) {
-                    UnaryRule pr = unaryRulesWithParent[parentState].get(i);
-                    short state = pr.getChildState();
+                    final UnaryRule pr = unaryRulesWithParent[parentState].get(i);
+                    final short state = pr.getChildState();
                     if (state == childState) {
                         double total = 0;
-                        double[][] scores = pr.getScores2();
+                        final double[][] scores = pr.getScores2();
                         for (int cp = 0; cp < nChildSubStates; cp++) {
                             if (scores[cp] == null)
                                 continue;
                             for (int np = 0; np < nParentSubStates; np++) {
                                 // sum over intermediate substates
-                                double sum = scores[cp][np];
+                                final double sum = scores[cp][np];
                                 scoresSum[cp][np] += sum;
                                 total += sum;
                                 if (sum > scoresMax[cp][np]) {
@@ -1482,10 +1485,10 @@ public class Grammar implements java.io.Serializable {
                         }
                     } else {
                         for (int j = 0; j < unaryRulesWithC[childState].size(); j++) {
-                            UnaryRule cr = unaryRulesWithC[childState].get(j);
+                            final UnaryRule cr = unaryRulesWithC[childState].get(j);
                             if (state != cr.getParentState())
                                 continue;
-                            int nMySubStates = numSubStates[state];
+                            final int nMySubStates = numSubStates[state];
                             double total = 0;
                             for (int np = 0; np < nParentSubStates; np++) {
                                 for (int cp = 0; cp < nChildSubStates; cp++) {
@@ -1493,7 +1496,7 @@ public class Grammar implements java.io.Serializable {
                                     double sum = 0;
                                     double max = 0;
                                     for (int unp = 0; unp < nMySubStates; unp++) {
-                                        double val = pr.getScore(np, unp) * cr.getScore(unp, cp);
+                                        final double val = pr.getScore(np, unp) * cr.getScore(unp, cp);
                                         sum += val;
                                         max = Math.max(max, val);
                                     }
@@ -1548,8 +1551,8 @@ public class Grammar implements java.io.Serializable {
      * @return
      */
     @SuppressWarnings("unchecked")
-    private void relaxViterbiRule(UnaryRule ur, short intState1, short[][] intSubStates1, short intState2,
-            short[][] intSubStates2) {
+    private void relaxViterbiRule(final UnaryRule ur, final short intState1, final short[][] intSubStates1,
+            final short intState2, final short[][] intSubStates2) {
         throw new Error("Viterbi closure is broken!");
         /*
          * UnaryRule bestR = (UnaryRule) bestViterbiRulesUnderMax.get(ur); boolean isNewRule = (bestR==null); if
@@ -1571,14 +1574,14 @@ public class Grammar implements java.io.Serializable {
      * @param rule
      */
     @SuppressWarnings("unchecked")
-    private void relaxViterbiRule(UnaryRule rule) {
+    private void relaxViterbiRule(final UnaryRule rule) {
         bestViterbiRulesUnderMax.put(rule, rule);
         closedViterbiRulesWithParent[rule.parentState].add(rule);
         closedViterbiRulesWithChild[rule.childState].add(rule);
         if (findClosedPaths) {
             for (short i = 0; i < rule.scores.length; i++) {
                 for (short j = 0; j < rule.scores[i].length; j++) {
-                    short[] pair = new short[2];
+                    final short[] pair = new short[2];
                     pair[0] = rule.childState;
                     pair[1] = j;
                     /*
@@ -1599,7 +1602,7 @@ public class Grammar implements java.io.Serializable {
      * to C, and the return value from A to C (summing out B). This function is intended primarily to compute
      * unaryRulesWithParent^n.
      */
-    private List<UnaryRule>[] matrixMultiply(List<UnaryRule>[] parentRules, List<UnaryRule>[] childRules) {
+    private List<UnaryRule>[] matrixMultiply(final List<UnaryRule>[] parentRules, final List<UnaryRule>[] childRules) {
         throw new Error("I'm broken by parent first");
         /*
          * double[][][][] scores = new double[numStates][numStates][][]; for ( short A=0; A<numStates; A++ ) { for (
@@ -1626,7 +1629,7 @@ public class Grammar implements java.io.Serializable {
      * @param rules1
      * @param rules2
      */
-    private void matrixAdd(List<UnaryRule>[] rules1, List<UnaryRule>[] rules2) {
+    private void matrixAdd(final List<UnaryRule>[] rules1, final List<UnaryRule>[] rules2) {
         throw new Error("I'm broken by parent first");
         /*
          * for ( short A=0; A<numStates; A++ ) { for ( UnaryRule r2 : rules2[A] ) { short child2 = r2.getChildState();
@@ -1661,7 +1664,7 @@ public class Grammar implements java.io.Serializable {
      * @param P
      * @return I + P + P^2 + P^3 + ... (approximation by truncation after some power)
      */
-    private List<UnaryRule>[] sumProductUnaryClosure(List<UnaryRule>[] P) {
+    private List<UnaryRule>[] sumProductUnaryClosure(final List<UnaryRule>[] P) {
         throw new Error("I'm broken by parent first");
         /*
          * List<UnaryRule>[] R = matrixUnity(); matrixAdd(R, P); // R = I + P + P^2 + P^3 + ... List<UnaryRule>[] Q = P;
@@ -1679,7 +1682,8 @@ public class Grammar implements java.io.Serializable {
      * @param possibleSt (a list of possible states to consider)
      * @return U=V*M (row vector)
      */
-    public double[][] matrixVectorPreMultiply(double[][] V, List<UnaryRule>[] M, List<Integer> possibleSt) {
+    public double[][] matrixVectorPreMultiply(final double[][] V, final List<UnaryRule>[] M,
+            final List<Integer> possibleSt) {
         throw new Error("I'm broken by parent first");
         /*
          * double[][] U = new double[numStates][]; for (int pState : possibleSt){ U[pState] = new
@@ -1707,7 +1711,8 @@ public class Grammar implements java.io.Serializable {
      * @param possibleSt (a list of possible states to consider)
      * @return U=M*V (column vector)
      */
-    public double[][] matrixVectorPostMultiply(List<UnaryRule>[] M, double[][] V, List<Integer> possibleSt) {
+    public double[][] matrixVectorPostMultiply(final List<UnaryRule>[] M, final double[][] V,
+            final List<Integer> possibleSt) {
         throw new Error("I'm broken by parent first");
         /*
          * double[][] U = new double[numStates][]; for (int cState : possibleSt){ U[cState] = new
@@ -1757,7 +1762,7 @@ public class Grammar implements java.io.Serializable {
         makeCRArrays();
     }
 
-    public BinaryRule[] splitRulesWithLC(int state) {
+    public BinaryRule[] splitRulesWithLC(final int state) {
         // System.out.println("splitRulesWithLC not supported anymore.");
         // return null;
         if (state >= splitRulesWithLC.length) {
@@ -1766,7 +1771,7 @@ public class Grammar implements java.io.Serializable {
         return splitRulesWithLC[state];
     }
 
-    public BinaryRule[] splitRulesWithRC(int state) {
+    public BinaryRule[] splitRulesWithRC(final int state) {
         // System.out.println("splitRulesWithLC not supported anymore.");
         // return null;
         if (state >= splitRulesWithRC.length) {
@@ -1775,7 +1780,7 @@ public class Grammar implements java.io.Serializable {
         return splitRulesWithRC[state];
     }
 
-    public BinaryRule[] splitRulesWithP(int state) {
+    public BinaryRule[] splitRulesWithP(final int state) {
         if (splitRulesWithP == null)
             splitRules();
         if (state >= splitRulesWithP.length) {
@@ -1784,23 +1789,23 @@ public class Grammar implements java.io.Serializable {
         return splitRulesWithP[state];
     }
 
-    private BinaryRule[] toBRArray(List<BinaryRule> list) {
+    private BinaryRule[] toBRArray(final List<BinaryRule> list) {
         // Collections.sort(list, Rule.scoreComparator()); // didn't seem to
         // help
-        BinaryRule[] array = new BinaryRule[list.size()];
+        final BinaryRule[] array = new BinaryRule[list.size()];
         for (int i = 0; i < array.length; i++) {
             array[i] = list.get(i);
         }
         return array;
     }
 
-    public double[][] getUnaryScore(short pState, short cState) {
-        UnaryRule r = getUnaryRule(pState, cState);
+    public double[][] getUnaryScore(final short pState, final short cState) {
+        final UnaryRule r = getUnaryRule(pState, cState);
         if (r != null)
             return r.getScores2();
         if (GrammarTrainer.VERBOSE)
             System.out.println("The requested rule (" + uSearchRule + ") is not in the grammar!");
-        double[][] uscores = new double[numSubStates[cState]][numSubStates[pState]];
+        final double[][] uscores = new double[numSubStates[cState]][numSubStates[pState]];
         ArrayUtil.fill(uscores, 0.0);
         return uscores;
     }
@@ -1810,25 +1815,25 @@ public class Grammar implements java.io.Serializable {
      * @param cState
      * @return
      */
-    public UnaryRule getUnaryRule(short pState, short cState) {
-        UnaryRule uRule = new UnaryRule(pState, cState);
-        UnaryRule r = unaryRuleMap.get(uRule);
+    public UnaryRule getUnaryRule(final short pState, final short cState) {
+        final UnaryRule uRule = new UnaryRule(pState, cState);
+        final UnaryRule r = unaryRuleMap.get(uRule);
         return r;
     }
 
-    public double[][] getUnaryScore(UnaryRule rule) {
-        UnaryRule r = unaryRuleMap.get(rule);
+    public double[][] getUnaryScore(final UnaryRule rule) {
+        final UnaryRule r = unaryRuleMap.get(rule);
         if (r != null)
             return r.getScores2();
         if (GrammarTrainer.VERBOSE)
             System.err.println("The requested rule (" + rule + ") is not in the grammar!");
-        double[][] uscores = new double[numSubStates[rule.getChildState()]][numSubStates[rule.getParentState()]];
+        final double[][] uscores = new double[numSubStates[rule.getChildState()]][numSubStates[rule.getParentState()]];
         ArrayUtil.fill(uscores, 0.0);
         return uscores;
     }
 
-    public double[][][] getBinaryScore(short pState, short lState, short rState) {
-        BinaryRule r = getBinaryRule(pState, lState, rState);
+    public double[][][] getBinaryScore(final short pState, final short lState, final short rState) {
+        final BinaryRule r = getBinaryRule(pState, lState, rState);
         if (r != null)
             return r.getScores2();
         if (GrammarTrainer.VERBOSE) {
@@ -1837,7 +1842,7 @@ public class Grammar implements java.io.Serializable {
             System.err.println(tagNumberer.object(rState) + "\t" + rState);
             System.err.println("numSubStates.length:" + "\t" + numSubStates.length);
         }
-        double[][][] bscores = new double[numSubStates[lState]][numSubStates[rState]][numSubStates[pState]];
+        final double[][][] bscores = new double[numSubStates[lState]][numSubStates[rState]][numSubStates[pState]];
         ArrayUtil.fill(bscores, 0.0);
         return bscores;
     }
@@ -1848,30 +1853,30 @@ public class Grammar implements java.io.Serializable {
      * @param rState
      * @return
      */
-    public BinaryRule getBinaryRule(short pState, short lState, short rState) {
-        BinaryRule bRule = new BinaryRule(pState, lState, rState);
-        BinaryRule r = binaryRuleMap.get(bRule);
+    public BinaryRule getBinaryRule(final short pState, final short lState, final short rState) {
+        final BinaryRule bRule = new BinaryRule(pState, lState, rState);
+        final BinaryRule r = binaryRuleMap.get(bRule);
         return r;
     }
 
-    public double[][][] getBinaryScore(BinaryRule rule) {
-        BinaryRule r = binaryRuleMap.get(rule);
+    public double[][][] getBinaryScore(final BinaryRule rule) {
+        final BinaryRule r = binaryRuleMap.get(rule);
         if (r != null)
             return r.getScores2();
         else {
             if (GrammarTrainer.VERBOSE)
                 System.out.println("The requested rule (" + rule + ") is not in the grammar!");
-            double[][][] bscores = new double[numSubStates[rule.getLeftChildState()]][numSubStates[rule
+            final double[][][] bscores = new double[numSubStates[rule.getLeftChildState()]][numSubStates[rule
                     .getRightChildState()]][numSubStates[rule.getParentState()]];
             ArrayUtil.fill(bscores, 0.0);
             return bscores;
         }
     }
 
-    public void printSymbolCounter(Numberer tagNumberer) {
-        Set<Integer> set = symbolCounter.keySet();
-        PriorityQueue<String> pq = new PriorityQueue<String>(set.size());
-        for (Integer i : set) {
+    public void printSymbolCounter(final Numberer tagNumberer) {
+        final Set<Integer> set = symbolCounter.keySet();
+        final PriorityQueue<String> pq = new PriorityQueue<String>(set.size());
+        for (final Integer i : set) {
             pq.add((String) tagNumberer.object(i), symbolCounter.getCount(i, 0));
             // System.out.println(i+". "+(String)tagNumberer.object(i)+"\t
             // "+symbolCounter.getCount(i,0));
@@ -1879,12 +1884,12 @@ public class Grammar implements java.io.Serializable {
         int i = 0;
         while (pq.hasNext()) {
             i++;
-            int p = (int) pq.getPriority();
+            final int p = (int) pq.getPriority();
             System.out.println(i + ". " + pq.next() + "\t " + p);
         }
     }
 
-    public int getSymbolCount(Integer i) {
+    public int getSymbolCount(final Integer i) {
         return (int) symbolCounter.getCount(i, 0);
     }
 
@@ -1897,7 +1902,7 @@ public class Grammar implements java.io.Serializable {
                 continue;
             if (binaryRulesWithParent == null)
                 continue;
-            for (BinaryRule rule : binaryRulesWithParent[state]) {
+            for (final BinaryRule rule : binaryRulesWithParent[state]) {
                 binaryRulesWithLC[rule.leftChildState].add(rule);
                 binaryRulesWithRC[rule.rightChildState].add(rule);
             }
@@ -1916,11 +1921,12 @@ public class Grammar implements java.io.Serializable {
      *            (for log-linear grammars with cascading regularization)
      * @return
      */
-    public Grammar splitAllStates(double randomness, int[] counts, boolean moreSubstatesThanCounts, int mode) {
+    public Grammar splitAllStates(final double randomness, final int[] counts, final boolean moreSubstatesThanCounts,
+            final int mode) {
         if (logarithmMode) {
             throw new Error("Do not split states when Grammar is in logarithm mode");
         }
-        short[] newNumSubStates = new short[numSubStates.length];
+        final short[] newNumSubStates = new short[numSubStates.length];
         for (short i = 0; i < numSubStates.length; i++) {
             // don't split a state into more substates than times it was
             // actaully seen
@@ -1932,21 +1938,21 @@ public class Grammar implements java.io.Serializable {
             newNumSubStates[i] = (short) (numSubStates[i] * 2);
             // }
         }
-        boolean doNotNormalize = (mode == 1);
+        final boolean doNotNormalize = (mode == 1);
         newNumSubStates[0] = 1; // never split ROOT
         // create the new grammar
-        Grammar grammar = new Grammar(newNumSubStates, findClosedPaths, smoother, this, threshold);
-        Random random = GrammarTrainer.RANDOM;
+        final Grammar grammar = new Grammar(newNumSubStates, findClosedPaths, smoother, this, threshold);
+        final Random random = GrammarTrainer.RANDOM;
 
-        for (BinaryRule oldRule : binaryRuleMap.keySet()) {
-            BinaryRule newRule = oldRule.splitRule(numSubStates, newNumSubStates, random, randomness, doNotNormalize,
-                    mode);
+        for (final BinaryRule oldRule : binaryRuleMap.keySet()) {
+            final BinaryRule newRule = oldRule.splitRule(numSubStates, newNumSubStates, random, randomness,
+                    doNotNormalize, mode);
             grammar.addBinary(newRule);
         }
 
-        for (UnaryRule oldRule : unaryRuleMap.keySet()) {
-            UnaryRule newRule = oldRule.splitRule(numSubStates, newNumSubStates, random, randomness, doNotNormalize,
-                    mode);
+        for (final UnaryRule oldRule : unaryRuleMap.keySet()) {
+            final UnaryRule newRule = oldRule.splitRule(numSubStates, newNumSubStates, random, randomness,
+                    doNotNormalize, mode);
             grammar.addUnary(newRule);
         }
         grammar.isGrammarTag = this.isGrammarTag;
@@ -1956,12 +1962,12 @@ public class Grammar implements java.io.Serializable {
     }
 
     @SuppressWarnings("unchecked")
-    public void extendSplitTrees(Tree<Short>[] trees, short[] oldNumSubStates) {
+    public void extendSplitTrees(final Tree<Short>[] trees, final short[] oldNumSubStates) {
         this.splitTrees = new Tree[numStates];
         for (int tag = 0; tag < splitTrees.length; tag++) {
-            Tree<Short> splitTree = trees[tag].shallowClone();
-            for (Tree<Short> leaf : splitTree.getTerminals()) {
-                List<Tree<Short>> children = leaf.getChildren();
+            final Tree<Short> splitTree = trees[tag].shallowClone();
+            for (final Tree<Short> leaf : splitTree.getTerminals()) {
+                final List<Tree<Short>> children = leaf.getChildren();
                 if (numSubStates[tag] > oldNumSubStates[tag]) {
                     children.add(new Tree<Short>((short) (2 * leaf.getLabel())));
                     children.add(new Tree<Short>((short) (2 * leaf.getLabel() + 1)));
@@ -1988,12 +1994,12 @@ public class Grammar implements java.io.Serializable {
      * @param tree
      * @param mergeWeights The probability of seeing substate given state.
      */
-    public void tallyMergeWeights(Tree<StateSet> tree, double mergeWeights[][]) {
+    public void tallyMergeWeights(final Tree<StateSet> tree, final double mergeWeights[][]) {
         if (tree.isLeaf())
             return;
-        StateSet label = tree.getLabel();
-        short state = label.getState();
-        double probs[] = new double[label.numSubStates()];
+        final StateSet label = tree.getLabel();
+        final short state = label.getState();
+        final double probs[] = new double[label.numSubStates()];
         double total = 0, tmp;
         for (short i = 0; i < label.numSubStates(); i++) {
             tmp = label.getIScore(i) * label.getOScore(i);
@@ -2006,7 +2012,7 @@ public class Grammar implements java.io.Serializable {
         for (short i = 0; i < label.numSubStates(); i++) {
             mergeWeights[state][i] += probs[i] / total;
         }
-        for (Tree<StateSet> child : tree.getChildren()) {
+        for (final Tree<StateSet> child : tree.getChildren()) {
             tallyMergeWeights(child, mergeWeights);
         }
     }
@@ -2015,7 +2021,7 @@ public class Grammar implements java.io.Serializable {
      * normalize merge weights. assumes that the mergeWeights are given as logs. the normalized weights are returned as
      * probabilities.
      */
-    public void normalizeMergeWeights(double[][] mergeWeights) {
+    public void normalizeMergeWeights(final double[][] mergeWeights) {
         for (int state = 0; state < mergeWeights.length; state++) {
             double sum = 0;
             for (int subState = 0; subState < numSubStates[state]; subState++) {
@@ -2037,13 +2043,13 @@ public class Grammar implements java.io.Serializable {
      * @param deltas The log likelihood gained by merging pairs of substates.
      * @param mergeWeights The probability of seeing substate given state.
      */
-    public void tallyMergeScores(Tree<StateSet> tree, double[][][] deltas, double[][] mergeWeights) {
+    public void tallyMergeScores(final Tree<StateSet> tree, final double[][][] deltas, final double[][] mergeWeights) {
         if (tree.isLeaf())
             return;
-        StateSet label = tree.getLabel();
-        short state = label.getState();
-        double[] separatedScores = new double[label.numSubStates()];
-        double[] combinedScores = new double[label.numSubStates()];
+        final StateSet label = tree.getLabel();
+        final short state = label.getState();
+        final double[] separatedScores = new double[label.numSubStates()];
+        final double[] combinedScores = new double[label.numSubStates()];
         double combinedScore;
         // calculate separated scores
 
@@ -2057,10 +2063,10 @@ public class Grammar implements java.io.Serializable {
         // calculate merged scores
         for (short i = 0; i < numSubStates[state]; i++) {
             for (short j = (short) (i + 1); j < numSubStates[state]; j++) {
-                short[] map = new short[2];
+                final short[] map = new short[2];
                 map[0] = i;
                 map[1] = j;
-                double[] tmp1 = new double[2], tmp2 = new double[2];
+                final double[] tmp1 = new double[2], tmp2 = new double[2];
                 double mergeWeightSum = 0;
                 for (int k = 0; k < 2; k++) {
                     mergeWeightSum += mergeWeights[state][map[k]];
@@ -2086,7 +2092,7 @@ public class Grammar implements java.io.Serializable {
             }
         }
 
-        for (Tree<StateSet> child : tree.getChildren()) {
+        for (final Tree<StateSet> child : tree.getChildren()) {
             tallyMergeScores(child, deltas, mergeWeights);
         }
     }
@@ -2098,36 +2104,37 @@ public class Grammar implements java.io.Serializable {
      * @param mergeThesePairs Which substate pairs to merge.
      * @param mergeWeights The probability of seeing each substate.
      */
-    public Grammar mergeStates(boolean[][][] mergeThesePairs, double[][] mergeWeights) {
+    public Grammar mergeStates(final boolean[][][] mergeThesePairs, final double[][] mergeWeights) {
         if (logarithmMode) {
             throw new Error("Do not merge grammars in logarithm mode!");
         }
-        short[] newNumSubStates = new short[numSubStates.length];
-        short[][] mapping = new short[numSubStates.length][];
+        final short[] newNumSubStates = new short[numSubStates.length];
+        final short[][] mapping = new short[numSubStates.length][];
         // invariant: if partners[state][substate][0] == substate, it's the 1st
         // one
-        short[][][] partners = new short[numSubStates.length][][];
+        final short[][][] partners = new short[numSubStates.length][][];
         calculateMergeArrays(mergeThesePairs, newNumSubStates, mapping, partners, numSubStates);
         // create the new grammar
-        Grammar grammar = new Grammar(newNumSubStates, findClosedPaths, smoother, this, threshold);
+        final Grammar grammar = new Grammar(newNumSubStates, findClosedPaths, smoother, this, threshold);
         // for (Rule r : allRules) {
         // if (r instanceof BinaryRule) {
-        for (BinaryRule oldRule : binaryRuleMap.keySet()) {
+        for (final BinaryRule oldRule : binaryRuleMap.keySet()) {
             // BinaryRule oldRule = r;
-            short pS = oldRule.getParentState(), lcS = oldRule.getLeftChildState(), rcS = oldRule.getRightChildState();
-            double[][][] oldScores = oldRule.getScores2();
+            final short pS = oldRule.getParentState(), lcS = oldRule.getLeftChildState(), rcS = oldRule
+                    .getRightChildState();
+            final double[][][] oldScores = oldRule.getScores2();
             // merge binary rule
-            double[][][] newScores = new double[newNumSubStates[lcS]][newNumSubStates[rcS]][newNumSubStates[pS]];
+            final double[][][] newScores = new double[newNumSubStates[lcS]][newNumSubStates[rcS]][newNumSubStates[pS]];
             for (int i = 0; i < numSubStates[pS]; i++) {
                 if (partners[pS][i][0] == i) {
-                    int parentSplit = partners[pS][i].length;
+                    final int parentSplit = partners[pS][i].length;
                     for (int j = 0; j < numSubStates[lcS]; j++) {
                         if (partners[lcS][j][0] == j) {
-                            int leftSplit = partners[lcS][j].length;
+                            final int leftSplit = partners[lcS][j].length;
                             for (int k = 0; k < (numSubStates[rcS]); k++) {
                                 if (partners[rcS][k][0] == k) {
-                                    int rightSplit = partners[rcS][k].length;
-                                    double[][][] scores = new double[leftSplit][rightSplit][parentSplit];
+                                    final int rightSplit = partners[rcS][k].length;
+                                    final double[][][] scores = new double[leftSplit][rightSplit][parentSplit];
                                     for (int js = 0; js < leftSplit; js++) {
                                         for (int ks = 0; ks < rightSplit; ks++) {
                                             if (oldScores[partners[lcS][j][js]][partners[rcS][k][ks]] == null)
@@ -2178,25 +2185,25 @@ public class Grammar implements java.io.Serializable {
                     }
                 }
             }
-            BinaryRule newRule = new BinaryRule(oldRule);
+            final BinaryRule newRule = new BinaryRule(oldRule);
             newRule.setScores2(newScores);
             grammar.addBinary(newRule);
         }
         // } else if (r instanceof UnaryRule) {
-        for (UnaryRule oldRule : unaryRuleMap.keySet()) {
+        for (final UnaryRule oldRule : unaryRuleMap.keySet()) {
             // UnaryRule oldRule = (UnaryRule) r;
-            short pS = oldRule.getParentState(), cS = oldRule.getChildState();
+            final short pS = oldRule.getParentState(), cS = oldRule.getChildState();
             // merge unary rule
-            double[][] newScores = new double[newNumSubStates[cS]][newNumSubStates[pS]];
-            double[][] oldScores = oldRule.getScores2();
+            final double[][] newScores = new double[newNumSubStates[cS]][newNumSubStates[pS]];
+            final double[][] oldScores = oldRule.getScores2();
             boolean allZero = true;
             for (int i = 0; i < numSubStates[pS]; i++) {
                 if (partners[pS][i][0] == i) {
-                    int parentSplit = partners[pS][i].length;
+                    final int parentSplit = partners[pS][i].length;
                     for (int j = 0; j < numSubStates[cS]; j++) {
                         if (partners[cS][j][0] == j) {
-                            int childSplit = partners[cS][j].length;
-                            double[][] scores = new double[childSplit][parentSplit];
+                            final int childSplit = partners[cS][j].length;
+                            final double[][] scores = new double[childSplit][parentSplit];
                             for (int js = 0; js < childSplit; js++) {
                                 if (oldScores[partners[cS][j][js]] == null)
                                     continue;
@@ -2235,7 +2242,7 @@ public class Grammar implements java.io.Serializable {
             // System.out.println(ArrayUtil.toString(oldScores));
             // System.out.println(Arrays.toString(mergeWeights[pS]));
             // }
-            UnaryRule newRule = new UnaryRule(oldRule);
+            final UnaryRule newRule = new UnaryRule(oldRule);
             newRule.setScores2(newScores);
             grammar.addUnary(newRule);
         }
@@ -2251,16 +2258,16 @@ public class Grammar implements java.io.Serializable {
      * @param mergeThesePairs
      * @param partners
      */
-    private void pruneSplitTree(short[][][] partners, short[][] mapping) {
+    private void pruneSplitTree(final short[][][] partners, final short[][] mapping) {
         for (int tag = 0; tag < splitTrees.length; tag++) {
-            Tree<Short> splitTree = splitTrees[tag];
-            int maxDepth = splitTree.getDepth();
-            for (Tree<Short> preTerminal : splitTree.getAtDepth(maxDepth - 2)) {
-                List<Tree<Short>> children = preTerminal.getChildren();
-                ArrayList<Tree<Short>> newChildren = new ArrayList<Tree<Short>>(2);
+            final Tree<Short> splitTree = splitTrees[tag];
+            final int maxDepth = splitTree.getDepth();
+            for (final Tree<Short> preTerminal : splitTree.getAtDepth(maxDepth - 2)) {
+                final List<Tree<Short>> children = preTerminal.getChildren();
+                final ArrayList<Tree<Short>> newChildren = new ArrayList<Tree<Short>>(2);
                 for (int i = 0; i < children.size(); i++) {
-                    Tree<Short> child = children.get(i);
-                    int curLoc = child.getLabel();
+                    final Tree<Short> child = children.get(i);
+                    final int curLoc = child.getLabel();
                     if (partners[tag][curLoc][0] == curLoc) {
                         newChildren.add(new Tree<Short>(mapping[tag][curLoc]));
                     }
@@ -2270,17 +2277,17 @@ public class Grammar implements java.io.Serializable {
         }
     }
 
-    public static void checkNormalization(Grammar grammar) {
-        double[][] psum = new double[grammar.numSubStates.length][];
+    public static void checkNormalization(final Grammar grammar) {
+        final double[][] psum = new double[grammar.numSubStates.length][];
         for (int pS = 0; pS < grammar.numSubStates.length; pS++) {
             psum[pS] = new double[grammar.numSubStates[pS]];
         }
-        boolean[] sawPS = new boolean[grammar.numSubStates.length];
-        for (UnaryRule ur : grammar.unaryRuleMap.values()) {
-            int pS = ur.getParentState();
+        final boolean[] sawPS = new boolean[grammar.numSubStates.length];
+        for (final UnaryRule ur : grammar.unaryRuleMap.values()) {
+            final int pS = ur.getParentState();
             sawPS[pS] = true;
-            int cS = ur.getChildState();
-            double[][] scores = ur.getScores2();
+            final int cS = ur.getChildState();
+            final double[][] scores = ur.getScores2();
             for (int ci = 0; ci < grammar.numSubStates[cS]; ci++) {
                 if (scores[ci] == null)
                     continue;
@@ -2289,12 +2296,12 @@ public class Grammar implements java.io.Serializable {
                 }
             }
         }
-        for (BinaryRule br : grammar.binaryRuleMap.values()) {
-            int pS = br.getParentState();
+        for (final BinaryRule br : grammar.binaryRuleMap.values()) {
+            final int pS = br.getParentState();
             sawPS[pS] = true;
-            int lcS = br.getLeftChildState();
-            int rcS = br.getRightChildState();
-            double[][][] scores = br.getScores2();
+            final int lcS = br.getLeftChildState();
+            final int rcS = br.getRightChildState();
+            final double[][][] scores = br.getScores2();
             for (int lci = 0; lci < grammar.numSubStates[lcS]; lci++) {
                 for (int rci = 0; rci < grammar.numSubStates[rcS]; rci++) {
                     if (scores[lci][rci] == null)
@@ -2323,10 +2330,10 @@ public class Grammar implements java.io.Serializable {
      * @param mapping
      * @param partners
      */
-    public static void calculateMergeArrays(boolean[][][] mergeThesePairs, short[] newNumSubStates, short[][] mapping,
-            short[][][] partners, short[] numSubStates) {
+    public static void calculateMergeArrays(final boolean[][][] mergeThesePairs, final short[] newNumSubStates,
+            final short[][] mapping, final short[][][] partners, final short[] numSubStates) {
         for (short state = 0; state < numSubStates.length; state++) {
-            short mergeTarget[] = new short[mergeThesePairs[state].length];
+            final short mergeTarget[] = new short[mergeThesePairs[state].length];
             Arrays.fill(mergeTarget, (short) -1);
             short count = 0;
             mapping[state] = new short[numSubStates[state]];
@@ -2360,23 +2367,23 @@ public class Grammar implements java.io.Serializable {
         newNumSubStates[0] = 1; // never split or merge ROOT
     }
 
-    public void fixMergeWeightsEtc(boolean[][][] mergeThesePairs, double[][] mergeWeights,
-            boolean[][][] complexMergePairs) {
-        short[] newNumSubStates = new short[numSubStates.length];
-        short[][] mapping = new short[numSubStates.length][];
+    public void fixMergeWeightsEtc(final boolean[][][] mergeThesePairs, final double[][] mergeWeights,
+            final boolean[][][] complexMergePairs) {
+        final short[] newNumSubStates = new short[numSubStates.length];
+        final short[][] mapping = new short[numSubStates.length][];
         // invariant: if partners[state][substate][0] == substate, it's the 1st
         // one
-        short[][][] partners = new short[numSubStates.length][][];
+        final short[][][] partners = new short[numSubStates.length][][];
         calculateMergeArrays(mergeThesePairs, newNumSubStates, mapping, partners, numSubStates);
         for (int tag = 0; tag < numSubStates.length; tag++) {
-            double[] newMergeWeights = new double[newNumSubStates[tag]];
+            final double[] newMergeWeights = new double[newNumSubStates[tag]];
             for (int i = 0; i < numSubStates[tag]; i++) {
                 newMergeWeights[mapping[tag][i]] += mergeWeights[tag][i];
             }
             mergeWeights[tag] = newMergeWeights;
 
-            boolean[][] newComplexMergePairs = new boolean[newNumSubStates[tag]][newNumSubStates[tag]];
-            boolean[][] newMergeThesePairs = new boolean[newNumSubStates[tag]][newNumSubStates[tag]];
+            final boolean[][] newComplexMergePairs = new boolean[newNumSubStates[tag]][newNumSubStates[tag]];
+            final boolean[][] newMergeThesePairs = new boolean[newNumSubStates[tag]][newNumSubStates[tag]];
             for (int i = 0; i < complexMergePairs[tag].length; i++) {
                 for (int j = 0; j < complexMergePairs[tag].length; j++) {
                     newComplexMergePairs[mapping[tag][i]][mapping[tag][j]] = newComplexMergePairs[mapping[tag][i]][mapping[tag][j]]
@@ -2395,10 +2402,10 @@ public class Grammar implements java.io.Serializable {
         if (logarithmMode)
             return;
         logarithmMode = true;
-        for (UnaryRule r : unaryRuleMap.keySet()) {
+        for (final UnaryRule r : unaryRuleMap.keySet()) {
             logarithmModeRule(unaryRuleMap.get(r));
         }
-        for (BinaryRule r : binaryRuleMap.keySet()) {
+        for (final BinaryRule r : binaryRuleMap.keySet()) {
             logarithmModeRule(binaryRuleMap.get(r));
         }
         // Leon thinks the following sets of rules are already covered above,
@@ -2425,12 +2432,12 @@ public class Grammar implements java.io.Serializable {
     /**
 	 * 
 	 */
-    private void logarithmModeBRuleListArray(List<BinaryRule>[] a) {
+    private void logarithmModeBRuleListArray(final List<BinaryRule>[] a) {
         if (a != null) {
-            for (List<BinaryRule> l : a) {
+            for (final List<BinaryRule> l : a) {
                 if (l == null)
                     continue;
-                for (BinaryRule r : l) {
+                for (final BinaryRule r : l) {
                     logarithmModeRule(r);
                 }
             }
@@ -2440,12 +2447,12 @@ public class Grammar implements java.io.Serializable {
     /**
 	 * 
 	 */
-    private void logarithmModeURuleListArray(List<UnaryRule>[] a) {
+    private void logarithmModeURuleListArray(final List<UnaryRule>[] a) {
         if (a != null) {
-            for (List<UnaryRule> l : a) {
+            for (final List<UnaryRule> l : a) {
                 if (l == null)
                     continue;
-                for (UnaryRule r : l) {
+                for (final UnaryRule r : l) {
                     logarithmModeRule(r);
                 }
             }
@@ -2455,12 +2462,12 @@ public class Grammar implements java.io.Serializable {
     /**
 	 * 
 	 */
-    private void logarithmModeBRuleArrayArray(BinaryRule[][] a) {
+    private void logarithmModeBRuleArrayArray(final BinaryRule[][] a) {
         if (a != null) {
-            for (BinaryRule[] l : a) {
+            for (final BinaryRule[] l : a) {
                 if (l == null)
                     continue;
-                for (BinaryRule r : l) {
+                for (final BinaryRule r : l) {
                     logarithmModeRule(r);
                 }
             }
@@ -2470,12 +2477,12 @@ public class Grammar implements java.io.Serializable {
     /**
 	 * 
 	 */
-    private void logarithmModeURuleArrayArray(UnaryRule[][] a) {
+    private void logarithmModeURuleArrayArray(final UnaryRule[][] a) {
         if (a != null) {
-            for (UnaryRule[] l : a) {
+            for (final UnaryRule[] l : a) {
                 if (l == null)
                     continue;
-                for (UnaryRule r : l) {
+                for (final UnaryRule r : l) {
                     logarithmModeRule(r);
                 }
             }
@@ -2485,11 +2492,11 @@ public class Grammar implements java.io.Serializable {
     /**
      * @param r
      */
-    private static void logarithmModeRule(BinaryRule r) {
+    private static void logarithmModeRule(final BinaryRule r) {
         if (r == null || r.logarithmMode)
             return;
         r.logarithmMode = true;
-        double[][][] scores = r.getScores2();
+        final double[][][] scores = r.getScores2();
         for (int i = 0; i < scores.length; i++) {
             for (int j = 0; j < scores[i].length; j++) {
                 if (scores[i][j] == null)
@@ -2505,11 +2512,11 @@ public class Grammar implements java.io.Serializable {
     /**
      * @param r
      */
-    private static void logarithmModeRule(UnaryRule r) {
+    private static void logarithmModeRule(final UnaryRule r) {
         if (r == null || r.logarithmMode)
             return;
         r.logarithmMode = true;
-        double[][] scores = r.getScores2();
+        final double[][] scores = r.getScores2();
         for (int j = 0; j < scores.length; j++) {
             if (scores[j] == null)
                 continue;
@@ -2524,22 +2531,23 @@ public class Grammar implements java.io.Serializable {
         return logarithmMode;
     }
 
-    public final boolean isGrammarTag(int n) {
+    public final boolean isGrammarTag(final int n) {
         return isGrammarTag[n];
     }
 
-    public Grammar projectGrammar(double[] condProbs, int[][] fromMapping, int[][] toSubstateMapping) {
-        short[] newNumSubStates = new short[numSubStates.length];
+    public Grammar projectGrammar(final double[] condProbs, final int[][] fromMapping, final int[][] toSubstateMapping) {
+        final short[] newNumSubStates = new short[numSubStates.length];
         for (int state = 0; state < numSubStates.length; state++) {
             newNumSubStates[state] = (short) toSubstateMapping[state][0];
         }
 
-        Grammar grammar = new Grammar(newNumSubStates, findClosedPaths, smoother, this, threshold);
-        for (BinaryRule oldRule : binaryRuleMap.keySet()) {
-            short pcS = oldRule.getParentState(), lcS = oldRule.getLeftChildState(), rcS = oldRule.getRightChildState();
-            double[][][] oldScores = oldRule.getScores2();
+        final Grammar grammar = new Grammar(newNumSubStates, findClosedPaths, smoother, this, threshold);
+        for (final BinaryRule oldRule : binaryRuleMap.keySet()) {
+            final short pcS = oldRule.getParentState(), lcS = oldRule.getLeftChildState(), rcS = oldRule
+                    .getRightChildState();
+            final double[][][] oldScores = oldRule.getScores2();
             // merge binary rule
-            double[][][] newScores = new double[newNumSubStates[lcS]][newNumSubStates[rcS]][newNumSubStates[pcS]];
+            final double[][][] newScores = new double[newNumSubStates[lcS]][newNumSubStates[rcS]][newNumSubStates[pcS]];
             for (int lS = 0; lS < numSubStates[lcS]; lS++) {
                 for (int rS = 0; rS < numSubStates[rcS]; rS++) {
                     if (oldScores[lS][rS] == null)
@@ -2550,13 +2558,13 @@ public class Grammar implements java.io.Serializable {
                     }
                 }
             }
-            BinaryRule newRule = new BinaryRule(oldRule, newScores);
+            final BinaryRule newRule = new BinaryRule(oldRule, newScores);
             grammar.addBinary(newRule);
         }
-        for (UnaryRule oldRule : unaryRuleMap.keySet()) {
-            short pcS = oldRule.getParentState(), ccS = oldRule.getChildState();
-            double[][] oldScores = oldRule.getScores2();
-            double[][] newScores = new double[newNumSubStates[ccS]][newNumSubStates[pcS]];
+        for (final UnaryRule oldRule : unaryRuleMap.keySet()) {
+            final short pcS = oldRule.getParentState(), ccS = oldRule.getChildState();
+            final double[][] oldScores = oldRule.getScores2();
+            final double[][] newScores = new double[newNumSubStates[ccS]][newNumSubStates[pcS]];
             for (int cS = 0; cS < numSubStates[ccS]; cS++) {
                 if (oldScores[cS] == null)
                     continue;
@@ -2565,7 +2573,7 @@ public class Grammar implements java.io.Serializable {
                             * oldScores[cS][pS];
                 }
             }
-            UnaryRule newRule = new UnaryRule(oldRule, newScores);
+            final UnaryRule newRule = new UnaryRule(oldRule, newScores);
             grammar.addUnary(newRule);
             // grammar.closedSumRulesWithParent[newRule.parentState].add(newRule);
             // grammar.closedSumRulesWithChild[newRule.childState].add(newRule);
@@ -2579,16 +2587,16 @@ public class Grammar implements java.io.Serializable {
         return grammar;
     }
 
-    public Grammar copyGrammar(boolean noUnaryChains) {
-        short[] newNumSubStates = numSubStates.clone();
+    public Grammar copyGrammar(final boolean noUnaryChains) {
+        final short[] newNumSubStates = numSubStates.clone();
 
-        Grammar grammar = new Grammar(newNumSubStates, findClosedPaths, smoother, this, threshold);
-        for (BinaryRule oldRule : binaryRuleMap.keySet()) {
-            BinaryRule newRule = new BinaryRule(oldRule);
+        final Grammar grammar = new Grammar(newNumSubStates, findClosedPaths, smoother, this, threshold);
+        for (final BinaryRule oldRule : binaryRuleMap.keySet()) {
+            final BinaryRule newRule = new BinaryRule(oldRule);
             grammar.addBinary(newRule);
         }
-        for (UnaryRule oldRule : unaryRuleMap.keySet()) {
-            UnaryRule newRule = new UnaryRule(oldRule);
+        for (final UnaryRule oldRule : unaryRuleMap.keySet()) {
+            final UnaryRule newRule = new UnaryRule(oldRule);
             grammar.addUnary(newRule);
         }
         if (noUnaryChains) {
@@ -2606,23 +2614,24 @@ public class Grammar implements java.io.Serializable {
         return grammar;
     }
 
-    public Grammar projectTo0LevelGrammar(double[] condProbs, int[][] fromMapping, int[][] toMapping) {
-        int newNumStates = fromMapping[fromMapping.length - 1][0];
+    public Grammar projectTo0LevelGrammar(final double[] condProbs, final int[][] fromMapping, final int[][] toMapping) {
+        final int newNumStates = fromMapping[fromMapping.length - 1][0];
         // all rules have the same parent in this grammar
-        double[][] newBinaryProbs = new double[newNumStates][newNumStates];
-        double[] newUnaryProbs = new double[newNumStates];
+        final double[][] newBinaryProbs = new double[newNumStates][newNumStates];
+        final double[] newUnaryProbs = new double[newNumStates];
 
-        short[] newNumSubStates = new short[numSubStates.length];
+        final short[] newNumSubStates = new short[numSubStates.length];
         Arrays.fill(newNumSubStates, (short) 1);
-        Grammar grammar = new Grammar(newNumSubStates, findClosedPaths, smoother, this, threshold);
+        final Grammar grammar = new Grammar(newNumSubStates, findClosedPaths, smoother, this, threshold);
 
         // short[] newNumSubStates = new short[newNumStates];
         // grammar.numSubStates = newNumSubStates;
         // grammar.numStates = (short)newNumStates;
 
-        for (BinaryRule oldRule : binaryRuleMap.keySet()) {
-            short pcS = oldRule.getParentState(), lcS = oldRule.getLeftChildState(), rcS = oldRule.getRightChildState();
-            double[][][] oldScores = oldRule.getScores2();
+        for (final BinaryRule oldRule : binaryRuleMap.keySet()) {
+            final short pcS = oldRule.getParentState(), lcS = oldRule.getLeftChildState(), rcS = oldRule
+                    .getRightChildState();
+            final double[][][] oldScores = oldRule.getScores2();
             // merge binary rule
             // double[][][] newScores = new double[1][1][1];
             for (int lS = 0; lS < numSubStates[lcS]; lS++) {
@@ -2640,9 +2649,9 @@ public class Grammar implements java.io.Serializable {
             // newRule.setScores2(newScores);
             // grammar.addBinary(newRule);
         }
-        for (UnaryRule oldRule : unaryRuleMap.keySet()) {
-            short pcS = oldRule.getParentState(), ccS = oldRule.getChildState();
-            double[][] oldScores = oldRule.getScores2();
+        for (final UnaryRule oldRule : unaryRuleMap.keySet()) {
+            final short pcS = oldRule.getParentState(), ccS = oldRule.getChildState();
+            final double[][] oldScores = oldRule.getScores2();
             for (int cS = 0; cS < numSubStates[ccS]; cS++) {
                 if (oldScores[cS] == null)
                     continue;
@@ -2665,9 +2674,9 @@ public class Grammar implements java.io.Serializable {
         for (short lS = 0; lS < newBinaryProbs.length; lS++) {
             for (short rS = 0; rS < newBinaryProbs.length; rS++) {
                 if (newBinaryProbs[lS][rS] > 0) {
-                    double[][][] newScores = new double[1][1][1];
+                    final double[][][] newScores = new double[1][1][1];
                     newScores[0][0][0] = newBinaryProbs[lS][rS];
-                    BinaryRule newRule = new BinaryRule((short) 0, lS, rS, newScores);
+                    final BinaryRule newRule = new BinaryRule((short) 0, lS, rS, newScores);
                     // newRule.setScores2(newScores);
                     grammar.addBinary(newRule);
                 }
@@ -2676,9 +2685,9 @@ public class Grammar implements java.io.Serializable {
 
         for (short cS = 0; cS < newUnaryProbs.length; cS++) {
             if (newUnaryProbs[cS] > 0) {
-                double[][] newScores = new double[1][1];
+                final double[][] newScores = new double[1][1];
                 newScores[0][0] = newUnaryProbs[cS];
-                UnaryRule newRule = new UnaryRule((short) 0, cS, newScores);
+                final UnaryRule newRule = new UnaryRule((short) 0, cS, newScores);
                 // newRule.setScores2(newScores);
                 grammar.addUnary(newRule);
             }
@@ -2691,10 +2700,10 @@ public class Grammar implements java.io.Serializable {
         return grammar;
     }
 
-    public double[] computeConditionalProbabilities(int[][] fromMapping, int[][] toMapping) {
-        double[][] transitionProbs = computeProductionProbabilities(fromMapping);
+    public double[] computeConditionalProbabilities(final int[][] fromMapping, final int[][] toMapping) {
+        final double[][] transitionProbs = computeProductionProbabilities(fromMapping);
         // System.out.println(ArrayUtil.toString(transitionProbs));
-        double[] expectedCounts = computeExpectedCounts(transitionProbs);
+        final double[] expectedCounts = computeExpectedCounts(transitionProbs);
         // System.out.println(Arrays.toString(expectedCounts));
         /*
          * for (int state=0; state<mapping.length-1; state++){ for (int substate=0; substate<mapping[state].length;
@@ -2702,7 +2711,7 @@ public class Grammar implements java.io.Serializable {
          * expectedCounts[mapping[state][substate]]); } }
          */
 
-        double[] condProbs = new double[expectedCounts.length];
+        final double[] condProbs = new double[expectedCounts.length];
         for (int projectedState = 0; projectedState < toMapping[toMapping.length - 1][0]; projectedState++) {
             double sum = 0;
             for (int state = 0; state < fromMapping.length - 1; state++) {
@@ -2721,11 +2730,11 @@ public class Grammar implements java.io.Serializable {
         return condProbs;
     }
 
-    public int[][] computeToMapping(int level, int[][] toSubstateMapping) {
+    public int[][] computeToMapping(final int level, final int[][] toSubstateMapping) {
         if (level == -1)
             return computeMapping(-1);
-        short[] numSubStates = this.numSubStates;
-        int[][] mapping = new int[numSubStates.length + 1][];
+        final short[] numSubStates = this.numSubStates;
+        final int[][] mapping = new int[numSubStates.length + 1][];
         int k = 0;
         for (int state = 0; state < numSubStates.length; state++) {
             mapping[state] = new int[numSubStates[state]];
@@ -2744,12 +2753,12 @@ public class Grammar implements java.io.Serializable {
         return mapping;
     }
 
-    public int[][] computeMapping(int level) {
+    public int[][] computeMapping(final int level) {
         // level -1 -> 0-bar states
         // level 0 -> x-bar states
         // level 1 -> each (state,substate) gets its own index
-        short[] numSubStates = this.numSubStates;
-        int[][] mapping = new int[numSubStates.length + 1][];
+        final short[] numSubStates = this.numSubStates;
+        final int[][] mapping = new int[numSubStates.length + 1][];
         int k = 0;
         for (int state = 0; state < numSubStates.length; state++) {
             mapping[state] = new int[numSubStates[state]];
@@ -2774,24 +2783,24 @@ public class Grammar implements java.io.Serializable {
         return mapping;
     }
 
-    public int[][] computeSubstateMapping(int level) {
+    public int[][] computeSubstateMapping(final int level) {
         // level 0 -> merge all substates
         // level 1 -> merge upto depth 1 -> keep upto 2 substates
         // level 2 -> merge upto depth 2 -> keep upto 4 substates
-        short[] numSubStates = this.numSubStates;
+        final short[] numSubStates = this.numSubStates;
         // for (int i=0; i<numSubStates.length; i++)
         // System.out.println(i+" "+numSubStates[i]+" "+splitTrees[i].toString());
-        int[][] mapping = new int[numSubStates.length][];
+        final int[][] mapping = new int[numSubStates.length][];
         for (int state = 0; state < numSubStates.length; state++) {
             mapping[state] = new int[numSubStates[state] + 1];
             int k = 0;
             if (level >= 0) {
                 Arrays.fill(mapping[state], -1);
-                Tree<Short> hierarchy = splitTrees[state];
-                List<Tree<Short>> subTrees = hierarchy.getAtDepth(level);
-                for (Tree<Short> subTree : subTrees) {
-                    List<Short> leaves = subTree.getYield();
-                    for (Short substate : leaves) {
+                final Tree<Short> hierarchy = splitTrees[state];
+                final List<Tree<Short>> subTrees = hierarchy.getAtDepth(level);
+                for (final Tree<Short> subTree : subTrees) {
+                    final List<Short> leaves = subTree.getYield();
+                    for (final Short substate : leaves) {
                         // System.out.println(substate+" "+numSubStates[state]+" "+state);
                         if (substate == numSubStates[state])
                             System.out.print("Will crash.");
@@ -2807,23 +2816,23 @@ public class Grammar implements java.io.Serializable {
         return mapping;
     }
 
-    public void computeReverseSubstateMapping(int level, int[][] lChildMap, int[][] rChildMap) {
+    public void computeReverseSubstateMapping(final int level, final int[][] lChildMap, final int[][] rChildMap) {
         // level 1 -> how do the states from depth 1 expand to depth 2
         for (int state = 0; state < numSubStates.length; state++) {
-            Tree<Short> hierarchy = splitTrees[state];
-            List<Tree<Short>> subTrees = hierarchy.getAtDepth(level);
+            final Tree<Short> hierarchy = splitTrees[state];
+            final List<Tree<Short>> subTrees = hierarchy.getAtDepth(level);
             lChildMap[state] = new int[subTrees.size()];
             rChildMap[state] = new int[subTrees.size()];
-            for (Tree<Short> subTree : subTrees) {
-                int substate = subTree.getLabel();
+            for (final Tree<Short> subTree : subTrees) {
+                final int substate = subTree.getLabel();
                 if (subTree.isLeaf()) {
                     lChildMap[state][substate] = substate;
                     rChildMap[state][substate] = substate;
                     continue;
                 }
                 boolean first = true;
-                int nChildren = subTree.getChildren().size();
-                for (Tree<Short> child : subTree.getChildren()) {
+                final int nChildren = subTree.getChildren().size();
+                for (final Tree<Short> child : subTree.getChildren()) {
                     if (first) {
                         lChildMap[state][substate] = child.getLabel();
                         first = false;
@@ -2836,10 +2845,10 @@ public class Grammar implements java.io.Serializable {
         }
     }
 
-    private double[] computeExpectedCounts(double[][] transitionProbs) {
+    private double[] computeExpectedCounts(final double[][] transitionProbs) {
         // System.out.println(ArrayUtil.toString(transitionProbs));
-        double[] expectedCounts = new double[transitionProbs.length];
-        double[] tmpCounts = new double[transitionProbs.length];
+        final double[] expectedCounts = new double[transitionProbs.length];
+        final double[] tmpCounts = new double[transitionProbs.length];
         expectedCounts[0] = 1;
         tmpCounts[0] = 1;
         // System.out.print("Computing expected counts");
@@ -2876,23 +2885,23 @@ public class Grammar implements java.io.Serializable {
         // System.out.println(grammar.toString());
     }
 
-    private double[][] computeProductionProbabilities(int[][] mapping) {
-        short[] numSubStates = this.numSubStates;
-        int totalStates = mapping[numSubStates.length][0];
+    private double[][] computeProductionProbabilities(final int[][] mapping) {
+        final short[] numSubStates = this.numSubStates;
+        final int totalStates = mapping[numSubStates.length][0];
         // W_ij is the probability of state i producing state j
-        double[][] W = new double[totalStates][totalStates];
+        final double[][] W = new double[totalStates][totalStates];
 
         for (int state = 0; state < numSubStates.length; state++) {
             // if (!grammar.isGrammarTag(state)) continue;
-            BinaryRule[] parentRules = this.splitRulesWithP(state);
+            final BinaryRule[] parentRules = this.splitRulesWithP(state);
             for (int i = 0; i < parentRules.length; i++) {
-                BinaryRule r = parentRules[i];
-                int lState = r.leftChildState;
-                int rState = r.rightChildState;
+                final BinaryRule r = parentRules[i];
+                final int lState = r.leftChildState;
+                final int rState = r.rightChildState;
                 /*
                  * if (lState==15||rState==15){ System.out.println("Found one"); }
                  */
-                double[][][] scores = r.getScores2();
+                final double[][][] scores = r.getScores2();
                 for (int lS = 0; lS < numSubStates[lState]; lS++) {
                     for (int rS = 0; rS < numSubStates[rState]; rS++) {
                         if (scores[lS][rS] == null)
@@ -2904,15 +2913,15 @@ public class Grammar implements java.io.Serializable {
                     }
                 }
             }
-            List<UnaryRule> uRules = this.getUnaryRulesByParent(state);
-            for (UnaryRule r : uRules) {
-                int cState = r.childState;
+            final List<UnaryRule> uRules = this.getUnaryRulesByParent(state);
+            for (final UnaryRule r : uRules) {
+                final int cState = r.childState;
                 if (cState == state)
                     continue;
                 /*
                  * if (cState==15){ System.out.println("Found one"); }
                  */
-                double[][] scores = r.getScores2();
+                final double[][] scores = r.getScores2();
                 for (int cS = 0; cS < numSubStates[cState]; cS++) {
                     if (scores[cS] == null)
                         continue;
@@ -2926,7 +2935,7 @@ public class Grammar implements java.io.Serializable {
     }
 
     public void computeProperClosures() {
-        int[][] map = new int[numStates][];
+        final int[][] map = new int[numStates][];
         int index = 0;
         for (int state = 0; state < numStates; state++) {
             map[state] = new int[numSubStates[state]];
@@ -2935,13 +2944,13 @@ public class Grammar implements java.io.Serializable {
             }
         }
 
-        double[][][] sumClosureMatrix = new double[10][index][index];
+        final double[][][] sumClosureMatrix = new double[10][index][index];
         // initialize
         for (int parentState = 0; parentState < numStates; parentState++) {
             for (int i = 0; i < unaryRulesWithParent[parentState].size(); i++) {
-                UnaryRule rule = unaryRulesWithParent[parentState].get(i);
-                short childState = rule.getChildState();
-                double[][] scores = rule.getScores2();
+                final UnaryRule rule = unaryRulesWithParent[parentState].get(i);
+                final short childState = rule.getChildState();
+                final double[][] scores = rule.getScores2();
                 for (int childSubState = 0; childSubState < numSubStates[childState]; childSubState++) {
                     if (scores[childSubState] == null)
                         continue;
@@ -2955,9 +2964,9 @@ public class Grammar implements java.io.Serializable {
         for (int length = 1; length < 10; length++) {
             for (short interState = 0; interState < numStates; interState++) {
                 for (int i = 0; i < unaryRulesWithParent[interState].size(); i++) {
-                    UnaryRule rule = unaryRulesWithParent[interState].get(i);
-                    short endState = rule.getChildState();
-                    double[][] scores = rule.getScores2();
+                    final UnaryRule rule = unaryRulesWithParent[interState].get(i);
+                    final short endState = rule.getChildState();
+                    final double[][] scores = rule.getScores2();
 
                     // loop over substates
                     for (int startState = 0; startState < numStates; startState++) {
@@ -2981,7 +2990,7 @@ public class Grammar implements java.io.Serializable {
         }
 
         // now sum up the paths of different lengths
-        double[][] sumClosureScores = new double[index][index];
+        final double[][] sumClosureScores = new double[index][index];
         for (int length = 0; length < 10; length++) {
             for (int startState = 0; startState < index; startState++) {
                 for (int endState = 0; endState < index; endState++) {
@@ -3004,10 +3013,10 @@ public class Grammar implements java.io.Serializable {
                 if (startState == endState)
                     continue;
                 boolean atLeastOneNonZero = false;
-                double[][] scores = new double[numSubStates[endState]][numSubStates[startState]];
+                final double[][] scores = new double[numSubStates[endState]][numSubStates[startState]];
                 for (int startSubState = 0; startSubState < numSubStates[startState]; startSubState++) {
                     for (int endSubState = 0; endSubState < numSubStates[endState]; endSubState++) {
-                        double score = sumClosureScores[map[startState][startSubState]][map[endState][endSubState]];
+                        final double score = sumClosureScores[map[startState][startSubState]][map[endState][endSubState]];
                         if (score > 0) {
                             scores[endSubState][startSubState] = score;
                             atLeastOneNonZero = true;
@@ -3015,7 +3024,7 @@ public class Grammar implements java.io.Serializable {
                     }
                 }
                 if (atLeastOneNonZero) {
-                    UnaryRule newUnary = new UnaryRule(startState, endState, scores);
+                    final UnaryRule newUnary = new UnaryRule(startState, endState, scores);
                     addUnary(newUnary);
                     closedSumRulesWithParent[startState].add(newUnary);
                     closedSumRulesWithChild[endState].add(newUnary);
@@ -3036,8 +3045,8 @@ public class Grammar implements java.io.Serializable {
     /**
      * @param output
      */
-    public void writeSplitTrees(Writer w) {
-        PrintWriter out = new PrintWriter(w);
+    public void writeSplitTrees(final Writer w) {
+        final PrintWriter out = new PrintWriter(w);
         for (int state = 1; state < numStates; state++) {
             String tag = (String) tagNumberer.object(state);
             if (isGrammarTag[state] && tag.endsWith("^g"))

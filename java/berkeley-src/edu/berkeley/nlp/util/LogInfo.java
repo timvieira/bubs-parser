@@ -228,11 +228,6 @@ public class LogInfo {
         throw Exceptions.bad(o);
     }
 
-    // Print random things
-    public static void printProgStatus() {
-        logs("PROG_STATUS: time = " + watch.stop() + ", memory = " + SysInfoUtils.getUsedMemoryStr());
-    }
-
     public static <T> void printList(final String s, final String lines) {
         printList(s, Arrays.asList(lines.split("\n")));
     }
