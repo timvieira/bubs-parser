@@ -7,7 +7,6 @@ import java.util.concurrent.Callable;
 
 import edu.berkeley.nlp.syntax.StateSet;
 import edu.berkeley.nlp.syntax.Tree;
-import edu.berkeley.nlp.util.ArrayUtil;
 import edu.berkeley.nlp.util.Counter;
 import edu.berkeley.nlp.util.Numberer;
 import edu.berkeley.nlp.util.PriorityQueue;
@@ -42,20 +41,20 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
     int myID;
     PriorityQueue<List<Tree<String>>> queue;
 
-    public void setID(int i, PriorityQueue<List<Tree<String>>> q) {
+    public void setID(final int i, final PriorityQueue<List<Tree<String>>> q) {
         myID = i;
         queue = q;
     }
 
-    public void setNextSentence(List<String> nextS, int nextID) {
+    public void setNextSentence(final List<String> nextS, final int nextID) {
         nextSentence = nextS;
         nextSentenceID = nextID;
     }
 
     public synchronized Object call() {
-        Tree<String> parse = getBestParse(nextSentence);
+        final Tree<String> parse = getBestParse(nextSentence);
         nextSentence = null;
-        ArrayList<Tree<String>> result = new ArrayList<Tree<String>>();
+        final ArrayList<Tree<String>> result = new ArrayList<Tree<String>>();
         result.add(parse);
         synchronized (queue) {
             queue.add(result, -nextSentenceID);
@@ -65,31 +64,32 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
     }
 
     public ConstrainedArrayParser newInstance() {
-        ConstrainedArrayParser newParser = new ConstrainedArrayParser(grammar, lexicon, numSubStatesArray);
+        final ConstrainedArrayParser newParser = new ConstrainedArrayParser(grammar, lexicon, numSubStatesArray);
         return newParser;
     }
 
-    public double getLogLikelihood(Tree<String> t) {
+    public double getLogLikelihood(final Tree<String> t) {
         System.out.println("Unsuported for now!");
         return Double.NEGATIVE_INFINITY;
     }
 
-    public Tree<String>[] getSampledTrees(List<String> sentence, List<Integer>[][] pStates, int n) {
+    public Tree<String>[] getSampledTrees(final List<String> sentence, final List<Integer>[][] pStates, final int n) {
         return null;
     }
 
-    public void setNoConstraints(boolean noC) {
+    public void setNoConstraints(final boolean noC) {
         this.noConstrains = noC;
     }
 
-    public List<Tree<String>> getKBestConstrainedParses(List<String> sentence, List<String> posTags, int k) {
+    public List<Tree<String>> getKBestConstrainedParses(final List<String> sentence, final List<String> posTags,
+            final int k) {
         return null;
     }
 
     public ConstrainedArrayParser() {
     }
 
-    public ConstrainedArrayParser(Grammar gr, Lexicon lex, short[] nSub) {
+    public ConstrainedArrayParser(final Grammar gr, final Lexicon lex, final short[] nSub) {
         super(gr, lex);
         this.numSubStatesArray = nSub;
         totalUsedUnaries = 0;
@@ -142,7 +142,7 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
      * Create a string representing the state for a StateSet tree that has the substate first iScore.
      * 
      */
-    private String getStateString(Tree<StateSet> tree) {
+    private String getStateString(final Tree<StateSet> tree) {
         return tagNumberer.object(tree.getLabel().getState()) + "&" + (short) tree.getLabel().getIScore(0);
     }
 
@@ -151,13 +151,13 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
      * 
      * @param bestStateSetTree
      */
-    private void tallyStatesAndRules(Tree<StateSet> bestStateSetTree) {
+    private void tallyStatesAndRules(final Tree<StateSet> bestStateSetTree) {
         if (bestStateSetTree.isLeaf() || bestStateSetTree.isPreTerminal())
             return;
-        String stateString = getStateString(bestStateSetTree);
+        final String stateString = getStateString(bestStateSetTree);
         stateCounter.incrementCount(stateString, 1);
         String ruleString = stateString + "->";
-        for (Tree<StateSet> child : bestStateSetTree.getChildren()) {
+        for (final Tree<StateSet> child : bestStateSetTree.getChildren()) {
             tallyStatesAndRules(child);
             ruleString += "|" + getStateString(child);
         }
@@ -170,11 +170,11 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
      */
     public void printStateAndRuleTallies() {
         System.out.println("STATE TALLIES");
-        for (String state : stateCounter.keySet()) {
+        for (final String state : stateCounter.keySet()) {
             System.out.println(state + " " + stateCounter.getCount(state));
         }
         System.out.println("RULE TALLIES");
-        for (String rule : ruleCounter.keySet()) {
+        for (final String rule : ruleCounter.keySet()) {
             System.out.println(rule + " " + ruleCounter.getCount(rule));
         }
     }
@@ -194,7 +194,7 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
         for (int start = 0; start < length; start++) { // initialize for all POS
                                                        // tags so that we can
                                                        // use the lexicon
-            int end = start + 1;
+            final int end = start + 1;
             iScore[start][end] = new double[numStates][];
             oScore[start][end] = new double[numStates][];
             iScale[start][end] = new int[numStates];
@@ -223,7 +223,7 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
                     pStates = possibleStates[start][end];
                 }
 
-                for (int state : pStates) {
+                for (final int state : pStates) {
                     iScore[start][end][state] = new double[numSubStatesArray[state]];
                     oScore[start][end][state] = new double[numSubStatesArray[state]];
                     Arrays.fill(iScore[start][end][state], Float.NEGATIVE_INFINITY);
@@ -262,12 +262,12 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
         }
     }
 
-    void initializeChart(List<String> sentence) {
+    void initializeChart(final List<String> sentence) {
         // for simplicity the lexicon will store words and tags as strings,
         // while the grammar will be using integers -> Numberer()
         int start = 0;
         int end = start + 1;
-        for (String word : sentence) {
+        for (final String word : sentence) {
             end = start + 1;
             for (short tag = 0; tag < grammar.numSubStates.length; tag++) {
                 if (grammar.isGrammarTag[tag])
@@ -278,9 +278,9 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
                 narrowLExtent[end][tag] = start;
                 wideRExtent[start][tag] = end;
                 wideLExtent[end][tag] = start;
-                double[] lexiconScores = lexicon.score(word, tag, start, false, false);
+                final double[] lexiconScores = lexicon.score(word, tag, start, false, false);
                 for (short n = 0; n < numSubStatesArray[tag]; n++) {
-                    double prob = lexiconScores[n];
+                    final double prob = lexiconScores[n];
                     /*
                      * if (prob>0){ prob = -10; System.out.println("Should never happen! Log-Prob > 0!!!" );
                      * System.out.println("Word "+word+" Tag "+(String)tagNumberer .object(tag)+" prob "+prob); }
@@ -300,14 +300,15 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
         }
     }
 
-    public Tree<String> getBestConstrainedParse(List<String> sentence, List<String> posTags, boolean[][][][] allowedS) {// List<Integer>[][]
-                                                                                                                        // pStates)
-                                                                                                                        // {
+    public Tree<String> getBestConstrainedParse(final List<String> sentence, final List<String> posTags,
+            final boolean[][][][] allowedS) {// List<Integer>[][]
+        // pStates)
+        // {
         return getBestConstrainedParse(sentence, posTags);
     }
 
-    public Tree<String> getBestConstrainedParse(List<String> sentence, List<String> posTags) {// List<Integer>[][]
-                                                                                              // pStates) {
+    public Tree<String> getBestConstrainedParse(final List<String> sentence, final List<String> posTags) {// List<Integer>[][]
+        // pStates) {
         length = (short) sentence.size();
         // this.possibleStates = pStates;
         noConstrains = true;
@@ -323,10 +324,10 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
          * Arrays.toString(iScore[12][13][pState]) + " oScore "+ Arrays.toString(oScore[12][13][pState])); }
          */
         Tree<String> bestTree = new Tree<String>("ROOT");
-        double score = iScore[0][length][0][0];
+        final double score = iScore[0][length][0][0];
         if (score > Double.NEGATIVE_INFINITY) {
             // System.out.println("\nFound a parse for sentence with length "+length+". The LL is "+score+".");
-            Tree<StateSet> bestStateSetTree = extractBestStateSetTree(zero, zero, zero, length, sentence);
+            final Tree<StateSet> bestStateSetTree = extractBestStateSetTree(zero, zero, zero, length, sentence);
             // tallyStatesAndRules(bestStateSetTree);
             bestTree = restoreStateSetTreeUnaries(bestStateSetTree);
             // bestTree = extractBestParse(0, 0, 0, length, sentence);
@@ -348,7 +349,7 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
         for (int diff = 1; diff <= length; diff++) {
             System.out.print(diff + " ");
             for (int start = 0; start < (length - diff + 1); start++) {
-                int end = start + diff;
+                final int end = start + diff;
                 List<Integer> possibleSt = null;
                 if (noConstrains) {
                     possibleSt = new ArrayList<Integer>();
@@ -358,66 +359,66 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
                 } else {
                     possibleSt = possibleStates[start][end];
                 }
-                for (int pState : possibleSt) {
-                    BinaryRule[] parentRules = grammar.splitRulesWithP(pState);
+                for (final int pState : possibleSt) {
+                    final BinaryRule[] parentRules = grammar.splitRulesWithP(pState);
                     for (int i = 0; i < parentRules.length; i++) {
-                        BinaryRule r = parentRules[i];
-                        int lState = r.leftChildState;
-                        int rState = r.rightChildState;
+                        final BinaryRule r = parentRules[i];
+                        final int lState = r.leftChildState;
+                        final int rState = r.rightChildState;
 
-                        int narrowR = narrowRExtent[start][lState];
-                        boolean iPossibleL = (narrowR < end); // can this left
-                                                              // constituent
-                                                              // leave space
-                                                              // for a right
-                                                              // constituent?
+                        final int narrowR = narrowRExtent[start][lState];
+                        final boolean iPossibleL = (narrowR < end); // can this left
+                        // constituent
+                        // leave space
+                        // for a right
+                        // constituent?
                         if (!iPossibleL) {
                             continue;
                         }
 
-                        int narrowL = narrowLExtent[end][rState];
-                        boolean iPossibleR = (narrowL >= narrowR); // can this
-                                                                   // right
-                                                                   // constituent
-                                                                   // fit next
-                                                                   // to the
-                                                                   // left
-                                                                   // constituent?
+                        final int narrowL = narrowLExtent[end][rState];
+                        final boolean iPossibleR = (narrowL >= narrowR); // can this
+                        // right
+                        // constituent
+                        // fit next
+                        // to the
+                        // left
+                        // constituent?
                         if (!iPossibleR) {
                             continue;
                         }
 
-                        int min1 = narrowR;
-                        int min2 = wideLExtent[end][rState];
-                        int min = (min1 > min2 ? min1 : min2); // can this right
-                                                               // constituent
-                                                               // stretch far
-                                                               // enough to
-                                                               // reach the
-                                                               // left
-                                                               // constituent?
+                        final int min1 = narrowR;
+                        final int min2 = wideLExtent[end][rState];
+                        final int min = (min1 > min2 ? min1 : min2); // can this right
+                        // constituent
+                        // stretch far
+                        // enough to
+                        // reach the
+                        // left
+                        // constituent?
                         if (min > narrowL) {
                             continue;
                         }
 
-                        int max1 = wideRExtent[start][lState];
-                        int max2 = narrowL;
-                        int max = (max1 < max2 ? max1 : max2); // can this left
-                                                               // constituent
-                                                               // stretch far
-                                                               // enough to
-                                                               // reach the
-                                                               // right
-                                                               // constituent?
+                        final int max1 = wideRExtent[start][lState];
+                        final int max2 = narrowL;
+                        final int max = (max1 < max2 ? max1 : max2); // can this left
+                        // constituent
+                        // stretch far
+                        // enough to
+                        // reach the
+                        // right
+                        // constituent?
                         if (min > max) {
                             continue;
                         }
 
                         // new: loop over all substates
-                        double[][][] scores = r.getScores2();
-                        int nParentSubStates = numSubStatesArray[pState];
+                        final double[][][] scores = r.getScores2();
+                        final int nParentSubStates = numSubStatesArray[pState];
                         for (int np = 0; np < nParentSubStates; np++) {
-                            double oldIScore = iScore[start][end][pState][np];
+                            final double oldIScore = iScore[start][end][pState][np];
                             double bestIScore = oldIScore;
                             for (int split = min; split <= max; split++) {
                                 if (iScore[start][split][lState] == null)
@@ -426,7 +427,7 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
                                     continue;
 
                                 for (int lp = 0; lp < scores.length; lp++) {
-                                    double lS = iScore[start][split][lState][lp];
+                                    final double lS = iScore[start][split][lState][lp];
                                     if (lS == Double.NEGATIVE_INFINITY)
                                         continue;
 
@@ -441,11 +442,11 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
                                             // System.out.println("s "+start+" sp "+split+" e "+end+" pS "+pS+" rS "+rS);
                                         }
 
-                                        double rS = iScore[split][end][rState][rp];
+                                        final double rS = iScore[split][end][rState][rp];
                                         if (rS == Double.NEGATIVE_INFINITY)
                                             continue;
 
-                                        double tot = pS + lS + rS;
+                                        final double tot = pS + lS + rS;
                                         if (tot >= bestIScore) {
                                             bestIScore = tot;
                                         }
@@ -479,27 +480,27 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
                         }
                     }
                 }
-                for (int pState : possibleSt) {// int pState=0; pState<0;
-                                               // pState++){//
+                for (final int pState : possibleSt) {// int pState=0; pState<0;
+                    // pState++){//
                     // UnaryRule[] unaries =
                     // grammar.getUnaryRulesByParent(pState).toArray(new
                     // UnaryRule[0]);
                     // it actually seems to be better to use the unaries without
                     // the closure...
                     // UnaryRule[] unaries = new UnaryRule[0];
-                    UnaryRule[] unaries = grammar.getClosedViterbiUnaryRulesByParent(pState);
+                    final UnaryRule[] unaries = grammar.getClosedViterbiUnaryRulesByParent(pState);
                     for (int r = 0; r < unaries.length; r++) {
-                        UnaryRule ur = unaries[r];
-                        int cState = ur.childState;
+                        final UnaryRule ur = unaries[r];
+                        final int cState = ur.childState;
                         if (iScore[start][end][cState] == null)
                             continue;
                         // if ((pState == cState)) continue;// && (np ==
                         // cp))continue;
                         // new loop over all substates
-                        double[][] scores = ur.getScores2();
-                        int nParentSubStates = numSubStatesArray[pState];
+                        final double[][] scores = ur.getScores2();
+                        final int nParentSubStates = numSubStatesArray[pState];
                         for (int np = 0; np < nParentSubStates; np++) {
-                            double oldIScore = iScore[start][end][pState][np];
+                            final double oldIScore = iScore[start][end][pState][np];
                             double bestIScore = oldIScore;
                             for (int cp = 0; cp < scores.length; cp++) {
                                 double pS = Double.NEGATIVE_INFINITY;
@@ -510,11 +511,11 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
                                     nRulesInf++;
                                     continue;
                                 }
-                                double iS = iScore[start][end][cState][cp];
+                                final double iS = iScore[start][end][cState][cp];
                                 if (iS == Double.NEGATIVE_INFINITY)
                                     continue;
 
-                                double tot = iS + pS;
+                                final double tot = iS + pS;
 
                                 if (tot >= bestIScore) {
                                     bestIScore = tot;
@@ -554,7 +555,7 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
         lexicon.logarithmMode();
         for (int diff = length; diff >= 1; diff--) {
             for (int start = 0; start + diff <= length; start++) {
-                int end = start + diff;
+                final int end = start + diff;
                 // do unaries
                 // List<Integer> possibleParentSt = possibleStates[start][end];
                 List<Integer> possibleParentSt = null;
@@ -566,38 +567,38 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
                 } else {
                     possibleParentSt = possibleStates[start][end];
                 }
-                for (int pState : possibleParentSt) {
+                for (final int pState : possibleParentSt) {
                     // this check should be unnecessary. if we get a null
                     // pointer
                     // exception here, then we did not initialize the arrays
                     // properly - slav
                     // if (oScore[start][end][pState] == null) { continue; }
 
-                    UnaryRule[] rules = grammar.getClosedViterbiUnaryRulesByParent(pState);
+                    final UnaryRule[] rules = grammar.getClosedViterbiUnaryRulesByParent(pState);
                     for (int r = 0; r < rules.length; r++) {
-                        UnaryRule ur = rules[r];
-                        int cState = ur.childState;
+                        final UnaryRule ur = rules[r];
+                        final int cState = ur.childState;
                         if (oScore[start][end][cState] == null) {
                             continue;
                         }
 
                         // new loop over all substates
-                        double[][] scores = ur.getScores2();
+                        final double[][] scores = ur.getScores2();
                         for (int cp = 0; cp < scores.length; cp++) {
-                            double oldOScore = oScore[start][end][cState][cp];
+                            final double oldOScore = oScore[start][end][cState][cp];
                             double bestOScore = oldOScore;
 
-                            double iS = iScore[start][end][cState][cp];
+                            final double iS = iScore[start][end][cState][cp];
                             if (iS == Double.NEGATIVE_INFINITY) {
                                 continue;
                             }
 
                             for (int np = 0; np < scores[0].length; np++) {
-                                double oS = oScore[start][end][pState][np];
+                                final double oS = oScore[start][end][pState][np];
                                 double pS = Double.NEGATIVE_INFINITY;
                                 if (scores[cp] != null)
                                     pS = scores[cp][np];
-                                double tot = oS + pS;
+                                final double tot = oS + pS;
 
                                 if (tot > bestOScore) {
                                     bestOScore = tot;
@@ -613,21 +614,21 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
                 // for (int lState = 0; lState < numStates; lState++) {
                 for (int pState = 0; pState < numStates; pState++) {
                     // BinaryRule[] rules = grammar.splitRulesWithLC(lState);
-                    BinaryRule[] rules = grammar.splitRulesWithP(pState);
+                    final BinaryRule[] rules = grammar.splitRulesWithP(pState);
                     for (int r = 0; r < rules.length; r++) {
-                        BinaryRule br = rules[r];
+                        final BinaryRule br = rules[r];
                         if (oScore[start][end][br.parentState] == null) {
                             continue;
                         }
 
-                        int lState = br.leftChildState;
-                        int min1 = narrowRExtent[start][lState];
+                        final int lState = br.leftChildState;
+                        final int min1 = narrowRExtent[start][lState];
                         if (end < min1) {
                             continue;
                         }
 
-                        int rState = br.rightChildState;
-                        int max1 = narrowLExtent[end][rState];
+                        final int rState = br.rightChildState;
+                        final int max1 = narrowLExtent[end][rState];
                         if (max1 < min1) {
                             continue;
                         }
@@ -635,45 +636,45 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
                         int min = min1;
                         int max = max1;
                         if (max - min > 2) {
-                            int min2 = wideLExtent[end][rState];
+                            final int min2 = wideLExtent[end][rState];
                             min = (min1 > min2 ? min1 : min2);
                             if (max1 < min) {
                                 continue;
                             }
-                            int max2 = wideRExtent[start][lState];
+                            final int max2 = wideRExtent[start][lState];
                             max = (max1 < max2 ? max1 : max2);
                             if (max < min) {
                                 continue;
                             }
                         }
 
-                        double[][][] scores = br.getScores2();
+                        final double[][][] scores = br.getScores2();
                         for (int split = min; split <= max; split++) {
                             if (oScore[start][split][lState] == null)
                                 continue;
                             if (oScore[split][end][rState] == null)
                                 continue;
                             for (int lp = 0; lp < scores.length; lp++) {
-                                double lS = iScore[start][split][lState][lp];
+                                final double lS = iScore[start][split][lState][lp];
                                 if (lS == Double.NEGATIVE_INFINITY) {
                                     continue;
                                 }
                                 for (int rp = 0; rp < scores[lp].length; rp++) {
-                                    double rS = iScore[split][end][rState][rp];
+                                    final double rS = iScore[split][end][rState][rp];
                                     if (rS == Double.NEGATIVE_INFINITY) {
                                         continue;
                                     }
                                     if (scores[lp][rp] == null)
                                         continue;
                                     for (int np = 0; np < scores[lp][rp].length; np++) {
-                                        double oS = oScore[start][end][br.parentState][np];
-                                        double pS = scores[lp][rp][np];
+                                        final double oS = oScore[start][end][br.parentState][np];
+                                        final double pS = scores[lp][rp][np];
 
-                                        double totL = pS + rS + oS;
+                                        final double totL = pS + rS + oS;
                                         if (totL > oScore[start][split][lState][lp]) {
                                             oScore[start][split][lState][lp] = totL;
                                         }
-                                        double totR = pS + lS + oS;
+                                        final double totR = pS + lS + oS;
                                         if (totR > oScore[split][end][rState][rp]) {
                                             oScore[split][end][rState][rp] = totR;
                                         }
@@ -712,11 +713,11 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
         }
     }
 
-    public void showScores(double[][][][] scores, String title) {
+    public void showScores(final double[][][][] scores, final String title) {
         System.out.println(title);
         for (int diff = 1; diff <= length; diff++) {
             for (int start = 0; start < (length - diff + 1); start++) {
-                int end = start + diff;
+                final int end = start + diff;
                 System.out.print("[" + start + " " + end + "]: ");
                 // List<Integer> possibleSt = possibleStates[start][end];
                 List<Integer> possibleSt = null;
@@ -728,10 +729,10 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
                 } else {
                     possibleSt = possibleStates[start][end];
                 }
-                for (int state : possibleSt) {
+                for (final int state : possibleSt) {
                     if (scores[start][end][state] != null) {
                         for (int s = 0; s < grammar.numSubStates[state]; s++) {
-                            Numberer n = grammar.tagNumberer;
+                            final Numberer n = grammar.tagNumberer;
                             System.out.print("("
                                     + StringUtils.escapeString(n.object(state).toString(), new char[] { '\"' }, '\\')
                                     + "[" + s + "] " + scores[start][end][state][s] + ")");
@@ -747,11 +748,12 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
      * Return the single best parse. Note that the returned tree may be missing intermediate nodes in a unary chain
      * because it parses with a unary-closed grammar.
      */
-    public Tree<String> extractBestParse(int gState, int gp, int start, int end, List<String> sentence) {
+    public Tree<String> extractBestParse(final int gState, final int gp, final int start, final int end,
+            final List<String> sentence) {
         // find sources of inside score
         // no backtraces so we can speed up the parsing for its primary use
-        double bestScore = iScore[start][end][gState][gp];
-        String goalStr = (String) tagNumberer.object(gState);
+        final double bestScore = iScore[start][end][gState][gp];
+        final String goalStr = (String) tagNumberer.object(gState);
         // System.out.println("Looking for "+goalStr+" from "+start+" to "+end+" with score "+
         // bestScore+".");
         if (end - start == 1) {
@@ -760,7 +762,7 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
             // anything but the word below it
             // if (lexicon.getAllTags().contains(gState)) {
             if (!grammar.isGrammarTag[gState]) {
-                List<Tree<String>> child = new ArrayList<Tree<String>>();
+                final List<Tree<String>> child = new ArrayList<Tree<String>>();
                 child.add(new Tree<String>(sentence.get(start)));
                 return new Tree<String>(goalStr, child);
             }
@@ -769,15 +771,15 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
             else {
                 double veryBestScore = Double.NEGATIVE_INFINITY;
                 int newIndex = -1;
-                UnaryRule[] unaries = grammar.getClosedViterbiUnaryRulesByParent(gState);
+                final UnaryRule[] unaries = grammar.getClosedViterbiUnaryRulesByParent(gState);
                 for (int r = 0; r < unaries.length; r++) {
-                    UnaryRule ur = unaries[r];
-                    int cState = ur.childState;
-                    double[][] scores = ur.getScores2();
+                    final UnaryRule ur = unaries[r];
+                    final int cState = ur.childState;
+                    final double[][] scores = ur.getScores2();
                     for (int cp = 0; cp < scores.length; cp++) {
                         if (scores[cp] == null)
                             continue;
-                        double ruleScore = iScore[start][end][cState][cp] + scores[cp][gp];
+                        final double ruleScore = iScore[start][end][cState][cp] + scores[cp][gp];
                         if ((ruleScore >= veryBestScore) && (gState != cState || gp != cp)
                                 && (!grammar.isGrammarTag[ur.getChildState()])) {
                             // && lexicon.getAllTags().contains(cState)) {
@@ -786,12 +788,12 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
                         }
                     }
                 }
-                List<Tree<String>> child1 = new ArrayList<Tree<String>>();
+                final List<Tree<String>> child1 = new ArrayList<Tree<String>>();
                 child1.add(new Tree<String>(sentence.get(start)));
-                String goalStr1 = (String) tagNumberer.object(newIndex);
+                final String goalStr1 = (String) tagNumberer.object(newIndex);
                 if (goalStr1 == null)
                     System.out.println("goalStr1==null with newIndex==" + newIndex + " goalStr==" + goalStr);
-                List<Tree<String>> child = new ArrayList<Tree<String>>();
+                final List<Tree<String>> child = new ArrayList<Tree<String>>();
                 child.add(new Tree<String>(goalStr1, child1));
                 return new Tree<String>(goalStr, child);
             }
@@ -801,34 +803,34 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
             // for (Iterator binaryI = grammar.bRuleIteratorByParent(gState,
             // gp); binaryI.hasNext();) {
             // BinaryRule br = (BinaryRule) binaryI.next();
-            BinaryRule[] parentRules = grammar.splitRulesWithP(gState);
+            final BinaryRule[] parentRules = grammar.splitRulesWithP(gState);
             for (int i = 0; i < parentRules.length; i++) {
-                BinaryRule br = parentRules[i];
+                final BinaryRule br = parentRules[i];
 
-                int lState = br.leftChildState;
+                final int lState = br.leftChildState;
                 if (iScore[start][split][lState] == null)
                     continue;
 
-                int rState = br.rightChildState;
+                final int rState = br.rightChildState;
                 if (iScore[split][end][rState] == null)
                     continue;
 
                 // new: iterate over substates
-                double[][][] scores = br.getScores2();
+                final double[][][] scores = br.getScores2();
                 for (int lp = 0; lp < scores.length; lp++) {
                     for (int rp = 0; rp < scores[lp].length; rp++) {
                         if (scores[lp][rp] == null)
                             continue;
-                        double score = scores[lp][rp][gp] + iScore[start][split][lState][lp]
+                        final double score = scores[lp][rp][gp] + iScore[start][split][lState][lp]
                                 + iScore[split][end][rState][rp];
                         if (matches(score, bestScore)) {
                             // build binary split
-                            Tree<String> leftChildTree = extractBestParse(lState, lp, start, split, sentence);
-                            Tree<String> rightChildTree = extractBestParse(rState, rp, split, end, sentence);
-                            List<Tree<String>> children = new ArrayList<Tree<String>>();
+                            final Tree<String> leftChildTree = extractBestParse(lState, lp, start, split, sentence);
+                            final Tree<String> rightChildTree = extractBestParse(rState, rp, split, end, sentence);
+                            final List<Tree<String>> children = new ArrayList<Tree<String>>();
                             children.add(leftChildTree);
                             children.add(rightChildTree);
-                            Tree<String> result = new Tree<String>(goalStr, children);
+                            final Tree<String> result = new Tree<String>(goalStr, children);
                             // System.out.println("Binary node: "+result);
                             // result.setScore(score);
                             return result;
@@ -841,26 +843,26 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
         // for (Iterator unaryI = grammar.uRuleIteratorByParent(gState, gp);
         // unaryI.hasNext();) {
         // UnaryRule ur = (UnaryRule) unaryI.next();
-        UnaryRule[] unaries = grammar.getClosedViterbiUnaryRulesByParent(gState);
+        final UnaryRule[] unaries = grammar.getClosedViterbiUnaryRulesByParent(gState);
         for (int r = 0; r < unaries.length; r++) {
-            UnaryRule ur = unaries[r];
-            int cState = ur.childState;
+            final UnaryRule ur = unaries[r];
+            final int cState = ur.childState;
 
             if (iScore[start][end][cState] == null)
                 continue;
 
             // new: iterate over substates
-            double[][] scores = ur.getScores2();
+            final double[][] scores = ur.getScores2();
             for (int cp = 0; cp < scores.length; cp++) {
                 if (scores[cp] == null)
                     continue;
-                double score = scores[cp][gp] + iScore[start][end][cState][cp];
+                final double score = scores[cp][gp] + iScore[start][end][cState][cp];
                 if ((cState != ur.parentState || cp != gp) && matches(score, bestScore)) {
                     // build unary
-                    Tree<String> childTree = extractBestParse(cState, cp, start, end, sentence);
-                    List<Tree<String>> children = new ArrayList<Tree<String>>();
+                    final Tree<String> childTree = extractBestParse(cState, cp, start, end, sentence);
+                    final List<Tree<String>> children = new ArrayList<Tree<String>>();
                     children.add(childTree);
-                    Tree<String> result = new Tree<String>(goalStr, children);
+                    final Tree<String> result = new Tree<String>(goalStr, children);
                     // System.out.println("Unary node: "+result);
                     // result.setScore(score);
                     return result;
@@ -877,10 +879,11 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
      * because it parses with a unary-closed grammar. A StateSet tree is returned, but the subState array is used in a
      * different way: it has only one entry, whose value is the substate! - dirty hack...
      */
-    public Tree<StateSet> extractBestStateSetTree(short gState, short gp, short start, short end, List<String> sentence) {
+    public Tree<StateSet> extractBestStateSetTree(final short gState, final short gp, final short start,
+            final short end, final List<String> sentence) {
         // find sources of inside score
         // no backtraces so we can speed up the parsing for its primary use
-        double bestScore = iScore[start][end][gState][gp];
+        final double bestScore = iScore[start][end][gState][gp];
         // Numberer tagNumberer = Numberer.getGlobalNumberer("tags");
         // System.out.println("Looking for "+(String)tagNumberer.object(gState)+" from "+start+" to "+end+" with score "+
         // bestScore+".");
@@ -889,10 +892,10 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
             // into
             // anything but the word below it
             if (!grammar.isGrammarTag(gState)) {
-                List<Tree<StateSet>> child = new ArrayList<Tree<StateSet>>();
-                StateSet node = new StateSet(zero, zero, sentence.get(start), start, end);
+                final List<Tree<StateSet>> child = new ArrayList<Tree<StateSet>>();
+                final StateSet node = new StateSet(zero, zero, sentence.get(start), start, end);
                 child.add(new Tree<StateSet>(node));
-                StateSet root = new StateSet(gState, one, null, start, end);
+                final StateSet root = new StateSet(gState, one, null, start, end);
                 root.allocate();
                 root.setIScore(0, gp);
                 return new Tree<StateSet>(root, child);
@@ -903,17 +906,17 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
                 double veryBestScore = Double.NEGATIVE_INFINITY;
                 short newIndex = -1;
                 short newSubstate = -1;
-                UnaryRule[] unaries = grammar.getClosedViterbiUnaryRulesByParent(gState);
+                final UnaryRule[] unaries = grammar.getClosedViterbiUnaryRulesByParent(gState);
                 for (int r = 0; r < unaries.length; r++) {
-                    UnaryRule ur = unaries[r];
-                    short cState = ur.childState;
-                    double[][] scores = ur.getScores2();
+                    final UnaryRule ur = unaries[r];
+                    final short cState = ur.childState;
+                    final double[][] scores = ur.getScores2();
                     for (short cp = 0; cp < scores.length; cp++) {
                         if (scores[cp] == null)
                             continue;
                         if (iScore[start][end][cState] == null)
                             continue;
-                        double ruleScore = iScore[start][end][cState][cp] + scores[cp][gp];
+                        final double ruleScore = iScore[start][end][cState][cp] + scores[cp][gp];
                         if ((ruleScore >= veryBestScore) && (gState != cState || gp != cp)
                                 && !grammar.isGrammarTag(cState)) {
                             veryBestScore = ruleScore;
@@ -922,17 +925,17 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
                         }
                     }
                 }
-                List<Tree<StateSet>> child1 = new ArrayList<Tree<StateSet>>();
-                StateSet node1 = new StateSet(zero, zero, sentence.get(start), start, end);
+                final List<Tree<StateSet>> child1 = new ArrayList<Tree<StateSet>>();
+                final StateSet node1 = new StateSet(zero, zero, sentence.get(start), start, end);
                 child1.add(new Tree<StateSet>(node1));
                 if (newIndex == -1)
                     System.out.println("goalStr1==null with newIndex==" + newIndex + " goalState==" + gState);
-                List<Tree<StateSet>> child = new ArrayList<Tree<StateSet>>();
-                StateSet node = new StateSet(newIndex, one, null, start, end);
+                final List<Tree<StateSet>> child = new ArrayList<Tree<StateSet>>();
+                final StateSet node = new StateSet(newIndex, one, null, start, end);
                 node.allocate();
                 node.setIScore(0, newSubstate);
                 child.add(new Tree<StateSet>(node, child1));
-                StateSet root = new StateSet(gState, one, null, start, end);
+                final StateSet root = new StateSet(gState, one, null, start, end);
                 root.allocate();
                 root.setIScore(0, gp);
                 // totalUsedUnaries++;
@@ -945,41 +948,41 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
         // short bestBLp, bestBRp;
         // TODO: fix parsing
         for (int split = start + 1; split < end; split++) {
-            BinaryRule[] parentRules = grammar.splitRulesWithP(gState);
+            final BinaryRule[] parentRules = grammar.splitRulesWithP(gState);
             for (short i = 0; i < parentRules.length; i++) {
-                BinaryRule br = parentRules[i];
+                final BinaryRule br = parentRules[i];
 
-                short lState = br.leftChildState;
+                final short lState = br.leftChildState;
                 if (iScore[start][split][lState] == null)
                     continue;
 
-                short rState = br.rightChildState;
+                final short rState = br.rightChildState;
                 if (iScore[split][end][rState] == null)
                     continue;
 
                 // new: iterate over substates
-                double[][][] scores = br.getScores2();
+                final double[][][] scores = br.getScores2();
                 for (short lp = 0; lp < scores.length; lp++) {
                     for (short rp = 0; rp < scores[lp].length; rp++) {
                         if (scores[lp][rp] == null)
                             continue;
-                        double score = scores[lp][rp][gp] + iScore[start][split][lState][lp]
+                        final double score = scores[lp][rp][gp] + iScore[start][split][lState][lp]
                                 + iScore[split][end][rState][rp];
                         if (score > bestBScore)
                             bestBScore = score;
                         if (matches(score, bestScore)) {
                             // build binary split
-                            Tree<StateSet> leftChildTree = extractBestStateSetTree(lState, lp, start, (short) split,
-                                    sentence);
-                            Tree<StateSet> rightChildTree = extractBestStateSetTree(rState, rp, (short) split, end,
-                                    sentence);
-                            List<Tree<StateSet>> children = new ArrayList<Tree<StateSet>>();
+                            final Tree<StateSet> leftChildTree = extractBestStateSetTree(lState, lp, start,
+                                    (short) split, sentence);
+                            final Tree<StateSet> rightChildTree = extractBestStateSetTree(rState, rp, (short) split,
+                                    end, sentence);
+                            final List<Tree<StateSet>> children = new ArrayList<Tree<StateSet>>();
                             children.add(leftChildTree);
                             children.add(rightChildTree);
-                            StateSet root = new StateSet(gState, one, null, start, end);
+                            final StateSet root = new StateSet(gState, one, null, start, end);
                             root.allocate();
                             root.setIScore(0, gp);
-                            Tree<StateSet> result = new Tree<StateSet>(root, children);
+                            final Tree<StateSet> result = new Tree<StateSet>(root, children);
                             // System.out.println("Binary node: "+result);
                             // result.setScore(score);
                             return result;
@@ -990,32 +993,32 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
         }
         double bestUScore = Double.NEGATIVE_INFINITY;
         // check unaries
-        UnaryRule[] unaries = grammar.getClosedViterbiUnaryRulesByParent(gState);
+        final UnaryRule[] unaries = grammar.getClosedViterbiUnaryRulesByParent(gState);
         for (short r = 0; r < unaries.length; r++) {
-            UnaryRule ur = unaries[r];
-            short cState = ur.childState;
+            final UnaryRule ur = unaries[r];
+            final short cState = ur.childState;
 
             if (iScore[start][end][cState] == null)
                 continue;
 
             // new: iterate over substates
-            double[][] scores = ur.getScores2();
+            final double[][] scores = ur.getScores2();
             for (short cp = 0; cp < scores.length; cp++) {
                 if (scores[cp] == null)
                     continue;
-                double rScore = scores[cp][gp];
-                double score = rScore + iScore[start][end][cState][cp];
+                final double rScore = scores[cp][gp];
+                final double score = rScore + iScore[start][end][cState][cp];
                 if (score > bestUScore)
                     bestUScore = score;
                 if ((cState != ur.parentState || cp != gp) && matches(score, bestScore)) {
                     // build unary
-                    Tree<StateSet> childTree = extractBestStateSetTree(cState, cp, start, end, sentence);
-                    List<Tree<StateSet>> children = new ArrayList<Tree<StateSet>>();
+                    final Tree<StateSet> childTree = extractBestStateSetTree(cState, cp, start, end, sentence);
+                    final List<Tree<StateSet>> children = new ArrayList<Tree<StateSet>>();
                     children.add(childTree);
-                    StateSet root = new StateSet(gState, one, null, start, end);
+                    final StateSet root = new StateSet(gState, one, null, start, end);
                     root.allocate();
                     root.setIScore(0, gp);
-                    Tree<StateSet> result = new Tree<StateSet>(root, children);
+                    final Tree<StateSet> result = new Tree<StateSet>(root, children);
                     // System.out.println("Unary node: "+result);
                     // result.setScore(score);
                     totalUsedUnaries++;
@@ -1033,7 +1036,7 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
 
     // the state set tree has nodes that are labeled with substate information
     // the substate information is the first element in the iscore array
-    protected Tree<String> restoreStateSetTreeUnaries(Tree<StateSet> t) {
+    protected Tree<String> restoreStateSetTreeUnaries(final Tree<StateSet> t) {
         // System.out.println("In restoreUnaries...");
         // System.out.println("Doing node: "+node.getLabel());
 
@@ -1042,28 +1045,28 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
             return null;
         } else if (t.isPreTerminal()) { // preterminal unaries have already been
                                         // restored
-            List<Tree<String>> child = new ArrayList<Tree<String>>();
+            final List<Tree<String>> child = new ArrayList<Tree<String>>();
             child.add(new Tree<String>(t.getChildren().get(0).getLabel().getWord()));
             return new Tree<String>((String) tagNumberer.object(t.getLabel().getState()), child);
         } else if (t.getChildren().size() != 1) { // nothing to restore
             // build binary split
-            Tree<String> leftChildTree = restoreStateSetTreeUnaries(t.getChildren().get(0));
-            Tree<String> rightChildTree = restoreStateSetTreeUnaries(t.getChildren().get(1));
-            List<Tree<String>> children = new ArrayList<Tree<String>>();
+            final Tree<String> leftChildTree = restoreStateSetTreeUnaries(t.getChildren().get(0));
+            final Tree<String> rightChildTree = restoreStateSetTreeUnaries(t.getChildren().get(1));
+            final List<Tree<String>> children = new ArrayList<Tree<String>>();
             children.add(leftChildTree);
             children.add(rightChildTree);
             return new Tree<String>((String) tagNumberer.object(t.getLabel().getState()), children);
         } // the interesting part:
           // System.out.println("Not skipping node: "+node.getLabel());
-        StateSet parent = t.getLabel();
-        StateSet child = t.getChildren().get(0).getLabel();
-        short pLabel = parent.getState();
-        short pSubState = (short) parent.getIScore(0); // dirty hack
-        short cLabel = child.getState();
-        short cSubState = (short) child.getIScore(0);
+        final StateSet parent = t.getLabel();
+        final StateSet child = t.getChildren().get(0).getLabel();
+        final short pLabel = parent.getState();
+        final short pSubState = (short) parent.getIScore(0); // dirty hack
+        final short cLabel = child.getState();
+        final short cSubState = (short) child.getIScore(0);
 
         // System.out.println("P: "+(String)tagNumberer.object(pLabel)+" C: "+(String)tagNumberer.object(cLabel));
-        List<Tree<String>> goodChild = new ArrayList<Tree<String>>();
+        final List<Tree<String>> goodChild = new ArrayList<Tree<String>>();
         goodChild.add(restoreStateSetTreeUnaries(t.getChildren().get(0)));
         // do we need a check here? if we can check whether the rule was
         // in the original grammar, then we wouldnt need the getBestPath call.
@@ -1073,8 +1076,8 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
 
         // System.out.println("Got path: "+path);
         // if (path.size()==1) return goodChild;
-        Tree<String> result = new Tree<String>((String) tagNumberer.object(pLabel), goodChild);
-        Tree<String> working = result;
+        final Tree<String> result = new Tree<String>((String) tagNumberer.object(pLabel), goodChild);
+        final Tree<String> working = result;
         // List<short[]> path = grammar.getBestViterbiPath(pLabel,pSubState,
         // cLabel,cSubState);
         // if (path.size()>2) {
@@ -1092,21 +1095,13 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
         return working;
     }
 
-    public double[][][][] getInsideScores() {
-        return ArrayUtil.clone(iScore);
-    }
-
-    public double[][][][] getOutsideScores() {
-        return ArrayUtil.clone(oScore);
-    }
-
     public void printUnaryStats() {
         System.out.println(" Used a total of " + totalUsedUnaries + " unary productions.");
         System.out.println(" restored unaries " + nTimesRestoredUnaries);
         System.out.println(" Out of " + nRules + " rules " + nRulesInf + " had probability=-Inf.");
     }
 
-    public void projectConstraints(boolean[][][][] allowed, boolean allSubstatesAllowed) {
+    public void projectConstraints(final boolean[][][][] allowed, final boolean allSubstatesAllowed) {
         System.err.println("Not supported!\nThis parser cannot project constraints!");
     }
 

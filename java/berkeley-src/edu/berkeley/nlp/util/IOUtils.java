@@ -724,7 +724,7 @@ public class IOUtils {
 
     public static void printLines(PrintWriter out, List lines) {
         for (Object line : lines)
-            out.println(StrUtils.toString(line));
+            out.println(line == null ? null : line.toString());
     }
 
     public static int readBigEndianInt(InputStream in) throws IOException {

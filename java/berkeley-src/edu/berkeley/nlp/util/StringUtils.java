@@ -3,6 +3,8 @@ package edu.berkeley.nlp.util;
 /**
  * StringUtils is a class for random String things.
  * 
+ * TODO Most of the remaining functionality could be replaced with String.format()
+ * 
  * @author Dan Klein
  * @author Christopher Manning
  * @author Tim Grow (grow@stanford.edu)

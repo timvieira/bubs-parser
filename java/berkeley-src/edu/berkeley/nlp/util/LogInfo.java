@@ -327,11 +327,11 @@ public class LogInfo {
     private static void printLines(Object o) {
         if (o == null)
             o = "null";
-        final String s = StrUtils.toString(o);
+        final String s = o == null ? null : o.toString();
         if (s.indexOf('\n') == -1)
             print(s + "\n");
         else
-            for (final String t : StrUtils.split(s, "\n"))
+            for (final String t : s.split("\n"))
                 print(t + "\n");
     }
 
