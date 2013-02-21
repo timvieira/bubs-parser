@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-import edu.berkeley.nlp.discPCFG.Linearizer;
 import edu.berkeley.nlp.math.DoubleArrays;
 import edu.berkeley.nlp.syntax.StateSet;
 import edu.berkeley.nlp.syntax.Tree;
@@ -62,7 +61,7 @@ public class ArrayParser implements Parser {
     public ArrayParser() {
     }
 
-    public ArrayParser(Grammar gr, Lexicon lex) {
+    public ArrayParser(final Grammar gr, final Lexicon lex) {
         this.touchedRules = 0;
         this.grammar = gr;
         this.lexicon = lex;
@@ -79,13 +78,13 @@ public class ArrayParser implements Parser {
     }
 
     @SuppressWarnings("unchecked")
-    public List<Integer>[][] getPossibleStates(List<String> sentence, double logThreshold) {
+    public List<Integer>[][] getPossibleStates(final List<String> sentence, final double logThreshold) {
         length = (short) sentence.size();
         initializeArrays();
         initializeChart(sentence, false);
 
         doInsideScores();
-        double score = iScore[0][length][0];
+        final double score = iScore[0][length][0];
         if (score > Double.NEGATIVE_INFINITY) {
             System.out.println("\nFound a parse for sentence with length " + length + ". The LL is " + score + ".");
         } else {
@@ -94,18 +93,19 @@ public class ArrayParser implements Parser {
         oScore[0][length][tagNumberer.number("ROOT")] = 0.0;
         doOutsideScores();
 
-        List<Integer>[][] possibleStates = new ArrayList[length + 1][length + 1];
+        final List<Integer>[][] possibleStates = new ArrayList[length + 1][length + 1];
 
         int unprunedStates = 0;
         int prunedStates = 0;
 
-        double sentenceProb = iScore[0][length][0];
+        final double sentenceProb = iScore[0][length][0];
         for (int diff = 1; diff <= length; diff++) {
             for (int start = 0; start < (length - diff + 1); start++) {
-                int end = start + diff;
+                final int end = start + diff;
                 possibleStates[start][end] = new ArrayList<Integer>();
                 for (int state = 0; state < numStates; state++) {
-                    double viterbiPosterior = iScore[start][end][state] + oScore[start][end][state] - sentenceProb;
+                    final double viterbiPosterior = iScore[start][end][state] + oScore[start][end][state]
+                            - sentenceProb;
 
                     if (!Double.isInfinite(viterbiPosterior)) {
                         unprunedStates++;
@@ -130,7 +130,7 @@ public class ArrayParser implements Parser {
 
     // belongs in the grammar but i didnt want to change the signature for
     // now...
-    public int maxSubStates(Grammar grammar) {
+    public int maxSubStates(final Grammar grammar) {
         int max = 0;
         for (int i = 0; i < numStates; i++) {
             if (grammar.numSubStates[i] > max)
@@ -139,7 +139,7 @@ public class ArrayParser implements Parser {
         return max;
     }
 
-    public Tree<String> getBestParse(List<String> sentence) {
+    public Tree<String> getBestParse(final List<String> sentence) {
         System.out.println("This parser assumes an unsplit grammar (= split grammar with 1 substate)");
         length = (short) sentence.size();
         initializeArrays();
@@ -161,7 +161,7 @@ public class ArrayParser implements Parser {
         // doOutsideScores();
 
         Tree<String> bestTree = new Tree<String>("ROOT");
-        double score = iScore[0][length][tagNumberer.number("ROOT")];
+        final double score = iScore[0][length][tagNumberer.number("ROOT")];
         if (score > Double.NEGATIVE_INFINITY) {
             System.out.println("\nFound a parse for sentence with length " + length + ". The LL is " + score + ".");
             bestTree = extractBestParse(tagNumberer.number("ROOT"), 0, length, sentence);
@@ -187,12 +187,12 @@ public class ArrayParser implements Parser {
             } else {
                 try {
                     createArrays(length + 1);
-                } catch (OutOfMemoryError e) {
+                } catch (final OutOfMemoryError e) {
                     myMaxLength = length;
                     if (arraySize > 0) {
                         try {
                             createArrays(arraySize);
-                        } catch (OutOfMemoryError e2) {
+                        } catch (final OutOfMemoryError e2) {
                             throw new RuntimeException("CANNOT EVEN CREATE ARRAYS OF ORIGINAL SIZE!!!");
                         }
                     }
@@ -233,18 +233,18 @@ public class ArrayParser implements Parser {
 
     }
 
-    void initializeChart(List<String> sentence, boolean noSmoothing) {
+    void initializeChart(final List<String> sentence, final boolean noSmoothing) {
         // for simplicity the lexicon will store words and tags as strings,
         // while the grammar will be using integers -> Numberer()
         int start = 0;
         int end = start + 1;
-        for (String word : sentence) {
+        for (final String word : sentence) {
             end = start + 1;
             // for (short tag : lexicon.getAllTags()) {
             for (short tag = 0; tag < numStates; tag++) {
                 if (grammar.isGrammarTag[tag])
                     continue;
-                double prob = lexicon.score(word, tag, start, noSmoothing, false)[0];
+                final double prob = lexicon.score(word, tag, start, noSmoothing, false)[0];
                 iScore[start][end][tag] = prob;
                 narrowRExtent[start][tag] = end;
                 narrowLExtent[end][tag] = start;
@@ -276,28 +276,28 @@ public class ArrayParser implements Parser {
         for (int diff = 1; diff <= length; diff++) {
             // for all symbol starting positions
             for (int start = 0; start < (length - diff + 1); start++) {
-                int end = start + diff;
+                final int end = start + diff;
                 // for all symbols, calculate the inside score without unaries
                 for (int pparentState = 0; pparentState < numStates; pparentState++) {
-                    BinaryRule[] parentRules = grammar.splitRulesWithP(pparentState);
+                    final BinaryRule[] parentRules = grammar.splitRulesWithP(pparentState);
                     // for all rules with this parent symbol
                     for (int i = 0; i < parentRules.length; i++) {
-                        BinaryRule r = parentRules[i];
-                        int leftState = r.leftChildState;
-                        int parentState = r.parentState;
+                        final BinaryRule r = parentRules[i];
+                        final int leftState = r.leftChildState;
+                        final int parentState = r.parentState;
 
-                        int narrowR = narrowRExtent[start][leftState];
-                        boolean iPossibleL = (narrowR < end); // can this left
-                                                              // constituent
+                        final int narrowR = narrowRExtent[start][leftState];
+                        final boolean iPossibleL = (narrowR < end); // can this left
+                        // constituent
                         // leave space for a right
                         // constituent?
                         if (!iPossibleL) {
                             continue;
                         }
 
-                        int narrowL = narrowLExtent[end][r.rightChildState];
-                        boolean iPossibleR = (narrowL >= narrowR); // can this
-                                                                   // right
+                        final int narrowL = narrowLExtent[end][r.rightChildState];
+                        final boolean iPossibleR = (narrowL >= narrowR); // can this
+                        // right
                         // constituent fit next
                         // to the left
                         // constituent?
@@ -305,9 +305,9 @@ public class ArrayParser implements Parser {
                             continue;
                         }
 
-                        int min1 = narrowR;
-                        int min2 = wideLExtent[end][r.rightChildState];
-                        int min = (min1 > min2 ? min1 : min2); // can this right
+                        final int min1 = narrowR;
+                        final int min2 = wideLExtent[end][r.rightChildState];
+                        final int min = (min1 > min2 ? min1 : min2); // can this right
                         // constituent stretch far
                         // enough to reach the left
                         // constituent?
@@ -315,10 +315,10 @@ public class ArrayParser implements Parser {
                             continue;
                         }
 
-                        int max1 = wideRExtent[start][leftState];
-                        int max2 = narrowL;
-                        int max = (max1 < max2 ? max1 : max2); // can this left
-                                                               // constituent
+                        final int max1 = wideRExtent[start][leftState];
+                        final int max2 = narrowL;
+                        final int max = (max1 < max2 ? max1 : max2); // can this left
+                        // constituent
                         // stretch far enough to
                         // reach the right
                         // constituent?
@@ -326,22 +326,22 @@ public class ArrayParser implements Parser {
                             continue;
                         }
 
-                        double pS = r.getScore(0, 0, 0);
-                        double oldIScore = iScore[start][end][parentState];
+                        final double pS = r.getScore(0, 0, 0);
+                        final double oldIScore = iScore[start][end][parentState];
                         double bestIScore = oldIScore;
                         boolean foundBetter; // always set below for this rule
 
                         for (int split = min; split <= max; split++) {
-                            double lS = iScore[start][split][leftState];
+                            final double lS = iScore[start][split][leftState];
                             if (Double.isInfinite(lS)) {
                                 continue;
                             }
-                            double rS = iScore[split][end][r.rightChildState];
+                            final double rS = iScore[split][end][r.rightChildState];
                             if (Double.isInfinite(rS)) {
                                 continue;
                             }
                             touchedRules++;
-                            double tot = pS + lS + rS;
+                            final double tot = pS + lS + rS;
 
                             if (tot > bestIScore) {
                                 bestIScore = tot;
@@ -375,22 +375,22 @@ public class ArrayParser implements Parser {
                 }
                 // for all symbols, close all unary productions
                 for (int pState = 0; pState < numStates; pState++) {
-                    UnaryRule[] unaries = grammar.getClosedViterbiUnaryRulesByParent(pState);
-                    double cur = iScore[start][end][pState];
+                    final UnaryRule[] unaries = grammar.getClosedViterbiUnaryRulesByParent(pState);
+                    final double cur = iScore[start][end][pState];
                     double best = cur;
                     for (int r = 0; r < unaries.length; r++) {
-                        UnaryRule ur = unaries[r];
-                        int cState = ur.childState;
+                        final UnaryRule ur = unaries[r];
+                        final int cState = ur.childState;
                         if (pState == cState)
                             continue;
 
-                        double pS = ur.getScore(0, 0);
-                        double iS = iScore[start][end][cState];
+                        final double pS = ur.getScore(0, 0);
+                        final double iS = iScore[start][end][cState];
                         if (Double.isInfinite(iS)) {
                             continue;
                         }
 
-                        double tot = iS + pS;
+                        final double tot = iS + pS;
                         touchedRules++;
                         if (tot > best) {
                             best = tot;
@@ -433,18 +433,18 @@ public class ArrayParser implements Parser {
         // TODO: this almost certainly underflows!
         for (int diff = length; diff >= 1; diff--) {
             for (int start = 0; start + diff <= length; start++) {
-                int end = start + diff;
+                final int end = start + diff;
                 // do unaries
                 for (int s = 0; s < numStates; s++) {
-                    double oS = oScore[start][end][s];
+                    final double oS = oScore[start][end][s];
                     if (Double.isInfinite(oS)) {
                         continue;
                     }
-                    UnaryRule[] rules = grammar.getClosedViterbiUnaryRulesByParent(s);
+                    final UnaryRule[] rules = grammar.getClosedViterbiUnaryRulesByParent(s);
                     for (int r = 0; r < rules.length; r++) {
-                        UnaryRule ur = rules[r];
-                        double pS = ur.getScore(0, 0);
-                        double tot = oS + pS;
+                        final UnaryRule ur = rules[r];
+                        final double pS = ur.getScore(0, 0);
+                        final double tot = oS + pS;
                         touchedRules++;
                         if (tot > oScore[start][end][ur.childState]
                                 && iScore[start][end][ur.childState] > Double.NEGATIVE_INFINITY) {
@@ -454,51 +454,51 @@ public class ArrayParser implements Parser {
                 }
                 // do binaries
                 for (int s = 0; s < numStates; s++) {
-                    BinaryRule[] rules = grammar.splitRulesWithP(s);
+                    final BinaryRule[] rules = grammar.splitRulesWithP(s);
                     for (int r = 0; r < rules.length; r++) {
-                        BinaryRule br = rules[r];
-                        double oS = oScore[start][end][br.parentState];
+                        final BinaryRule br = rules[r];
+                        final double oS = oScore[start][end][br.parentState];
                         if (Double.isInfinite(oS)) {
                             continue;
                         }
-                        int min1 = narrowRExtent[start][br.leftChildState];
+                        final int min1 = narrowRExtent[start][br.leftChildState];
                         if (end < min1) {
                             continue;
                         }
-                        int max1 = narrowLExtent[end][br.rightChildState];
+                        final int max1 = narrowLExtent[end][br.rightChildState];
                         if (max1 < min1) {
                             continue;
                         }
                         int min = min1;
                         int max = max1;
                         if (max - min > 2) {
-                            int min2 = wideLExtent[end][br.rightChildState];
+                            final int min2 = wideLExtent[end][br.rightChildState];
                             min = (min1 > min2 ? min1 : min2);
                             if (max1 < min) {
                                 continue;
                             }
-                            int max2 = wideRExtent[start][br.leftChildState];
+                            final int max2 = wideRExtent[start][br.leftChildState];
                             max = (max1 < max2 ? max1 : max2);
                             if (max < min) {
                                 continue;
                             }
                         }
-                        double pS = br.getScore(0, 0, 0);
+                        final double pS = br.getScore(0, 0, 0);
                         for (int split = min; split <= max; split++) {
-                            double lS = iScore[start][split][br.leftChildState];
+                            final double lS = iScore[start][split][br.leftChildState];
                             if (Double.isInfinite(lS)) {
                                 continue;
                             }
-                            double rS = iScore[split][end][br.rightChildState];
+                            final double rS = iScore[split][end][br.rightChildState];
                             if (Double.isInfinite(rS)) {
                                 continue;
                             }
-                            double totL = pS + rS + oS;
+                            final double totL = pS + rS + oS;
                             touchedRules++;
                             if (totL > oScore[start][split][br.leftChildState]) {
                                 oScore[start][split][br.leftChildState] = totL;
                             }
-                            double totR = pS + lS + oS;
+                            final double totR = pS + lS + oS;
                             if (totR > oScore[split][end][br.rightChildState]) {
                                 oScore[split][end][br.rightChildState] = totR;
                             }
@@ -530,24 +530,25 @@ public class ArrayParser implements Parser {
      * @param tree
      * @param sentence
      */
-    void doInsideScores(Tree<StateSet> tree, boolean noSmoothing, boolean debugOutput, double[][][] spanScores) {
+    void doInsideScores(final Tree<StateSet> tree, final boolean noSmoothing, final boolean debugOutput,
+            final double[][][] spanScores) {
         if (grammar.isLogarithmMode() || lexicon.isLogarithmMode())
             throw new Error("Grammar in logarithm mode!  Cannot do inside scores!");
         if (tree.isLeaf()) {
             return;
         }
-        List<Tree<StateSet>> children = tree.getChildren();
-        for (Tree<StateSet> child : children) {
+        final List<Tree<StateSet>> children = tree.getChildren();
+        for (final Tree<StateSet> child : children) {
             if (!child.isLeaf())
                 doInsideScores(child, noSmoothing, debugOutput, spanScores);
         }
-        StateSet parent = tree.getLabel();
-        short pState = parent.getState();
-        int nParentStates = parent.numSubStates();
+        final StateSet parent = tree.getLabel();
+        final short pState = parent.getState();
+        final int nParentStates = parent.numSubStates();
         if (tree.isPreTerminal()) {
             // Plays a role similar to initializeChart()
-            StateSet wordStateSet = tree.getChildren().get(0).getLabel();
-            double[] lexiconScores = lexicon.score(wordStateSet, pState, noSmoothing, false);
+            final StateSet wordStateSet = tree.getChildren().get(0).getLabel();
+            final double[] lexiconScores = lexicon.score(wordStateSet, pState, noSmoothing, false);
             if (lexiconScores.length != nParentStates) {
                 System.out.println("Have more scores than substates!" + lexiconScores.length + " " + nParentStates);// truncate
                                                                                                                     // the
@@ -560,24 +561,24 @@ public class ArrayParser implements Parser {
             case 0:
                 break;
             case 1:
-                StateSet child = children.get(0).getLabel();
-                short cState = child.getState();
-                int nChildStates = child.numSubStates();
-                double[][] uscores = grammar.getUnaryScore(pState, cState);
-                double[] iScores = new double[nParentStates];
+                final StateSet child = children.get(0).getLabel();
+                final short cState = child.getState();
+                final int nChildStates = child.numSubStates();
+                final double[][] uscores = grammar.getUnaryScore(pState, cState);
+                final double[] iScores = new double[nParentStates];
                 boolean foundOne = false;
                 for (int j = 0; j < nChildStates; j++) {
                     if (uscores[j] != null) { // check whether one of the
                                               // parents can produce this
                                               // child
-                        double cS = child.getIScore(j);
+                        final double cS = child.getIScore(j);
                         if (cS == 0)
                             continue;
                         for (int i = 0; i < nParentStates; i++) {
-                            double rS = uscores[j][i]; // rule score
+                            final double rS = uscores[j][i]; // rule score
                             if (rS == 0)
                                 continue;
-                            double res = rS * cS;
+                            final double res = rS * cS;
                             /*
                              * if (res == 0) { System.out.println("Prevented an underflow: rS " +rS+" cS "+cS); res =
                              * Double.MIN_VALUE; }
@@ -598,31 +599,31 @@ public class ArrayParser implements Parser {
                 parent.scaleIScores(child.getIScale());
                 break;
             case 2:
-                StateSet leftChild = children.get(0).getLabel();
-                StateSet rightChild = children.get(1).getLabel();
-                int nLeftChildStates = leftChild.numSubStates();
-                int nRightChildStates = rightChild.numSubStates();
-                short lState = leftChild.getState();
-                short rState = rightChild.getState();
-                double[][][] bscores = grammar.getBinaryScore(pState, lState, rState);
-                double[] iScores2 = new double[nParentStates];
+                final StateSet leftChild = children.get(0).getLabel();
+                final StateSet rightChild = children.get(1).getLabel();
+                final int nLeftChildStates = leftChild.numSubStates();
+                final int nRightChildStates = rightChild.numSubStates();
+                final short lState = leftChild.getState();
+                final short rState = rightChild.getState();
+                final double[][][] bscores = grammar.getBinaryScore(pState, lState, rState);
+                final double[] iScores2 = new double[nParentStates];
                 boolean foundOne2 = false;
                 for (int j = 0; j < nLeftChildStates; j++) {
-                    double lcS = leftChild.getIScore(j);
+                    final double lcS = leftChild.getIScore(j);
                     if (lcS == 0)
                         continue;
                     for (int k = 0; k < nRightChildStates; k++) {
-                        double rcS = rightChild.getIScore(k);
+                        final double rcS = rightChild.getIScore(k);
                         if (rcS == 0)
                             continue;
                         if (bscores[j][k] != null) { // check whether one of the
                                                      // parents can produce
                                                      // these kids
                             for (int i = 0; i < nParentStates; i++) {
-                                double rS = bscores[j][k][i];
+                                final double rS = bscores[j][k][i];
                                 if (rS == 0)
                                     continue;
-                                double res = rS * lcS * rcS;
+                                final double res = rS * lcS * rcS;
                                 /*
                                  * if (res == 0) { System.out.println("Prevented an underflow: rS "
                                  * +rS+" lcS "+lcS+" rcS "+rcS); res = Double.MIN_VALUE; }
@@ -663,7 +664,7 @@ public class ArrayParser implements Parser {
      * 
      * @param tree
      */
-    void setRootOutsideScore(Tree<StateSet> tree) {
+    void setRootOutsideScore(final Tree<StateSet> tree) {
         tree.getLabel().setOScore(0, 1);
         tree.getLabel().setOScale(0);
     }
@@ -677,20 +678,20 @@ public class ArrayParser implements Parser {
      * 
      * @param tree
      */
-    void doOutsideScores(Tree<StateSet> tree, boolean unaryAbove, double[][][] spanScores) {
+    void doOutsideScores(final Tree<StateSet> tree, boolean unaryAbove, final double[][][] spanScores) {
         if (grammar.isLogarithmMode() || lexicon.isLogarithmMode())
             throw new Error("Grammar in logarithm mode!  Cannot do inside scores!");
         if (tree.isLeaf())
             return;
-        List<Tree<StateSet>> children = tree.getChildren();
-        StateSet parent = tree.getLabel();
-        short pState = parent.getState();
-        int nParentStates = parent.numSubStates();
+        final List<Tree<StateSet>> children = tree.getChildren();
+        final StateSet parent = tree.getLabel();
+        final short pState = parent.getState();
+        final int nParentStates = parent.numSubStates();
         // this sets the outside scores for the children
         if (tree.isPreTerminal()) {
 
         } else {
-            double[] parentScores = parent.getOScores();
+            final double[] parentScores = parent.getOScores();
             if (spanScores != null && !unaryAbove) {
                 for (int i = 0; i < nParentStates; i++) {
                     parentScores[i] *= spanScores[parent.from][parent.to][stateClass[pState]];
@@ -701,20 +702,20 @@ public class ArrayParser implements Parser {
                 // Nothing to do
                 break;
             case 1:
-                StateSet child = children.get(0).getLabel();
-                short cState = child.getState();
-                int nChildStates = child.numSubStates();
+                final StateSet child = children.get(0).getLabel();
+                final short cState = child.getState();
+                final int nChildStates = child.numSubStates();
                 // UnaryRule uR = new UnaryRule(pState,cState);
-                double[][] uscores = grammar.getUnaryScore(pState, cState);
-                double[] oScores = new double[nChildStates];
+                final double[][] uscores = grammar.getUnaryScore(pState, cState);
+                final double[] oScores = new double[nChildStates];
                 for (int j = 0; j < nChildStates; j++) {
                     if (uscores[j] != null) {
                         double childScore = 0;
                         for (int i = 0; i < nParentStates; i++) {
-                            double pS = parentScores[i];
+                            final double pS = parentScores[i];
                             if (pS == 0)
                                 continue;
-                            double rS = uscores[j][i]; // rule score
+                            final double rS = uscores[j][i]; // rule score
                             if (rS == 0)
                                 continue;
                             childScore += pS * rS;
@@ -727,31 +728,31 @@ public class ArrayParser implements Parser {
                 unaryAbove = true;
                 break;
             case 2:
-                StateSet leftChild = children.get(0).getLabel();
-                StateSet rightChild = children.get(1).getLabel();
-                int nLeftChildStates = leftChild.numSubStates();
-                int nRightChildStates = rightChild.numSubStates();
-                short lState = leftChild.getState();
-                short rState = rightChild.getState();
+                final StateSet leftChild = children.get(0).getLabel();
+                final StateSet rightChild = children.get(1).getLabel();
+                final int nLeftChildStates = leftChild.numSubStates();
+                final int nRightChildStates = rightChild.numSubStates();
+                final short lState = leftChild.getState();
+                final short rState = rightChild.getState();
                 // double[] leftScoresToAdd -> use childScores array instead =
                 // new double[nRightChildStates * nParentStates];
                 // double[][] rightScoresToAdd -> use binaryScores array instead
                 // = new double[nRightChildStates][nLeftChildStates *
                 // nParentStates];
-                double[][][] bscores = grammar.getBinaryScore(pState, lState, rState);
-                double[] lOScores = new double[nLeftChildStates];
-                double[] rOScores = new double[nRightChildStates];
+                final double[][][] bscores = grammar.getBinaryScore(pState, lState, rState);
+                final double[] lOScores = new double[nLeftChildStates];
+                final double[] rOScores = new double[nRightChildStates];
                 for (int j = 0; j < nLeftChildStates; j++) {
-                    double lcS = leftChild.getIScore(j);
+                    final double lcS = leftChild.getIScore(j);
                     double leftScore = 0;
                     for (int k = 0; k < nRightChildStates; k++) {
-                        double rcS = rightChild.getIScore(k);
+                        final double rcS = rightChild.getIScore(k);
                         if (bscores[j][k] != null) {
                             for (int i = 0; i < nParentStates; i++) {
-                                double pS = parentScores[i];
+                                final double pS = parentScores[i];
                                 if (pS == 0)
                                     continue;
-                                double rS = bscores[j][k][i];
+                                final double rS = bscores[j][k][i];
                                 if (rS == 0)
                                     continue;
                                 leftScore += pS * rS * rcS;
@@ -770,29 +771,29 @@ public class ArrayParser implements Parser {
             default:
                 throw new Error("Malformed tree: more than two children");
             }
-            for (Tree<StateSet> child : children) {
+            for (final Tree<StateSet> child : children) {
                 doOutsideScores(child, unaryAbove, spanScores);
             }
         }
     }
 
-    public double doInsideOutsideScores(Tree<StateSet> tree, boolean noSmoothing, boolean debugOutput,
-            double[][][] spanScores) {
+    public double doInsideOutsideScores(final Tree<StateSet> tree, final boolean noSmoothing,
+            final boolean debugOutput, final double[][][] spanScores) {
         doInsideScores(tree, noSmoothing, debugOutput, spanScores);
         setRootOutsideScore(tree);
         doOutsideScores(tree, false, spanScores);
-        double tree_score = tree.getLabel().getIScore(0);
-        int tree_scale = tree.getLabel().getIScale();
+        final double tree_score = tree.getLabel().getIScore(0);
+        final int tree_scale = tree.getLabel().getIScale();
         return Math.log(tree_score) + (ScalingTools.LOGSCALE * tree_scale);
     }
 
-    public void doInsideOutsideScores(Tree<StateSet> tree, boolean noSmoothing, boolean debugOutput) {
+    public void doInsideOutsideScores(final Tree<StateSet> tree, final boolean noSmoothing, final boolean debugOutput) {
         doInsideScores(tree, noSmoothing, debugOutput, null);
         setRootOutsideScore(tree);
         doOutsideScores(tree, false, null);
     }
 
-    private void createArrays(int length) {
+    private void createArrays(final int length) {
 
         // zero out some stuff first in case we recently ran out of memory and
         // are
@@ -852,13 +853,13 @@ public class ArrayParser implements Parser {
      * Return all best parses (except no ties allowed on POS tags?). Note that the returned tree may be missing
      * intermediate nodes in a unary chain because it parses with a unary-closed grammar.
      */
-    public Tree<String> extractBestParse(int goal, int start, int end, List<String> sentence) {
+    public Tree<String> extractBestParse(final int goal, final int start, final int end, final List<String> sentence) {
         grammar.logarithmMode();
         lexicon.logarithmMode();
         // find sources of inside score
         // no backtraces so we can speed up the parsing for its primary use
-        double bestScore = iScore[start][end][goal];
-        String goalStr = (String) tagNumberer.object(goal);
+        final double bestScore = iScore[start][end][goal];
+        final String goalStr = (String) tagNumberer.object(goal);
         // System.out.println("Looking for " + goalStr + " from " + start +
         // " to " + end + " with score " + bestScore + ".");
         if (end - start == 1) {
@@ -871,7 +872,7 @@ public class ArrayParser implements Parser {
             // unary rules to get to a preterminal tag
             if (!grammar.isGrammarTag[goal]) {
                 // if (lexicon.getAllTags().contains(goal)) {
-                List<Tree<String>> child = new ArrayList<Tree<String>>();
+                final List<Tree<String>> child = new ArrayList<Tree<String>>();
                 child.add(new Tree<String>(sentence.get(start)));
                 return new Tree<String>(goalStr, child);
             }
@@ -880,10 +881,10 @@ public class ArrayParser implements Parser {
             else {
                 double veryBestScore = Double.NEGATIVE_INFINITY;
                 int newIndex = -1;
-                UnaryRule[] unaries = grammar.getClosedViterbiUnaryRulesByParent(goal);
+                final UnaryRule[] unaries = grammar.getClosedViterbiUnaryRulesByParent(goal);
                 for (int r = 0; r < unaries.length; r++) {
-                    UnaryRule ur = unaries[r];
-                    double ruleScore = iScore[start][end][ur.childState] + grammar.getUnaryScore(ur)[0][0];
+                    final UnaryRule ur = unaries[r];
+                    final double ruleScore = iScore[start][end][ur.childState] + grammar.getUnaryScore(ur)[0][0];
                     if ((ruleScore > veryBestScore) && (goal != ur.childState)
                             && (!grammar.isGrammarTag[ur.getChildState()])) {
                         // if ((ruleScore > veryBestScore) && (goal !=
@@ -896,11 +897,11 @@ public class ArrayParser implements Parser {
                 }
 
                 // insert the nonterminal tag into the tree
-                List<Tree<String>> child1 = new ArrayList<Tree<String>>();
+                final List<Tree<String>> child1 = new ArrayList<Tree<String>>();
                 child1.add(new Tree<String>(sentence.get(start)));
-                String goalStr1 = (String) tagNumberer.object(newIndex);
+                final String goalStr1 = (String) tagNumberer.object(newIndex);
 
-                List<Tree<String>> child = new ArrayList<Tree<String>>();
+                final List<Tree<String>> child = new ArrayList<Tree<String>>();
                 child.add(new Tree<String>(goalStr1, child1));
                 return new Tree<String>(goalStr, child);
             }
@@ -915,19 +916,19 @@ public class ArrayParser implements Parser {
         }
         // check binaries first
         for (int split = start + 1; split < end; split++) {
-            BinaryRule[] parentRules = grammar.splitRulesWithP(goal);
+            final BinaryRule[] parentRules = grammar.splitRulesWithP(goal);
             for (int i = 0; i < parentRules.length; i++) {
-                BinaryRule br = parentRules[i];
-                double score = br.getScore(0, 0, 0) + iScore[start][split][br.leftChildState]
+                final BinaryRule br = parentRules[i];
+                final double score = br.getScore(0, 0, 0) + iScore[start][split][br.leftChildState]
                         + iScore[split][end][br.rightChildState];
                 if (matches(score, bestScore)) {
                     // build binary split
-                    Tree<String> leftChildTree = extractBestParse(br.leftChildState, start, split, sentence);
-                    Tree<String> rightChildTree = extractBestParse(br.rightChildState, split, end, sentence);
-                    List<Tree<String>> children = new ArrayList<Tree<String>>();
+                    final Tree<String> leftChildTree = extractBestParse(br.leftChildState, start, split, sentence);
+                    final Tree<String> rightChildTree = extractBestParse(br.rightChildState, split, end, sentence);
+                    final List<Tree<String>> children = new ArrayList<Tree<String>>();
                     children.add(leftChildTree);
                     children.add(rightChildTree);
-                    Tree<String> result = new Tree<String>(goalStr, children);
+                    final Tree<String> result = new Tree<String>(goalStr, children);
                     // System.out.println("Binary node: "+result);
                     // result.setScore(score);
                     return result;
@@ -935,16 +936,16 @@ public class ArrayParser implements Parser {
             }
         }
         // check unaries
-        UnaryRule[] unaries = grammar.getClosedViterbiUnaryRulesByParent(goal);
+        final UnaryRule[] unaries = grammar.getClosedViterbiUnaryRulesByParent(goal);
         for (int r = 0; r < unaries.length; r++) {
-            UnaryRule ur = unaries[r];
-            double score = ur.getScore(0, 0) + iScore[start][end][ur.childState];
+            final UnaryRule ur = unaries[r];
+            final double score = ur.getScore(0, 0) + iScore[start][end][ur.childState];
             if (ur.childState != ur.parentState && matches(score, bestScore)) {
                 // build unary
-                Tree<String> childTree = extractBestParse(ur.childState, start, end, sentence);
-                List<Tree<String>> children = new ArrayList<Tree<String>>();
+                final Tree<String> childTree = extractBestParse(ur.childState, start, end, sentence);
+                final List<Tree<String>> children = new ArrayList<Tree<String>>();
                 children.add(childTree);
-                Tree<String> result = new Tree<String>(goalStr, children);
+                final Tree<String> result = new Tree<String>(goalStr, children);
                 // System.out.println("Unary node: "+result);
                 // result.setScore(score);
                 return result;
@@ -954,10 +955,10 @@ public class ArrayParser implements Parser {
         return null;
     }
 
-    protected void restoreUnaries(Tree<String> t) {
+    protected void restoreUnaries(final Tree<String> t) {
         // System.out.println("In restoreUnaries...");
-        for (Iterator nodeI = t.subTreeList().iterator(); nodeI.hasNext();) {
-            Tree<String> node = (Tree<String>) nodeI.next();
+        for (final Iterator nodeI = t.subTreeList().iterator(); nodeI.hasNext();) {
+            final Tree<String> node = (Tree<String>) nodeI.next();
             // System.out.println("Doing node: "+node.getLabel());
             if (node.isLeaf() || node.isPreTerminal() || node.getChildren().size() != 1) {
                 // System.out.println("Skipping node: "+node.getLabel());
@@ -966,24 +967,24 @@ public class ArrayParser implements Parser {
             // System.out.println("Not skipping node: "+node.getLabel());
             Tree<String> parent = node;
             // Tree<String> child = node.getChildren().get(0);
-            short pLabel = (short) tagNumberer.number(parent.getLabel());
-            short cLabel = (short) tagNumberer.number(node.getChildren().get(0).getLabel());
+            final short pLabel = (short) tagNumberer.number(parent.getLabel());
+            final short cLabel = (short) tagNumberer.number(node.getChildren().get(0).getLabel());
             // List path =
             // grammar.getBestPath(stateNumberer.number(parent.getLabel().value()),
             // stateNumberer.number(child.label().value().toString()));
             // if (grammar.getUnaryScore(new UnaryRule(pLabel,cLabel))[0][0] ==
             // 0){
             // continue; }// means the rule was already in grammar
-            List<short[]> path = grammar.getBestViterbiPath(pLabel, (short) 0, cLabel, (short) 0);
+            final List<short[]> path = grammar.getBestViterbiPath(pLabel, (short) 0, cLabel, (short) 0);
             // System.out.println("Got path for "+pLabel + " to " + cLabel +
             // " via " +
             // path);
             for (int pos = 1; pos < path.size() - 1; pos++) {
-                int tmp = path.get(pos)[0];
-                int interState = tmp;
-                Tree<String> intermediate = new Tree<String>((String) tagNumberer.object(interState),
+                final int tmp = path.get(pos)[0];
+                final int interState = tmp;
+                final Tree<String> intermediate = new Tree<String>((String) tagNumberer.object(interState),
                         parent.getChildren());
-                List<Tree<String>> children = new ArrayList<Tree<String>>();
+                final List<Tree<String>> children = new ArrayList<Tree<String>>();
                 children.add(intermediate);
                 parent.setChildren(children);
                 parent = intermediate;
@@ -993,7 +994,7 @@ public class ArrayParser implements Parser {
 
     private static final double TOL = 1e-5;
 
-    protected boolean matches(double x, double y) {
+    protected boolean matches(final double x, final double y) {
         return (Math.abs(x - y) / (Math.abs(x) + Math.abs(y) + 1e-10) < TOL);
     }
 
@@ -1001,24 +1002,24 @@ public class ArrayParser implements Parser {
      * @param stateSetTree
      * @return
      */
-    public void doViterbiInsideScores(Tree<StateSet> tree) {
+    public void doViterbiInsideScores(final Tree<StateSet> tree) {
         if (tree.isLeaf()) {
             return;
         }
-        List<Tree<StateSet>> children = tree.getChildren();
-        for (Tree<StateSet> child : children) {
+        final List<Tree<StateSet>> children = tree.getChildren();
+        for (final Tree<StateSet> child : children) {
             if (tree.isLeaf())
                 continue;
             doViterbiInsideScores(child);// newChildren.add(getBestViterbiDerivation(child));
         }
-        StateSet parent = tree.getLabel();
-        short pState = parent.getState();
-        int nParentStates = grammar.numSubStates[pState];// parent.numSubStates();
+        final StateSet parent = tree.getLabel();
+        final short pState = parent.getState();
+        final int nParentStates = grammar.numSubStates[pState];// parent.numSubStates();
         double[] iScores = new double[nParentStates];
         if (tree.isPreTerminal()) {
             // Plays a role similar to initializeChart()
-            String word = tree.getChildren().get(0).getLabel().getWord();
-            int pos = tree.getChildren().get(0).getLabel().from;
+            final String word = tree.getChildren().get(0).getLabel().getWord();
+            final int pos = tree.getChildren().get(0).getLabel().from;
             iScores = lexicon.score(word, pState, pos, false, false);
             // parent.scaleIScores(0);
         } else {
@@ -1027,22 +1028,22 @@ public class ArrayParser implements Parser {
             case 0:
                 break;
             case 1:
-                StateSet child = children.get(0).getLabel();
-                short cState = child.getState();
-                int nChildStates = child.numSubStates();
-                double[][] uscores = grammar.getUnaryScore(pState, cState);
+                final StateSet child = children.get(0).getLabel();
+                final short cState = child.getState();
+                final int nChildStates = child.numSubStates();
+                final double[][] uscores = grammar.getUnaryScore(pState, cState);
                 for (int j = 0; j < nChildStates; j++) {
                     if (uscores[j] != null) { // check whether one of the
                                               // parents can produce this
                                               // child
-                        double cS = child.getIScore(j);
+                        final double cS = child.getIScore(j);
                         if (cS == Double.NEGATIVE_INFINITY)
                             continue;
                         for (int i = 0; i < nParentStates; i++) {
-                            double rS = uscores[j][i]; // rule score
+                            final double rS = uscores[j][i]; // rule score
                             if (rS == Double.NEGATIVE_INFINITY)
                                 continue;
-                            double res = rS + cS;
+                            final double res = rS + cS;
                             iScores[i] = Math.max(iScores[i], res);
                         }
                     }
@@ -1050,14 +1051,14 @@ public class ArrayParser implements Parser {
                 // parent.scaleIScores(child.getIScale());
                 break;
             case 2:
-                StateSet leftChild = children.get(0).getLabel();
-                StateSet rightChild = children.get(1).getLabel();
-                int nLeftChildStates = grammar.numSubStates[leftChild.getState()];// leftChild.numSubStates();
-                int nRightChildStates = grammar.numSubStates[rightChild.getState()];// rightChild.numSubStates();
-                short lState = leftChild.getState();
-                short rState = rightChild.getState();
+                final StateSet leftChild = children.get(0).getLabel();
+                final StateSet rightChild = children.get(1).getLabel();
+                final int nLeftChildStates = grammar.numSubStates[leftChild.getState()];// leftChild.numSubStates();
+                final int nRightChildStates = grammar.numSubStates[rightChild.getState()];// rightChild.numSubStates();
+                final short lState = leftChild.getState();
+                final short rState = rightChild.getState();
                 double[][][] bscores = grammar.getBinaryScore(pState, lState, rState);
-                for (BinaryRule br : grammar.splitRulesWithP(pState)) {
+                for (final BinaryRule br : grammar.splitRulesWithP(pState)) {
                     if (br.leftChildState != lState)
                         continue;
                     if (br.rightChildState != rState)
@@ -1066,21 +1067,21 @@ public class ArrayParser implements Parser {
                 }
 
                 for (int j = 0; j < nLeftChildStates; j++) {
-                    double lcS = leftChild.getIScore(j);
+                    final double lcS = leftChild.getIScore(j);
                     if (lcS == Double.NEGATIVE_INFINITY)
                         continue;
                     for (int k = 0; k < nRightChildStates; k++) {
-                        double rcS = rightChild.getIScore(k);
+                        final double rcS = rightChild.getIScore(k);
                         if (rcS == Double.NEGATIVE_INFINITY)
                             continue;
                         if (bscores[j][k] != null) { // check whether one of the
                                                      // parents can produce
                                                      // these kids
                             for (int i = 0; i < nParentStates; i++) {
-                                double rS = bscores[j][k][i];
+                                final double rS = bscores[j][k][i];
                                 if (rS == Double.NEGATIVE_INFINITY)
                                     continue;
-                                double res = rS + lcS + rcS;
+                                final double res = rS + lcS + rcS;
                                 iScores[i] = Math.max(iScores[i], res);
                             }
                         }
@@ -1095,14 +1096,14 @@ public class ArrayParser implements Parser {
         parent.setIScores(iScores);
     }
 
-    Tree<String> extractBestViterbiDerivation(Tree<StateSet> tree, int substate, boolean outputScore,
-            boolean labelOnlyPOS) {
+    Tree<String> extractBestViterbiDerivation(final Tree<StateSet> tree, int substate, final boolean outputScore,
+            final boolean labelOnlyPOS) {
         if (tree.isLeaf())
             return new Tree<String>(tree.getLabel().getWord());
         if (substate == -1)
             substate = 0;
         if (tree.isPreTerminal()) {
-            ArrayList<Tree<String>> child = new ArrayList<Tree<String>>();
+            final ArrayList<Tree<String>> child = new ArrayList<Tree<String>>();
             child.add(extractBestViterbiDerivation(tree.getChildren().get(0), -1, outputScore, labelOnlyPOS));
             String goalStr = tagNumberer.object(tree.getLabel().getState()) + "-" + substate;
             if (outputScore)
@@ -1110,11 +1111,11 @@ public class ArrayParser implements Parser {
             return new Tree<String>(goalStr, child);
         }
 
-        StateSet node = tree.getLabel();
-        short pState = node.getState();
+        final StateSet node = tree.getLabel();
+        final short pState = node.getState();
 
-        ArrayList<Tree<String>> newChildren = new ArrayList<Tree<String>>();
-        List<Tree<StateSet>> children = tree.getChildren();
+        final ArrayList<Tree<String>> newChildren = new ArrayList<Tree<String>>();
+        final List<Tree<StateSet>> children = tree.getChildren();
 
         double myScore = node.getIScore(substate);
         if (myScore == Double.NEGATIVE_INFINITY) {
@@ -1123,22 +1124,22 @@ public class ArrayParser implements Parser {
         }
         switch (children.size()) {
         case 1:
-            StateSet child = children.get(0).getLabel();
-            short cState = child.getState();
-            int nChildStates = child.numSubStates();
-            double[][] uscores = grammar.getUnaryScore(pState, cState);
+            final StateSet child = children.get(0).getLabel();
+            final short cState = child.getState();
+            final int nChildStates = child.numSubStates();
+            final double[][] uscores = grammar.getUnaryScore(pState, cState);
             int childIndex = -1;
             for (int j = 0; j < nChildStates; j++) {
                 if (childIndex != -1)
                     break;
                 if (uscores[j] != null) {
-                    double cS = child.getIScore(j);
+                    final double cS = child.getIScore(j);
                     if (cS == Double.NEGATIVE_INFINITY)
                         continue;
-                    double rS = uscores[j][substate]; // rule score
+                    final double rS = uscores[j][substate]; // rule score
                     if (rS == Double.NEGATIVE_INFINITY)
                         continue;
-                    double res = rS + cS;
+                    final double res = rS + cS;
                     if (matches(res, myScore))
                         childIndex = j;
                 }
@@ -1146,34 +1147,34 @@ public class ArrayParser implements Parser {
             newChildren.add(extractBestViterbiDerivation(children.get(0), childIndex, outputScore, labelOnlyPOS));
             break;
         case 2:
-            StateSet leftChild = children.get(0).getLabel();
-            StateSet rightChild = children.get(1).getLabel();
-            int nLeftChildStates = leftChild.numSubStates();
-            int nRightChildStates = rightChild.numSubStates();
-            short lState = leftChild.getState();
-            short rState = rightChild.getState();
-            double[][][] bscores = grammar.getBinaryScore(pState, lState, rState);
+            final StateSet leftChild = children.get(0).getLabel();
+            final StateSet rightChild = children.get(1).getLabel();
+            final int nLeftChildStates = leftChild.numSubStates();
+            final int nRightChildStates = rightChild.numSubStates();
+            final short lState = leftChild.getState();
+            final short rState = rightChild.getState();
+            final double[][][] bscores = grammar.getBinaryScore(pState, lState, rState);
             int lChildIndex = -1,
             rChildIndex = -1;
             for (int j = 0; j < nLeftChildStates; j++) {
                 if (lChildIndex != -1 && rChildIndex != -1)
                     break;
-                double lcS = leftChild.getIScore(j);
+                final double lcS = leftChild.getIScore(j);
                 if (lcS == Double.NEGATIVE_INFINITY)
                     continue;
                 for (int k = 0; k < nRightChildStates; k++) {
                     if (lChildIndex != -1 && rChildIndex != -1)
                         break;
-                    double rcS = rightChild.getIScore(k);
+                    final double rcS = rightChild.getIScore(k);
                     if (rcS == Double.NEGATIVE_INFINITY)
                         continue;
                     if (bscores[j][k] != null) { // check whether one of the
                                                  // parents can produce these
                                                  // kids
-                        double rS = bscores[j][k][substate];
+                        final double rS = bscores[j][k][substate];
                         if (rS == Double.NEGATIVE_INFINITY)
                             continue;
-                        double res = rS + lcS + rcS;
+                        final double res = rS + lcS + rcS;
                         if (matches(myScore, res)) {
                             lChildIndex = j;
                             rChildIndex = k;
@@ -1198,7 +1199,8 @@ public class ArrayParser implements Parser {
         return new Tree<String>(parentString, newChildren);
     }
 
-    public Tree<String> getBestViterbiDerivation(Tree<StateSet> tree, boolean outputScore, boolean labelOnlyPOS) {
+    public Tree<String> getBestViterbiDerivation(final Tree<StateSet> tree, final boolean outputScore,
+            final boolean labelOnlyPOS) {
         doViterbiInsideScores(tree);
         if (tree.getLabel().getIScore(0) == Double.NEGATIVE_INFINITY) {
             // System.out.println("Tree is unparsable!");
@@ -1207,288 +1209,24 @@ public class ArrayParser implements Parser {
         return extractBestViterbiDerivation(tree, 0, outputScore, labelOnlyPOS);
     }
 
-    public void incrementExpectedGoldCounts(Linearizer linearizer, double[] probs, Tree<StateSet> tree) {
-        double tree_score = tree.getLabel().getIScore(0);
-        int tree_scale = tree.getLabel().getIScale();
-        incrementExpectedGoldCounts(linearizer, probs, tree, tree_score, tree_scale);
-    }
-
-    public void incrementExpectedGoldCounts(Linearizer linearizer, double[] probs, Tree<StateSet> tree,
-            double tree_score, int tree_scale) {
-
-        if (tree.isLeaf())
-            return;
-        if (tree.isPreTerminal()) {
-            StateSet parent = tree.getLabel();
-            StateSet child = tree.getChildren().get(0).getLabel();
-
-            // String word = child.getWord();
-            short tag = tree.getLabel().getState();
-
-            final int nSubStates = grammar.numSubStates[tag];
-            double scalingFactor = ScalingTools.calcScaleFactor(parent.getOScale() + parent.getIScale() - tree_scale);
-
-            // if (!combinedLexicon){
-            for (short substate = 0; substate < nSubStates; substate++) {
-                // weight by the probability of seeing the tag and word
-                // together, given the sentence
-                double pIS = parent.getIScore(substate); // Parent outside score
-                if (pIS == 0) {
-                    continue;
-                }
-                double pOS = parent.getOScore(substate); // Parent outside score
-                if (pOS == 0) {
-                    continue;
-                }
-                double weight = 1;
-                weight = (pIS / tree_score) * scalingFactor * pOS;
-                if (weight > 1.01) {
-                    System.out.println("Overflow when counting tags? " + weight);
-                    weight = 0;
-                }
-                tmpCountsArray[substate] = weight;
-            }
-            linearizer.increment(probs, child, tag, tmpCountsArray, true); // probs[startIndexWord+substate]
-                                                                           // +=
-                                                                           // weight;
-            // linearizer.increment(probs, child.sigIndex, tag, tmpCountsArray);
-            // //probs[startIndexWord+substate] += weight;
-            // } else {
-            // // int pos = child.from;
-            // double[] wordScores = lexicon.scoreWord(child, tag);
-            // for (short substate=0; substate<nSubStates; substate++) {
-            // //weight by the probability of seeing the tag and word together,
-            // given the sentence
-            // double pIS = wordScores[substate]; // Parent outside score
-            // if (pIS==0) { continue; }
-            // double pOS = parent.getOScore(substate); // Parent outside score
-            // if (pOS==0) { continue; }
-            // double weight = 1;
-            // weight = hardCounts ? 1 : (pIS / tree_score) * scalingFactor *
-            // pOS;
-            // tmpCountsArray[substate] = weight;
-            // }
-            // linearizer.increment(probs, child.wordIndex, tag,
-            // tmpCountsArray); //probs[startIndexWord+substate] += weight;
-            //
-            // // String sig = lexicon.getSignature(word, pos);
-            // double[] sigScores = lexicon.scoreSignature(child, tag);
-            // if (sigScores==null)
-            // return;
-            // for (short substate=0; substate<nSubStates; substate++) {
-            // //weight by the probability of seeing the tag and word together,
-            // given the sentence
-            // double pIS = sigScores[substate]; // Parent outside score
-            // if (pIS==0) { continue; }
-            // double pOS = parent.getOScore(substate); // Parent outside score
-            // if (pOS==0) { continue; }
-            // double weight = 1;
-            // weight = hardCounts ? 1 : (pIS / tree_score) * scalingFactor *
-            // pOS;
-            // tmpCountsArray[substate] = weight;
-            // }
-            // linearizer.increment(probs, child.sigIndex, tag, tmpCountsArray);
-            // //probs[startIndexWord+substate] += weight;
-            // }
-            return;
-        }
-        List<Tree<StateSet>> children = tree.getChildren();
-        StateSet parent = tree.getLabel();
-        short parentState = parent.getState();
-        int nParentSubStates = grammar.numSubStates[parentState];
-        // if (oScore[pStart][pEnd][parentState]==null) break;
-        switch (children.size()) {
-        case 0:
-            // This is a leaf (a preterminal node, if we count the words
-            // themselves),
-            // nothing to do
-            break;
-        case 1:
-            // first check whether this is a unary chain!
-            /*
-             * if (!children.get(0).isPreTerminal() && children.get(0).getChildren().size()==1){ // if so, skip the
-             * intermediate node children = children.get(0).getChildren(); }
-             */
-            StateSet child = children.get(0).getLabel();
-            short childState = child.getState();
-            // int thisStartIndex = linearizer.getLinearIndex(new
-            // UnaryRule(parentState,
-            // childState));//startIndexGrammar[parentState][childState][0];
-            int curInd = 0;
-            int nChildSubStates = grammar.numSubStates[childState];
-            UnaryRule urule = grammar.getUnaryRule(parentState, childState);
-            double[][] oldUScores = urule.getScores2();
-            double scalingFactor = ScalingTools.calcScaleFactor(parent.getOScale() + child.getIScale() - tree_scale);
-            // if (scalingFactor==0){
-            // System.out.println("p: "+parent.getOScale()+" c: "+child.getIScale()+" t:"+tree_scale);
-            // }
-            for (short i = 0; i < nChildSubStates; i++) {
-                if (oldUScores[i] == null)
-                    continue;
-                double cIS = child.getIScore(i);
-                for (short j = 0; j < nParentSubStates; j++) {
-                    curInd++;
-                    if (cIS == 0) {
-                        continue;
-                    }
-                    double pOS = parent.getOScore(j); // Parent outside score
-                    if (pOS == 0) {
-                        continue;
-                    }
-                    double rS = oldUScores[i][j];
-                    if (rS == 0) {
-                        continue;
-                    }
-                    if (tree_score == 0)
-                        tree_score = 1;
-                    double ruleCount = (rS * cIS / tree_score) * scalingFactor * pOS;
-                    if (ruleCount > 1.01) {
-                        System.out.println("Overflow when counting binaries? " + ruleCount);
-                        ruleCount = 0;
-                    }
-                    if (ruleCount != 0)
-                        tmpCountsArray[curInd - 1] = ruleCount;
-                }
-                if (parentState == 0)
-                    curInd += (nChildSubStates - 1);
-            }
-            linearizer.increment(probs, urule, tmpCountsArray, true); // probs[thisStartIndex
-                                                                      // +
-                                                                      // curInd-1]
-                                                                      // +=
-                                                                      // ruleCount;
-            break;
-        case 2:
-            StateSet leftChild = children.get(0).getLabel();
-            short lChildState = leftChild.getState();
-            StateSet rightChild = children.get(1).getLabel();
-            short rChildState = rightChild.getState();
-            int nLeftChildSubStates = grammar.numSubStates[lChildState];
-            int nRightChildSubStates = grammar.numSubStates[rChildState];
-            // thisStartIndex = linearizer.getLinearIndex(new
-            // BinaryRule(parentState, lChildState,
-            // rChildState));//startIndexGrammar[parentState][lChildState][rChildState];
-            curInd = 0;
-            // new double[nLeftChildSubStates][nRightChildSubStates][];
-            BinaryRule brule = grammar.getBinaryRule(parentState, lChildState, rChildState);
-            double[][][] oldBScores = brule.getScores2();
-
-            scalingFactor = ScalingTools.calcScaleFactor(parent.getOScale() + leftChild.getIScale()
-                    + rightChild.getIScale() - tree_scale);
-            // if (scalingFactor==0){
-            // System.out.println("p: "+parent.getOScale()+" l: "+leftChild.getIScale()+" r:"+rightChild.getIScale()+" t:"+tree_scale);
-            // }
-            int nRuleStates = oldBScores[0][0].length;
-            int divisor = nParentSubStates / nRuleStates;
-            if (divisor == 0)
-                System.out.println("not possible");
-            for (short i = 0; i < nLeftChildSubStates; i++) {
-                double lcIS = leftChild.getIScore(i);
-                for (short j = 0; j < nRightChildSubStates; j++) {
-                    // if (oldBScores[i][j]==null) continue;
-                    if (nRuleStates == nParentSubStates) {
-                        for (short k = 0; k < nParentSubStates; k++) {
-                            curInd++;
-                            if (lcIS == 0) {
-                                continue;
-                            }
-                            double rcIS = rightChild.getIScore(j);
-                            if (rcIS == 0) {
-                                continue;
-                            }
-                            double pOS = parent.getOScore(k); // Parent outside
-                                                              // score
-                            if (pOS == 0) {
-                                continue;
-                            }
-                            double rS = oldBScores[i][j][k];
-                            if (rS == 0) {
-                                continue;
-                            }
-                            if (tree_score == 0)
-                                tree_score = 1;
-                            double ruleCount = (rS * lcIS / tree_score) * rcIS * scalingFactor * pOS;
-                            if (ruleCount > 1.01) {
-                                System.out.println("Overflow when counting unaries? " + ruleCount);
-                                ruleCount = 0;
-                            }
-                            if (ruleCount > 0)
-                                tmpCountsArray[curInd - 1] = ruleCount;// probs[thisStartIndex
-                                                                       // +
-                                                                       // curInd-1]
-                                                                       // +=
-                                                                       // ruleCount;
-                        }
-                    } else {
-                        for (short k = 0; k < nParentSubStates; k++) {
-                            curInd++;
-                            if (lcIS == 0) {
-                                continue;
-                            }
-                            double rcIS = rightChild.getIScore(j);
-                            if (rcIS == 0) {
-                                continue;
-                            }
-                            double pOS = parent.getOScore(k); // Parent outside
-                                                              // score
-                            if (pOS == 0) {
-                                continue;
-                            }
-                            double rS = oldBScores[i / divisor][j / divisor][k / divisor];
-                            if (rS == 0) {
-                                continue;
-                            }
-                            if (tree_score == 0)
-                                tree_score = 1;
-                            double ruleCount = (rS * lcIS / tree_score) * rcIS * scalingFactor * pOS;
-                            if (ruleCount > 1.01) {
-                                System.out.println("Overflow when counting unaries? " + ruleCount);
-                                ruleCount = 0;
-                            }
-                            if (ruleCount > 0)
-                                tmpCountsArray[curInd - 1] = ruleCount;// probs[thisStartIndex
-                                                                       // +
-                                                                       // curInd-1]
-                                                                       // +=
-                                                                       // ruleCount;
-                        }
-
-                    }
-                }
-            }
-            linearizer.increment(probs, brule, tmpCountsArray, true); // probs[thisStartIndex
-                                                                      // +
-                                                                      // curInd-1]
-                                                                      // +=
-                                                                      // ruleCount;
-
-            break;
-        default:
-            throw new Error("Malformed tree: more than two children");
-        }
-
-        for (Tree<StateSet> child : children) {
-            incrementExpectedGoldCounts(linearizer, probs, child, tree_score, tree_scale);
-        }
-    }
-
-    public void countPosteriors(double[][] cumulativePosteriors, Tree<StateSet> tree, double tree_score, int tree_scale) {
+    public void countPosteriors(final double[][] cumulativePosteriors, final Tree<StateSet> tree,
+            final double tree_score, final int tree_scale) {
 
         if (tree.isLeaf())
             return;
 
-        StateSet node = tree.getLabel();
-        short state = node.getState();
+        final StateSet node = tree.getLabel();
+        final short state = node.getState();
 
         final int nSubStates = grammar.numSubStates[state];
-        double scalingFactor = ScalingTools.calcScaleFactor(node.getOScale() + node.getIScale() - tree_scale);
+        final double scalingFactor = ScalingTools.calcScaleFactor(node.getOScale() + node.getIScale() - tree_scale);
 
         for (short substate = 0; substate < nSubStates; substate++) {
-            double pIS = node.getIScore(substate); // Parent outside score
+            final double pIS = node.getIScore(substate); // Parent outside score
             if (pIS == 0) {
                 continue;
             }
-            double pOS = node.getOScore(substate); // Parent outside score
+            final double pOS = node.getOScore(substate); // Parent outside score
             if (pOS == 0) {
                 continue;
             }
@@ -1501,7 +1239,7 @@ public class ArrayParser implements Parser {
             cumulativePosteriors[state][substate] += weight;
         }
 
-        for (Tree<StateSet> child : tree.getChildren()) {
+        for (final Tree<StateSet> child : tree.getChildren()) {
             countPosteriors(cumulativePosteriors, child, tree_score, tree_scale);
         }
     }

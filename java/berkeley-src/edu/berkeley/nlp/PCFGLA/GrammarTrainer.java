@@ -518,8 +518,8 @@ public class GrammarTrainer {
 
             // Dump a grammar file to disk from time to time
             if (opts.writeIntermediateGrammars || "smoothing".equals(opString)) {
-                ParserData pData = new ParserData(maxLexicon, maxGrammar, null, Numberer.getNumberers(),
-                        numSubStatesArray, VERTICAL_MARKOVIZATION, HORIZONTAL_MARKOVIZATION, binarization);
+                ParserData pData = new ParserData(maxLexicon, maxGrammar, Numberer.getNumberers(), numSubStatesArray,
+                        VERTICAL_MARKOVIZATION, HORIZONTAL_MARKOVIZATION, binarization);
                 final String outTmpName = outFileName + "_" + (splitIndex / 3 + 1) + "_" + opString + ".gr";
                 System.out.println("Saving grammar to " + outTmpName + ".");
                 if (pData.Save(outTmpName))
@@ -545,8 +545,8 @@ public class GrammarTrainer {
             maxLexicon = previousLexicon;
         }
 
-        final ParserData pData = new ParserData(maxLexicon, maxGrammar, null, Numberer.getNumberers(),
-                numSubStatesArray, VERTICAL_MARKOVIZATION, HORIZONTAL_MARKOVIZATION, binarization);
+        final ParserData pData = new ParserData(maxLexicon, maxGrammar, Numberer.getNumberers(), numSubStatesArray,
+                VERTICAL_MARKOVIZATION, HORIZONTAL_MARKOVIZATION, binarization);
 
         System.out.println("Saving grammar to " + outFileName + ".");
         System.out.println("It gives a validation data log likelihood of: " + maxLikelihood);

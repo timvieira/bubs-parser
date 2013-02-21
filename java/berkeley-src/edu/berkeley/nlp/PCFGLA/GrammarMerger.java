@@ -18,7 +18,7 @@ public class GrammarMerger {
     /**
      * @param args
      */
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
         if (args.length < 1) {
             System.out.println("usage: java GrammarMerger \n"
                     + "\t\t  -i       Input File for Grammar (Required)\n"
@@ -46,18 +46,19 @@ public class GrammarMerger {
         }
         // provide feedback on command-line arguments
         System.out.print("Running with arguments:  ");
-        for (String arg : args) {
+        for (final String arg : args) {
             System.out.print(" '" + arg + "'");
         }
         System.out.println("");
 
         // parse the input arguments
-        Map<String, String> input = CommandLineUtils.simpleCommandLineParser(args);
+        final Map<String, String> input = CommandLineUtils.simpleCommandLineParser(args);
 
-        double mergingPercentage = Double.parseDouble(CommandLineUtils.getValueOrUseDefault(input, "-p", "0.5"));
-        double mergingPercentage2 = Double.parseDouble(CommandLineUtils.getValueOrUseDefault(input, "-2p", "0.0"));
-        String outFileName = CommandLineUtils.getValueOrUseDefault(input, "-o", null);
-        String inFileName = CommandLineUtils.getValueOrUseDefault(input, "-i", null);
+        final double mergingPercentage = Double.parseDouble(CommandLineUtils.getValueOrUseDefault(input, "-p", "0.5"));
+        final double mergingPercentage2 = Double
+                .parseDouble(CommandLineUtils.getValueOrUseDefault(input, "-2p", "0.0"));
+        final String outFileName = CommandLineUtils.getValueOrUseDefault(input, "-o", null);
+        final String inFileName = CommandLineUtils.getValueOrUseDefault(input, "-i", null);
         System.out.println("Loading grammar from " + inFileName + ".");
 
         ParserData pData = ParserData.Load(inFileName);
@@ -65,55 +66,56 @@ public class GrammarMerger {
             System.out.println("Failed to load grammar from file" + inFileName + ".");
             System.exit(1);
         }
-        int minIterations = Integer.parseInt(CommandLineUtils.getValueOrUseDefault(input, "-minIt", "0"));
+        final int minIterations = Integer.parseInt(CommandLineUtils.getValueOrUseDefault(input, "-minIt", "0"));
         if (minIterations > 0)
             System.out.println("I will do at least " + minIterations + " iterations.");
 
-        boolean separateMerge = CommandLineUtils.getValueOrUseDefault(input, "-sep", "").equals("true");
+        final boolean separateMerge = CommandLineUtils.getValueOrUseDefault(input, "-sep", "").equals("true");
 
-        int maxIterations = Integer.parseInt(CommandLineUtils.getValueOrUseDefault(input, "-maxIt", "100"));
+        final int maxIterations = Integer.parseInt(CommandLineUtils.getValueOrUseDefault(input, "-maxIt", "100"));
         if (maxIterations > 0)
             System.out.println("But at most " + maxIterations + " iterations.");
-        boolean deleteLabels = CommandLineUtils.getValueOrUseDefault(input, "-dL", "").equals("true");
+        final boolean deleteLabels = CommandLineUtils.getValueOrUseDefault(input, "-dL", "").equals("true");
 
-        boolean useEntropicPrior = CommandLineUtils.getValueOrUseDefault(input, "-ent", "").equals("true");
+        final boolean useEntropicPrior = CommandLineUtils.getValueOrUseDefault(input, "-ent", "").equals("true");
 
-        int maxSentenceLength = Integer.parseInt(CommandLineUtils.getValueOrUseDefault(input, "-maxL", "10000"));
+        final int maxSentenceLength = Integer.parseInt(CommandLineUtils.getValueOrUseDefault(input, "-maxL", "10000"));
         System.out.println("Will remove sentences with more than " + maxSentenceLength + " words.");
 
-        String path = CommandLineUtils.getValueOrUseDefault(input, "-path", null);
+        final String path = CommandLineUtils.getValueOrUseDefault(input, "-path", null);
         // int lang =
         // Integer.parseInt(CommandLineUtils.getValueOrUseDefault(input,
         // "-lang", "1"));
         // System.out.println("Loading trees from "+path+" and using language "+lang);
 
-        boolean chineseShort = Boolean.parseBoolean(CommandLineUtils.getValueOrUseDefault(input, "-chsh", "false"));
+        final boolean chineseShort = Boolean.parseBoolean(CommandLineUtils
+                .getValueOrUseDefault(input, "-chsh", "false"));
 
-        double trainingFractionToKeep = Double
-                .parseDouble(CommandLineUtils.getValueOrUseDefault(input, "-trfr", "1.0"));
+        final double trainingFractionToKeep = Double.parseDouble(CommandLineUtils.getValueOrUseDefault(input, "-trfr",
+                "1.0"));
 
         Grammar grammar = pData.getGrammar();
         Lexicon lexicon = pData.getLexicon();
         Numberer.setNumberers(pData.getNumbs());
-        int h_markov = pData.h_markov;
-        int v_markov = pData.v_markov;
-        Binarization bin = pData.bin;
-        short[] numSubStatesArray = pData.numSubStatesArray;
-        Numberer tagNumberer = Numberer.getGlobalNumberer("tags");
+        final int h_markov = pData.h_markov;
+        final int v_markov = pData.v_markov;
+        final Binarization bin = pData.bin;
+        final short[] numSubStatesArray = pData.numSubStatesArray;
+        final Numberer tagNumberer = Numberer.getGlobalNumberer("tags");
 
-        double filter = Double.parseDouble(CommandLineUtils.getValueOrUseDefault(input, "-f", "-1"));
+        final double filter = Double.parseDouble(CommandLineUtils.getValueOrUseDefault(input, "-f", "-1"));
         if (filter > 0)
             System.out.println("Will remove rules with prob under " + filter);
 
-        Corpus corpus = new Corpus(path, TreeBankType.WSJ, trainingFractionToKeep, false);
+        final Corpus corpus = new Corpus(path, TreeBankType.WSJ, trainingFractionToKeep, false);
         // int nTrees = corpus.getTrainTrees().size();
         // binarize trees
-        List<Tree<String>> trainTrees = Corpus.binarizeAndFilterTrees(corpus.getTrainTrees(), v_markov, h_markov,
+        final List<Tree<String>> trainTrees = Corpus.binarizeAndFilterTrees(corpus.getTrainTrees(), v_markov, h_markov,
                 maxSentenceLength, bin, false, false);
-        List<Tree<String>> validationTrees = Corpus.binarizeAndFilterTrees(corpus.getValidationTrees(), v_markov,
+        final List<Tree<String>> validationTrees = Corpus.binarizeAndFilterTrees(corpus.getValidationTrees(), v_markov,
                 h_markov, maxSentenceLength, bin, false, false);
 
-        int nTrees = trainTrees.size();
+        final int nTrees = trainTrees.size();
         System.out.println("There are " + nTrees + " trees in the training set.");
 
         StateSetTreeList trainStateSetTrees = new StateSetTreeList(trainTrees, numSubStatesArray, false, tagNumberer);
@@ -132,17 +134,17 @@ public class GrammarMerger {
         // }
         //
 
-        double[][] mergeWeights = computeMergeWeights(grammar, lexicon, trainStateSetTrees);
+        final double[][] mergeWeights = computeMergeWeights(grammar, lexicon, trainStateSetTrees);
 
-        double[][][] deltas = computeDeltas(grammar, lexicon, mergeWeights, trainStateSetTrees);
+        final double[][][] deltas = computeDeltas(grammar, lexicon, mergeWeights, trainStateSetTrees);
 
-        boolean[][][] mergeThesePairs = determineMergePairs(deltas, separateMerge, mergingPercentage, grammar);
+        final boolean[][][] mergeThesePairs = determineMergePairs(deltas, separateMerge, mergingPercentage, grammar);
 
         Grammar newGrammar = doTheMerges(grammar, lexicon, mergeThesePairs, mergeWeights);
 
         printMergingStatistics(grammar, newGrammar);
 
-        short[] newNumSubStatesArray = newGrammar.numSubStates;
+        final short[] newNumSubStatesArray = newGrammar.numSubStates;
         trainStateSetTrees = new StateSetTreeList(trainTrees, newNumSubStatesArray, false, tagNumberer);
         validationStateSetTrees = new StateSetTreeList(validationTrees, newNumSubStatesArray, false, tagNumberer);
 
@@ -153,7 +155,7 @@ public class GrammarMerger {
         SophisticatedLexicon newLexicon = new SophisticatedLexicon(newNumSubStatesArray,
                 SophisticatedLexicon.DEFAULT_SMOOTHING_CUTOFF, lexicon.getSmoothingParams(), lexicon.getSmoother(),
                 filter);
-        boolean updateOnlyLexicon = true;
+        final boolean updateOnlyLexicon = true;
         double trainingLikelihood = GrammarTrainer.doOneEStep(newGrammar, lexicon, null, newLexicon,
                 trainStateSetTrees, updateOnlyLexicon, 4 /* opts.rare */);
 
@@ -190,7 +192,7 @@ public class GrammarMerger {
             iter++;
             previousLexicon = newLexicon;
             previousGrammar = newGrammar;
-            boolean noSmoothing = false, debugOutput = false;
+            final boolean noSmoothing = false, debugOutput = false;
             newParser = new ArrayParser(previousGrammar, previousLexicon);
 
             newLexicon = new SophisticatedLexicon(newNumSubStatesArray, SophisticatedLexicon.DEFAULT_SMOOTHING_CUTOFF,
@@ -200,8 +202,8 @@ public class GrammarMerger {
                 grammar.useEntropicPrior = true;
             int n = 0;
             trainingLikelihood = 0;
-            for (Tree<StateSet> stateSetTree : trainStateSetTrees) {
-                boolean secondHalf = (n++ > nTrees / 2.0);
+            for (final Tree<StateSet> stateSetTree : trainStateSetTrees) {
+                final boolean secondHalf = (n++ > nTrees / 2.0);
                 newParser.doInsideOutsideScores(stateSetTree, noSmoothing, debugOutput); // E Step
                 double ll = stateSetTree.getLabel().getIScore(0);
                 ll = Math.log(ll) + (100 * stateSetTree.getLabel().getIScale());// System.out.println(stateSetTree);
@@ -226,7 +228,7 @@ public class GrammarMerger {
             // System.out.println("Evaluating new grammar");
             double validationLikelihood = 0;
             n = 0;
-            for (Tree<StateSet> stateSetTree : validationStateSetTrees) {
+            for (final Tree<StateSet> stateSetTree : validationStateSetTrees) {
                 n++;
                 newParser.doInsideScores(stateSetTree, false, false, null); // E
                                                                             // Step
@@ -256,8 +258,8 @@ public class GrammarMerger {
             }
 
             if (iter > 0 && iter % 5 == 0) {
-                pData = new ParserData(newLexicon, newGrammar, null, Numberer.getNumberers(), newNumSubStatesArray,
-                        v_markov, h_markov, bin);
+                pData = new ParserData(newLexicon, newGrammar, Numberer.getNumberers(), newNumSubStatesArray, v_markov,
+                        h_markov, bin);
                 System.out.println("Saving grammar to " + outFileName + "-it-" + iter + ".");
                 System.out.println("It gives a validation data log likelihood of: " + maxLikelihood);
                 if (pData.Save(outFileName + "-it-" + iter))
@@ -276,7 +278,7 @@ public class GrammarMerger {
         // if (grammar.numSubStates[i]!=lexicon.numSubStates[i])
         // System.out.println("DISAGREEMENT: The grammar thinks that state "+i+" is split into "+grammar.numSubStates[i]+" substates, while the lexicon thinks "+lexicon.numSubStates[i]);
         // }
-        ParserData newPData = new ParserData(lexicon, grammar, null, Numberer.getNumberers(), newNumSubStatesArray,
+        final ParserData newPData = new ParserData(lexicon, grammar, Numberer.getNumberers(), newNumSubStatesArray,
                 v_markov, h_markov, bin);
         if (newPData.Save(outFileName))
             System.out.println("Saving successful.");
@@ -291,12 +293,12 @@ public class GrammarMerger {
      * @param grammar
      * @param newGrammar
      */
-    public static void printMergingStatistics(Grammar grammar, Grammar newGrammar) {
-        PriorityQueue<String> lexiconStates = new PriorityQueue<String>();
-        PriorityQueue<String> grammarStates = new PriorityQueue<String>();
-        short[] numSubStatesArray = grammar.numSubStates;
-        short[] newNumSubStatesArray = newGrammar.numSubStates;
-        Numberer tagNumberer = grammar.tagNumberer;
+    public static void printMergingStatistics(final Grammar grammar, final Grammar newGrammar) {
+        final PriorityQueue<String> lexiconStates = new PriorityQueue<String>();
+        final PriorityQueue<String> grammarStates = new PriorityQueue<String>();
+        final short[] numSubStatesArray = grammar.numSubStates;
+        final short[] newNumSubStatesArray = newGrammar.numSubStates;
+        final Numberer tagNumberer = grammar.tagNumberer;
         for (short state = 0; state < numSubStatesArray.length; state++) {
             System.out.print("\nState " + tagNumberer.object(state) + " had " + numSubStatesArray[state]
                     + " substates and now has " + newNumSubStatesArray[state] + ".");
@@ -328,9 +330,9 @@ public class GrammarMerger {
      * @param lexicon
      * @param mergeThesePairs
      */
-    public static Grammar doTheMerges(Grammar grammar, Lexicon lexicon, boolean[][][] mergeThesePairs,
-            double[][] mergeWeights) {
-        short[] numSubStatesArray = grammar.numSubStates;
+    public static Grammar doTheMerges(Grammar grammar, final Lexicon lexicon, final boolean[][][] mergeThesePairs,
+            final double[][] mergeWeights) {
+        final short[] numSubStatesArray = grammar.numSubStates;
         short[] newNumSubStatesArray = grammar.numSubStates;
         Grammar newGrammar = null;
         while (true) {
@@ -348,7 +350,7 @@ public class GrammarMerger {
             /**
              * mergeThisIteration is which states to merge on this iteration through the loop
              */
-            boolean[][][] mergeThisIteration = new boolean[newNumSubStatesArray.length][][];
+            final boolean[][][] mergeThisIteration = new boolean[newNumSubStatesArray.length][][];
             // make mergeThisIteration a copy of mergeTheseStates
             for (int tag = 0; tag < numSubStatesArray.length; tag++) {
                 mergeThisIteration[tag] = new boolean[mergeThesePairs[tag].length][mergeThesePairs[tag].length];
@@ -360,7 +362,7 @@ public class GrammarMerger {
             }
             // delete all complicated merges from mergeThisIteration
             for (int tag = 0; tag < numSubStatesArray.length; tag++) {
-                boolean[] alreadyDecidedToMerge = new boolean[mergeThesePairs[tag].length];
+                final boolean[] alreadyDecidedToMerge = new boolean[mergeThesePairs[tag].length];
                 for (int i = 0; i < mergeThesePairs[tag].length; i++) {
                     for (int j = 0; j < mergeThesePairs[tag].length; j++) {
                         if (alreadyDecidedToMerge[i] || alreadyDecidedToMerge[j])
@@ -407,12 +409,12 @@ public class GrammarMerger {
      * @param trainStateSetTrees
      * @return
      */
-    public static double[][][] computeDeltas(Grammar grammar, Lexicon lexicon, double[][] mergeWeights,
-            StateSetTreeList trainStateSetTrees) {
-        ArrayParser parser = new ArrayParser(grammar, lexicon);
-        double[][][] deltas = new double[grammar.numSubStates.length][mergeWeights[0].length][mergeWeights[0].length];
-        boolean noSmoothing = false, debugOutput = false;
-        for (Tree<StateSet> stateSetTree : trainStateSetTrees) {
+    public static double[][][] computeDeltas(final Grammar grammar, final Lexicon lexicon,
+            final double[][] mergeWeights, final StateSetTreeList trainStateSetTrees) {
+        final ArrayParser parser = new ArrayParser(grammar, lexicon);
+        final double[][][] deltas = new double[grammar.numSubStates.length][mergeWeights[0].length][mergeWeights[0].length];
+        final boolean noSmoothing = false, debugOutput = false;
+        for (final Tree<StateSet> stateSetTree : trainStateSetTrees) {
             parser.doInsideOutsideScores(stateSetTree, noSmoothing, debugOutput); // E
                                                                                   // Step
             double ll = stateSetTree.getLabel().getIScore(0);
@@ -429,13 +431,15 @@ public class GrammarMerger {
      * @param trainStateSetTrees
      * @return
      */
-    public static double[][] computeMergeWeights(Grammar grammar, Lexicon lexicon, StateSetTreeList trainStateSetTrees) {
-        double[][] mergeWeights = new double[grammar.numSubStates.length][(int) ArrayUtil.max(grammar.numSubStates)];
+    public static double[][] computeMergeWeights(final Grammar grammar, final Lexicon lexicon,
+            final StateSetTreeList trainStateSetTrees) {
+        final double[][] mergeWeights = new double[grammar.numSubStates.length][(int) ArrayUtil
+                .max(grammar.numSubStates)];
         double trainingLikelihood = 0;
-        ArrayParser parser = new ArrayParser(grammar, lexicon);
-        boolean noSmoothing = false, debugOutput = false;
+        final ArrayParser parser = new ArrayParser(grammar, lexicon);
+        final boolean noSmoothing = false, debugOutput = false;
         int n = 0;
-        for (Tree<StateSet> stateSetTree : trainStateSetTrees) {
+        for (final Tree<StateSet> stateSetTree : trainStateSetTrees) {
             parser.doInsideOutsideScores(stateSetTree, noSmoothing, debugOutput); // E
                                                                                   // Step
             double ll = stateSetTree.getLabel().getIScore(0);
@@ -460,15 +464,15 @@ public class GrammarMerger {
      * @param deltas
      * @return
      */
-    public static boolean[][][] determineMergePairs(double[][][] deltas, boolean separateMerge,
-            double mergingPercentage, Grammar grammar) {
-        boolean[][][] mergeThesePairs = new boolean[grammar.numSubStates.length][][];
-        short[] numSubStatesArray = grammar.numSubStates;
+    public static boolean[][][] determineMergePairs(final double[][][] deltas, final boolean separateMerge,
+            final double mergingPercentage, final Grammar grammar) {
+        final boolean[][][] mergeThesePairs = new boolean[grammar.numSubStates.length][][];
+        final short[] numSubStatesArray = grammar.numSubStates;
         // set the threshold so that p percent of the splits are merged again.
-        ArrayList<Double> deltaSiblings = new ArrayList<Double>();
-        ArrayList<Double> deltaPairs = new ArrayList<Double>();
-        ArrayList<Double> deltaLexicon = new ArrayList<Double>();
-        ArrayList<Double> deltaGrammar = new ArrayList<Double>();
+        final ArrayList<Double> deltaSiblings = new ArrayList<Double>();
+        final ArrayList<Double> deltaPairs = new ArrayList<Double>();
+        final ArrayList<Double> deltaLexicon = new ArrayList<Double>();
+        final ArrayList<Double> deltaGrammar = new ArrayList<Double>();
         int nSiblings = 0, nPairs = 0, nSiblingsGr = 0, nSiblingsLex = 0;
         for (int state = 0; state < mergeThesePairs.length; state++) {
             for (int sub1 = 0; sub1 < numSubStatesArray[state] - 1; sub1++) {
@@ -493,7 +497,9 @@ public class GrammarMerger {
                 }
             }
         }
-        double threshold = -1, threshold2 = -1, thresholdGr = -1, thresholdLex = -1;
+        double threshold = -1;
+        final double threshold2 = -1;
+        double thresholdGr = -1, thresholdLex = -1;
         if (separateMerge) {
             System.out.println("Going to merge " + (int) (mergingPercentage * 100) + "% of the substates siblings.");
             System.out.println("Setting the merging threshold for lexicon and grammar separately.");
@@ -524,7 +530,8 @@ public class GrammarMerger {
         }
         // if (maxSubStates>2 && mergingPercentage2>0)
         // System.out.println("Setting the threshold for other pairs to "+threshold2);
-        int mergePair = 0, mergeSiblings = 0;
+        final int mergePair = 0;
+        int mergeSiblings = 0;
         for (int state = 0; state < mergeThesePairs.length; state++) {
             mergeThesePairs[state] = new boolean[numSubStatesArray[state]][numSubStatesArray[state]];
             for (int i = 0; i < numSubStatesArray[state] - 1; i++) {
