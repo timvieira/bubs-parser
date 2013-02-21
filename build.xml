@@ -143,7 +143,7 @@
     </target>
 
     
-    <target name="train-grammar" depends="compile">
+    <target name="lela" depends="compile">
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.lela.TrainGrammar" />
             <param name="tool-name" value="train-grammar" />
@@ -153,6 +153,15 @@
     </target>
 
 
+    <target name="train-grammar" depends="compile">
+        <antcall target="package-tool">
+            <param name="root-class" value="edu.berkeley.nlp.PCFGLA.GrammarTrainer" />
+            <param name="tool-name" value="train-grammar" />
+            <param name="heap-size" value="2g" />
+        </antcall>
+    </target>
+
+            
     <target name="induce-count-grammar" depends="compile">
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.lela.InduceCountGrammar" />
