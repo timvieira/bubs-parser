@@ -33,38 +33,29 @@ public class Corpus {
      * Load the WSJ, Brown, and Chinese corpora from the given locations. If either is null, don't load it. If both are
      * null, use the dummy sentence. Then, throw away all but *fraction* of the data. To train on only the part of the
      * Chinese Treebank that Levy and Manning do, use fraction=0.22225.
-     * 
-     * @param fraction The fraction of training data to use. In the range [0,1].
      */
-    public Corpus(final String path, final double fraction, final boolean onlyTest) {
-        this(path, fraction, onlyTest, -1, false);
+    public Corpus(final String path, final boolean onlyTest) {
+        this(path, onlyTest, -1, false);
     }
 
-    public Corpus(final String path, final double fraction, final boolean onlyTest, final int skipSection,
-            final boolean skipBilingual) {
-        this(path, onlyTest, skipSection, skipBilingual);
-        final int beforeSize = trainTrees.size();
-        if (fraction < 0) {
-            final int startIndex = (int) Math.ceil(beforeSize * -1.0 * fraction);
-            trainTrees = new ArrayList<Tree<String>>(trainTrees.subList(startIndex, trainTrees.size()));
-        } else if (fraction < 1) {
-            final int endIndex = (int) Math.ceil(beforeSize * fraction);
-            trainTrees = new ArrayList<Tree<String>>(trainTrees.subList(0, endIndex));
-        }
-        int nTrainingWords = 0;
-        for (final Tree<String> tree : trainTrees) {
-            nTrainingWords += tree.getYield().size();
-        }
-        System.out.println("In training set we have # of words: " + nTrainingWords);
-        final int afterSize = trainTrees.size();
-        System.out.println("reducing number of training trees from " + beforeSize + " to " + afterSize);
-    }
-
+    // public Corpus(final String path, final boolean onlyTest, final int skipSection,
+    // final boolean skipBilingual) {
+    // this(path, onlyTest, skipSection, skipBilingual);
+    // final int beforeSize = trainTrees.size();
+    // int nTrainingWords = 0;
+    // for (final Tree<String> tree : trainTrees) {
+    // nTrainingWords += tree.getYield().size();
+    // }
+    // System.out.println("In training set we have # of words: " + nTrainingWords);
+    // final int afterSize = trainTrees.size();
+    // System.out.println("reducing number of training trees from " + beforeSize + " to " + afterSize);
+    // }
+    //
     /**
      * Load the WSJ, Brown, and Chinese corpora from the given locations. If any is null, don't load it. If all are
      * null, use the dummy sentence. Don't load the English corpora if we load the Chinese one.
      */
-    private Corpus(final String path, final boolean onlyTest, final int skipSection, final boolean skipBilingual) {
+    public Corpus(final String path, final boolean onlyTest, final int skipSection, final boolean skipBilingual) {
         final boolean dummy = path == null;
         if (dummy) {
             System.out.println("Loading one dummy sentence into training set only.");

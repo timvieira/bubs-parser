@@ -14,7 +14,7 @@ import edu.berkeley.nlp.util.ScalingTools;
 /**
  * Simple mixture parser.
  */
-public class ArrayParser implements Parser {
+public class ArrayParser {
     // i dont know how to initialize shorts...
     short zero = 0, one = 1;
     protected Numberer tagNumberer = Numberer.getGlobalNumberer("tags");

@@ -13,6 +13,7 @@ import edu.berkeley.nlp.util.PriorityQueue;
 import edu.berkeley.nlp.util.StringUtils;
 
 public class ConstrainedArrayParser extends ArrayParser implements Callable {
+
     List<Integer>[][] possibleStates;
     /** inside scores; start idx, end idx, state -> logProb */
     protected double[][][][] iScore;
@@ -97,32 +98,6 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
         nRules = 0;
         nRulesInf = 0;
         // Math.pow(GrammarTrainer.SCALE,scaleDiff);
-    }
-
-    /**
-     * Create a string representing the state for a StateSet tree that has the substate first iScore.
-     * 
-     */
-    private String getStateString(final Tree<StateSet> tree) {
-        return tagNumberer.object(tree.getLabel().getState()) + "&" + (short) tree.getLabel().getIScore(0);
-    }
-
-    /**
-     * Compute statistics on how often each state and rule appeared.
-     * 
-     * @param bestStateSetTree
-     */
-    private void tallyStatesAndRules(final Tree<StateSet> bestStateSetTree) {
-        if (bestStateSetTree.isLeaf() || bestStateSetTree.isPreTerminal())
-            return;
-        final String stateString = getStateString(bestStateSetTree);
-        stateCounter.incrementCount(stateString, 1);
-        String ruleString = stateString + "->";
-        for (final Tree<StateSet> child : bestStateSetTree.getChildren()) {
-            tallyStatesAndRules(child);
-            ruleString += "|" + getStateString(child);
-        }
-        ruleCounter.incrementCount(ruleString, 1);
     }
 
     /**
@@ -1006,11 +981,7 @@ public class ConstrainedArrayParser extends ArrayParser implements Callable {
         } // the interesting part:
           // System.out.println("Not skipping node: "+node.getLabel());
         final StateSet parent = t.getLabel();
-        final StateSet child = t.getChildren().get(0).getLabel();
         final short pLabel = parent.getState();
-        final short pSubState = (short) parent.getIScore(0); // dirty hack
-        final short cLabel = child.getState();
-        final short cSubState = (short) child.getIScore(0);
 
         // System.out.println("P: "+(String)tagNumberer.object(pLabel)+" C: "+(String)tagNumberer.object(cLabel));
         final List<Tree<String>> goodChild = new ArrayList<Tree<String>>();

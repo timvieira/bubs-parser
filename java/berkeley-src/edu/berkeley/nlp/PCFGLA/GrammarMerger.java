@@ -2,291 +2,289 @@ package edu.berkeley.nlp.PCFGLA;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 
 import edu.berkeley.nlp.syntax.StateSet;
 import edu.berkeley.nlp.syntax.Tree;
 import edu.berkeley.nlp.util.ArrayUtil;
-import edu.berkeley.nlp.util.CommandLineUtils;
 import edu.berkeley.nlp.util.Numberer;
 import edu.berkeley.nlp.util.PriorityQueue;
 
 public class GrammarMerger {
 
-    /**
-     * @param args
-     */
-    public static void main(final String[] args) {
-        if (args.length < 1) {
-            System.out.println("usage: java GrammarMerger \n"
-                    + "\t\t  -i       Input File for Grammar (Required)\n"
-                    + "\t\t  -o       Output File for Merged Grammar (Required)\n"
-                    + "\t\t  -p       Merging percentage (Default: 0.5)\n"
-                    + "\t\t  -2p      Merging percentage for non-siblings (Default: 0.0)\n"
-                    + "\t\t  -top     Keep top N substates, overrides -p!"
-                    + "               -path  Path to Corpus (Default: null)\n"
-                    +
-                    // "               -lang  Language:  1-ENG, 2-CHN, 3-GER, 4-ARB (Default: 1)\n"
-                    // +
-                    "\t\t  -chsh    If this is enabled, then we train on a short segment of\n"
-                    + "\t\t           the Chinese treebank (Default: false)"
-                    + "\t\t  -trfr    The fraction of the training corpus to keep (Default: 1.0)\n"
-                    + "\t\t  -maxIt   Maximum number of EM iterations (Default: 100)"
-                    + "\t\t  -minIt   Minimum number of EM iterations (Default: 5)"
-                    + "\t\t	 -f		    Filter rules with prob under f (Default: -1)"
-                    + "\t\t  -dL      Delete labels? (true/false) (Default: false)"
-                    + "\t\t  -ent 	  Use Entropic prior (Default: false)"
-                    + "\t\t  -maxL 	  Maximum sentence length (Default: 10000)"
-                    + "\t\t	 -sep	    Set merging threshold for grammar and lexicon separately (Default: false)"
-
-            );
-            System.exit(2);
-        }
-        // provide feedback on command-line arguments
-        System.out.print("Running with arguments:  ");
-        for (final String arg : args) {
-            System.out.print(" '" + arg + "'");
-        }
-        System.out.println("");
-
-        // parse the input arguments
-        final Map<String, String> input = CommandLineUtils.simpleCommandLineParser(args);
-
-        final double mergingPercentage = Double.parseDouble(CommandLineUtils.getValueOrUseDefault(input, "-p", "0.5"));
-        final double mergingPercentage2 = Double
-                .parseDouble(CommandLineUtils.getValueOrUseDefault(input, "-2p", "0.0"));
-        final String outFileName = CommandLineUtils.getValueOrUseDefault(input, "-o", null);
-        final String inFileName = CommandLineUtils.getValueOrUseDefault(input, "-i", null);
-        System.out.println("Loading grammar from " + inFileName + ".");
-
-        ParserData pData = ParserData.Load(inFileName);
-        if (pData == null) {
-            System.out.println("Failed to load grammar from file" + inFileName + ".");
-            System.exit(1);
-        }
-        final int minIterations = Integer.parseInt(CommandLineUtils.getValueOrUseDefault(input, "-minIt", "0"));
-        if (minIterations > 0)
-            System.out.println("I will do at least " + minIterations + " iterations.");
-
-        final boolean separateMerge = CommandLineUtils.getValueOrUseDefault(input, "-sep", "").equals("true");
-
-        final int maxIterations = Integer.parseInt(CommandLineUtils.getValueOrUseDefault(input, "-maxIt", "100"));
-        if (maxIterations > 0)
-            System.out.println("But at most " + maxIterations + " iterations.");
-        final boolean deleteLabels = CommandLineUtils.getValueOrUseDefault(input, "-dL", "").equals("true");
-
-        final boolean useEntropicPrior = CommandLineUtils.getValueOrUseDefault(input, "-ent", "").equals("true");
-
-        final int maxSentenceLength = Integer.parseInt(CommandLineUtils.getValueOrUseDefault(input, "-maxL", "10000"));
-        System.out.println("Will remove sentences with more than " + maxSentenceLength + " words.");
-
-        final String path = CommandLineUtils.getValueOrUseDefault(input, "-path", null);
-        // int lang =
-        // Integer.parseInt(CommandLineUtils.getValueOrUseDefault(input,
-        // "-lang", "1"));
-        // System.out.println("Loading trees from "+path+" and using language "+lang);
-
-        final boolean chineseShort = Boolean.parseBoolean(CommandLineUtils
-                .getValueOrUseDefault(input, "-chsh", "false"));
-
-        final double trainingFractionToKeep = Double.parseDouble(CommandLineUtils.getValueOrUseDefault(input, "-trfr",
-                "1.0"));
-
-        Grammar grammar = pData.getGrammar();
-        Lexicon lexicon = pData.getLexicon();
-        Numberer.setNumberers(pData.getNumbs());
-        final int h_markov = pData.h_markov;
-        final int v_markov = pData.v_markov;
-        final Binarization bin = pData.bin;
-        final short[] numSubStatesArray = pData.numSubStatesArray;
-        final Numberer tagNumberer = Numberer.getGlobalNumberer("tags");
-
-        final double filter = Double.parseDouble(CommandLineUtils.getValueOrUseDefault(input, "-f", "-1"));
-        if (filter > 0)
-            System.out.println("Will remove rules with prob under " + filter);
-
-        final Corpus corpus = new Corpus(path, trainingFractionToKeep, false);
-        // int nTrees = corpus.getTrainTrees().size();
-        // binarize trees
-        final List<Tree<String>> trainTrees = Corpus.binarizeAndFilterTrees(corpus.getTrainTrees(), v_markov, h_markov,
-                maxSentenceLength, bin, false, false);
-        final List<Tree<String>> validationTrees = Corpus.binarizeAndFilterTrees(corpus.getValidationTrees(), v_markov,
-                h_markov, maxSentenceLength, bin, false, false);
-
-        final int nTrees = trainTrees.size();
-        System.out.println("There are " + nTrees + " trees in the training set.");
-
-        StateSetTreeList trainStateSetTrees = new StateSetTreeList(trainTrees, numSubStatesArray, false, tagNumberer);
-        StateSetTreeList validationStateSetTrees = new StateSetTreeList(validationTrees, numSubStatesArray, false,
-                tagNumberer);
-
-        // get rid of the old trees
-        // trainTrees = null;
-        // validationTrees = null;
-        // corpus = null;
-        // System.gc();
-
-        // System.out.println("before merging, we have split trees:");
-        // for (int i=0; i<grammar.numStates; i++) {
-        // System.out.println(grammar.splitTrees[i]);
-        // }
-        //
-
-        final double[][] mergeWeights = computeMergeWeights(grammar, lexicon, trainStateSetTrees);
-
-        final double[][][] deltas = computeDeltas(grammar, lexicon, mergeWeights, trainStateSetTrees);
-
-        final boolean[][][] mergeThesePairs = determineMergePairs(deltas, separateMerge, mergingPercentage, grammar);
-
-        Grammar newGrammar = doTheMerges(grammar, lexicon, mergeThesePairs, mergeWeights);
-
-        printMergingStatistics(grammar, newGrammar);
-
-        final short[] newNumSubStatesArray = newGrammar.numSubStates;
-        trainStateSetTrees = new StateSetTreeList(trainTrees, newNumSubStatesArray, false, tagNumberer);
-        validationStateSetTrees = new StateSetTreeList(validationTrees, newNumSubStatesArray, false, tagNumberer);
-
-        // retrain lexicon to finish the lexicon merge (updates the unknown
-        // words model)...
-        System.out.println("completing lexicon merge");
-        ArrayParser newParser = new ArrayParser(newGrammar, lexicon);
-        SophisticatedLexicon newLexicon = new SophisticatedLexicon(newNumSubStatesArray,
-                SophisticatedLexicon.DEFAULT_SMOOTHING_CUTOFF, lexicon.getSmoothingParams(), lexicon.getSmoother(),
-                filter);
-        final boolean updateOnlyLexicon = true;
-        double trainingLikelihood = GrammarTrainer.doOneEStep(newGrammar, lexicon, null, newLexicon,
-                trainStateSetTrees, updateOnlyLexicon, 4 /* opts.rare */);
-
-        // int n = 0;
-        // for (Tree<StateSet> stateSetTree : trainStateSetTrees) {
-        // boolean secondHalf = (n++>nTrees/2.0);
-        // newParser.doInsideOutsideScores(stateSetTree,noSmoothing,debugOutput);
-        // // E Step
-        // double ll = stateSetTree.getLabel().getIScore(0);
-        // ll = Math.log(ll) +
-        // (100*stateSetTree.getLabel().getIScale());//System.out.println(stateSetTree);
-        // if (Double.isInfinite(ll)||Double.isNaN(ll)) {
-        // System.out.println("Training sentence "+n+" is given "+ll+" log likelihood!");
-        // GrammarTrainer.printBadLLReason(stateSetTree,lexicon);
-        // }
-        // else {
-        // //System.out.println("Training sentence "+n+" is good.");
-        // trainingLikelihood += ll;
-        // newLexicon.trainTree(stateSetTree, -1, lexicon, secondHalf,true);
-        // }
-        // }
-        System.out.println("The training LL is " + trainingLikelihood);
-        newLexicon.optimize();// Grammar.RandomInitializationType.INITIALIZE_WITH_SMALL_RANDOMIZATION);
-                              // // M Step
-
-        // do 5 iterations of EM to clean things up
-        SophisticatedLexicon previousLexicon = null;
-        Grammar previousGrammar = null;
-        System.out.println("Doing some iterations of EM to clean things up...");
-        double maxLikelihood = Double.NEGATIVE_INFINITY;
-        int droppingIter = 0;
-        int iter = 0;
-        while ((droppingIter < 2) && (iter < maxIterations)) {
-            iter++;
-            previousLexicon = newLexicon;
-            previousGrammar = newGrammar;
-            final boolean noSmoothing = false, debugOutput = false;
-            newParser = new ArrayParser(previousGrammar, previousLexicon);
-
-            newLexicon = new SophisticatedLexicon(newNumSubStatesArray, SophisticatedLexicon.DEFAULT_SMOOTHING_CUTOFF,
-                    lexicon.getSmoothingParams(), lexicon.getSmoother(), filter);
-            newGrammar = new Grammar(newNumSubStatesArray, grammar.findClosedPaths, grammar.smoother, grammar, filter);
-            if (useEntropicPrior)
-                grammar.useEntropicPrior = true;
-            int n = 0;
-            trainingLikelihood = 0;
-            for (final Tree<StateSet> stateSetTree : trainStateSetTrees) {
-                final boolean secondHalf = (n++ > nTrees / 2.0);
-                newParser.doInsideOutsideScores(stateSetTree, noSmoothing, debugOutput); // E Step
-                double ll = stateSetTree.getLabel().getIScore(0);
-                ll = Math.log(ll) + (100 * stateSetTree.getLabel().getIScale());// System.out.println(stateSetTree);
-                if (Double.isInfinite(ll) || Double.isNaN(ll)) {
-                    System.out.println("Training sentence " + n + " is given " + ll + " log likelihood!");
-                    GrammarTrainer.printBadLLReason(stateSetTree, previousLexicon);
-                } else {
-                    trainingLikelihood += ll;
-                    newGrammar.tallyStateSetTree(stateSetTree, previousGrammar); // E
-                                                                                 // Step
-                    newLexicon.trainTree(stateSetTree, -1, previousLexicon, secondHalf, false, 4 /* opts.rare */);
-                }
-            }
-            System.out.println("The training LL is " + trainingLikelihood);
-
-            newLexicon.optimize();// Grammar.RandomInitializationType.INITIALIZE_WITH_SMALL_RANDOMIZATION);
-                                  // // M Step
-            newGrammar.optimize(0);// Grammar.RandomInitializationType.INITIALIZE_WITH_SMALL_RANDOMIZATION);
-                                   // // M Step
-            newParser = new ArrayParser(newGrammar, newLexicon);
-
-            // System.out.println("Evaluating new grammar");
-            double validationLikelihood = 0;
-            n = 0;
-            for (final Tree<StateSet> stateSetTree : validationStateSetTrees) {
-                n++;
-                newParser.doInsideScores(stateSetTree, false, false, null); // E
-                                                                            // Step
-                double ll = stateSetTree.getLabel().getIScore(0);
-                ll = Math.log(ll) + (100 * stateSetTree.getLabel().getIScale());// System.out.println(stateSetTree);
-                if (Double.isInfinite(ll) || Double.isNaN(ll)) {
-                    System.out.println("Validation sentence " + n + " is given -inf log likelihood!");
-                } else
-                    validationLikelihood += ll; // there are for some reason
-                                                // some sentences that are
-                                                // unparsable
-            }
-            System.out.println("The validation LL after merging and " + (iter + 1) + " iterations is "
-                    + validationLikelihood);
-            if (iter < minIterations) {
-                maxLikelihood = Math.max(validationLikelihood, maxLikelihood);
-                grammar = newGrammar;
-                lexicon = newLexicon;
-                droppingIter = 0;
-            } else if (validationLikelihood > maxLikelihood) {
-                maxLikelihood = validationLikelihood;
-                grammar = newGrammar;
-                lexicon = newLexicon;
-                droppingIter = 0;
-            } else {
-                droppingIter++;
-            }
-
-            if (iter > 0 && iter % 5 == 0) {
-                pData = new ParserData(newLexicon, newGrammar, Numberer.getNumberers(), newNumSubStatesArray, v_markov,
-                        h_markov, bin);
-                System.out.println("Saving grammar to " + outFileName + "-it-" + iter + ".");
-                System.out.println("It gives a validation data log likelihood of: " + maxLikelihood);
-                if (pData.Save(outFileName + "-it-" + iter))
-                    System.out.println("Saving successful");
-                else
-                    System.out.println("Saving failed!");
-                pData = null;
-            }
-
-        }
-
-        System.out.println("Saving grammar to " + outFileName + ".");
-        System.out.println("It gives a validation data log likelihood of: " + maxLikelihood);
-
-        // for (int i=0; i<grammar.numStates; i++){
-        // if (grammar.numSubStates[i]!=lexicon.numSubStates[i])
-        // System.out.println("DISAGREEMENT: The grammar thinks that state "+i+" is split into "+grammar.numSubStates[i]+" substates, while the lexicon thinks "+lexicon.numSubStates[i]);
-        // }
-        final ParserData newPData = new ParserData(lexicon, grammar, Numberer.getNumberers(), newNumSubStatesArray,
-                v_markov, h_markov, bin);
-        if (newPData.Save(outFileName))
-            System.out.println("Saving successful.");
-        else
-            System.out.println("Saving failed!");
-
-        System.exit(0);
-
-    }
+    // /**
+    // * @param args
+    // */
+    // public static void main(final String[] args) {
+    // if (args.length < 1) {
+    // System.out.println("usage: java GrammarMerger \n"
+    // + "\t\t  -i       Input File for Grammar (Required)\n"
+    // + "\t\t  -o       Output File for Merged Grammar (Required)\n"
+    // + "\t\t  -p       Merging percentage (Default: 0.5)\n"
+    // + "\t\t  -2p      Merging percentage for non-siblings (Default: 0.0)\n"
+    // + "\t\t  -top     Keep top N substates, overrides -p!"
+    // + "               -path  Path to Corpus (Default: null)\n"
+    // +
+    // // "               -lang  Language:  1-ENG, 2-CHN, 3-GER, 4-ARB (Default: 1)\n"
+    // // +
+    // "\t\t  -chsh    If this is enabled, then we train on a short segment of\n"
+    // + "\t\t           the Chinese treebank (Default: false)"
+    // + "\t\t  -trfr    The fraction of the training corpus to keep (Default: 1.0)\n"
+    // + "\t\t  -maxIt   Maximum number of EM iterations (Default: 100)"
+    // + "\t\t  -minIt   Minimum number of EM iterations (Default: 5)"
+    // + "\t\t	 -f		    Filter rules with prob under f (Default: -1)"
+    // + "\t\t  -dL      Delete labels? (true/false) (Default: false)"
+    // + "\t\t  -ent 	  Use Entropic prior (Default: false)"
+    // + "\t\t  -maxL 	  Maximum sentence length (Default: 10000)"
+    // + "\t\t	 -sep	    Set merging threshold for grammar and lexicon separately (Default: false)"
+    //
+    // );
+    // System.exit(2);
+    // }
+    // // provide feedback on command-line arguments
+    // System.out.print("Running with arguments:  ");
+    // for (final String arg : args) {
+    // System.out.print(" '" + arg + "'");
+    // }
+    // System.out.println("");
+    //
+    // // parse the input arguments
+    // final Map<String, String> input = CommandLineUtils.simpleCommandLineParser(args);
+    //
+    // final double mergingPercentage = Double.parseDouble(CommandLineUtils.getValueOrUseDefault(input, "-p", "0.5"));
+    // final double mergingPercentage2 = Double
+    // .parseDouble(CommandLineUtils.getValueOrUseDefault(input, "-2p", "0.0"));
+    // final String outFileName = CommandLineUtils.getValueOrUseDefault(input, "-o", null);
+    // final String inFileName = CommandLineUtils.getValueOrUseDefault(input, "-i", null);
+    // System.out.println("Loading grammar from " + inFileName + ".");
+    //
+    // ParserData pData = ParserData.Load(inFileName);
+    // if (pData == null) {
+    // System.out.println("Failed to load grammar from file" + inFileName + ".");
+    // System.exit(1);
+    // }
+    // final int minIterations = Integer.parseInt(CommandLineUtils.getValueOrUseDefault(input, "-minIt", "0"));
+    // if (minIterations > 0)
+    // System.out.println("I will do at least " + minIterations + " iterations.");
+    //
+    // final boolean separateMerge = CommandLineUtils.getValueOrUseDefault(input, "-sep", "").equals("true");
+    //
+    // final int maxIterations = Integer.parseInt(CommandLineUtils.getValueOrUseDefault(input, "-maxIt", "100"));
+    // if (maxIterations > 0)
+    // System.out.println("But at most " + maxIterations + " iterations.");
+    // final boolean deleteLabels = CommandLineUtils.getValueOrUseDefault(input, "-dL", "").equals("true");
+    //
+    // final boolean useEntropicPrior = CommandLineUtils.getValueOrUseDefault(input, "-ent", "").equals("true");
+    //
+    // final int maxSentenceLength = Integer.parseInt(CommandLineUtils.getValueOrUseDefault(input, "-maxL", "10000"));
+    // System.out.println("Will remove sentences with more than " + maxSentenceLength + " words.");
+    //
+    // final String path = CommandLineUtils.getValueOrUseDefault(input, "-path", null);
+    // // int lang =
+    // // Integer.parseInt(CommandLineUtils.getValueOrUseDefault(input,
+    // // "-lang", "1"));
+    // // System.out.println("Loading trees from "+path+" and using language "+lang);
+    //
+    // final boolean chineseShort = Boolean.parseBoolean(CommandLineUtils
+    // .getValueOrUseDefault(input, "-chsh", "false"));
+    //
+    // final double trainingFractionToKeep = Double.parseDouble(CommandLineUtils.getValueOrUseDefault(input, "-trfr",
+    // "1.0"));
+    //
+    // Grammar grammar = pData.getGrammar();
+    // Lexicon lexicon = pData.getLexicon();
+    // Numberer.setNumberers(pData.getNumbs());
+    // final int h_markov = pData.h_markov;
+    // final int v_markov = pData.v_markov;
+    // final Binarization bin = pData.bin;
+    // final short[] numSubStatesArray = pData.numSubStatesArray;
+    // final Numberer tagNumberer = Numberer.getGlobalNumberer("tags");
+    //
+    // final double filter = Double.parseDouble(CommandLineUtils.getValueOrUseDefault(input, "-f", "-1"));
+    // if (filter > 0)
+    // System.out.println("Will remove rules with prob under " + filter);
+    //
+    // final Corpus corpus = new Corpus(path, false);
+    // // int nTrees = corpus.getTrainTrees().size();
+    // // binarize trees
+    // final List<Tree<String>> trainTrees = Corpus.binarizeAndFilterTrees(corpus.getTrainTrees(), v_markov, h_markov,
+    // maxSentenceLength, bin, false, false);
+    // final List<Tree<String>> validationTrees = Corpus.binarizeAndFilterTrees(corpus.getValidationTrees(), v_markov,
+    // h_markov, maxSentenceLength, bin, false, false);
+    //
+    // final int nTrees = trainTrees.size();
+    // System.out.println("There are " + nTrees + " trees in the training set.");
+    //
+    // StateSetTreeList trainStateSetTrees = new StateSetTreeList(trainTrees, numSubStatesArray, false, tagNumberer);
+    // StateSetTreeList validationStateSetTrees = new StateSetTreeList(validationTrees, numSubStatesArray, false,
+    // tagNumberer);
+    //
+    // // get rid of the old trees
+    // // trainTrees = null;
+    // // validationTrees = null;
+    // // corpus = null;
+    // // System.gc();
+    //
+    // // System.out.println("before merging, we have split trees:");
+    // // for (int i=0; i<grammar.numStates; i++) {
+    // // System.out.println(grammar.splitTrees[i]);
+    // // }
+    // //
+    //
+    // final double[][] mergeWeights = computeMergeWeights(grammar, lexicon, trainStateSetTrees);
+    //
+    // final double[][][] deltas = computeDeltas(grammar, lexicon, mergeWeights, trainStateSetTrees);
+    //
+    // final boolean[][][] mergeThesePairs = determineMergePairs(deltas, separateMerge, mergingPercentage, grammar);
+    //
+    // Grammar newGrammar = doTheMerges(grammar, lexicon, mergeThesePairs, mergeWeights);
+    //
+    // printMergingStatistics(grammar, newGrammar);
+    //
+    // final short[] newNumSubStatesArray = newGrammar.numSubStates;
+    // trainStateSetTrees = new StateSetTreeList(trainTrees, newNumSubStatesArray, false, tagNumberer);
+    // validationStateSetTrees = new StateSetTreeList(validationTrees, newNumSubStatesArray, false, tagNumberer);
+    //
+    // // retrain lexicon to finish the lexicon merge (updates the unknown
+    // // words model)...
+    // System.out.println("completing lexicon merge");
+    // ArrayParser newParser = new ArrayParser(newGrammar, lexicon);
+    // SophisticatedLexicon newLexicon = new SophisticatedLexicon(newNumSubStatesArray,
+    // SophisticatedLexicon.DEFAULT_SMOOTHING_CUTOFF, lexicon.getSmoothingParams(), lexicon.getSmoother(),
+    // filter);
+    // final boolean updateOnlyLexicon = true;
+    // double trainingLikelihood = GrammarTrainer.doOneEStep(newGrammar, lexicon, null, newLexicon,
+    // trainStateSetTrees, updateOnlyLexicon, 4 /* opts.rare */);
+    //
+    // // int n = 0;
+    // // for (Tree<StateSet> stateSetTree : trainStateSetTrees) {
+    // // boolean secondHalf = (n++>nTrees/2.0);
+    // // newParser.doInsideOutsideScores(stateSetTree,noSmoothing,debugOutput);
+    // // // E Step
+    // // double ll = stateSetTree.getLabel().getIScore(0);
+    // // ll = Math.log(ll) +
+    // // (100*stateSetTree.getLabel().getIScale());//System.out.println(stateSetTree);
+    // // if (Double.isInfinite(ll)||Double.isNaN(ll)) {
+    // // System.out.println("Training sentence "+n+" is given "+ll+" log likelihood!");
+    // // GrammarTrainer.printBadLLReason(stateSetTree,lexicon);
+    // // }
+    // // else {
+    // // //System.out.println("Training sentence "+n+" is good.");
+    // // trainingLikelihood += ll;
+    // // newLexicon.trainTree(stateSetTree, -1, lexicon, secondHalf,true);
+    // // }
+    // // }
+    // System.out.println("The training LL is " + trainingLikelihood);
+    // newLexicon.optimize();// Grammar.RandomInitializationType.INITIALIZE_WITH_SMALL_RANDOMIZATION);
+    // // // M Step
+    //
+    // // do 5 iterations of EM to clean things up
+    // SophisticatedLexicon previousLexicon = null;
+    // Grammar previousGrammar = null;
+    // System.out.println("Doing some iterations of EM to clean things up...");
+    // double maxLikelihood = Double.NEGATIVE_INFINITY;
+    // int droppingIter = 0;
+    // int iter = 0;
+    // while ((droppingIter < 2) && (iter < maxIterations)) {
+    // iter++;
+    // previousLexicon = newLexicon;
+    // previousGrammar = newGrammar;
+    // final boolean noSmoothing = false, debugOutput = false;
+    // newParser = new ArrayParser(previousGrammar, previousLexicon);
+    //
+    // newLexicon = new SophisticatedLexicon(newNumSubStatesArray, SophisticatedLexicon.DEFAULT_SMOOTHING_CUTOFF,
+    // lexicon.getSmoothingParams(), lexicon.getSmoother(), filter);
+    // newGrammar = new Grammar(newNumSubStatesArray, grammar.findClosedPaths, grammar.smoother, grammar, filter);
+    // if (useEntropicPrior)
+    // grammar.useEntropicPrior = true;
+    // int n = 0;
+    // trainingLikelihood = 0;
+    // for (final Tree<StateSet> stateSetTree : trainStateSetTrees) {
+    // final boolean secondHalf = (n++ > nTrees / 2.0);
+    // newParser.doInsideOutsideScores(stateSetTree, noSmoothing, debugOutput); // E Step
+    // double ll = stateSetTree.getLabel().getIScore(0);
+    // ll = Math.log(ll) + (100 * stateSetTree.getLabel().getIScale());// System.out.println(stateSetTree);
+    // if (Double.isInfinite(ll) || Double.isNaN(ll)) {
+    // System.out.println("Training sentence " + n + " is given " + ll + " log likelihood!");
+    // GrammarTrainer.printBadLLReason(stateSetTree, previousLexicon);
+    // } else {
+    // trainingLikelihood += ll;
+    // newGrammar.tallyStateSetTree(stateSetTree, previousGrammar); // E
+    // // Step
+    // newLexicon.trainTree(stateSetTree, -1, previousLexicon, secondHalf, false, 4 /* opts.rare */);
+    // }
+    // }
+    // System.out.println("The training LL is " + trainingLikelihood);
+    //
+    // newLexicon.optimize();// Grammar.RandomInitializationType.INITIALIZE_WITH_SMALL_RANDOMIZATION);
+    // // // M Step
+    // newGrammar.optimize(0);// Grammar.RandomInitializationType.INITIALIZE_WITH_SMALL_RANDOMIZATION);
+    // // // M Step
+    // newParser = new ArrayParser(newGrammar, newLexicon);
+    //
+    // // System.out.println("Evaluating new grammar");
+    // double validationLikelihood = 0;
+    // n = 0;
+    // for (final Tree<StateSet> stateSetTree : validationStateSetTrees) {
+    // n++;
+    // newParser.doInsideScores(stateSetTree, false, false, null); // E
+    // // Step
+    // double ll = stateSetTree.getLabel().getIScore(0);
+    // ll = Math.log(ll) + (100 * stateSetTree.getLabel().getIScale());// System.out.println(stateSetTree);
+    // if (Double.isInfinite(ll) || Double.isNaN(ll)) {
+    // System.out.println("Validation sentence " + n + " is given -inf log likelihood!");
+    // } else
+    // validationLikelihood += ll; // there are for some reason
+    // // some sentences that are
+    // // unparsable
+    // }
+    // System.out.println("The validation LL after merging and " + (iter + 1) + " iterations is "
+    // + validationLikelihood);
+    // if (iter < minIterations) {
+    // maxLikelihood = Math.max(validationLikelihood, maxLikelihood);
+    // grammar = newGrammar;
+    // lexicon = newLexicon;
+    // droppingIter = 0;
+    // } else if (validationLikelihood > maxLikelihood) {
+    // maxLikelihood = validationLikelihood;
+    // grammar = newGrammar;
+    // lexicon = newLexicon;
+    // droppingIter = 0;
+    // } else {
+    // droppingIter++;
+    // }
+    //
+    // if (iter > 0 && iter % 5 == 0) {
+    // pData = new ParserData(newLexicon, newGrammar, Numberer.getNumberers(), newNumSubStatesArray, v_markov,
+    // h_markov, bin);
+    // System.out.println("Saving grammar to " + outFileName + "-it-" + iter + ".");
+    // System.out.println("It gives a validation data log likelihood of: " + maxLikelihood);
+    // if (pData.Save(outFileName + "-it-" + iter))
+    // System.out.println("Saving successful");
+    // else
+    // System.out.println("Saving failed!");
+    // pData = null;
+    // }
+    //
+    // }
+    //
+    // System.out.println("Saving grammar to " + outFileName + ".");
+    // System.out.println("It gives a validation data log likelihood of: " + maxLikelihood);
+    //
+    // // for (int i=0; i<grammar.numStates; i++){
+    // // if (grammar.numSubStates[i]!=lexicon.numSubStates[i])
+    // //
+    // System.out.println("DISAGREEMENT: The grammar thinks that state "+i+" is split into "+grammar.numSubStates[i]+" substates, while the lexicon thinks "+lexicon.numSubStates[i]);
+    // // }
+    // final ParserData newPData = new ParserData(lexicon, grammar, Numberer.getNumberers(), newNumSubStatesArray,
+    // v_markov, h_markov, bin);
+    // if (newPData.Save(outFileName))
+    // System.out.println("Saving successful.");
+    // else
+    // System.out.println("Saving failed!");
+    //
+    // System.exit(0);
+    //
+    // }
 
     /**
      * @param grammar
