@@ -12,6 +12,8 @@ import java.util.Set;
  * precisely because it maintains a global name space for numbered object families, and provides facilities for mapping
  * across numberings within that space. At any rate, it's widely used in some existing packages.
  * 
+ * TODO Replace with SymbolSet? (Maybe rename SymbolSet - Numberer or Index is more descriptive)
+ * 
  * @author Dan Klein
  */
 public class Numberer implements Serializable {

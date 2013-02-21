@@ -9,7 +9,8 @@ public class ArrayUtil {
 
     // ARITHMETIC FUNCTIONS
 
-    // TODO Compare with edu.ohsu.cslu.util.Math versions and combine the best of both implementations
+    // TODO Compare with edu.ohsu.cslu.util.Math versions and combine the best of both implementations. Remove
+    // referenced methods in SloppyMath too
     private static double approxLogSum(final double[] logInputs, final int leng) {
 
         if (leng == 0) {

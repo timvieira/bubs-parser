@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-import edu.berkeley.nlp.math.DoubleArrays;
 import edu.berkeley.nlp.syntax.StateSet;
 import edu.berkeley.nlp.syntax.Tree;
 import edu.berkeley.nlp.util.ArrayUtil;
@@ -1094,119 +1093,6 @@ public class ArrayParser implements Parser {
             }
         }
         parent.setIScores(iScores);
-    }
-
-    Tree<String> extractBestViterbiDerivation(final Tree<StateSet> tree, int substate, final boolean outputScore,
-            final boolean labelOnlyPOS) {
-        if (tree.isLeaf())
-            return new Tree<String>(tree.getLabel().getWord());
-        if (substate == -1)
-            substate = 0;
-        if (tree.isPreTerminal()) {
-            final ArrayList<Tree<String>> child = new ArrayList<Tree<String>>();
-            child.add(extractBestViterbiDerivation(tree.getChildren().get(0), -1, outputScore, labelOnlyPOS));
-            String goalStr = tagNumberer.object(tree.getLabel().getState()) + "-" + substate;
-            if (outputScore)
-                goalStr = goalStr + " " + tree.getLabel().getIScore(substate);
-            return new Tree<String>(goalStr, child);
-        }
-
-        final StateSet node = tree.getLabel();
-        final short pState = node.getState();
-
-        final ArrayList<Tree<String>> newChildren = new ArrayList<Tree<String>>();
-        final List<Tree<StateSet>> children = tree.getChildren();
-
-        double myScore = node.getIScore(substate);
-        if (myScore == Double.NEGATIVE_INFINITY) {
-            myScore = DoubleArrays.max(node.getIScores());
-            substate = DoubleArrays.argMax(node.getIScores());
-        }
-        switch (children.size()) {
-        case 1:
-            final StateSet child = children.get(0).getLabel();
-            final short cState = child.getState();
-            final int nChildStates = child.numSubStates();
-            final double[][] uscores = grammar.getUnaryScore(pState, cState);
-            int childIndex = -1;
-            for (int j = 0; j < nChildStates; j++) {
-                if (childIndex != -1)
-                    break;
-                if (uscores[j] != null) {
-                    final double cS = child.getIScore(j);
-                    if (cS == Double.NEGATIVE_INFINITY)
-                        continue;
-                    final double rS = uscores[j][substate]; // rule score
-                    if (rS == Double.NEGATIVE_INFINITY)
-                        continue;
-                    final double res = rS + cS;
-                    if (matches(res, myScore))
-                        childIndex = j;
-                }
-            }
-            newChildren.add(extractBestViterbiDerivation(children.get(0), childIndex, outputScore, labelOnlyPOS));
-            break;
-        case 2:
-            final StateSet leftChild = children.get(0).getLabel();
-            final StateSet rightChild = children.get(1).getLabel();
-            final int nLeftChildStates = leftChild.numSubStates();
-            final int nRightChildStates = rightChild.numSubStates();
-            final short lState = leftChild.getState();
-            final short rState = rightChild.getState();
-            final double[][][] bscores = grammar.getBinaryScore(pState, lState, rState);
-            int lChildIndex = -1,
-            rChildIndex = -1;
-            for (int j = 0; j < nLeftChildStates; j++) {
-                if (lChildIndex != -1 && rChildIndex != -1)
-                    break;
-                final double lcS = leftChild.getIScore(j);
-                if (lcS == Double.NEGATIVE_INFINITY)
-                    continue;
-                for (int k = 0; k < nRightChildStates; k++) {
-                    if (lChildIndex != -1 && rChildIndex != -1)
-                        break;
-                    final double rcS = rightChild.getIScore(k);
-                    if (rcS == Double.NEGATIVE_INFINITY)
-                        continue;
-                    if (bscores[j][k] != null) { // check whether one of the
-                                                 // parents can produce these
-                                                 // kids
-                        final double rS = bscores[j][k][substate];
-                        if (rS == Double.NEGATIVE_INFINITY)
-                            continue;
-                        final double res = rS + lcS + rcS;
-                        if (matches(myScore, res)) {
-                            lChildIndex = j;
-                            rChildIndex = k;
-                        }
-                    }
-                }
-            }
-            newChildren.add(extractBestViterbiDerivation(children.get(0), lChildIndex, outputScore, labelOnlyPOS));
-            newChildren.add(extractBestViterbiDerivation(children.get(1), rChildIndex, outputScore, labelOnlyPOS));
-            break;
-        default:
-            throw new Error("Malformed tree: more than two children");
-        }
-        String parentString = (String) tagNumberer.object(node.getState());
-        if (parentString.endsWith("^g"))
-            parentString = parentString.substring(0, parentString.length() - 2);
-        if (!labelOnlyPOS)
-            parentString = parentString + "-" + substate;
-        if (outputScore)
-            parentString = parentString + " " + myScore;
-
-        return new Tree<String>(parentString, newChildren);
-    }
-
-    public Tree<String> getBestViterbiDerivation(final Tree<StateSet> tree, final boolean outputScore,
-            final boolean labelOnlyPOS) {
-        doViterbiInsideScores(tree);
-        if (tree.getLabel().getIScore(0) == Double.NEGATIVE_INFINITY) {
-            // System.out.println("Tree is unparsable!");
-            return null;
-        }
-        return extractBestViterbiDerivation(tree, 0, outputScore, labelOnlyPOS);
     }
 
     public void countPosteriors(final double[][] cumulativePosteriors, final Tree<StateSet> tree,

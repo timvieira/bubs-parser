@@ -6,12 +6,9 @@ package edu.berkeley.nlp.PCFGLA;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
-import edu.berkeley.nlp.io.PennTreebankReader;
 import edu.berkeley.nlp.syntax.StateSet;
 import edu.berkeley.nlp.syntax.Tree;
 import edu.berkeley.nlp.syntax.Trees;
@@ -27,8 +24,6 @@ import edu.berkeley.nlp.util.Counter;
  */
 public class Corpus {
 
-    public static boolean keepFunctionLabels;
-
     ArrayList<Tree<String>> trainTrees = new ArrayList<Tree<String>>();
     ArrayList<Tree<String>> validationTrees = new ArrayList<Tree<String>>();
     ArrayList<Tree<String>> devTestTrees = new ArrayList<Tree<String>>();
@@ -42,12 +37,12 @@ public class Corpus {
      * @param fraction The fraction of training data to use. In the range [0,1].
      */
     public Corpus(final String path, final double fraction, final boolean onlyTest) {
-        this(path, fraction, onlyTest, -1, false, false);
+        this(path, fraction, onlyTest, -1, false);
     }
 
     public Corpus(final String path, final double fraction, final boolean onlyTest, final int skipSection,
-            final boolean skipBilingual, final boolean keepFunctionLabels) {
-        this(path, onlyTest, skipSection, skipBilingual, keepFunctionLabels);
+            final boolean skipBilingual) {
+        this(path, onlyTest, skipSection, skipBilingual);
         final int beforeSize = trainTrees.size();
         if (fraction < 0) {
             final int startIndex = (int) Math.ceil(beforeSize * -1.0 * fraction);
@@ -69,10 +64,8 @@ public class Corpus {
      * Load the WSJ, Brown, and Chinese corpora from the given locations. If any is null, don't load it. If all are
      * null, use the dummy sentence. Don't load the English corpora if we load the Chinese one.
      */
-    private Corpus(final String path, final boolean onlyTest, final int skipSection, final boolean skipBilingual,
-            final boolean keepFunctionLabel) {
+    private Corpus(final String path, final boolean onlyTest, final int skipSection, final boolean skipBilingual) {
         final boolean dummy = path == null;
-        keepFunctionLabels = keepFunctionLabel;
         if (dummy) {
             System.out.println("Loading one dummy sentence into training set only.");
             Trees.PennTreeReader reader;
@@ -191,8 +184,7 @@ public class Corpus {
             for (final String sentence : sentences) {
                 reader = new Trees.PennTreeReader(new StringReader(sentence));
                 tree = reader.next();
-                final Trees.TreeTransformer<String> treeTransformer = (keepFunctionLabels) ? new Trees.FunctionLabelRetainingTreeNormalizer()
-                        : new Trees.StandardTreeNormalizer();
+                final Trees.TreeTransformer<String> treeTransformer = new Trees.StandardTreeNormalizer();
                 final Tree<String> normalizedTree = treeTransformer.transformTree(tree);
                 tree = normalizedTree;
                 trainTrees.add(tree);
@@ -222,8 +214,7 @@ public class Corpus {
             trainTrees.add(treeReader.next());
         }
 
-        final Trees.TreeTransformer<String> treeTransformer = (keepFunctionLabels) ? new Trees.FunctionLabelRetainingTreeNormalizer()
-                : new Trees.StandardTreeNormalizer();
+        final Trees.TreeTransformer<String> treeTransformer = new Trees.StandardTreeNormalizer();
         final ArrayList<Tree<String>> normalizedTreeList = new ArrayList<Tree<String>>();
         for (final Tree<String> tree : trainTrees) {
             final Tree<String> normalizedTree = treeTransformer.transformTree(tree);

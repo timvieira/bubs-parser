@@ -131,9 +131,6 @@ public class GrammarTrainer {
         @Option(name = "-skipBilingual", usage = "Skips the bilingual portion of the Chinese treebank (Needed for training the bilingual reranker")
         public boolean skipBilingual = false;
 
-        @Option(name = "-keepFunctionLabels", usage = "Retain predicted function labels. Model must have been trained with function labels. (Default: false)")
-        public boolean keepFunctionLabels = false;
-
         @Option(name = "-writeIntermediateGrammars", usage = "Write intermediate (splitting and merging) grammars to disk. (Default: false)")
         public boolean writeIntermediateGrammars = false;
     }
@@ -196,8 +193,7 @@ public class GrammarTrainer {
         final boolean allowMoreSubstatesThanCounts = false;
         final boolean findClosedUnaryPaths = opts.findClosedUnaryPaths;
 
-        Corpus corpus = new Corpus(path, trainingFractionToKeep, false, opts.skipSection, opts.skipBilingual,
-                opts.keepFunctionLabels);
+        Corpus corpus = new Corpus(path, trainingFractionToKeep, false, opts.skipSection, opts.skipBilingual);
         List<Tree<String>> trainTrees = Corpus.binarizeAndFilterTrees(corpus.getTrainTrees(), VERTICAL_MARKOVIZATION,
                 HORIZONTAL_MARKOVIZATION, maxSentenceLength, binarization, manualAnnotation, VERBOSE);
         List<Tree<String>> validationTrees = Corpus.binarizeAndFilterTrees(corpus.getValidationTrees(),

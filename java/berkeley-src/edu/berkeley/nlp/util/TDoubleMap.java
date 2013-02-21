@@ -1,7 +1,5 @@
 package edu.berkeley.nlp.util;
 
-import static edu.berkeley.nlp.util.LogInfo.errors;
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -29,6 +27,8 @@ import java.util.Set;
  * 
  * Will get runtime exception if try to used sorted list and keys are not comparable.
  * 
+ * TODO Replace with Object2DoubleOpenHashMap
+ * 
  * TODO: support remove operation.
  */
 public class TDoubleMap<T> extends AbstractTMap<T> implements Iterable<TDoubleMap<T>.Entry>, Serializable {
@@ -38,16 +38,16 @@ public class TDoubleMap<T> extends AbstractTMap<T> implements Iterable<TDoubleMa
         this(AbstractTMap.defaultFunctionality, defaultExpectedSize);
     }
 
-    public TDoubleMap(Functionality<T> keyFunc) {
+    public TDoubleMap(final Functionality<T> keyFunc) {
         this(keyFunc, defaultExpectedSize);
     }
 
-    public TDoubleMap(int expectedSize) {
+    public TDoubleMap(final int expectedSize) {
         this(AbstractTMap.defaultFunctionality, expectedSize);
     }
 
     // If keys are locked, we can share the same keys.
-    public TDoubleMap(AbstractTMap<T> map) {
+    public TDoubleMap(final AbstractTMap<T> map) {
         this(map.keyFunc);
         this.mapType = map.mapType;
         this.locked = map.locked;
@@ -64,7 +64,7 @@ public class TDoubleMap<T> extends AbstractTMap<T> implements Iterable<TDoubleMa
     /**
      * expectedSize: expected number of entries we're going to have in the map.
      */
-    public TDoubleMap(Functionality<T> keyFunc, int expectedSize) {
+    public TDoubleMap(final Functionality<T> keyFunc, final int expectedSize) {
         this.keyFunc = keyFunc;
         this.mapType = MapType.HASH_TABLE;
         this.locked = false;
@@ -74,48 +74,41 @@ public class TDoubleMap<T> extends AbstractTMap<T> implements Iterable<TDoubleMa
     }
 
     // Main operations
-    public boolean containsKey(T key) {
+    public boolean containsKey(final T key) {
         return find(key, false) != -1;
     }
 
-    public double get(T key, double defaultValue) {
-        int i = find(key, false);
+    public double get(final T key, final double defaultValue) {
+        final int i = find(key, false);
         return i == -1 ? defaultValue : values[i];
     }
 
-    public double getWithErrorMsg(T key, double defaultValue) {
-        int i = find(key, false);
-        if (i == -1)
-            errors("%s not in map, using %f", key, defaultValue);
-        return i == -1 ? defaultValue : values[i];
-    }
-
-    public double getSure(T key) {
+    public double getSure(final T key) {
         // Throw exception if key doesn't exist.
-        int i = find(key, false);
+        final int i = find(key, false);
         if (i == -1)
             throw new RuntimeException("Missing key: " + key);
         return values[i];
     }
 
-    public void put(T key, double value) {
+    public void put(final T key, final double value) {
         assert !Double.isNaN(value);
-        int i = find(key, true);
+        final int i = find(key, true);
         keys[i] = key;
         values[i] = value;
     }
 
-    public void put(T key, double value, boolean keepHigher) {
+    public void put(final T key, final double value, final boolean keepHigher) {
         assert !Double.isNaN(value);
-        int i = find(key, true);
+        final int i = find(key, true);
         keys[i] = key;
         if (keepHigher && values[i] > value)
             return;
         values[i] = value;
     }
 
-    public void incr(T key, double dValue) {
-        int i = find(key, true);
+    public void incr(final T key, final double dValue) {
+        final int i = find(key, true);
         keys[i] = key;
         if (Double.isNaN(values[i]))
             values[i] = dValue; // New value
@@ -123,8 +116,8 @@ public class TDoubleMap<T> extends AbstractTMap<T> implements Iterable<TDoubleMa
             values[i] += dValue;
     }
 
-    public void scale(T key, double dValue) {
-        int i = find(key, true);
+    public void scale(final T key, final double dValue) {
+        final int i = find(key, true);
         if (i == -1)
             return;
         values[i] *= dValue;
@@ -155,19 +148,19 @@ public class TDoubleMap<T> extends AbstractTMap<T> implements Iterable<TDoubleMa
         return sum;
     }
 
-    public void putAll(double value) {
+    public void putAll(final double value) {
         for (int i = 0; i < keys.length; i++)
             if (keys[i] != null)
                 values[i] = value;
     }
 
-    public void incrAll(double dValue) {
+    public void incrAll(final double dValue) {
         for (int i = 0; i < keys.length; i++)
             if (keys[i] != null)
                 values[i] += dValue;
     }
 
-    public void multAll(double dValue) {
+    public void multAll(final double dValue) {
         for (int i = 0; i < keys.length; i++)
             if (keys[i] != null)
                 values[i] *= dValue;
@@ -192,7 +185,7 @@ public class TDoubleMap<T> extends AbstractTMap<T> implements Iterable<TDoubleMa
     }
 
     // For each (key, value) in map, increment this's key by factor*value
-    public void incrMap(TDoubleMap<T> map, double factor) {
+    public void incrMap(final TDoubleMap<T> map, final double factor) {
         for (int i = 0; i < map.keys.length; i++)
             if (map.keys[i] != null)
                 incr(map.keys[i], factor * map.values[i]);
@@ -200,7 +193,7 @@ public class TDoubleMap<T> extends AbstractTMap<T> implements Iterable<TDoubleMa
 
     // If keys are locked, we can share the same keys.
     public TDoubleMap<T> copy() {
-        TDoubleMap<T> newMap = new TDoubleMap<T>(keyFunc);
+        final TDoubleMap<T> newMap = new TDoubleMap<T>(keyFunc);
         newMap.mapType = mapType;
         newMap.locked = locked;
         newMap.num = num;
@@ -210,8 +203,8 @@ public class TDoubleMap<T> extends AbstractTMap<T> implements Iterable<TDoubleMa
     }
 
     // Return a map with only keys in the set
-    public TDoubleMap<T> restrict(Set<T> set) {
-        TDoubleMap<T> newMap = new TDoubleMap<T>(keyFunc);
+    public TDoubleMap<T> restrict(final Set<T> set) {
+        final TDoubleMap<T> newMap = new TDoubleMap<T>(keyFunc);
         newMap.mapType = mapType;
         if (mapType == MapType.SORTED_LIST) {
             allocate(getCapacity(num, false));
@@ -234,14 +227,14 @@ public class TDoubleMap<T> extends AbstractTMap<T> implements Iterable<TDoubleMa
     // For sorting the entries.
     // Warning: this class has the overhead of the parent class
     private class FullEntry implements Comparable<FullEntry> {
-        private FullEntry(T key, double value) {
+        private FullEntry(final T key, final double value) {
             this.key = key;
             this.value = value;
         }
 
-        public int compareTo(FullEntry e) {
-            int h1 = hash(key);
-            int h2 = hash(e.key);
+        public int compareTo(final FullEntry e) {
+            final int h1 = hash(key);
+            final int h2 = hash(e.key);
             if (h1 != h2)
                 return h1 - h2;
             return ((Comparable) key).compareTo(e.key);
@@ -253,7 +246,7 @@ public class TDoubleMap<T> extends AbstractTMap<T> implements Iterable<TDoubleMa
 
     // Compare by value.
     public class EntryValueComparator implements Comparator<Entry> {
-        public int compare(Entry e1, Entry e2) {
+        public int compare(final Entry e1, final Entry e2) {
             return Double.compare(values[e1.i], values[e2.i]);
         }
     }
@@ -264,7 +257,7 @@ public class TDoubleMap<T> extends AbstractTMap<T> implements Iterable<TDoubleMa
 
     // For iterating.
     public class Entry {
-        private Entry(int i) {
+        private Entry(final int i) {
             this.i = i;
         }
 
@@ -276,7 +269,7 @@ public class TDoubleMap<T> extends AbstractTMap<T> implements Iterable<TDoubleMa
             return values[i];
         }
 
-        public void setValue(double newValue) {
+        public void setValue(final double newValue) {
             values[i] = newValue;
         }
 
@@ -309,12 +302,12 @@ public class TDoubleMap<T> extends AbstractTMap<T> implements Iterable<TDoubleMa
         }
 
         @Override
-        public boolean contains(Object o) {
+        public boolean contains(final Object o) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public boolean remove(Object o) {
+        public boolean remove(final Object o) {
             throw new UnsupportedOperationException();
         }
 
@@ -336,12 +329,12 @@ public class TDoubleMap<T> extends AbstractTMap<T> implements Iterable<TDoubleMa
         }
 
         @Override
-        public boolean contains(Object o) {
+        public boolean contains(final Object o) {
             return containsKey((T) o);
         } // CHECKED
 
         @Override
-        public boolean remove(Object o) {
+        public boolean remove(final Object o) {
             throw new UnsupportedOperationException();
         }
 
@@ -363,7 +356,7 @@ public class TDoubleMap<T> extends AbstractTMap<T> implements Iterable<TDoubleMa
         }
 
         @Override
-        public boolean contains(Object o) {
+        public boolean contains(final Object o) {
             throw new UnsupportedOperationException();
         }
 
@@ -424,7 +417,7 @@ public class TDoubleMap<T> extends AbstractTMap<T> implements Iterable<TDoubleMa
         }
 
         int nextIndex() {
-            int curr = next;
+            final int curr = next;
             do {
                 next++;
             } while (next < end && keys[next] == null);
@@ -444,7 +437,7 @@ public class TDoubleMap<T> extends AbstractTMap<T> implements Iterable<TDoubleMa
      * How much capacity do we need for this type of map, given that we want n elements. compact: whether we want to
      * save space and don't plan on growing.
      */
-    private int getCapacity(int n, boolean compact) {
+    private int getCapacity(final int n, final boolean compact) {
         int capacity;
         if (mapType == MapType.SORTED_LIST)
             capacity = compact ? n : n * growFactor;
@@ -459,22 +452,22 @@ public class TDoubleMap<T> extends AbstractTMap<T> implements Iterable<TDoubleMa
     /**
      * Convert the map to the given type.
      */
-    private void switchMapType(MapType newMapType) {
+    private void switchMapType(final MapType newMapType) {
         assert !locked;
 
         // System.out.println("switchMapType(" + newMapType + ", " + compact +
         // ")");
 
         // Save old keys and values, allocate space
-        T[] oldKeys = keys;
-        double[] oldValues = values;
+        final T[] oldKeys = keys;
+        final double[] oldValues = values;
         mapType = newMapType;
         allocate(getCapacity(num, true));
         numCollisions = 0;
 
         if (newMapType == MapType.SORTED_LIST) {
             // Sort the keys
-            List<FullEntry> entries = new ArrayList<FullEntry>(num);
+            final List<FullEntry> entries = new ArrayList<FullEntry>(num);
             for (int i = 0; i < oldKeys.length; i++)
                 if (oldKeys[i] != null)
                     entries.add(new FullEntry(oldKeys[i], oldValues[i]));
@@ -499,13 +492,13 @@ public class TDoubleMap<T> extends AbstractTMap<T> implements Iterable<TDoubleMa
      * Return the first index i for which the target key is less than or equal to key i (00001111). Should insert target
      * key at position i. If target is larger than all of the elements, return size().
      */
-    private int binarySearch(T targetKey) {
-        int targetHash = hash(targetKey);
+    private int binarySearch(final T targetKey) {
+        final int targetHash = hash(targetKey);
         int l = 0, u = num;
         while (l < u) {
             // System.out.println(l);
-            int m = (l + u) >> 1;
-            int keyHash = hash(keys[m]);
+            final int m = (l + u) >> 1;
+            final int keyHash = hash(keys[m]);
             if (targetHash < keyHash || (targetHash == keyHash && ((Comparable) targetKey).compareTo(keys[m]) <= 0))
                 u = m;
             else
@@ -515,7 +508,7 @@ public class TDoubleMap<T> extends AbstractTMap<T> implements Iterable<TDoubleMa
     }
 
     // Modified hash (taken from HashMap.java).
-    private int hash(T x) {
+    private int hash(final T x) {
         int h = x.hashCode();
         h += ~(h << 9);
         h ^= (h >>> 14);
@@ -530,13 +523,13 @@ public class TDoubleMap<T> extends AbstractTMap<T> implements Iterable<TDoubleMa
      * Modify is whether to make room for the new key if it doesn't exist. If a new entry is created, the value at that
      * position will be Double.NaN. Here's where all the magic happens.
      */
-    private int find(T key, boolean modify) {
+    private int find(final T key, final boolean modify) {
         // System.out.println("find " + key + " " + modify + " " + mapType + " "
         // + capacity());
 
         if (mapType == MapType.SORTED_LIST) {
             // Binary search
-            int i = binarySearch(key);
+            final int i = binarySearch(key);
             if (i < num && keys[i] != null && key.equals(keys[i]))
                 return i;
             if (modify) {
@@ -557,8 +550,8 @@ public class TDoubleMap<T> extends AbstractTMap<T> implements Iterable<TDoubleMa
             } else
                 return -1;
         } else if (mapType == MapType.HASH_TABLE) {
-            int capacity = capacity();
-            int keyHash = hash(key);
+            final int capacity = capacity();
+            final int keyHash = hash(key);
             int i = keyHash % capacity;
             if (i < 0)
                 i = -i; // Arbitrary transformation
@@ -599,17 +592,17 @@ public class TDoubleMap<T> extends AbstractTMap<T> implements Iterable<TDoubleMa
             throw new RuntimeException("Internal bug: " + mapType);
     }
 
-    private void allocate(int n) {
+    private void allocate(final int n) {
         keys = keyFunc.createArray(n);
         values = new double[n];
     }
 
     // Resize the sorted list to the new capacity.
-    private void changeSortedListCapacity(int newCapacity) {
+    private void changeSortedListCapacity(final int newCapacity) {
         assert mapType == MapType.SORTED_LIST;
         assert newCapacity >= num;
-        T[] oldKeys = keys;
-        double[] oldValues = values;
+        final T[] oldKeys = keys;
+        final double[] oldValues = values;
         allocate(newCapacity);
         System.arraycopy(oldKeys, 0, keys, 0, num);
         System.arraycopy(oldValues, 0, values, 0, num);
@@ -621,8 +614,8 @@ public class TDoubleMap<T> extends AbstractTMap<T> implements Iterable<TDoubleMa
         if (mapType == MapType.SORTED_LIST) {
             assert num <= capacity();
             for (int i = 1; i < num; i++) { // Make sure keys are sorted.
-                int h1 = hash(keys[i - 1]);
-                int h2 = hash(keys[i]);
+                final int h1 = hash(keys[i - 1]);
+                final int h2 = hash(keys[i]);
                 assert h1 <= h2;
                 if (h1 == h2)
                     assert ((Comparable) keys[i - 1]).compareTo(keys[i]) < 0;
@@ -630,41 +623,29 @@ public class TDoubleMap<T> extends AbstractTMap<T> implements Iterable<TDoubleMa
         }
     }
 
-    public void debugDump() {
-        LogInfo.logsForce("--------------------");
-        LogInfo.logsForce("mapType = " + mapType);
-        LogInfo.logsForce("locked = " + locked);
-        LogInfo.logsForce("size/capacity = " + size() + "/" + capacity());
-        LogInfo.logsForce("numCollisions = " + numCollisions);
-        /*
-         * for(int i = 0; i < keys.length; i++) { System.out.printf("[%d] %s (%d) => %f\n", i, keys[i], (keys[i] == null
-         * ? 0 : keys[i].hashCode()), values[i]); }
-         */
-    }
-
     /**
      * Format: mapType, num, (key, value) pairs
      */
-    private void writeObject(ObjectOutputStream out) throws IOException {
+    private void writeObject(final ObjectOutputStream out) throws IOException {
         out.writeObject(mapType);
         out.writeInt(num);
-        for (Entry e : this) {
+        for (final Entry e : this) {
             out.writeObject(e.getKey());
             out.writeDouble(e.getValue());
         }
     }
 
-    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+    private void readObject(final ObjectInputStream in) throws IOException, ClassNotFoundException {
         this.mapType = (MapType) in.readObject();
         this.num = 0;
         this.locked = false;
 
-        int n = in.readInt();
+        final int n = in.readInt();
         allocate(getCapacity(n, true));
 
         for (int i = 0; i < n; i++) {
-            T key = keyFunc.intern((T) in.readObject()); // CHECKED
-            double value = in.readDouble();
+            final T key = keyFunc.intern((T) in.readObject()); // CHECKED
+            final double value = in.readDouble();
             if (mapType == MapType.SORTED_LIST) {
                 // Assume keys and values serialized in sorted order
                 keys[num] = key;
@@ -677,12 +658,14 @@ public class TDoubleMap<T> extends AbstractTMap<T> implements Iterable<TDoubleMa
     }
 
     // Construct a map from a list of key, value, key value arguments.
-    public static <T> TDoubleMap newMap(Object... args) {
-        if (args.length % 2 != 0)
-            throw Exceptions.bad;
-        TDoubleMap map = new TDoubleMap();
+    public static <T> TDoubleMap newMap(final Object... args) {
+        if (args.length % 2 != 0) {
+            throw new IllegalArgumentException("Unexpected argument count");
+        }
+
+        final TDoubleMap map = new TDoubleMap();
         for (int i = 0; i < args.length; i += 2) {
-            T key = (T) args[i];
+            final T key = (T) args[i];
             Object value = args[i + 1];
             if (value instanceof Integer)
                 value = (double) ((Integer) value);
@@ -693,9 +676,9 @@ public class TDoubleMap<T> extends AbstractTMap<T> implements Iterable<TDoubleMa
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
+        final StringBuilder sb = new StringBuilder();
         sb.append("[");
-        for (TDoubleMap<T>.Entry entry : entrySet()) {
+        for (final TDoubleMap<T>.Entry entry : entrySet()) {
             sb.append(entry.getKey() + ":" + entry.getValue() + ", ");
         }
         sb.append("]");

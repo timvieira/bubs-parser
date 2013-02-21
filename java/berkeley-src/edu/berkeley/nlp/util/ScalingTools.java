@@ -5,7 +5,6 @@ package edu.berkeley.nlp.util;
 
 import java.util.Arrays;
 
-import edu.berkeley.nlp.math.DoubleArrays;
 import edu.berkeley.nlp.math.SloppyMath;
 
 /**
@@ -19,11 +18,11 @@ public class ScalingTools {
 
     // Note: e^709 is the largest double java can handle.
 
-    public static double calcScaleFactor(double logScale) {
+    public static double calcScaleFactor(final double logScale) {
         return calcScaleFactor(logScale, SCALE);
     }
 
-    public static double calcScaleFactor(double logScale, double scale) {
+    public static double calcScaleFactor(final double logScale, final double scale) {
         if (logScale == Integer.MIN_VALUE) {
             return 0.0;// System.out.println("give me a break!");
         }
@@ -44,14 +43,14 @@ public class ScalingTools {
         return Math.pow(scale, logScale);
     }
 
-    public static int scaleArray(double[] scores, int previousScale) {
+    public static int scaleArray(final double[] scores, final int previousScale) {
         if (previousScale == Integer.MIN_VALUE) {
             return previousScale;// System.out.println("give me a break!");
         }
         // if (true) return previousScale;
         int logScale = 0;
         double scale = 1.0;
-        double max = DoubleArrays.max(scores);
+        double max = max(scores);
         if (max == Double.POSITIVE_INFINITY) {
             // System.out.println("Infinity");
             return 0;
@@ -79,15 +78,15 @@ public class ScalingTools {
         return previousScale + logScale;
     }
 
-    public static void scaleArrayToScale(double[] scores, int previousScale, int newScale) {
-        int scaleDiff = previousScale - newScale;
+    public static void scaleArrayToScale(final double[] scores, final int previousScale, final int newScale) {
+        final int scaleDiff = previousScale - newScale;
         if (scaleDiff == 0)
             return; // nothing to do
-        double max = DoubleArrays.max(scores);
+        final double max = max(scores);
         if (SloppyMath.isDangerous(max))
             return;
 
-        double scale = calcScaleFactor(scaleDiff);
+        final double scale = calcScaleFactor(scaleDiff);
 
         if (Math.abs(scaleDiff) >= 800) {
             // under-/overflow...
@@ -103,16 +102,16 @@ public class ScalingTools {
         // }
     }
 
-    public static double scaleToScale(double score, int previousScale, int newScale) {
-        int scaleDiff = previousScale - newScale;
+    public static double scaleToScale(double score, final int previousScale, final int newScale) {
+        final int scaleDiff = previousScale - newScale;
         if (scaleDiff == 0)
             return score; // nothing to do
-        double max = score;
+        final double max = score;
 
         if (SloppyMath.isDangerous(max))
             return 0;
 
-        double scale = calcScaleFactor(scaleDiff);
+        final double scale = calcScaleFactor(scaleDiff);
 
         if (Math.abs(scaleDiff) >= 800) {
             // under-/overflow...
@@ -124,9 +123,18 @@ public class ScalingTools {
         return score;
     }
 
-    public static boolean isBadScale(int scale) {
+    public static boolean isBadScale(final int scale) {
         return scale == Integer.MIN_VALUE || scale == Integer.MAX_VALUE || scale == Integer.MAX_VALUE - 1
                 || scale == Integer.MIN_VALUE + 1 || scale == Integer.MAX_VALUE - 2 || scale == Integer.MIN_VALUE + 2;
     }
 
+    private static double max(final double[] v) {
+        double maxV = Double.NEGATIVE_INFINITY;
+        for (int i = 0; i < v.length; i++) {
+            if (v[i] > maxV) {
+                maxV = v[i];
+            }
+        }
+        return maxV;
+    }
 }

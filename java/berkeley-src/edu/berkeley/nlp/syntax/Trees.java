@@ -5,12 +5,8 @@ import java.io.PushbackReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.IdentityHashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -31,29 +27,8 @@ public class Trees {
         Tree<E> transformTree(Tree<E> tree);
     }
 
-    public static class PunctuationStripper implements TreeTransformer<String> {
-        public Tree<String> transformTree(Tree<String> tree) {
-            return Trees.spliceNodes(tree, new Filter<String>() {
-                public boolean accept(String t) {
-                    return (t.equals("."));
-                }
-            });
-        }
-    }
-
-    public static <L> Tree<L> findNode(Tree<L> root, Filter<L> filter) {
-        if (filter.accept(root.getLabel()))
-            return root;
-        for (Tree<L> node : root.getChildren()) {
-            Tree<L> ret = findNode(node, filter);
-            if (ret != null)
-                return ret;
-        }
-        return null;
-    }
-
     public static class FunctionNodeStripper implements TreeTransformer<String> {
-        public Tree<String> transformTree(Tree<String> tree) {
+        public Tree<String> transformTree(final Tree<String> tree) {
             final String transformedLabel = transformLabel(tree);
             if (tree.isLeaf()) {
                 return tree.shallowCloneJustRoot();
@@ -69,7 +44,7 @@ public class Trees {
          * @param tree
          * @return
          */
-        public static String transformLabel(Tree<String> tree) {
+        public static String transformLabel(final Tree<String> tree) {
             String transformedLabel = tree.getLabel();
             int cutIndex = transformedLabel.indexOf('-');
             int cutIndex2 = transformedLabel.indexOf('=');
@@ -86,7 +61,7 @@ public class Trees {
     }
 
     public static class EmptyNodeStripper implements TreeTransformer<String> {
-        public Tree<String> transformTree(Tree<String> tree) {
+        public Tree<String> transformTree(final Tree<String> tree) {
             final String label = tree.getLabel();
             if (label.equals("-NONE-")) {
                 return null;
@@ -108,7 +83,7 @@ public class Trees {
     }
 
     public static class XOverXRemover<E> implements TreeTransformer<E> {
-        public Tree<E> transformTree(Tree<E> tree) {
+        public Tree<E> transformTree(final Tree<E> tree) {
             final E label = tree.getLabel();
             List<Tree<E>> children = tree.getChildren();
             while (children.size() == 1 && !children.get(0).isLeaf() && label.equals(children.get(0).getLabel())) {
@@ -122,143 +97,6 @@ public class Trees {
         }
     }
 
-    public static class CoindexingStripper implements TreeTransformer<String> {
-        public Tree<String> transformTree(Tree<String> tree) {
-            final String transformedLabel = transformLabel(tree);
-            if (tree.getLabel().equals("-NONE-")) {
-                List<Tree<String>> child = new ArrayList<Tree<String>>();
-                child.add(new Tree<String>(transformLabel(tree.getChild(0))));
-                return new Tree<String>(tree.getLabel(), child);
-            }
-            if (tree.isLeaf()) {
-                return tree.shallowCloneJustRoot();
-            }
-            final List<Tree<String>> transformedChildren = new ArrayList<Tree<String>>();
-            for (final Tree<String> child : tree.getChildren()) {
-                transformedChildren.add(transformTree(child));
-            }
-            return new Tree<String>(transformedLabel, transformedChildren);
-        }
-
-        /**
-         * @param tree
-         * @return
-         */
-        public static String transformLabel(Tree<String> tree) {
-            String label = tree.getLabel();
-            if (label.equals("0"))
-                return label;
-            return label.replaceAll("\\d+", "XX");
-        }
-    }
-
-    public static class EmptyNodeRestorer implements TreeTransformer<String> {
-        public Tree<String> transformTree(Tree<String> tree) {
-            final String label = tree.getLabel();
-            if (tree.isLeaf()) {
-                return new Tree<String>(label);
-            }
-            final List<Tree<String>> children = tree.getChildren();
-            final List<Tree<String>> transformedChildren = new LinkedList<Tree<String>>();
-            for (final Tree<String> child : children) {
-                final Tree<String> transformedChild = transformTree(child);
-                transformedChildren.add(transformedChild);
-            }
-            String newLabel = label.replace('_', '-').replace('+', '=');
-            newLabel = addChildren(newLabel, transformedChildren);
-            return new Tree<String>(newLabel, transformedChildren);
-        }
-
-        private String addChildren(String currentLabel, List<Tree<String>> children) {
-            String newLabel = currentLabel;
-            while (newLabel.contains("~")) {
-                assert (newLabel.lastIndexOf(']') == newLabel.length() - 1);
-                int bracketCount = 1;
-                int p;
-                for (p = newLabel.length() - 2; p >= 0 && bracketCount > 0; p--) {
-                    if (newLabel.charAt(p) == ']') {
-                        bracketCount++;
-                    }
-                    if (newLabel.charAt(p) == '[') {
-                        bracketCount--;
-                    }
-                }
-                assert (p > 0);
-                assert (newLabel.charAt(p) == '~');
-                int q = newLabel.lastIndexOf('~', p - 1);
-                int childIndex = Integer.parseInt(newLabel.substring(q + 1, p));
-                String childString = newLabel.substring(p + 2, newLabel.length() - 1);
-                List<Tree<String>> newChildren = new LinkedList<Tree<String>>();
-                String childLabel = addChildren(childString, newChildren);
-                int indexToUse = Math.min(childIndex, children.size());
-                if (childLabel.equals("NONE")) {
-                    childLabel = "-NONE-";
-                }
-                children.add(indexToUse, new Tree<String>(childLabel, newChildren));
-                newLabel = newLabel.substring(0, q);
-            }
-            return newLabel;
-        }
-    }
-
-    public static class EmptyNodeRelabeler implements TreeTransformer<String> {
-        public Tree<String> transformTree(Tree<String> tree) {
-            final String label = tree.getLabel();
-            if (tree.isLeaf()) {
-                return new Tree<String>(label);
-            }
-            String newLabel = replaceNumbers(label);
-            if (label.equals("-NONE-")) {
-                String childLabel = replaceNumbers(tree.getChildren().get(0).getLabel());
-                return new Tree<String>("NONE~0~[" + childLabel + "]");
-            }
-            final List<Tree<String>> children = tree.getChildren();
-            final List<Tree<String>> transformedChildren = new ArrayList<Tree<String>>();
-            int index = 0;
-            for (final Tree<String> child : children) {
-                final Tree<String> transformedChild = transformTree(child);
-                if (transformedChild.getLabel().contains("NONE~") && transformedChild.isLeaf()) {
-                    newLabel = newLabel + "~" + index + "~[" + transformedChild.getLabel() + "]";
-                } else {
-                    transformedChildren.add(transformedChild);
-                    index++;
-                }
-            }
-            newLabel = newLabel.replace('-', '_').replace('=', '+');
-            return new Tree<String>(newLabel, transformedChildren);
-        }
-
-        private static String replaceNumbers(String label) {
-            if (label.equals("0"))
-                return label;
-            return label.replaceAll("\\d+", "XX");
-        }
-    }
-
-    public static class CompoundTreeTransformer<T> implements TreeTransformer<T> {
-
-        Collection<TreeTransformer<T>> transformers;
-
-        public CompoundTreeTransformer(Collection<TreeTransformer<T>> transformers) {
-            this.transformers = transformers;
-        }
-
-        public CompoundTreeTransformer() {
-            this(new ArrayList<TreeTransformer<T>>());
-        }
-
-        public void addTransformer(TreeTransformer<T> transformer) {
-            transformers.add(transformer);
-        }
-
-        public Tree<T> transformTree(Tree<T> tree) {
-            for (TreeTransformer<T> trans : transformers) {
-                tree = trans.transformTree(tree);
-            }
-            return tree;
-        }
-    }
-
     public static class StandardTreeNormalizer implements TreeTransformer<String> {
         EmptyNodeStripper emptyNodeStripper = new EmptyNodeStripper();
         XOverXRemover<String> xOverXRemover = new XOverXRemover<String>();
@@ -266,17 +104,6 @@ public class Trees {
 
         public Tree<String> transformTree(Tree<String> tree) {
             tree = functionNodeStripper.transformTree(tree);
-            tree = emptyNodeStripper.transformTree(tree);
-            tree = xOverXRemover.transformTree(tree);
-            return tree;
-        }
-    }
-
-    public static class FunctionLabelRetainingTreeNormalizer implements TreeTransformer<String> {
-        EmptyNodeStripper emptyNodeStripper = new EmptyNodeStripper();
-        XOverXRemover<String> xOverXRemover = new XOverXRemover<String>();
-
-        public Tree<String> transformTree(Tree<String> tree) {
             tree = emptyNodeStripper.transformTree(tree);
             tree = xOverXRemover.transformTree(tree);
             return tree;
@@ -326,7 +153,7 @@ public class Trees {
 
         }
 
-        private Tree<String> readTree(boolean isRoot) throws IOException {
+        private Tree<String> readTree(final boolean isRoot) throws IOException {
             readLeftParen();
             String label = readLabel();
             if (label.length() == 0 && isRoot)
@@ -378,7 +205,7 @@ public class Trees {
                         children.add(readTree(false));
                     }
                 } else if (peek() == 65535) {
-                    int peek = peek();
+                    final int peek = peek();
                     throw new RuntimeException("Unmatched parentheses in tree input.");
                 } else {
                     children.add(readLeaf());
@@ -391,7 +218,7 @@ public class Trees {
         private boolean isTextParen() throws IOException {
             final int next = in.read();
             final int postnext = in.read();
-            boolean isText = isLeftParen(next) && isRightParen(postnext);
+            final boolean isText = isLeftParen(next) && isRightParen(postnext);
             in.unread(postnext);
             in.unread(next);
             return isText;
@@ -434,15 +261,15 @@ public class Trees {
             in.unread(ch);
         }
 
-        private boolean isWhiteSpace(int ch) {
+        private boolean isWhiteSpace(final int ch) {
             return (ch == ' ' || ch == '\t' || ch == '\f' || ch == '\r' || ch == '\n');
         }
 
-        private boolean isLeftParen(int ch) {
+        private boolean isLeftParen(final int ch) {
             return ch == '(';
         }
 
-        private boolean isRightParen(int ch) {
+        private boolean isRightParen(final int ch) {
             return ch == ')';
         }
 
@@ -450,22 +277,22 @@ public class Trees {
             throw new UnsupportedOperationException();
         }
 
-        public PennTreeReader(Reader in) {
+        public PennTreeReader(final Reader in) {
             this(in, "", false);
         }
 
-        public PennTreeReader(Reader in, String name) {
+        public PennTreeReader(final Reader in, final String name) {
             this(in, name, false);
         }
 
-        public PennTreeReader(Reader in, String name, boolean lowercase) {
+        public PennTreeReader(final Reader in, final String name, final boolean lowercase) {
             this.lowercase = lowercase;
             this.name = name;
             this.in = new PushbackReader(in, 2);
             nextTree = readRootTree();
         }
 
-        public PennTreeReader(Reader in, boolean lowercase) {
+        public PennTreeReader(final Reader in, final boolean lowercase) {
             this(in, "", lowercase);
         }
 
@@ -474,10 +301,10 @@ public class Trees {
          * 
          * @param lowercase
          */
-        public static Tree<String> parseEasy(String treeString, boolean lowercase) {
+        public static Tree<String> parseEasy(final String treeString, final boolean lowercase) {
             try {
                 return parseHard(treeString, lowercase);
-            } catch (RuntimeException e) {
+            } catch (final RuntimeException e) {
                 return null;
             }
         }
@@ -487,13 +314,13 @@ public class Trees {
          * 
          * @param treeString
          */
-        public static Tree<String> parseEasy(String treeString) {
+        public static Tree<String> parseEasy(final String treeString) {
             return parseEasy(treeString, false);
         }
 
-        private static Tree<String> parseHard(String treeString, boolean lowercase) {
-            StringReader sr = new StringReader(treeString);
-            PennTreeReader reader = new Trees.PennTreeReader(sr, lowercase);
+        private static Tree<String> parseHard(final String treeString, final boolean lowercase) {
+            final StringReader sr = new StringReader(treeString);
+            final PennTreeReader reader = new Trees.PennTreeReader(sr, lowercase);
             return reader.next();
         }
     }
@@ -511,7 +338,7 @@ public class Trees {
          * Additional complexities are that conjunctions (tag CC) are not collapsed in this way, and that the unlabeled
          * outer brackets are collapsed onto the same line as the next bracket down.
          */
-        public static <L> String render(Tree<L> tree) {
+        public static <L> String render(final Tree<L> tree) {
             final StringBuilder sb = new StringBuilder();
             renderTree(tree, 0, false, false, false, true, sb);
             sb.append('\n');
@@ -521,8 +348,9 @@ public class Trees {
         /**
          * Display a node, implementing Penn Treebank style layout
          */
-        private static <L> void renderTree(Tree<L> tree, int indent, boolean parentLabelNull, boolean firstSibling,
-                boolean leftSiblingPreTerminal, boolean topLevel, StringBuilder sb) {
+        private static <L> void renderTree(final Tree<L> tree, final int indent, final boolean parentLabelNull,
+                final boolean firstSibling, final boolean leftSiblingPreTerminal, final boolean topLevel,
+                final StringBuilder sb) {
             // the condition for staying on the same line in Penn Treebank
             final boolean suppressIndent = (parentLabelNull || (firstSibling && tree.isPreTerminal()) || (leftSiblingPreTerminal
                     && tree.isPreTerminal() && (tree.getLabel() == null || !tree.getLabel().toString().startsWith("CC"))));
@@ -547,7 +375,7 @@ public class Trees {
             sb.append(')');
         }
 
-        private static <L> void renderFlat(Tree<L> tree, StringBuilder sb) {
+        private static <L> void renderFlat(final Tree<L> tree, final StringBuilder sb) {
             if (tree.isLeaf()) {
                 sb.append(tree.getLabel().toString());
                 return;
@@ -562,8 +390,8 @@ public class Trees {
             sb.append(')');
         }
 
-        private static <L> void renderChildren(List<Tree<L>> children, int indent, boolean parentLabelNull,
-                StringBuilder sb) {
+        private static <L> void renderChildren(final List<Tree<L>> children, final int indent,
+                final boolean parentLabelNull, final StringBuilder sb) {
             boolean firstSibling = true;
             boolean leftSibIsPreTerm = true; // counts as true at beginning
             for (final Tree<L> child : children) {
@@ -578,7 +406,7 @@ public class Trees {
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
         // Basic Test
         String parse = "((S (NP (DT the) (JJ quick) (JJ brown) (NN fox)) (VP (VBD jumped) (PP (IN over) (NP (DT the) (JJ lazy) (NN dog)))) (. .)))";
         if (args.length > 0) {
@@ -592,15 +420,15 @@ public class Trees {
         // Robustness Tests
         if (args.length == 0) {
             System.out.println("Testing robustness");
-            String unbalanced1 = "((S (NP (DT the) (JJ quick) (JJ brown) (NN fox)) (VP (VBD jumped) (PP (IN over) (NP (DT the) (JJ lazy) (NN dog)))) (. .))";
-            String unbalanced2 = "((S (NP (DT the) (JJ quick) (JJ brown) (NN fox))) (VP (VBD jumped) (PP (IN over) (NP (DT the) (JJ lazy) (NN dog)))) (. .)))";
+            final String unbalanced1 = "((S (NP (DT the) (JJ quick) (JJ brown) (NN fox)) (VP (VBD jumped) (PP (IN over) (NP (DT the) (JJ lazy) (NN dog)))) (. .))";
+            final String unbalanced2 = "((S (NP (DT the) (JJ quick) (JJ brown) (NN fox))) (VP (VBD jumped) (PP (IN over) (NP (DT the) (JJ lazy) (NN dog)))) (. .)))";
             System.out.println("\nMissing a paren:");
             System.out.println(unbalanced1);
             System.out.println(PennTreeReader.parseEasy(unbalanced1, false));
             System.out.println("\nExtra paren:");
             System.out.println(unbalanced2);
             System.out.println(PennTreeReader.parseEasy(unbalanced2, false));
-            String parens = "((S (NP (DT the) (SYM () (JJ quick) (JJ brown) (SYM )) (NN fox)) (VP (VBD jumped) (PP (IN over) (NP (DT the) (JJ lazy) (NN dog)))) (. .)))";
+            final String parens = "((S (NP (DT the) (SYM () (JJ quick) (JJ brown) (SYM )) (NN fox)) (VP (VBD jumped) (PP (IN over) (NP (DT the) (JJ lazy) (NN dog)))) (. .)))";
             System.out.println("\nParens as characters:");
             System.out.println(parens);
             System.out.println(PennTreeReader.parseEasy(parens, false));
@@ -614,11 +442,11 @@ public class Trees {
      * @param filter
      * @return
      */
-    public static <L> Tree<L> spliceNodes(Tree<L> tree, Filter<L> filter) {
+    public static <L> Tree<L> spliceNodes(final Tree<L> tree, final Filter<L> filter) {
         return spliceNodes(tree, filter, true);
     }
 
-    private static <L> Tree<L> spliceNodes(Tree<L> tree, Filter<L> filter, boolean splice) {
+    private static <L> Tree<L> spliceNodes(final Tree<L> tree, final Filter<L> filter, final boolean splice) {
         final List<Tree<L>> rootList = spliceNodesHelper(tree, filter, splice);
         if (rootList.size() > 1)
             throw new IllegalArgumentException("spliceNodes: no unique root after splicing");
@@ -627,79 +455,7 @@ public class Trees {
         return rootList.get(0);
     }
 
-    public static <L> Tree<L> deleteNodes(Tree<L> tree, Filter<L> filter) {
-        return spliceNodes(tree, filter, false);
-    }
-
-    /**
-     * Splices out all nodes which match the provided filter, with a map from the original tree nodes to the spliced
-     * tree nodes.
-     * 
-     * @param tree
-     * @param filter
-     * @return
-     */
-    public static <L> Map<Tree<L>, Tree<L>> spliceNodesWithMap(Tree<L> tree, Filter<L> filter) {
-        Map<Tree<L>, Tree<L>> nodeMap = new IdentityHashMap<Tree<L>, Tree<L>>();
-        final List<Tree<L>> rootList = spliceNodesWithMapHelper(tree, filter, nodeMap);
-        if (rootList.size() > 1)
-            throw new IllegalArgumentException("spliceNodes: no unique root after splicing");
-        if (rootList.size() < 1)
-            return null;
-        return nodeMap;
-    }
-
-    private static <L> List<Tree<L>> spliceNodesWithMapHelper(Tree<L> tree, Filter<L> filter,
-            Map<Tree<L>, Tree<L>> nodeMap) {
-        final List<Tree<L>> splicedChildren = new ArrayList<Tree<L>>();
-        for (final Tree<L> child : tree.getChildren()) {
-            final List<Tree<L>> splicedChildList = spliceNodesWithMapHelper(child, filter, nodeMap);
-            splicedChildren.addAll(splicedChildList);
-        }
-
-        if (filter.accept(tree.getLabel())) {
-            nodeMap.put(tree, null);
-            return splicedChildren;
-        }
-        final Tree<L> newTree = tree.shallowCloneJustRoot();
-        newTree.setChildren(splicedChildren);
-        nodeMap.put(tree, newTree);
-        return Collections.singletonList(newTree);
-    }
-
-    public static <L> Tree<L> asTree(List<L> leaves, L root) {
-        final Tree<L> t = new Tree<L>(root);
-        final List<Tree<L>> children = new ArrayList<Tree<L>>(leaves.size());
-        for (final L leaf : leaves) {
-            children.add(new Tree<L>(leaf));
-        }
-        t.setChildren(children);
-        return t;
-    }
-
-    public static <T> Tree<String> stringTree(Tree<T> tree) {
-        final String root = tree.getLabel().toString();
-        final List<Tree<String>> children = new ArrayList<Tree<String>>();
-        final Tree<String> newTree = new Tree<String>(root, children);
-        for (final Tree<T> child : tree.getChildren()) {
-            children.add(stringTree(child));
-        }
-        return newTree;
-    }
-
-    public static <T> Tree<T> truncateAtDepth(Tree<T> tree, int depth) {
-        if (depth == 0) {
-            return new Tree<T>(tree.getLabel());
-        }
-        final List<Tree<T>> children = new ArrayList<Tree<T>>();
-        final Tree<T> newTree = new Tree<T>(tree.getLabel(), children);
-        for (final Tree<T> child : tree.getChildren()) {
-            children.add(truncateAtDepth(child, depth - 1));
-        }
-        return newTree;
-    }
-
-    private static <L> List<Tree<L>> spliceNodesHelper(Tree<L> tree, Filter<L> filter, boolean splice) {
+    private static <L> List<Tree<L>> spliceNodesHelper(final Tree<L> tree, final Filter<L> filter, final boolean splice) {
         final List<Tree<L>> splicedChildren = new ArrayList<Tree<L>>();
         for (final Tree<L> child : tree.getChildren()) {
             final List<Tree<L>> splicedChildList = spliceNodesHelper(child, filter, splice);
@@ -714,7 +470,7 @@ public class Trees {
         return Collections.singletonList(newTree);
     }
 
-    public static Tree<String> stripLeaves(Tree<String> tree) {
+    public static Tree<String> stripLeaves(final Tree<String> tree) {
         if (tree.isLeaf()) {
             throw new RuntimeException("Can't strip leaves from " + tree.toString());
         }
@@ -732,7 +488,7 @@ public class Trees {
         }
     }
 
-    public static <T> int getMaxBranchingFactor(Tree<T> tree) {
+    public static <T> int getMaxBranchingFactor(final Tree<T> tree) {
         int max = tree.getChildren().size();
         for (final Tree<T> child : tree.getChildren()) {
             max = Math.max(max, getMaxBranchingFactor(child));
@@ -740,11 +496,11 @@ public class Trees {
         return max;
     }
 
-    public static <T> Tree<T> buildTree(T rootLabel, Map<T, List<T>> parent2ChildrenMap) {
-        List<T> childrenLabels = CollectionUtils.getValueList(parent2ChildrenMap, rootLabel);
-        List<Tree<T>> children = new ArrayList<Tree<T>>();
-        for (T c : childrenLabels) {
-            Tree<T> node = buildTree(c, parent2ChildrenMap);
+    public static <T> Tree<T> buildTree(final T rootLabel, final Map<T, List<T>> parent2ChildrenMap) {
+        final List<T> childrenLabels = CollectionUtils.getValueList(parent2ChildrenMap, rootLabel);
+        final List<Tree<T>> children = new ArrayList<Tree<T>>();
+        for (final T c : childrenLabels) {
+            final Tree<T> node = buildTree(c, parent2ChildrenMap);
             children.add(node);
         }
         return new Tree<T>(rootLabel, children);
@@ -754,44 +510,22 @@ public class Trees {
         public T transform(Tree<S> node);
     }
 
-    public static <S, T> Tree<T> transformLabels(Tree<S> origTree, LabelTransformer<S, T> labelTransform) {
-        T newLabel = labelTransform.transform(origTree);
+    public static <S, T> Tree<T> transformLabels(final Tree<S> origTree, final LabelTransformer<S, T> labelTransform) {
+        final T newLabel = labelTransform.transform(origTree);
         if (origTree.isLeaf()) {
             return new Tree<T>(newLabel);
         }
-        List<Tree<T>> children = new ArrayList<Tree<T>>();
-        for (Tree<S> child : origTree.getChildren()) {
+        final List<Tree<T>> children = new ArrayList<Tree<T>>();
+        for (final Tree<S> child : origTree.getChildren()) {
             children.add(transformLabels(child, labelTransform));
         }
         return new Tree<T>(newLabel, children);
     }
 
-    public static class SortingTransformer<T> implements TreeTransformer<T> {
-
-        Comparator<? super T> comparator;
-
-        public SortingTransformer(Comparator<? super T> comparator) {
-            this.comparator = comparator;
-        }
-
-        public Tree<T> transformTree(Tree<T> t) {
-            List<Tree<T>> children = new ArrayList<Tree<T>>();
-            for (Tree<T> child : t.getChildren()) {
-                children.add(transformTree(child));
-            }
-            Collections.sort(children, new Comparator<Tree<T>>() {
-                public int compare(Tree<T> tTree, Tree<T> tTree1) {
-                    return comparator.compare(tTree.getLabel(), tTree1.getLabel());
-                }
-            });
-            return new Tree<T>(t.getLabel(), children);
-        }
-    }
-
-    public static <T> List<Pair<T, T>> getParentChildPairs(Tree<T> tree) {
-        List<Pair<T, T>> rv = new ArrayList<Pair<T, T>>();
-        for (Tree<T> parent : tree.getPostOrderTraversal()) {
-            for (Tree<T> child : parent.getChildren()) {
+    public static <T> List<Pair<T, T>> getParentChildPairs(final Tree<T> tree) {
+        final List<Pair<T, T>> rv = new ArrayList<Pair<T, T>>();
+        for (final Tree<T> parent : tree.getPostOrderTraversal()) {
+            for (final Tree<T> child : parent.getChildren()) {
                 rv.add(Pair.newPair(parent.getLabel(), child.getLabel()));
             }
         }

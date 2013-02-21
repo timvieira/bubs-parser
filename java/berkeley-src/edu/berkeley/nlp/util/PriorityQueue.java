@@ -12,18 +12,114 @@ import java.util.NoSuchElementException;
  * removal, or element promotion (decreaseKey) -- these methods are therefore not yet implemented. It is a maximum
  * priority queue, so next() gives the highest-priority object.
  * 
+ * TODO Replace with a FastUtil version?
+ * 
  * @author Dan Klein
  */
-public class PriorityQueue<E> implements Iterator<E>, Serializable, Cloneable, PriorityQueueInterface<E> {
-    private static final long serialVersionUID = 1L;
-    int size;
-    int capacity;
-    List<E> elements;
-    double[] priorities;
+public class PriorityQueue<E> implements Iterator<E>, Serializable, Cloneable {
 
-    protected void grow(int newCapacity) {
-        List<E> newElements = new ArrayList<E>(newCapacity);
-        double[] newPriorities = new double[newCapacity];
+    private static final long serialVersionUID = 1L;
+
+    private int size;
+    private int capacity;
+    private List<E> elements;
+    private double[] priorities;
+
+    public PriorityQueue() {
+        this(15);
+    }
+
+    public PriorityQueue(final int capacity) {
+        int legalCapacity = 0;
+        while (legalCapacity < capacity) {
+            legalCapacity = 2 * legalCapacity + 1;
+        }
+        grow(legalCapacity);
+    }
+
+    /**
+     * @return true if the priority queue is non-empty
+     */
+    public boolean hasNext() {
+        return !isEmpty();
+    }
+
+    /**
+     * Pops and returns the head of the queue
+     * 
+     * @return the head of the queue
+     */
+    public E next() {
+        final E first = peek();
+        removeFirst();
+        return first;
+    }
+
+    /**
+     * Unsupported - use {@link #next()}
+     */
+    public void remove() {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Returns the highest-priority element in the queue without removing it.
+     * 
+     * @return The head of the queue (without removing it).
+     * @throws NoSuchElementException if the queue is empty
+     */
+    public E peek() {
+        if (size() > 0) {
+            return elements.get(0);
+        }
+        throw new NoSuchElementException();
+    }
+
+    /**
+     * @return the priority of the head element in the queue.
+     * 
+     * @throws NoSuchElementException if the queue is empty
+     */
+    public double getPriority() {
+        if (size() > 0) {
+            return priorities[0];
+        }
+        throw new NoSuchElementException();
+    }
+
+    /**
+     * @return The size of the queue
+     */
+    public int size() {
+        return size;
+    }
+
+    /**
+     * @return true if the queue is empty
+     */
+    public boolean isEmpty() {
+        return size == 0;
+    }
+
+    /**
+     * Enqueues an element.
+     * 
+     * @param key
+     * @param priority
+     */
+    public void add(final E key, final double priority) {
+        if (size == capacity) {
+            grow(2 * capacity + 1);
+        }
+        elements.add(key);
+        priorities[size] = priority;
+        heapifyUp(size);
+        size++;
+    }
+
+    private void grow(final int newCapacity) {
+        final List<E> newElements = new ArrayList<E>(newCapacity);
+        final double[] newPriorities = new double[newCapacity];
         if (size > 0) {
             newElements.addAll(elements);
             System.arraycopy(priorities, 0, newPriorities, 0, priorities.length);
@@ -33,39 +129,39 @@ public class PriorityQueue<E> implements Iterator<E>, Serializable, Cloneable, P
         capacity = newCapacity;
     }
 
-    protected int parent(int loc) {
+    private int parent(final int loc) {
         return (loc - 1) / 2;
     }
 
-    protected int leftChild(int loc) {
+    private int leftChild(final int loc) {
         return 2 * loc + 1;
     }
 
-    protected int rightChild(int loc) {
+    private int rightChild(final int loc) {
         return 2 * loc + 2;
     }
 
-    protected void heapifyUp(int loc) {
+    private void heapifyUp(final int loc) {
         if (loc == 0)
             return;
-        int parent = parent(loc);
+        final int parent = parent(loc);
         if (priorities[loc] > priorities[parent]) {
             swap(loc, parent);
             heapifyUp(parent);
         }
     }
 
-    protected void heapifyDown(int loc) {
+    private void heapifyDown(final int loc) {
         int max = loc;
-        int leftChild = leftChild(loc);
+        final int leftChild = leftChild(loc);
         if (leftChild < size()) {
-            double priority = priorities[loc];
-            double leftChildPriority = priorities[leftChild];
+            final double priority = priorities[loc];
+            final double leftChildPriority = priorities[leftChild];
             if (leftChildPriority > priority)
                 max = leftChild;
-            int rightChild = rightChild(loc);
+            final int rightChild = rightChild(loc);
             if (rightChild < size()) {
-                double rightChildPriority = priorities[rightChild(loc)];
+                final double rightChildPriority = priorities[rightChild(loc)];
                 if (rightChildPriority > priority && rightChildPriority > leftChildPriority)
                     max = rightChild;
             }
@@ -76,111 +172,22 @@ public class PriorityQueue<E> implements Iterator<E>, Serializable, Cloneable, P
         heapifyDown(max);
     }
 
-    protected void swap(int loc1, int loc2) {
-        double tempPriority = priorities[loc1];
-        E tempElement = elements.get(loc1);
+    private void swap(final int loc1, final int loc2) {
+        final double tempPriority = priorities[loc1];
+        final E tempElement = elements.get(loc1);
         priorities[loc1] = priorities[loc2];
         elements.set(loc1, elements.get(loc2));
         priorities[loc2] = tempPriority;
         elements.set(loc2, tempElement);
     }
 
-    protected void removeFirst() {
+    private void removeFirst() {
         if (size < 1)
             return;
         swap(0, size - 1);
         size--;
         elements.remove(size);
         heapifyDown(0);
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see edu.berkeley.nlp.util.PriorityQueueInterface#hasNext()
-     */
-    public boolean hasNext() {
-        return !isEmpty();
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see edu.berkeley.nlp.util.PriorityQueueInterface#next()
-     */
-    public E next() {
-        E first = peek();
-        removeFirst();
-        return first;
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see edu.berkeley.nlp.util.PriorityQueueInterface#remove()
-     */
-    public void remove() {
-        throw new UnsupportedOperationException();
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see edu.berkeley.nlp.util.PriorityQueueInterface#peek()
-     */
-    public E peek() {
-        if (size() > 0)
-            return elements.get(0);
-        throw new NoSuchElementException();
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see edu.berkeley.nlp.util.PriorityQueueInterface#getPriority()
-     */
-    public double getPriority() {
-        if (size() > 0)
-            return priorities[0];
-        throw new NoSuchElementException();
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see edu.berkeley.nlp.util.PriorityQueueInterface#size()
-     */
-    public int size() {
-        return size;
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see edu.berkeley.nlp.util.PriorityQueueInterface#isEmpty()
-     */
-    public boolean isEmpty() {
-        return size == 0;
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see edu.berkeley.nlp.util.PriorityQueueInterface#add(E, double)
-     */
-    public boolean add(E key, double priority) {
-        if (size == capacity) {
-            grow(2 * capacity + 1);
-        }
-        elements.add(key);
-        priorities[size] = priority;
-        heapifyUp(size);
-        size++;
-        return true;
-    }
-
-    public void put(E key, double priority) {
-        add(key, priority);
     }
 
     /**
@@ -198,15 +205,15 @@ public class PriorityQueue<E> implements Iterator<E>, Serializable, Cloneable, P
      * @param maxKeysToPrint
      * @param multiline TODO
      */
-    public String toString(int maxKeysToPrint, boolean multiline) {
-        PriorityQueue<E> pq = clone();
-        StringBuilder sb = new StringBuilder(multiline ? "" : "[");
+    public String toString(final int maxKeysToPrint, final boolean multiline) {
+        final PriorityQueue<E> pq = clone();
+        final StringBuilder sb = new StringBuilder(multiline ? "" : "[");
         int numKeysPrinted = 0;
-        NumberFormat f = NumberFormat.getInstance();
+        final NumberFormat f = NumberFormat.getInstance();
         f.setMaximumFractionDigits(5);
         while (numKeysPrinted < maxKeysToPrint && pq.hasNext()) {
-            double priority = pq.getPriority();
-            E element = pq.next();
+            final double priority = pq.getPriority();
+            final E element = pq.next();
             sb.append(element == null ? "null" : element.toString());
             sb.append(" : ");
             sb.append(f.format(priority));
@@ -222,29 +229,11 @@ public class PriorityQueue<E> implements Iterator<E>, Serializable, Cloneable, P
     }
 
     /**
-     * Returns a counter whose keys are the elements in this priority queue, and whose counts are the priorities in this
-     * queue. In the event there are multiple instances of the same element in the queue, the counter's count will be
-     * the sum of the instances' priorities.
-     * 
-     * @return
-     */
-    public Counter<E> asCounter() {
-        PriorityQueue<E> pq = clone();
-        Counter<E> counter = new Counter<E>();
-        while (pq.hasNext()) {
-            double priority = pq.getPriority();
-            E element = pq.next();
-            counter.incrementCount(element, priority);
-        }
-        return counter;
-    }
-
-    /**
      * Returns a clone of this priority queue. Modifications to one will not affect modifications to the other.
      */
     @Override
     public PriorityQueue<E> clone() {
-        PriorityQueue<E> clonePQ = new PriorityQueue<E>();
+        final PriorityQueue<E> clonePQ = new PriorityQueue<E>();
         clonePQ.size = size;
         clonePQ.capacity = capacity;
         clonePQ.elements = new ArrayList<E>(capacity);
@@ -254,34 +243,5 @@ public class PriorityQueue<E> implements Iterator<E>, Serializable, Cloneable, P
             System.arraycopy(priorities, 0, clonePQ.priorities, 0, size());
         }
         return clonePQ;
-    }
-
-    public PriorityQueue() {
-        this(15);
-    }
-
-    public PriorityQueue(int capacity) {
-        int legalCapacity = 0;
-        while (legalCapacity < capacity) {
-            legalCapacity = 2 * legalCapacity + 1;
-        }
-        grow(legalCapacity);
-    }
-
-    public static void main(String[] args) {
-        PriorityQueue<String> pq = new PriorityQueue<String>();
-        System.out.println(pq);
-        pq.put("one", 1);
-        System.out.println(pq);
-        pq.put("three", 3);
-        System.out.println(pq);
-        pq.put("one", 1.1);
-        System.out.println(pq);
-        pq.put("two", 2);
-        System.out.println(pq);
-        System.out.println(pq.toString(2, false));
-        while (pq.hasNext()) {
-            System.out.println(pq.next());
-        }
     }
 }
