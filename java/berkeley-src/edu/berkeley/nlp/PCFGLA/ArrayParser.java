@@ -7,7 +7,6 @@ import java.util.List;
 
 import edu.berkeley.nlp.syntax.StateSet;
 import edu.berkeley.nlp.syntax.Tree;
-import edu.berkeley.nlp.util.ArrayUtil;
 import edu.berkeley.nlp.util.Numberer;
 import edu.berkeley.nlp.util.ScalingTools;
 
@@ -183,15 +182,16 @@ public class ArrayParser {
      * @param tree
      * @param sentence
      */
-    void doInsideScores(final Tree<StateSet> tree, final boolean noSmoothing, final boolean debugOutput,
-            final double[][][] spanScores) {
+    void doInsideScores(final Tree<StateSet> tree, final boolean noSmoothing, final double[][][] spanScores) {
+
         if (tree.isLeaf()) {
             return;
         }
+
         final List<Tree<StateSet>> children = tree.getChildren();
         for (final Tree<StateSet> child : children) {
             if (!child.isLeaf())
-                doInsideScores(child, noSmoothing, debugOutput, spanScores);
+                doInsideScores(child, noSmoothing, spanScores);
         }
         final StateSet parent = tree.getLabel();
         final short pState = parent.getState();
@@ -239,13 +239,13 @@ public class ArrayParser {
                         }
                     }
                 }
-                if (debugOutput && !foundOne) {
-                    System.out.println("iscore reached zero!");
-                    System.out.println(grammar.getUnaryRule(pState, cState));
-                    System.out.println(Arrays.toString(iScores));
-                    System.out.println(ArrayUtil.toString(uscores));
-                    System.out.println(Arrays.toString(child.getIScores()));
-                }
+                // if (debugOutput && !foundOne) {
+                // System.out.println("iscore reached zero!");
+                // System.out.println(grammar.getUnaryRule(pState, cState));
+                // System.out.println(Arrays.toString(iScores));
+                // System.out.println(ArrayUtil.toString(uscores));
+                // System.out.println(Arrays.toString(child.getIScores()));
+                // }
                 parent.setIScores(iScores);
                 parent.scaleIScores(child.getIScale());
                 break;
@@ -293,14 +293,14 @@ public class ArrayParser {
 
                 // if (!foundOne2)
                 // System.out.println("Did not find a way to build binary transition from "+pState+" to "+lState+" and "+rState+" "+ArrayUtil.toString(bscores));
-                if (debugOutput && !foundOne2) {
-                    System.out.println("iscore reached zero!");
-                    System.out.println(grammar.getBinaryRule(pState, lState, rState));
-                    System.out.println(Arrays.toString(iScores2));
-                    System.out.println(Arrays.toString(bscores));
-                    System.out.println(Arrays.toString(leftChild.getIScores()));
-                    System.out.println(Arrays.toString(rightChild.getIScores()));
-                }
+                // if (debugOutput && !foundOne2) {
+                // System.out.println("iscore reached zero!");
+                // System.out.println(grammar.getBinaryRule(pState, lState, rState));
+                // System.out.println(Arrays.toString(iScores2));
+                // System.out.println(Arrays.toString(bscores));
+                // System.out.println(Arrays.toString(leftChild.getIScores()));
+                // System.out.println(Arrays.toString(rightChild.getIScores()));
+                // }
                 parent.setIScores(iScores2);
                 parent.scaleIScores(leftChild.getIScale() + rightChild.getIScale());
                 break;
@@ -427,8 +427,8 @@ public class ArrayParser {
     }
 
     public double doInsideOutsideScores(final Tree<StateSet> tree, final boolean noSmoothing,
-            final boolean debugOutput, final double[][][] spanScores) {
-        doInsideScores(tree, noSmoothing, debugOutput, spanScores);
+            final double[][][] spanScores) {
+        doInsideScores(tree, noSmoothing, spanScores);
         setRootOutsideScore(tree);
         doOutsideScores(tree, false, spanScores);
         final double tree_score = tree.getLabel().getIScore(0);
@@ -436,8 +436,8 @@ public class ArrayParser {
         return Math.log(tree_score) + (ScalingTools.LOGSCALE * tree_scale);
     }
 
-    public void doInsideOutsideScores(final Tree<StateSet> tree, final boolean noSmoothing, final boolean debugOutput) {
-        doInsideScores(tree, noSmoothing, debugOutput, null);
+    public void doInsideOutsideScores(final Tree<StateSet> tree, final boolean noSmoothing) {
+        doInsideScores(tree, noSmoothing, null);
         setRootOutsideScore(tree);
         doOutsideScores(tree, false, null);
     }

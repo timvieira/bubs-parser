@@ -410,9 +410,8 @@ public class GrammarMerger {
             final double[][] mergeWeights, final StateSetTreeList trainStateSetTrees) {
         final ArrayParser parser = new ArrayParser(grammar, lexicon);
         final double[][][] deltas = new double[grammar.numSubStates.length][mergeWeights[0].length][mergeWeights[0].length];
-        final boolean noSmoothing = false, debugOutput = false;
         for (final Tree<StateSet> stateSetTree : trainStateSetTrees) {
-            parser.doInsideOutsideScores(stateSetTree, noSmoothing, debugOutput); // E
+            parser.doInsideOutsideScores(stateSetTree, false); // E
                                                                                   // Step
             double ll = stateSetTree.getLabel().getIScore(0);
             ll = Math.log(ll) + (100 * stateSetTree.getLabel().getIScale());// System.out.println(stateSetTree);
@@ -434,10 +433,9 @@ public class GrammarMerger {
                 .max(grammar.numSubStates)];
         double trainingLikelihood = 0;
         final ArrayParser parser = new ArrayParser(grammar, lexicon);
-        final boolean noSmoothing = false, debugOutput = false;
         int n = 0;
         for (final Tree<StateSet> stateSetTree : trainStateSetTrees) {
-            parser.doInsideOutsideScores(stateSetTree, noSmoothing, debugOutput); // E
+            parser.doInsideOutsideScores(stateSetTree, false); // E
                                                                                   // Step
             double ll = stateSetTree.getLabel().getIScore(0);
             ll = Math.log(ll) + (100 * stateSetTree.getLabel().getIScale());// System.out.println(stateSetTree);

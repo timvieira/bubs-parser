@@ -54,24 +54,22 @@ public class BinaryCounterTable implements Serializable {
      * @param key
      * @return whether the counter contains the key
      */
-    public boolean containsKey(BinaryRule key) {
+    public boolean containsKey(final BinaryRule key) {
         return entries.containsKey(key);
     }
 
     /**
-     * Get the count of the element, or zero if the element is not in the counter. Can return null!
-     * 
      * @param key
-     * @return
+     * @return the count of the specified element, or null if the element is not in the counter.
      */
-    public double[][][] getCount(BinaryRule key) {
-        double[][][] value = entries.get(key);
+    public double[][][] getCount(final BinaryRule key) {
+        final double[][][] value = entries.get(key);
         return value;
     }
 
-    public double[][][] getCount(short pState, short lState, short rState) {
+    public double[][][] getCount(final short pState, final short lState, final short rState) {
         searchKey.setNodes(pState, lState, rState);
-        double[][][] value = entries.get(searchKey);
+        final double[][][] value = entries.get(searchKey);
         return value;
     }
 
@@ -79,9 +77,9 @@ public class BinaryCounterTable implements Serializable {
      * Set the count for the given key, clobbering any previous count.
      * 
      * @param key
-     * @param count
+     * @param counts
      */
-    public void setCount(BinaryRule key, double[][][] counts) {
+    public void setCount(final BinaryRule key, final double[][][] counts) {
         entries.put(key, counts);
     }
 
@@ -91,8 +89,8 @@ public class BinaryCounterTable implements Serializable {
      * @param key
      * @param increment
      */
-    public void incrementCount(BinaryRule key, double[][][] increment) {
-        double[][][] current = getCount(key);
+    public void incrementCount(final BinaryRule key, final double[][][] increment) {
+        final double[][][] current = getCount(key);
         if (current == null) {
             setCount(key, increment);
             return;
@@ -116,10 +114,10 @@ public class BinaryCounterTable implements Serializable {
         setCount(key, current);
     }
 
-    public void incrementCount(BinaryRule key, double increment) {
+    public void incrementCount(final BinaryRule key, final double increment) {
         double[][][] current = getCount(key);
         if (current == null) {
-            double[][][] tmp = key.getScores2();
+            final double[][][] tmp = key.getScores2();
             current = new double[tmp.length][tmp[0].length][tmp[0][0].length];
             ArrayUtil.fill(current, increment);
             setCount(key, current);
@@ -137,18 +135,18 @@ public class BinaryCounterTable implements Serializable {
         setCount(key, current);
     }
 
-    public BinaryCounterTable(short[] numSubStates) {
+    public BinaryCounterTable(final short[] numSubStates) {
         this(new MapFactory.HashMapFactory<BinaryRule, double[][][]>(), numSubStates);
     }
 
-    public BinaryCounterTable(MapFactory<BinaryRule, double[][][]> mf, short[] numSubStates) {
+    public BinaryCounterTable(final MapFactory<BinaryRule, double[][][]> mf, final short[] numSubStates) {
         entries = mf.buildMap();
         searchKey = new BinaryRule((short) 0, (short) 0, (short) 0);
         this.numSubStates = numSubStates;
     }
 
-    public static void main(String[] args) {
-        Counter<String> counter = new Counter<String>();
+    public static void main(final String[] args) {
+        final Counter<String> counter = new Counter<String>();
         System.out.println(counter);
         counter.incrementCount("planets", 7);
         System.out.println(counter);

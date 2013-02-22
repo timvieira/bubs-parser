@@ -94,21 +94,30 @@ public class UnaryRule extends Rule implements java.io.Serializable, Comparable<
     public String toString() {
         final Numberer n = Numberer.getGlobalNumberer("tags");
         String cState = (String) n.object(childState);
-        if (cState.endsWith("^g"))
+        if (cState.endsWith("^g")) {
             cState = cState.substring(0, cState.length() - 2);
+        }
+
         String pState = (String) n.object(parentState);
-        if (pState.endsWith("^g"))
+        if (pState.endsWith("^g")) {
             pState = pState.substring(0, pState.length() - 2);
-        if (scores == null)
+        }
+
+        if (scores == null) {
             return pState + " -> " + cState + "\n";
+        }
+
         final StringBuilder sb = new StringBuilder();
         for (int cS = 0; cS < scores.length; cS++) {
-            if (scores[cS] == null)
+            if (scores[cS] == null) {
                 continue;
+            }
+
             for (int pS = 0; pS < scores[cS].length; pS++) {
                 final double p = scores[cS][pS];
-                if (p > 0)
-                    sb.append(pState + "_" + pS + " -> " + cState + "_" + cS + " " + p + "\n");
+                if (p > 0) {
+                    sb.append(String.format("%s_%d -> %s_%d %.10f\n", pState, pS, cState, cS, Math.log(p)));
+                }
             }
         }
         return sb.toString();
@@ -196,7 +205,7 @@ public class UnaryRule extends Rule implements java.io.Serializable, Comparable<
                         // each rule in 1/divFactor
                         final short newPS = (short) (parentSplitFactor * pS + p);
                         final short newCS = (short) (childSplitFactor * cS + c);
-                        newScores[newCS][newPS] = (score / (double) childSplitFactor + randomComponent);
+                        newScores[newCS][newPS] = (score / childSplitFactor + randomComponent);
                     }
                 }
             }

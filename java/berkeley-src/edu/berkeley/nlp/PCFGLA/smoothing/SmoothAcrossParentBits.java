@@ -165,37 +165,6 @@ public class SmoothAcrossParentBits implements Smoother, Serializable {
         }
     }
 
-    private void fillWeightsArray(final short state, final short substate, final double weight,
-            final Tree<Short> subTree) {
-        if (subTree.isLeaf()) {
-            if (subTree.getLabel() == substate)
-                diffWeights[state][substate][substate] = same;
-            else {
-                diffWeights[state][substate][subTree.getLabel()] = weight;
-                totalWeight += weight;
-            }
-            return;
-        }
-        if (subTree.getChildren().size() == 1) {
-            fillWeightsArray(state, substate, weight, subTree.getChildren().get(0));
-            return;
-        }
-        for (int branch = 0; branch < 2; branch++) {
-            final Tree<Short> branchTree = subTree.getChildren().get(branch);
-            final List<Short> substatesInBranch = branchTree.getYield();
-            // int nSubstatesInBranch = substatesInBranch.size();
-            if (substatesInBranch.contains(substate))
-                fillWeightsArray(state, substate, weight, branchTree);
-            else
-                fillWeightsArray(state, substate, weight * weightBasis / 2.0, branchTree);
-        }
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see edu.berkeley.nlp.PCFGLA.smoothing.Smoother#smooth(short, float[])
-     */
     public void smooth(final short tag, final double[] scores) {
         final double[] scopy = new double[scores.length];
         for (int i = 0; i < scores.length; i++) {
@@ -209,11 +178,6 @@ public class SmoothAcrossParentBits implements Smoother, Serializable {
         }
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see edu.berkeley.nlp.PCFGLA.smoothing.Smoother#updateWeights(int[][])
-     */
     public void updateWeights(final int[][] toSubstateMapping) {
         final double[][][] newWeights = new double[toSubstateMapping.length][][];
         for (int state = 0; state < toSubstateMapping.length; state++) {

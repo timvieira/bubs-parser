@@ -1,10 +1,16 @@
 package edu.berkeley.nlp.PCFGLA;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.logging.Level;
+import java.util.zip.GZIPOutputStream;
 
 import cltool4j.BaseCommandlineTool;
 import cltool4j.BaseLogger;
@@ -232,19 +238,16 @@ public class GrammarTrainer extends BaseCommandlineTool {
         // without splitting.
         if (inFile == null) {
             grammar = new Grammar(numSubStatesArray, findClosedUnaryPaths, new NoSmoothing(), null, filter);
-            final Lexicon tmp_lexicon = new SophisticatedLexicon(numSubStatesArray,
-                    SophisticatedLexicon.DEFAULT_SMOOTHING_CUTOFF, smoothParams, new NoSmoothing(), filter);
-            int n = 0;
-            boolean secondHalf = false;
+            final Lexicon tmp_lexicon = new Lexicon(numSubStatesArray, Lexicon.DEFAULT_SMOOTHING_CUTOFF, smoothParams,
+                    new NoSmoothing(), filter);
+            final int n = 0;
             for (final Tree<StateSet> stateSetTree : trainStateSetTrees) {
-                secondHalf = (n++ > trainStateSetTrees.size() / 2.0);
-                tmp_lexicon.trainTree(stateSetTree, randomness, null, secondHalf, false, rare);
+                tmp_lexicon.trainTree(stateSetTree, randomness, null, false, rare);
             }
-            lexicon = new SophisticatedLexicon(numSubStatesArray, SophisticatedLexicon.DEFAULT_SMOOTHING_CUTOFF,
-                    smoothParams, new NoSmoothing(), filter);
+            lexicon = new Lexicon(numSubStatesArray, Lexicon.DEFAULT_SMOOTHING_CUTOFF, smoothParams, new NoSmoothing(),
+                    filter);
             for (final Tree<StateSet> stateSetTree : trainStateSetTrees) {
-                secondHalf = (n++ > trainStateSetTrees.size() / 2.0);
-                lexicon.trainTree(stateSetTree, randomness, tmp_lexicon, secondHalf, false, rare);
+                lexicon.trainTree(stateSetTree, randomness, tmp_lexicon, false, rare);
                 grammar.tallyUninitializedStateSetTree(stateSetTree);
             }
             lexicon.tieRareWordStats(rare);
@@ -268,8 +271,7 @@ public class GrammarTrainer extends BaseCommandlineTool {
                 System.out.println("Setting smoother for grammar and lexicon.");
                 final Smoother grSmoother = new SmoothAcrossParentBits(0.01, maxGrammar.splitTrees);
                 final Smoother lexSmoother = new SmoothAcrossParentBits(0.1, maxGrammar.splitTrees);
-                // Smoother grSmoother = new SmoothAcrossParentSubstate(0.01);
-                // Smoother lexSmoother = new SmoothAcrossParentSubstate(0.1);
+
                 maxGrammar.setSmoother(grSmoother);
                 maxLexicon.setSmoother(lexSmoother);
                 emIterations = emIterationsWithSmoothing;
@@ -313,7 +315,7 @@ public class GrammarTrainer extends BaseCommandlineTool {
 
                 // retrain lexicon to finish the lexicon merge (updates the
                 // unknown words model)...
-                lexicon = new SophisticatedLexicon(newNumSubStatesArray, SophisticatedLexicon.DEFAULT_SMOOTHING_CUTOFF,
+                lexicon = new Lexicon(newNumSubStatesArray, Lexicon.DEFAULT_SMOOTHING_CUTOFF,
                         maxLexicon.getSmoothingParams(), maxLexicon.getSmoother(), maxLexicon.getPruningThreshold());
                 final double trainingLikelihood = GrammarTrainer.doOneEStep(grammar, maxLexicon, null, lexicon,
                         trainStateSetTrees, rare);
@@ -358,7 +360,7 @@ public class GrammarTrainer extends BaseCommandlineTool {
                 System.out.print("Calculating training likelihood...");
                 grammar = new Grammar(grammar.numSubStates, grammar.findClosedPaths, grammar.smoother, grammar,
                         grammar.threshold);
-                lexicon = new SophisticatedLexicon(grammar.numSubStates, SophisticatedLexicon.DEFAULT_SMOOTHING_CUTOFF,
+                lexicon = new Lexicon(grammar.numSubStates, Lexicon.DEFAULT_SMOOTHING_CUTOFF,
                         lexicon.getSmoothingParams(), lexicon.getSmoother(), lexicon.getPruningThreshold());
                 final double trainingLikelihood = doOneEStep(previousGrammar, previousLexicon, grammar, lexicon,
                         trainStateSetTrees, rare); // The training LL of
@@ -369,8 +371,7 @@ public class GrammarTrainer extends BaseCommandlineTool {
                 lexicon.optimize(); // M Step
                 grammar.optimize(0); // M Step
 
-                // 4) Check whether previousGrammar/previousLexicon was in fact
-                // better than the best
+                // 4) Check whether previousGrammar/previousLexicon was in fact better than the best
                 if (iter < emIterations || validationLikelihood >= maxLikelihood) {
                     maxLikelihood = validationLikelihood;
                     maxGrammar = previousGrammar;
@@ -387,15 +388,9 @@ public class GrammarTrainer extends BaseCommandlineTool {
 
             // Dump a grammar file to disk from time to time
             if (writeIntermediateGrammars || "smoothing".equals(opString)) {
-                ParserData pData = new ParserData(maxLexicon, maxGrammar, Numberer.getNumberers(), numSubStatesArray,
-                        verticalMarkovization, horizontalMarkovization, binarization);
                 final String outTmpName = outFileName + "_" + (splitIndex / 3 + 1) + "_" + opString + ".gr";
                 System.out.println("Saving grammar to " + outTmpName + ".");
-                if (pData.Save(outTmpName))
-                    System.out.println("Saving successful.");
-                else
-                    System.out.println("Saving failed!");
-                pData = null;
+                writeGrammar(maxGrammar, maxLexicon, new File(outTmpName));
             }
         }
 
@@ -412,18 +407,21 @@ public class GrammarTrainer extends BaseCommandlineTool {
             maxLexicon = previousLexicon;
         }
 
-        final ParserData pData = new ParserData(maxLexicon, maxGrammar, Numberer.getNumberers(), numSubStatesArray,
-                verticalMarkovization, horizontalMarkovization, binarization);
-
-        System.out.println("Saving grammar to " + outFileName + ".");
+        BaseLogger.singleton().info("Saving grammar to " + outFileName + ".");
         System.out.println("It gives a validation data log likelihood of: " + maxLikelihood);
-        if (pData.Save(outFileName)) {
-            System.out.println("Saving successful.");
-        } else {
-            System.out.println("Saving failed!");
-        }
+        writeGrammar(maxGrammar, maxLexicon, new File(outFileName));
+    }
 
-        System.exit(0);
+    void writeGrammar(final Grammar grammar, final Lexicon lexicon, final File f) {
+        try {
+            final Writer w = new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(f)));
+            w.write(grammar.toString(lexicon.getNumberOfEntries()));
+            w.write("===== LEXICON =====\n");
+            w.write(lexicon.toString());
+            w.close();
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -437,18 +435,15 @@ public class GrammarTrainer extends BaseCommandlineTool {
     private static double doOneEStep(final Grammar previousGrammar, final Lexicon previousLexicon,
             final Grammar grammar, final Lexicon lexicon, final StateSetTreeList trainStateSetTrees,
             final int unkThreshold) {
-        boolean secondHalf = false;
+
         final ArrayParser parser = new ArrayParser(previousGrammar, previousLexicon);
         double trainingLikelihood = 0;
-        int n = 0;
-        final int nTrees = trainStateSetTrees.size();
+        final int n = 0;
+
         for (final Tree<StateSet> stateSetTree : trainStateSetTrees) {
-            secondHalf = (n++ > nTrees / 2.0);
-            final boolean noSmoothing = true, debugOutput = false;
-            parser.doInsideOutsideScores(stateSetTree, noSmoothing, debugOutput); // E
-                                                                                  // Step
+            parser.doInsideOutsideScores(stateSetTree, true); // E step
             double ll = stateSetTree.getLabel().getIScore(0);
-            ll = Math.log(ll) + (100 * stateSetTree.getLabel().getIScale());// System.out.println(stateSetTree);
+            ll = Math.log(ll) + (100 * stateSetTree.getLabel().getIScale());
             if ((Double.isInfinite(ll) || Double.isNaN(ll))) {
                 if (VERBOSE) {
                     System.out.println("Training sentence " + n + " is given " + ll + " log likelihood!");
@@ -456,7 +451,7 @@ public class GrammarTrainer extends BaseCommandlineTool {
                             + stateSetTree.getLabel().getIScale());
                 }
             } else {
-                lexicon.trainTree(stateSetTree, -1, previousLexicon, secondHalf, noSmoothing, unkThreshold);
+                lexicon.trainTree(stateSetTree, -1, previousLexicon, true, unkThreshold);
                 if (grammar != null) {
                     grammar.tallyStateSetTree(stateSetTree, previousGrammar); // E step
                 }
@@ -480,14 +475,11 @@ public class GrammarTrainer extends BaseCommandlineTool {
         int unparsable = 0;
         double maxLikelihood = 0;
         for (final Tree<StateSet> stateSetTree : validationStateSetTrees) {
-            parser.doInsideScores(stateSetTree, false, false, null); // Only
-                                                                     // inside
-                                                                     // scores
-                                                                     // are
-                                                                     // needed
-                                                                     // here
+            // Only the inside scores are needed here
+            parser.doInsideScores(stateSetTree, false, null);
             double ll = stateSetTree.getLabel().getIScore(0);
             ll = Math.log(ll) + (100 * stateSetTree.getLabel().getIScale());
+
             if (Double.isInfinite(ll) || Double.isNaN(ll)) {
                 unparsable++;
                 // printBadLLReason(stateSetTree, lexicon);
@@ -503,7 +495,7 @@ public class GrammarTrainer extends BaseCommandlineTool {
     /**
      * @param stateSetTree
      */
-    public static void printBadLLReason(final Tree<StateSet> stateSetTree, final SophisticatedLexicon lexicon) {
+    public static void printBadLLReason(final Tree<StateSet> stateSetTree, final Lexicon lexicon) {
         System.out.println(stateSetTree.toString());
         boolean lexiconProblem = false;
         final List<StateSet> words = stateSetTree.getYield();
@@ -566,7 +558,7 @@ public class GrammarTrainer extends BaseCommandlineTool {
      */
     public static void updateStateSetTrees(final List<Tree<StateSet>> trees, final ArrayParser parser) {
         for (final Tree<StateSet> tree : trees) {
-            parser.doInsideOutsideScores(tree, false, false);
+            parser.doInsideOutsideScores(tree, false);
         }
     }
 

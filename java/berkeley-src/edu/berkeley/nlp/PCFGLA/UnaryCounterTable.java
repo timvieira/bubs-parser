@@ -53,34 +53,30 @@ public class UnaryCounterTable implements Serializable {
      * @param key
      * @return whether the counter contains the key
      */
-    public boolean containsKey(UnaryRule key) {
+    public boolean containsKey(final UnaryRule key) {
         return entries.containsKey(key);
     }
 
     /**
-     * Get the count of the element, or zero if the element is not in the counter. Can return null!
-     * 
      * @param key
-     * @return
+     * @return the count of the specified element, or null if the element is not in the counter.
      */
-    public double[][] getCount(UnaryRule key) {
-        double[][] value = entries.get(key);
-        return value;
+    public double[][] getCount(final UnaryRule key) {
+        return entries.get(key);
     }
 
-    public double[][] getCount(short pState, short cState) {
+    public double[][] getCount(final short pState, final short cState) {
         searchKey.setNodes(pState, cState);
-        double[][] value = entries.get(searchKey);
-        return value;
+        return entries.get(searchKey);
     }
 
     /**
      * Set the count for the given key, clobbering any previous count.
      * 
      * @param key
-     * @param count
+     * @param counts
      */
-    public void setCount(UnaryRule key, double[][] counts) {
+    public void setCount(final UnaryRule key, final double[][] counts) {
         entries.put(key, counts);
     }
 
@@ -90,8 +86,8 @@ public class UnaryCounterTable implements Serializable {
      * @param key
      * @param increment
      */
-    public void incrementCount(UnaryRule key, double[][] increment) {
-        double[][] current = getCount(key);
+    public void incrementCount(final UnaryRule key, final double[][] increment) {
+        final double[][] current = getCount(key);
         if (current == null) {
             setCount(key, increment);
             return;
@@ -113,10 +109,10 @@ public class UnaryCounterTable implements Serializable {
         setCount(key, current);
     }
 
-    public void incrementCount(UnaryRule key, double increment) {
+    public void incrementCount(final UnaryRule key, final double increment) {
         double[][] current = getCount(key);
         if (current == null) {
-            double[][] tmp = key.getScores2();
+            final double[][] tmp = key.getScores2();
             current = new double[tmp.length][tmp[0].length];
             ArrayUtil.fill(current, increment);
             setCount(key, current);
@@ -133,11 +129,11 @@ public class UnaryCounterTable implements Serializable {
         setCount(key, current);
     }
 
-    public UnaryCounterTable(short[] numSubStates) {
+    public UnaryCounterTable(final short[] numSubStates) {
         this(new MapFactory.HashMapFactory<UnaryRule, double[][]>(), numSubStates);
     }
 
-    public UnaryCounterTable(MapFactory<UnaryRule, double[][]> mf, short[] numSubStates) {
+    public UnaryCounterTable(final MapFactory<UnaryRule, double[][]> mf, final short[] numSubStates) {
         entries = mf.buildMap();
         searchKey = new UnaryRule((short) 0, (short) 0);
         this.numSubStates = numSubStates;

@@ -66,29 +66,41 @@ public class BinaryRule extends Rule implements Serializable, java.lang.Comparab
 
     @Override
     public String toString() {
+
         final Numberer n = Numberer.getGlobalNumberer("tags");
         String lState = (String) n.object(leftChildState);
-        if (lState.endsWith("^g"))
+
+        if (lState.endsWith("^g")) {
             lState = lState.substring(0, lState.length() - 2);
+        }
+
         String rState = (String) n.object(rightChildState);
-        if (rState.endsWith("^g"))
+        if (rState.endsWith("^g")) {
             rState = rState.substring(0, rState.length() - 2);
+        }
+
         String pState = (String) n.object(parentState);
-        if (pState.endsWith("^g"))
+        if (pState.endsWith("^g")) {
             pState = pState.substring(0, pState.length() - 2);
+        }
+
         final StringBuilder sb = new StringBuilder();
-        if (scores == null)
+        if (scores == null) {
             return pState + " -> " + lState + " " + rState + "\n";
-        // sb.append(pState+ " -> "+lState+ " "+rState+ "\n");
+        }
+
         for (int lS = 0; lS < scores.length; lS++) {
             for (int rS = 0; rS < scores[lS].length; rS++) {
-                if (scores[lS][rS] == null)
+                if (scores[lS][rS] == null) {
                     continue;
+                }
+
                 for (int pS = 0; pS < scores[lS][rS].length; pS++) {
                     final double p = scores[lS][rS][pS];
-                    if (p > 0)
-                        sb.append(pState + "_" + pS + " -> " + lState + "_" + lS + " " + rState + "_" + rS + " " + p
-                                + "\n");
+                    if (p > 0) {
+                        sb.append(String.format("%s_%d -> %s_%d %s_%d %.10f\n", pState, pS, lState, lS, rState, rS,
+                                Math.log(p)));
+                    }
                 }
             }
         }

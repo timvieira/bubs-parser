@@ -36,19 +36,6 @@ public class Corpus {
         this(path, onlyTest, -1, false);
     }
 
-    // public Corpus(final String path, final boolean onlyTest, final int skipSection,
-    // final boolean skipBilingual) {
-    // this(path, onlyTest, skipSection, skipBilingual);
-    // final int beforeSize = trainTrees.size();
-    // int nTrainingWords = 0;
-    // for (final Tree<String> tree : trainTrees) {
-    // nTrainingWords += tree.getYield().size();
-    // }
-    // System.out.println("In training set we have # of words: " + nTrainingWords);
-    // final int afterSize = trainTrees.size();
-    // System.out.println("reducing number of training trees from " + beforeSize + " to " + afterSize);
-    // }
-    //
     /**
      * Load the WSJ, Brown, and Chinese corpora from the given locations. If any is null, don't load it. If all are
      * null, use the dummy sentence. Don't load the English corpora if we load the Chinese one.
@@ -239,55 +226,41 @@ public class Corpus {
             System.out.println("annotation levels: vertical=" + verticalAnnotations + " horizontal="
                     + horizontalAnnotations);
 
-        int i = 0;
         for (final Tree<String> tree : trees) {
             final List<String> testSentence = tree.getYield();
-            i++;
-            if (testSentence.size() > sentenceMaxLength)
+            if (testSentence.size() > sentenceMaxLength) {
                 continue;
-            // if (noUnaries && tree.hasUnaryChain()) continue;
-            if (true) {
-                binarizedTrees.add(TreeAnnotations.processTree(tree, verticalAnnotations, horizontalAnnotations,
-                        binarization, manualAnnotation, markUnaryParents, true));
-            } else {
-                binarizedTrees.add(TreeAnnotations.binarizeTree(tree, binarization));
             }
+            binarizedTrees.add(TreeAnnotations.processTree(tree, verticalAnnotations, horizontalAnnotations,
+                    binarization, manualAnnotation, markUnaryParents, true));
         }
         System.out.print("done.\n");
         return binarizedTrees;
     }
 
     /**
-     * Get the training trees.
-     * 
-     * @return
+     * @return training trees
      */
     public List<Tree<String>> getTrainTrees() {
         return trainTrees;
     }
 
     /**
-     * Get the validation trees.
-     * 
-     * @return
+     * @return validation-set trees
      */
     public List<Tree<String>> getValidationTrees() {
         return validationTrees;
     }
 
     /**
-     * Get the trees we test on during development.
-     * 
-     * @return
+     * @return development-set trees
      */
     public List<Tree<String>> getDevTestingTrees() {
         return devTestTrees;
     }
 
     /**
-     * Get the trees we test on for our final results.
-     * 
-     * @return
+     * @return final test-set trees
      */
     public List<Tree<String>> getFinalTestingTrees() {
         return finalTestTrees;
