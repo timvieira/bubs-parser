@@ -106,9 +106,6 @@ public class GrammarTrainer extends BaseCommandlineTool {
     @Option(name = "-spath", usage = "Whether or not to store the best path info (true/false) (Default: true)")
     private boolean findClosedUnaryPaths = true;
 
-    @Option(name = "-simpleLexicon", usage = "Use the simple generative lexicon")
-    private boolean simpleLexicon = false;
-
     @Option(name = "-skipSection", usage = "Skips a particular section of the WSJ training corpus (Needed for training Mark Johnsons reranker")
     private int skipSection = -1;
 
@@ -231,29 +228,22 @@ public class GrammarTrainer extends BaseCommandlineTool {
         corpus = null;
         System.gc();
 
-        if (simpleLexicon) {
-            System.out.println("Replacing words which have been seen less than 5 times with their signature.");
-            Corpus.replaceRareWords(trainStateSetTrees, new SimpleLexicon(numSubStatesArray, -1), rare);
-        }
-
         // If we're training without loading a split grammar, then we run once
         // without splitting.
         if (inFile == null) {
             grammar = new Grammar(numSubStatesArray, findClosedUnaryPaths, new NoSmoothing(), null, filter);
-            final Lexicon tmp_lexicon = (simpleLexicon) ? new SimpleLexicon(numSubStatesArray, -1, smoothParams,
-                    new NoSmoothing(), filter, trainStateSetTrees) : new SophisticatedLexicon(numSubStatesArray,
+            final Lexicon tmp_lexicon = new SophisticatedLexicon(numSubStatesArray,
                     SophisticatedLexicon.DEFAULT_SMOOTHING_CUTOFF, smoothParams, new NoSmoothing(), filter);
             int n = 0;
             boolean secondHalf = false;
             for (final Tree<StateSet> stateSetTree : trainStateSetTrees) {
-                secondHalf = (n++ > trainTrees.size() / 2.0);
+                secondHalf = (n++ > trainStateSetTrees.size() / 2.0);
                 tmp_lexicon.trainTree(stateSetTree, randomness, null, secondHalf, false, rare);
             }
-            lexicon = (simpleLexicon) ? new SimpleLexicon(numSubStatesArray, -1, smoothParams, new NoSmoothing(),
-                    filter, trainStateSetTrees) : new SophisticatedLexicon(numSubStatesArray,
-                    SophisticatedLexicon.DEFAULT_SMOOTHING_CUTOFF, smoothParams, new NoSmoothing(), filter);
+            lexicon = new SophisticatedLexicon(numSubStatesArray, SophisticatedLexicon.DEFAULT_SMOOTHING_CUTOFF,
+                    smoothParams, new NoSmoothing(), filter);
             for (final Tree<StateSet> stateSetTree : trainStateSetTrees) {
-                secondHalf = (n++ > trainTrees.size() / 2.0);
+                secondHalf = (n++ > trainStateSetTrees.size() / 2.0);
                 lexicon.trainTree(stateSetTree, randomness, tmp_lexicon, secondHalf, false, rare);
                 grammar.tallyUninitializedStateSetTree(stateSetTree);
             }
@@ -293,7 +283,7 @@ public class GrammarTrainer extends BaseCommandlineTool {
                 final CorpusStatistics corpusStatistics = new CorpusStatistics(tagNumberer, trainStateSetTrees);
                 final int[] counts = corpusStatistics.getSymbolCounts();
 
-                maxGrammar = maxGrammar.splitAllStates(randomness, counts, false, 0);
+                maxGrammar = maxGrammar.splitAllStates(randomness, counts);
                 maxLexicon = maxLexicon.splitAllStates(counts, false, 0);
                 final Smoother grSmoother = new NoSmoothing();
                 final Smoother lexSmoother = new NoSmoothing();
@@ -323,13 +313,10 @@ public class GrammarTrainer extends BaseCommandlineTool {
 
                 // retrain lexicon to finish the lexicon merge (updates the
                 // unknown words model)...
-                lexicon = (simpleLexicon) ? new SimpleLexicon(newNumSubStatesArray, -1, smoothParams,
-                        maxLexicon.getSmoother(), filter, trainStateSetTrees) : new SophisticatedLexicon(
-                        newNumSubStatesArray, SophisticatedLexicon.DEFAULT_SMOOTHING_CUTOFF,
+                lexicon = new SophisticatedLexicon(newNumSubStatesArray, SophisticatedLexicon.DEFAULT_SMOOTHING_CUTOFF,
                         maxLexicon.getSmoothingParams(), maxLexicon.getSmoother(), maxLexicon.getPruningThreshold());
-                final boolean updateOnlyLexicon = true;
                 final double trainingLikelihood = GrammarTrainer.doOneEStep(grammar, maxLexicon, null, lexicon,
-                        trainStateSetTrees, updateOnlyLexicon, rare);
+                        trainStateSetTrees, rare);
                 // System.out.println("The training LL is "+trainingLikelihood);
                 lexicon.optimize();// Grammar.RandomInitializationType.INITIALIZE_WITH_SMALL_RANDOMIZATION);
                                    // // M Step
@@ -371,14 +358,11 @@ public class GrammarTrainer extends BaseCommandlineTool {
                 System.out.print("Calculating training likelihood...");
                 grammar = new Grammar(grammar.numSubStates, grammar.findClosedPaths, grammar.smoother, grammar,
                         grammar.threshold);
-                lexicon = (simpleLexicon) ? new SimpleLexicon(grammar.numSubStates, -1, smoothParams,
-                        lexicon.getSmoother(), filter, trainStateSetTrees) : new SophisticatedLexicon(
-                        grammar.numSubStates, SophisticatedLexicon.DEFAULT_SMOOTHING_CUTOFF,
+                lexicon = new SophisticatedLexicon(grammar.numSubStates, SophisticatedLexicon.DEFAULT_SMOOTHING_CUTOFF,
                         lexicon.getSmoothingParams(), lexicon.getSmoother(), lexicon.getPruningThreshold());
-                final boolean updateOnlyLexicon = false;
                 final double trainingLikelihood = doOneEStep(previousGrammar, previousLexicon, grammar, lexicon,
-                        trainStateSetTrees, updateOnlyLexicon, rare); // The training LL of
-                                                                      // previousGrammar/previousLexicon
+                        trainStateSetTrees, rare); // The training LL of
+                                                   // previousGrammar/previousLexicon
                 System.out.println("done: " + trainingLikelihood);
 
                 // 3) Perform the M-Step
@@ -445,14 +429,14 @@ public class GrammarTrainer extends BaseCommandlineTool {
     /**
      * @param previousGrammar
      * @param previousLexicon
-     * @param grammar
+     * @param grammar Current grammar, or null if merging (in which case we will train only the lexicon)
      * @param lexicon
      * @param trainStateSetTrees
      * @return
      */
-    public static double doOneEStep(final Grammar previousGrammar, final Lexicon previousLexicon,
+    private static double doOneEStep(final Grammar previousGrammar, final Lexicon previousLexicon,
             final Grammar grammar, final Lexicon lexicon, final StateSetTreeList trainStateSetTrees,
-            final boolean updateOnlyLexicon, final int unkThreshold) {
+            final int unkThreshold) {
         boolean secondHalf = false;
         final ArrayParser parser = new ArrayParser(previousGrammar, previousLexicon);
         double trainingLikelihood = 0;
@@ -473,9 +457,9 @@ public class GrammarTrainer extends BaseCommandlineTool {
                 }
             } else {
                 lexicon.trainTree(stateSetTree, -1, previousLexicon, secondHalf, noSmoothing, unkThreshold);
-                if (!updateOnlyLexicon)
-                    grammar.tallyStateSetTree(stateSetTree, previousGrammar); // E
-                                                                              // Step
+                if (grammar != null) {
+                    grammar.tallyStateSetTree(stateSetTree, previousGrammar); // E step
+                }
                 trainingLikelihood += ll; // there are for some reason some
                                           // sentences that are unparsable
             }

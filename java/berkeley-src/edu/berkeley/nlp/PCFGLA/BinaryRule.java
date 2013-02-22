@@ -12,7 +12,7 @@ import edu.berkeley.nlp.util.Numberer;
  * @author Dan Klein
  */
 
-public class BinaryRule extends Rule implements Serializable, java.lang.Comparable {
+public class BinaryRule extends Rule implements Serializable, java.lang.Comparable<BinaryRule> {
 
     public short leftChildState = -1;
     public short rightChildState = -1;
@@ -21,17 +21,6 @@ public class BinaryRule extends Rule implements Serializable, java.lang.Comparab
      */
     public double[][][] scores;
 
-    /**
-     * Creates a BinaryRule from String s, assuming it was created using toString().
-     * 
-     * @param s
-     */
-    /*
-     * public BinaryRule(String s, Numberer n) { String[] fields = StringUtils.splitOnCharWithQuoting(s, ' ', '\"',
-     * '\\'); // System.out.println("fields:\n" + fields[0] + "\n" + fields[2] + "\n" + fields[3] + "\n" + fields[4]);
-     * this.parent = n.number(fields[0]); this.leftChild = n.number(fields[2]); this.rightChild = n.number(fields[3]);
-     * this.score = Double.parseDouble(fields[4]); }
-     */
     public BinaryRule(final short pState, final short lState, final short rState, final double[][][] scores) {
         this.parentState = pState;
         this.leftChildState = lState;
@@ -55,14 +44,6 @@ public class BinaryRule extends Rule implements Serializable, java.lang.Comparab
         this(b.parentState, b.leftChildState, b.rightChildState, newScores);
     }
 
-    // public BinaryRule(short pState, short lState, short rState, short
-    // pSubStates, int lSubStates, int rSubStates) {
-    // this.parentState = pState;
-    // this.leftChildState = lState;
-    // this.rightChildState = rState;
-    // this.scores = new double[lSubStates][rSubStates][pSubStates];
-    // }
-
     @Override
     public int hashCode() {
         return (parentState << 16) ^ (leftChildState << 8) ^ (rightChildState);
@@ -82,8 +63,6 @@ public class BinaryRule extends Rule implements Serializable, java.lang.Comparab
         }
         return false;
     }
-
-    private static final char[] charsToEscape = new char[] { '\"' };
 
     @Override
     public String toString() {
@@ -116,24 +95,23 @@ public class BinaryRule extends Rule implements Serializable, java.lang.Comparab
         return sb.toString();
     }
 
-    public int compareTo(final Object o) {
-        final BinaryRule ur = (BinaryRule) o;
-        if (parentState < ur.parentState) {
+    public int compareTo(final BinaryRule o) {
+        if (parentState < o.parentState) {
             return -1;
         }
-        if (parentState > ur.parentState) {
+        if (parentState > o.parentState) {
             return 1;
         }
-        if (leftChildState < ur.leftChildState) {
+        if (leftChildState < o.leftChildState) {
             return -1;
         }
-        if (leftChildState > ur.leftChildState) {
+        if (leftChildState > o.leftChildState) {
             return 1;
         }
-        if (rightChildState < ur.rightChildState) {
+        if (rightChildState < o.rightChildState) {
             return -1;
         }
-        if (rightChildState > ur.rightChildState) {
+        if (rightChildState > o.rightChildState) {
             return 1;
         }
         return 0;
@@ -182,7 +160,7 @@ public class BinaryRule extends Rule implements Serializable, java.lang.Comparab
     private static final long serialVersionUID = 2L;
 
     public BinaryRule splitRule(final short[] numSubStates, final short[] newNumSubStates, final Random random,
-            final double randomness, final boolean doNotNormalize, final int mode) {
+            final double randomness) {
         // when splitting on parent, never split on ROOT
         int parentSplitFactor = this.getParentState() == 0 ? 1 : 2; // should
 
@@ -221,7 +199,7 @@ public class BinaryRule extends Rule implements Serializable, java.lang.Comparab
                     final double score = oldScores[lcS][rcS][pS];
                     // split on parent
                     for (short p = 0; p < parentSplitFactor; p++) {
-                        final double divFactor = (doNotNormalize) ? 1.0 : lChildSplitFactor * rChildSplitFactor;
+                        final double divFactor = lChildSplitFactor * rChildSplitFactor;
                         double randomComponentLC = score / divFactor * randomness / 100 * (random.nextDouble() - 0.5);
                         // split on left child
                         for (short lc = 0; lc < lChildSplitFactor; lc++) {
@@ -253,19 +231,8 @@ public class BinaryRule extends Rule implements Serializable, java.lang.Comparab
                                 final short newPS = (short) (parentSplitFactor * pS + p);
                                 final short newLCS = (short) (lChildSplitFactor * lcS + lc);
                                 final short newRCS = (short) (rChildSplitFactor * rcS + rc);
-                                final double splitFactor = (doNotNormalize) ? 1.0 : lChildSplitFactor
-                                        * rChildSplitFactor;
+                                final double splitFactor = lChildSplitFactor * rChildSplitFactor;
                                 newScores[newLCS][newRCS][newPS] = (score / (splitFactor) + randomComponentLC + randomComponentRC);
-                                // sparsifier
-                                // .splitBinaryWeight(oldRule.getParentState(),
-                                // pS,
-                                // oldRule.getLeftChildState(), lcS, oldRule
-                                // .getRightChildState(), rcS, newPS, newLCS,
-                                // newRCS, lChildSplitFactor, rChildSplitFactor,
-                                // randomComponentLC, randomComponentRC, ,
-                                // tagNumberer);
-                                if (mode == 2)
-                                    newScores[newLCS][newRCS][newPS] = 1.0 + random.nextDouble() / 100.0;
                             }
                         }
                     }

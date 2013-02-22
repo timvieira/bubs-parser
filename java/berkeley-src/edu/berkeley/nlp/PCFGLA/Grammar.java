@@ -107,12 +107,6 @@ public class Grammar implements java.io.Serializable {
 
     public boolean findClosedPaths;
 
-    /**
-     * If we are in logarithm mode, then this grammar's scores are all given as logarithms. The default is to have a
-     * score plus a scale factor.
-     */
-    boolean logarithmMode;
-
     public Tree<Short>[] splitTrees;
 
     public void clearUnaryIntermediates() {
@@ -415,7 +409,6 @@ public class Grammar implements java.io.Serializable {
         numSubStates = nSubStates;
         bSearchRule = new BinaryRule((short) 0, (short) 0, (short) 0);
         uSearchRule = new UnaryRule((short) 0, (short) 0);
-        logarithmMode = false;
         if (oldGrammar != null) {
             splitTrees = oldGrammar.splitTrees;
         } else {
@@ -527,11 +520,9 @@ public class Grammar implements java.io.Serializable {
         // System.out.println("done.");
     }
 
-    public void removeUnlikelyRules(final double thresh, double power) {
+    public void removeUnlikelyRules(final double thresh, final double power) {
         // System.out.print("Removing everything below "+thresh+" and rasiing rules to the "
         // +power+"th power... ");
-        if (isLogarithmMode())
-            power = Math.log(power);
         int total = 0, removed = 0;
         for (int state = 0; state < numStates; state++) {
             for (int r = 0; r < splitRulesWithP[state].length; r++) {
@@ -725,126 +716,6 @@ public class Grammar implements java.io.Serializable {
             binaryRuleCounter.setCount(binaryRule, binaryCounts);
         }
     }
-
-    // public void normalizeWithEntropicPrior(){
-    // for (int iter=1; iter<=6; iter++){
-    // tallyParentCounts();
-    // // turn the rule scores into fractions
-    // for (UnaryRule unaryRule : unaryRuleCounter.keySet()) {
-    // double[][] unaryCounts = unaryRuleCounter.getCount(unaryRule);
-    // int parentState = unaryRule.getParentState();
-    // int nParentSubStates = numSubStates[parentState];
-    // double[] parentCount = new double[nParentSubStates];
-    // for (int i = 0; i < nParentSubStates; i++) {
-    // parentCount[i] = symbolCounter.getCount(parentState, i);
-    // }
-    // double[][] theta = new double[unaryCounts.length][];
-    // if (iter==1){
-    // // initialize the thetas
-    // for (int j = 0; j < unaryCounts.length; j++) {
-    // if (unaryCounts[j]==null) continue;
-    // theta[j] = new double[nParentSubStates];
-    // for (int i = 0; i < nParentSubStates; i++) {
-    // double val = unaryCounts[j][i];
-    // theta[j][i]=Math.pow(val,1-(1/parentCount[i]));
-    // }
-    // }
-    // unaryRule.setScores2(unaryCounts);
-    // unaryRuleCounter.setCount(unaryRule,theta);
-    // }
-    // // compute lambdas
-    // else{
-    // theta = unaryCounts;
-    // unaryCounts = unaryRule.getScores2();
-    // for (int j = 0; j < unaryCounts.length; j++) {
-    // if (unaryCounts[j]==null) continue;
-    // for (int i = 0; i < nParentSubStates; i++) {
-    // theta[j][i] = unaryCounts[j][i]/parentCount[i];
-    // }
-    // }
-    // for (int j = 0; j < unaryCounts.length; j++) {
-    // if (unaryCounts[j]==null) continue;
-    // for (int i = 0; i < nParentSubStates; i++) {
-    // if (unaryCounts[j][i]==0) {
-    // theta[j][i]=0;
-    // continue;
-    // }
-    // double val = theta[j][i];
-    // double lambda = -((unaryCounts[j][i]/val) + Math.log(val) + 1);
-    // // compute thetas
-    // val = -1.0*unaryCounts[j][i];
-    // theta[j][i]= val/SloppyMath.lambert(val,(1+lambda));
-    // // if (SloppyMath.isDangerous(theta[j][i]))
-    // //
-    // System.out.println("Maybe an underflow: count "+val+" lambda "+lambda+" theta "
-    // +theta[j][i] + " div "+SloppyMath.lambert(val,(1+lambda)));
-    // }
-    // }
-    // unaryRuleCounter.setCount(unaryRule,theta);
-    // }
-    // }
-    // for (BinaryRule binaryRule : binaryRuleCounter.keySet()) {
-    // double[][][] binaryCounts = binaryRuleCounter.getCount(binaryRule);
-    // int parentState = binaryRule.parentState;
-    // int nParentSubStates = numSubStates[parentState];
-    // double[] parentCount = new double[nParentSubStates];
-    // for (int i = 0; i < nParentSubStates; i++) {
-    // parentCount[i] = symbolCounter.getCount(parentState, i);
-    // }
-    // double[][][] theta = new
-    // double[binaryCounts.length][binaryCounts[0].length][];
-    // if (iter==1){
-    // // initialize the thetas
-    // for (int j = 0; j < binaryCounts.length; j++) {
-    // for (int k = 0; k < binaryCounts[j].length; k++) {
-    // if (binaryCounts[j][k]==null) continue;
-    // theta[j][k] = new double[nParentSubStates];
-    // for (int i = 0; i < nParentSubStates; i++) {
-    // double val = binaryCounts[j][k][i];
-    // theta[j][k][i]=Math.pow(val,1-(1/parentCount[i]));
-    // }
-    // }
-    // }
-    // binaryRule.setScores2(binaryCounts);
-    // binaryRuleCounter.setCount(binaryRule,theta);
-    // }
-    // else{
-    // theta = binaryCounts;
-    // binaryCounts = binaryRule.getScores2();
-    // for (int j = 0; j < binaryCounts.length; j++) {
-    // for (int k = 0; k < binaryCounts[j].length; k++) {
-    // if (binaryCounts[j][k]==null) continue;
-    // for (int i = 0; i < nParentSubStates; i++) {
-    // theta[j][k][i] = binaryCounts[j][k][i]/parentCount[i];
-    // }
-    // }
-    // }
-    // binaryCounts = binaryRule.getScores2();
-    // for (int j = 0; j < binaryCounts.length; j++) {
-    // for (int k = 0; k < binaryCounts[j].length; k++) {
-    // if (binaryCounts[j][k]==null) continue;
-    // for (int i = 0; i < nParentSubStates; i++) {
-    // if (binaryCounts[j][k][i]==0) {
-    // theta[j][k][i]=0;
-    // continue;
-    // }
-    // double val = theta[j][k][i];
-    // double lambda = -((binaryCounts[j][k][i]/val) + Math.log(val) + 1);
-    // // compute thetas
-    // val = -1.0*binaryCounts[j][k][i];
-    // theta[j][k][i]= val/SloppyMath.lambert(val,(1+lambda));
-    // if (SloppyMath.isDangerous(theta[j][k][i]))
-    // System.out.println("Maybe an underflow: count "+val+" lambda "+lambda+" theta "
-    // +theta[j][k][i] + " div "+SloppyMath.lambert(val,(1+lambda)));
-    // if (val==0) theta[j][k][i]=0;
-    // }
-    // }
-    // }
-    // binaryRuleCounter.setCount(binaryRule,theta);
-    // }
-    // }
-    // }
-    // }
 
     /*
      * Check number of substates
@@ -1579,15 +1450,9 @@ public class Grammar implements java.io.Serializable {
      * Split all substates into two new ones. This produces a new Grammar with updated rules.
      * 
      * @param randomness percent randomness applied in splitting rules
-     * @param mode 0: normalized (at least almost) 1: not normalized (when splitting a log-linear grammar) 2: just noise
-     *            (for log-linear grammars with cascading regularization)
      * @return
      */
-    public Grammar splitAllStates(final double randomness, final int[] counts, final boolean moreSubstatesThanCounts,
-            final int mode) {
-        if (logarithmMode) {
-            throw new Error("Do not split states when Grammar is in logarithm mode");
-        }
+    public Grammar splitAllStates(final double randomness, final int[] counts) {
         final short[] newNumSubStates = new short[numSubStates.length];
         for (short i = 0; i < numSubStates.length; i++) {
             // don't split a state into more substates than times it was
@@ -1600,21 +1465,18 @@ public class Grammar implements java.io.Serializable {
             newNumSubStates[i] = (short) (numSubStates[i] * 2);
             // }
         }
-        final boolean doNotNormalize = (mode == 1);
         newNumSubStates[0] = 1; // never split ROOT
         // create the new grammar
         final Grammar grammar = new Grammar(newNumSubStates, findClosedPaths, smoother, this, threshold);
         final Random random = GrammarTrainer.RANDOM;
 
         for (final BinaryRule oldRule : binaryRuleMap.keySet()) {
-            final BinaryRule newRule = oldRule.splitRule(numSubStates, newNumSubStates, random, randomness,
-                    doNotNormalize, mode);
+            final BinaryRule newRule = oldRule.splitRule(numSubStates, newNumSubStates, random, randomness);
             grammar.addBinary(newRule);
         }
 
         for (final UnaryRule oldRule : unaryRuleMap.keySet()) {
-            final UnaryRule newRule = oldRule.splitRule(numSubStates, newNumSubStates, random, randomness,
-                    doNotNormalize, mode);
+            final UnaryRule newRule = oldRule.splitRule(numSubStates, newNumSubStates, random, randomness);
             grammar.addUnary(newRule);
         }
         grammar.isGrammarTag = this.isGrammarTag;
@@ -1767,9 +1629,6 @@ public class Grammar implements java.io.Serializable {
      * @param mergeWeights The probability of seeing each substate.
      */
     public Grammar mergeStates(final boolean[][][] mergeThesePairs, final double[][] mergeWeights) {
-        if (logarithmMode) {
-            throw new Error("Do not merge grammars in logarithm mode!");
-        }
         final short[] newNumSubStates = new short[numSubStates.length];
         final short[][] mapping = new short[numSubStates.length][];
         // invariant: if partners[state][substate][0] == substate, it's the 1st
@@ -2059,38 +1918,6 @@ public class Grammar implements java.io.Serializable {
         }
     }
 
-    public void logarithmMode() {
-        // System.out.println("The gramar is in logarithmMode!");
-        if (logarithmMode)
-            return;
-        logarithmMode = true;
-        for (final UnaryRule r : unaryRuleMap.keySet()) {
-            logarithmModeRule(unaryRuleMap.get(r));
-        }
-        for (final BinaryRule r : binaryRuleMap.keySet()) {
-            logarithmModeRule(binaryRuleMap.get(r));
-        }
-        // Leon thinks the following sets of rules are already covered above,
-        // but he wants to take no chances
-        logarithmModeBRuleListArray(binaryRulesWithParent);
-        logarithmModeBRuleListArray(binaryRulesWithLC);
-        logarithmModeBRuleListArray(binaryRulesWithRC);
-        logarithmModeBRuleArrayArray(splitRulesWithLC);
-        logarithmModeBRuleArrayArray(splitRulesWithRC);
-        logarithmModeBRuleArrayArray(splitRulesWithP);
-        logarithmModeURuleListArray(unaryRulesWithParent);
-        logarithmModeURuleListArray(unaryRulesWithC);
-        logarithmModeURuleListArray(sumProductClosedUnaryRulesWithParent);
-        logarithmModeURuleListArray(closedSumRulesWithParent);
-        logarithmModeURuleListArray(closedSumRulesWithChild);
-        logarithmModeURuleListArray(closedViterbiRulesWithParent);
-        logarithmModeURuleListArray(closedViterbiRulesWithChild);
-        logarithmModeURuleArrayArray(closedSumRulesWithP);
-        logarithmModeURuleArrayArray(closedSumRulesWithC);
-        logarithmModeURuleArrayArray(closedViterbiRulesWithP);
-        logarithmModeURuleArrayArray(closedViterbiRulesWithC);
-    }
-
     /**
 	 * 
 	 */
@@ -2187,10 +2014,6 @@ public class Grammar implements java.io.Serializable {
             }
         }
         r.setScores2(scores);
-    }
-
-    public boolean isLogarithmMode() {
-        return logarithmMode;
     }
 
     public final boolean isGrammarTag(final int n) {

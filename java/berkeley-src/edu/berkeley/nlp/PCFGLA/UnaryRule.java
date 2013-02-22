@@ -10,7 +10,7 @@ import edu.berkeley.nlp.util.Numberer;
  * 
  * @author Dan Klein
  */
-public class UnaryRule extends Rule implements java.io.Serializable, Comparable {
+public class UnaryRule extends Rule implements java.io.Serializable, Comparable<UnaryRule> {
 
     public short childState = -1;
     /**
@@ -74,24 +74,21 @@ public class UnaryRule extends Rule implements java.io.Serializable, Comparable 
         return false;
     }
 
-    public int compareTo(final Object o) {
-        final UnaryRule ur = (UnaryRule) o;
-        if (parentState < ur.parentState) {
+    public int compareTo(final UnaryRule o) {
+        if (parentState < o.parentState) {
             return -1;
         }
-        if (parentState > ur.parentState) {
+        if (parentState > o.parentState) {
             return 1;
         }
-        if (childState < ur.childState) {
+        if (childState < o.childState) {
             return -1;
         }
-        if (childState > ur.childState) {
+        if (childState > o.childState) {
             return 1;
         }
         return 0;
     }
-
-    private static final char[] charsToEscape = new char[] { '\"' };
 
     @Override
     public String toString() {
@@ -155,10 +152,10 @@ public class UnaryRule extends Rule implements java.io.Serializable, Comparable 
     private static final long serialVersionUID = 2L;
 
     /**
-     * @return
+     * @return Split rule
      */
     public UnaryRule splitRule(final short[] numSubStates, final short[] newNumSubStates, final Random random,
-            final double randomness, final boolean doNotNormalize, final int mode) {
+            final double randomness) {
         // when splitting on parent, never split on ROOT parent
         short parentSplitFactor = this.getParentState() == 0 ? (short) 1 : (short) 2;
         if (newNumSubStates[this.parentState] == numSubStates[this.parentState]) {
@@ -185,7 +182,7 @@ public class UnaryRule extends Rule implements java.io.Serializable, Comparable 
                 final double score = oldScores[cS][pS];
                 // split on parent
                 for (short p = 0; p < parentSplitFactor; p++) {
-                    final double divFactor = (doNotNormalize) ? 1.0 : childSplitFactor;
+                    final double divFactor = childSplitFactor;
                     double randomComponent = score / divFactor * randomness / 100 * (random.nextDouble() - 0.5);
                     // split on child
                     for (short c = 0; c < childSplitFactor; c++) {
@@ -199,15 +196,7 @@ public class UnaryRule extends Rule implements java.io.Serializable, Comparable 
                         // each rule in 1/divFactor
                         final short newPS = (short) (parentSplitFactor * pS + p);
                         final short newCS = (short) (childSplitFactor * cS + c);
-                        final double splitFactor = (doNotNormalize) ? 1.0 : childSplitFactor;
-                        newScores[newCS][newPS] = (score / splitFactor + randomComponent);
-                        // sparsifier.splitUnaryWeight(
-                        // oldRule.getParentState(), cS,
-                        // oldRule.getChildState(), pS,
-                        // newPS, newCS, childSplitFactor, randomComponent,
-                        // score, tagNumberer);
-                        if (mode == 2)
-                            newScores[newCS][newPS] = 1.0 + random.nextDouble() / 100.0;
+                        newScores[newCS][newPS] = (score / (double) childSplitFactor + randomComponent);
                     }
                 }
             }

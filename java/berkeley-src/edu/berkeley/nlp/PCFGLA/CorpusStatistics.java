@@ -52,7 +52,7 @@ public class CorpusStatistics {
     /**
      * Get the number of times each state appeared.
      * 
-     * @return
+     * @return Symbol counts
      */
     public int[] getSymbolCounts() {
         countSymbols();

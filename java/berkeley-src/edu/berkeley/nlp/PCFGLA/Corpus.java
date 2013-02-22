@@ -9,11 +9,9 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 
-import edu.berkeley.nlp.syntax.StateSet;
 import edu.berkeley.nlp.syntax.Tree;
 import edu.berkeley.nlp.syntax.Trees;
 import edu.berkeley.nlp.syntax.Trees.PennTreeReader;
-import edu.berkeley.nlp.util.Counter;
 
 /**
  * Class Corpus will give easy access to loading the training, validation, development testing, and testing sets from
@@ -293,33 +291,6 @@ public class Corpus {
      */
     public List<Tree<String>> getFinalTestingTrees() {
         return finalTestTrees;
-    }
-
-    public static void replaceRareWords(final StateSetTreeList trainTrees, final SimpleLexicon lexicon,
-            final int threshold) {
-        final Counter<String> wordCounts = new Counter<String>();
-        for (final Tree<StateSet> tree : trainTrees) {
-            final List<StateSet> words = tree.getYield();
-            for (final StateSet word : words) {
-                final String wordString = word.getWord();
-                wordCounts.incrementCount(wordString, 1.0);
-                lexicon.wordIndexer.add(wordString);
-            }
-        }
-        // replace the rare words and also add the others to the appropriate
-        // numberers
-        for (final Tree<StateSet> tree : trainTrees) {
-            final List<StateSet> words = tree.getYield();
-            int ind = 0;
-            for (final StateSet word : words) {
-                String sig = word.getWord();
-                if (wordCounts.getCount(sig) <= threshold) {
-                    sig = lexicon.getSignature(word.getWord(), ind);
-                    word.setWord(sig);
-                }
-                ind++;
-            }
-        }
     }
 
     public static void lowercaseWords(final List<Tree<String>> trainTrees) {

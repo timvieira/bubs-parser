@@ -73,7 +73,7 @@ public class TreeAnnotations implements java.io.Serializable {
      * 
      * @param tree
      * @param binarization The type of binarization used.
-     * @return
+     * @return Binarized tree
      */
     public static Tree<String> binarizeTree(final Tree<String> tree, final Binarization binarization) {
         switch (binarization) {
@@ -177,49 +177,6 @@ public class TreeAnnotations implements java.io.Serializable {
             verticallyMarkovizatedTree = new Tree<String>(tree.getLabel() + parentLabel, children);
         }
         return verticallyMarkovizatedTree;
-    }
-
-    // replaces labels with three types of labels:
-    // X, @X=Y and Z
-    private static Tree<String> deleteLabels(final Tree<String> tree, final boolean isRoot) {
-        final String label = tree.getLabel();
-        String newLabel = "";
-        if (isRoot) {
-            newLabel = label;
-        } else if (tree.isPreTerminal()) {
-            newLabel = "Z";
-            return new Tree<String>(newLabel, tree.getChildren());
-        } else if (label.charAt(0) == '@') {
-            newLabel = "@X";
-        } else
-            newLabel = "X";
-
-        final List<Tree<String>> transformedChildren = new ArrayList<Tree<String>>();
-        for (final Tree<String> child : tree.getChildren()) {
-            transformedChildren.add(deleteLabels(child, false));
-        }
-        return new Tree<String>(newLabel, transformedChildren);
-    }
-
-    // replaces phrasal categories with
-    // X, @X=Y but keeps POS-tags
-    private static Tree<String> deletePC(final Tree<String> tree, final boolean isRoot) {
-        final String label = tree.getLabel();
-        String newLabel = "";
-        if (isRoot) {
-            newLabel = label;
-        } else if (tree.isPreTerminal()) {
-            return tree;
-        } else if (label.charAt(0) == '@') {
-            newLabel = "@X";
-        } else
-            newLabel = "X";
-
-        final List<Tree<String>> transformedChildren = new ArrayList<Tree<String>>();
-        for (final Tree<String> child : tree.getChildren()) {
-            transformedChildren.add(deletePC(child, false));
-        }
-        return new Tree<String>(newLabel, transformedChildren);
     }
 
     private static Tree<String> forgetLabels(final Tree<String> tree, final int nHorizontalAnnotation) {
@@ -474,13 +431,13 @@ public class TreeAnnotations implements java.io.Serializable {
             return;
         if (tree.getChildren().size() == 1 && tree.getChildren().get(0).getChildren().size() == 1) {
             // unary chain
-            if (tree.getChildren().get(0).isPreTerminal())
+            if (tree.getChildren().get(0).isPreTerminal()) {
                 return; // if we are just above a preterminal, dont do anything
-            else {// otherwise remove the intermediate node
-                final ArrayList<Tree<String>> newChildren = new ArrayList<Tree<String>>();
-                newChildren.add(tree.getChildren().get(0).getChildren().get(0));
-                tree.setChildren(newChildren);
             }
+
+            final ArrayList<Tree<String>> newChildren = new ArrayList<Tree<String>>();
+            newChildren.add(tree.getChildren().get(0).getChildren().get(0));
+            tree.setChildren(newChildren);
         }
         for (final Tree<String> child : tree.getChildren()) {
             removeUnaryChains(child);
