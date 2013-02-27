@@ -414,6 +414,19 @@ public class GrammarTrainer extends BaseCommandlineTool {
 
     void writeGrammar(final Grammar grammar, final Lexicon lexicon, final File f) {
         try {
+            // Write a Java Serialized Object
+            final String serFilename = f.getParent() + "/" + f.getName().replaceAll("\\.gz", "") + ".ser";
+            final ParserData pData = new ParserData(lexicon, grammar, Numberer.getNumberers(), grammar.numSubStates,
+                    verticalMarkovization, horizontalMarkovization, binarization);
+
+            System.out.println("Saving grammar to " + serFilename + ".");
+            if (pData.Save(serFilename)) {
+                System.out.println("Saving successful.");
+            } else {
+                System.out.println("Saving failed!");
+            }
+
+            // And a gzipped-text representation
             final Writer w = new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(f)));
             w.write(grammar.toString(lexicon.getNumberOfEntries()));
             w.write("===== LEXICON =====\n");
