@@ -65,6 +65,7 @@ public class Grammar implements java.io.Serializable {
 
     private BinaryCounterTable binaryRuleCounter = null;
 
+    // TODO Replace with a FastUtil implementation
     private CounterMap<Integer, Integer> symbolCounter = new CounterMap<Integer, Integer>();
 
     private static final long serialVersionUID = 1L;
@@ -1213,13 +1214,8 @@ public class Grammar implements java.io.Serializable {
 
     public double[][][] getBinaryScore(final short pState, final short lState, final short rState) {
         final BinaryRule r = getBinaryRule(pState, lState, rState);
-        if (r != null)
+        if (r != null) {
             return r.getScores2();
-        if (GrammarTrainer.VERBOSE) {
-            System.err.println(tagNumberer.symbol(pState) + "\t" + pState);
-            System.err.println(tagNumberer.symbol(lState) + "\t" + lState);
-            System.err.println(tagNumberer.symbol(rState) + "\t" + rState);
-            System.err.println("numSubStates.length:" + "\t" + numSubStates.length);
         }
         final double[][][] bscores = new double[numSubStates[lState]][numSubStates[rState]][numSubStates[pState]];
         ArrayUtil.fill(bscores, 0.0);
@@ -1251,10 +1247,6 @@ public class Grammar implements java.io.Serializable {
                 .getRightChildState()]][numSubStates[rule.getParentState()]];
         ArrayUtil.fill(bscores, 0.0);
         return bscores;
-    }
-
-    public int getSymbolCount(final Integer i) {
-        return (int) symbolCounter.getCount(i, 0);
     }
 
     /**
@@ -1740,7 +1732,7 @@ public class Grammar implements java.io.Serializable {
     public void writeSplitTrees(final Writer w) {
         final PrintWriter out = new PrintWriter(w);
         for (int state = 1; state < numStates; state++) {
-            String tag = (String) tagNumberer.symbol(state);
+            String tag = tagNumberer.symbol(state);
             if (isGrammarTag[state] && tag.endsWith("^g"))
                 tag = tag.substring(0, tag.length() - 2);
             out.write(tag + "\t" + splitTrees[state].toString() + "\n");

@@ -134,7 +134,7 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>> {
     /**
      * Clone the structure of the tree. Unfortunately, the new labels are copied by reference from the current tree.
      * 
-     * @return
+     * @return A shallow clone of the tree
      */
     public Tree<L> shallowClone() {
         final ArrayList<Tree<L>> newChildren = new ArrayList<Tree<L>>(children.size());
@@ -142,16 +142,6 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>> {
             newChildren.add(child.shallowClone());
         }
         return new Tree<L>(label, newChildren);
-    }
-
-    /**
-     * Return a clone of just the root node of this tree (with no children)
-     * 
-     * @return
-     */
-    public Tree<L> shallowCloneJustRoot() {
-
-        return new Tree<L>(label);
     }
 
     private static <L> void appendYield(final Tree<L> tree, final List<L> yield) {
@@ -293,7 +283,7 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>> {
      * 
      * @param <O>
      * @param trans
-     * @return
+     * @return A transformed version of this tree
      */
     public <O> Tree<O> transformNodesUsingNode(final MyMethod<Tree<L>, O> trans) {
         final ArrayList<Tree<O>> newChildren = new ArrayList<Tree<O>>(children.size());
@@ -328,47 +318,48 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>> {
     public boolean equals(final Object obj) {
         if (this == obj)
             return true;
-        if (obj == null)
+        if (obj == null || !(obj instanceof Tree)) {
             return false;
-        if (getClass() != obj.getClass())
-            return false;
-        if (!(obj instanceof Tree))
-            return false;
-        final Tree<L> other = (Tree<L>) obj;
-        if (!this.label.equals(other.label))
-            return false;
-        if (this.getChildren().size() != other.getChildren().size())
-            return false;
-        for (int i = 0; i < getChildren().size(); ++i) {
+        }
 
+        @SuppressWarnings("unchecked")
+        final Tree<L> other = (Tree<L>) obj;
+        if (!this.label.equals(other.label) || this.getChildren().size() != other.getChildren().size()) {
+            return false;
+        }
+
+        for (int i = 0; i < getChildren().size(); ++i) {
             if (!getChildren().get(i).equals(other.getChildren().get(i)))
                 return false;
         }
         return true;
-
     }
 
     public int compareTo(final Tree<L> o) {
-        if (!(o.getLabel() instanceof Comparable && getLabel() instanceof Comparable))
+        if (!(o.getLabel() instanceof Comparable && getLabel() instanceof Comparable)) {
             throw new IllegalArgumentException("Tree labels are not comparable");
-        final int cmp = ((Comparable) o.getLabel()).compareTo(getLabel());
-        if (cmp != 0)
+        }
+
+        @SuppressWarnings("unchecked")
+        final int cmp = ((Comparable<L>) o.getLabel()).compareTo(getLabel());
+        if (cmp != 0) {
             return cmp;
-        final int cmp2 = Double.compare(this.getChildren().size(), o.getChildren().size());
-        if (cmp2 != 0)
+        }
+
+        final int cmp2 = Integer.compare(this.getChildren().size(), o.getChildren().size());
+        if (cmp2 != 0) {
             return cmp2;
+        }
+
         for (int i = 0; i < getChildren().size(); ++i) {
 
             final int cmp3 = getChildren().get(i).compareTo(o.getChildren().get(i));
-            if (cmp3 != 0)
+            if (cmp3 != 0) {
                 return cmp3;
+            }
         }
         return 0;
 
-    }
-
-    public boolean isPhrasal() {
-        return getYield().size() > 1;
     }
 
     private static <L> Tree<L> getTopTreeForSpanHelper(final Tree<L> tree, final int start, final int end, final int i,

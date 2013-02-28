@@ -29,7 +29,7 @@ public class Trees {
         public Tree<String> transformTree(final Tree<String> tree) {
             final String transformedLabel = transformLabel(tree);
             if (tree.isLeaf()) {
-                return tree.shallowCloneJustRoot();
+                return new Tree<String>(tree.label);
             }
             final List<Tree<String>> transformedChildren = new ArrayList<Tree<String>>();
             for (final Tree<String> child : tree.getChildren()) {
@@ -118,9 +118,6 @@ public class Trees {
 
         private boolean lowercase = false;
 
-        private String name = "";
-        private String currTreeName;
-
         public boolean hasNext() {
             return (nextTree != null);
         }
@@ -136,7 +133,6 @@ public class Trees {
         }
 
         private Tree<String> readRootTree() {
-            currTreeName = name + ":" + treeNum;
             try {
                 readWhiteSpace();
                 if (!isLeftParen(peek()))
@@ -163,11 +159,9 @@ public class Trees {
             final List<Tree<String>> children = readChildren();
             readRightParen();
             if (!lowercase || children.size() > 0) {
-                return isRoot ? new NamedTree<String>(label, children, currTreeName)
-                        : new Tree<String>(label, children);
+                return new Tree<String>(label, children);
             }
-            return isRoot ? new NamedTree<String>(label.toLowerCase().intern(), children, currTreeName)
-                    : new Tree<String>(label.toLowerCase().intern(), children);
+            return new Tree<String>(label.toLowerCase().intern(), children);
         }
 
         private String readLabel() throws IOException {
@@ -272,22 +266,13 @@ public class Trees {
         }
 
         public PennTreeReader(final Reader in) {
-            this(in, "", false);
-        }
-
-        public PennTreeReader(final Reader in, final String name) {
-            this(in, name, false);
-        }
-
-        public PennTreeReader(final Reader in, final String name, final boolean lowercase) {
-            this.lowercase = lowercase;
-            this.name = name;
-            this.in = new PushbackReader(in, 2);
-            nextTree = readRootTree();
+            this(in, false);
         }
 
         public PennTreeReader(final Reader in, final boolean lowercase) {
-            this(in, "", lowercase);
+            this.lowercase = lowercase;
+            this.in = new PushbackReader(in, 2);
+            nextTree = readRootTree();
         }
 
         /**
@@ -430,7 +415,7 @@ public class Trees {
         if (filter.accept(tree.getLabel()) && !tree.isLeaf())
             return splice ? splicedChildren : new ArrayList<Tree<L>>();
         // assert !(tree.getLabel().equals("NP") && splicedChildren.isEmpty());
-        final Tree<L> newTree = tree.shallowCloneJustRoot();
+        final Tree<L> newTree = new Tree<L>(tree.label);
         newTree.setChildren(splicedChildren);
         return Collections.singletonList(newTree);
     }
