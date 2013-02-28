@@ -13,7 +13,6 @@ import java.util.NoSuchElementException;
 
 import edu.berkeley.nlp.util.CollectionUtils;
 import edu.berkeley.nlp.util.Filter;
-import edu.berkeley.nlp.util.Pair;
 import edu.berkeley.nlp.util.StrUtils;
 
 /**
@@ -517,15 +516,4 @@ public class Trees {
         }
         return new Tree<T>(newLabel, children);
     }
-
-    public static <T> List<Pair<T, T>> getParentChildPairs(final Tree<T> tree) {
-        final List<Pair<T, T>> rv = new ArrayList<Pair<T, T>>();
-        for (final Tree<T> parent : tree.getPostOrderTraversal()) {
-            for (final Tree<T> child : parent.getChildren()) {
-                rv.add(Pair.newPair(parent.getLabel(), child.getLabel()));
-            }
-        }
-        return rv;
-    }
-
 }

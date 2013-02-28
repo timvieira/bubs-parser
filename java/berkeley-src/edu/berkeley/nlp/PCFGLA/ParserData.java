@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import edu.berkeley.nlp.util.Numberer;
+
 /**
  * Stores the serialized material representing the grammar and lexicon of a parser, and an Options that specifies things
  * like how unknown words were handled and how distances were binned that will also be needed to parse with the grammar.
@@ -20,7 +22,7 @@ public class ParserData implements Serializable {
 
     Lexicon lex;
     Grammar gr;
-    Map numbs;
+    Map<String, Numberer> numbs;
     short[] numSubStatesArray;
     int h_markov;
     int v_markov;
@@ -42,7 +44,7 @@ public class ParserData implements Serializable {
         return lex;
     }
 
-    public Map getNumbs() {
+    public Map<String, Numberer> getNumbs() {
         return numbs;
     }
 
@@ -54,8 +56,8 @@ public class ParserData implements Serializable {
         return v_markov;
     }
 
-    public ParserData(final Lexicon lex, final Grammar gr, final Map numbs, final short[] nSub, final int v_m,
-            final int h_m, final Binarization b) {
+    public ParserData(final Lexicon lex, final Grammar gr, final Map<String, Numberer> numbs, final short[] nSub,
+            final int v_m, final int h_m, final Binarization b) {
         this.lex = lex;
         this.gr = gr;
         this.numbs = numbs;

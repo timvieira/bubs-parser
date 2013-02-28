@@ -36,9 +36,8 @@ public class ArrayUtil {
         }
         if (haveTerms) {
             return max + SloppyMath.approxLog(1.0 + intermediate);
-        } else {
-            return max;
         }
+        return max;
     }
 
     /**

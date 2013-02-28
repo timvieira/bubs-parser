@@ -5,7 +5,6 @@ import java.util.Map;
 import java.util.Set;
 
 import edu.berkeley.nlp.util.ArrayUtil;
-import edu.berkeley.nlp.util.Counter;
 import edu.berkeley.nlp.util.MapFactory;
 
 public class BinaryCounterTable implements Serializable {
@@ -143,20 +142,5 @@ public class BinaryCounterTable implements Serializable {
         entries = mf.buildMap();
         searchKey = new BinaryRule((short) 0, (short) 0, (short) 0);
         this.numSubStates = numSubStates;
-    }
-
-    public static void main(final String[] args) {
-        final Counter<String> counter = new Counter<String>();
-        System.out.println(counter);
-        counter.incrementCount("planets", 7);
-        System.out.println(counter);
-        counter.incrementCount("planets", 1);
-        System.out.println(counter);
-        counter.setCount("suns", 1);
-        System.out.println(counter);
-        counter.setCount("aliens", 0);
-        System.out.println(counter);
-        System.out.println(counter.toString(2));
-        System.out.println("Total: " + counter.totalCount());
     }
 }

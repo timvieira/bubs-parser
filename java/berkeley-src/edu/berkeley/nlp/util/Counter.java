@@ -9,7 +9,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -78,10 +77,8 @@ public class Counter<E> implements Serializable {
     }
 
     /**
-     * Get the count of the element, or zero if the element is not in the counter.
-     * 
      * @param key
-     * @return
+     * @return the count of the specified <code>key</code>, or zero if <code>key</code> is not present in the counter.
      */
     public double getCount(final E key) {
         final Double value = entries.get(key);
@@ -135,87 +132,6 @@ public class Counter<E> implements Serializable {
             entries.put(key, count);
         }
         dirty = true;
-    }
-
-    /**
-     * Will return a sample from the counter, will throw exception if any of the counts are < 0.0 or if the totalCount()
-     * <= 0.0
-     * 
-     * @return
-     * 
-     * @author aria42
-     */
-    public E sample(final Random rand) {
-        final double total = totalCount();
-        if (total <= 0.0) {
-            throw new RuntimeException(String.format("Attempting to sample() with totalCount() %.3f\n", total));
-        }
-        double sum = 0.0;
-        final double r = rand.nextDouble();
-        for (final Map.Entry<E, Double> entry : entries.entrySet()) {
-            final double count = entry.getValue();
-            final double frac = count / total;
-            sum += frac;
-            if (r < sum) {
-                return entry.getKey();
-            }
-        }
-        throw new IllegalStateException("Shoudl've have returned a sample by now....");
-    }
-
-    /**
-     * Will return a sample from the counter, will throw exception if any of the counts are < 0.0 or if the totalCount()
-     * <= 0.0
-     * 
-     * @return
-     * 
-     * @author aria42
-     */
-    public E sample() {
-        return sample(new Random());
-    }
-
-    public void removeKey(final E key) {
-        setCount(key, 0.0);
-        dirty = true;
-        removeKeyFromEntries(key);
-    }
-
-    /**
-     * @param key
-     */
-    protected void removeKeyFromEntries(final E key) {
-        entries.remove(key);
-    }
-
-    /**
-     * Set's the key's count to the maximum of the current count and val. Always sets to val if key is not yet present.
-     * 
-     * @param key
-     * @param increment
-     */
-    public void setMaxCount(final E key, final double val) {
-        final Double value = entries.get(key);
-        if (value == null || val > value.doubleValue()) {
-            setCount(key, val);
-
-            dirty = true;
-        }
-    }
-
-    /**
-     * Set's the key's count to the minimum of the current count and val. Always sets to val if key is not yet present.
-     * 
-     * @param key
-     * @param increment
-     */
-    public void setMinCount(final E key, final double val) {
-        final Double value = entries.get(key);
-        if (value == null || val < value.doubleValue()) {
-            setCount(key, val);
-
-            dirty = true;
-        }
     }
 
     /**
@@ -378,19 +294,6 @@ public class Counter<E> implements Serializable {
         return pq;
     }
 
-    /**
-     * Warning: all priorities are the negative of their counts in the counter here
-     * 
-     * @return
-     */
-    public PriorityQueue<E> asMinPriorityQueue() {
-        final PriorityQueue<E> pq = new PriorityQueue<E>(entries.size());
-        for (final Map.Entry<E, Double> entry : entries.entrySet()) {
-            pq.add(entry.getKey(), -entry.getValue());
-        }
-        return pq;
-    }
-
     public Counter() {
         this(false);
     }
@@ -437,30 +340,6 @@ public class Counter<E> implements Serializable {
 
     public Set<Map.Entry<E, Double>> getEntrySet() {
         return entries.entrySet();
-    }
-
-    public boolean isEqualTo(final Counter<E> counter) {
-        boolean tmp = true;
-        final Counter<E> bigger = counter.size() > size() ? counter : this;
-        for (final E e : bigger.keySet()) {
-            tmp &= counter.getCount(e) == getCount(e);
-        }
-        return tmp;
-    }
-
-    public static void main(final String[] args) {
-        final Counter<String> counter = new Counter<String>();
-        System.out.println(counter);
-        counter.incrementCount("planets", 7);
-        System.out.println(counter);
-        counter.incrementCount("planets", 1);
-        System.out.println(counter);
-        counter.setCount("suns", 1);
-        System.out.println(counter);
-        counter.setCount("aliens", 0);
-        System.out.println(counter);
-        System.out.println(counter.toString(2));
-        System.out.println("Total: " + counter.totalCount());
     }
 
     public void clear() {

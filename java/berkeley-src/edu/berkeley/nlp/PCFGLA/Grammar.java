@@ -1,6 +1,5 @@
 package edu.berkeley.nlp.PCFGLA;
 
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.text.SimpleDateFormat;
@@ -12,7 +11,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 
 import edu.berkeley.nlp.PCFGLA.smoothing.Smoother;
 import edu.berkeley.nlp.math.SloppyMath;
@@ -21,7 +19,6 @@ import edu.berkeley.nlp.syntax.Tree;
 import edu.berkeley.nlp.util.ArrayUtil;
 import edu.berkeley.nlp.util.CounterMap;
 import edu.berkeley.nlp.util.Numberer;
-import edu.berkeley.nlp.util.PriorityQueue;
 import edu.berkeley.nlp.util.ScalingTools;
 
 /**
@@ -86,7 +83,7 @@ public class Grammar implements java.io.Serializable {
     private UnaryRule[][] closedViterbiRulesWithP = null;
     public UnaryRule[][] closedViterbiRulesWithC = null;
 
-    private Map bestViterbiRulesUnderMax = null;
+    private Map<UnaryRule, UnaryRule> bestViterbiRulesUnderMax = null;
     public double threshold;
 
     public Smoother smoother = null;
@@ -139,7 +136,7 @@ public class Grammar implements java.io.Serializable {
         return unaryRulesWithParent[state];
     }
 
-    public void writeData(final Writer w) throws IOException {
+    public void writeData(final Writer w) {
         final PrintWriter out = new PrintWriter(w);
         for (int state = 0; state < numStates; state++) {
             final BinaryRule[] parentRules = this.splitRulesWithP(state);
@@ -295,7 +292,7 @@ public class Grammar implements java.io.Serializable {
         binaryRuleMap = new HashMap<BinaryRule, BinaryRule>();
         unaryRuleMap = new HashMap<UnaryRule, UnaryRule>();
         // allRules = new ArrayList<Rule>();
-        bestViterbiRulesUnderMax = new HashMap();
+        bestViterbiRulesUnderMax = new HashMap<UnaryRule, UnaryRule>();
         binaryRulesWithParent = new List[numStates];
         binaryRulesWithLC = new List[numStates];
         binaryRulesWithRC = new List[numStates];
@@ -468,7 +465,6 @@ public class Grammar implements java.io.Serializable {
     public void removeUnlikelyRules(final double thresh, final double power) {
         // System.out.print("Removing everything below "+thresh+" and rasiing rules to the "
         // +power+"th power... ");
-        int total = 0, removed = 0;
         for (int state = 0; state < numStates; state++) {
             for (int r = 0; r < splitRulesWithP[state].length; r++) {
                 final BinaryRule rule = splitRulesWithP[state][r];
@@ -478,11 +474,9 @@ public class Grammar implements java.io.Serializable {
                             continue;
                         boolean isNull = true;
                         for (int p = 0; p < rule.scores[lC][rC].length; p++) {
-                            total++;
                             if (rule.scores[lC][rC][p] < thresh) {
                                 // System.out.print(".");
                                 rule.scores[lC][rC][p] = 0;
-                                removed++;
                             } else {
                                 if (power != 1)
                                     rule.scores[lC][rC][p] = Math.pow(rule.scores[lC][rC][p], power);
@@ -501,9 +495,7 @@ public class Grammar implements java.io.Serializable {
                         continue;
                     boolean isNull = true;
                     for (int p = 0; p < rule.scores[c].length; p++) {
-                        total++;
                         if (rule.scores[c][p] <= thresh) {
-                            removed++;
                             rule.scores[c][p] = 0;
                         } else {
                             if (power != 1)
@@ -978,7 +970,6 @@ public class Grammar implements java.io.Serializable {
         return closedViterbiRulesWithP[state];
     }
 
-    @SuppressWarnings("unchecked")
     public List<short[]> getBestViterbiPath(final short pState, final short np, final short cState, final short cp) {
         final ArrayList<short[]> path = new ArrayList<short[]>();
         short[] state = new short[2];
@@ -1113,7 +1104,6 @@ public class Grammar implements java.io.Serializable {
      * 
      * @param rule
      */
-    @SuppressWarnings("unchecked")
     private void relaxViterbiRule(final UnaryRule rule) {
         bestViterbiRulesUnderMax.put(rule, rule);
         closedViterbiRulesWithParent[rule.parentState].add(rule);
@@ -1142,7 +1132,6 @@ public class Grammar implements java.io.Serializable {
      * <p>
      * <i>This method must be called before the grammar is used, either after training or deserializing grammar.</i>
      */
-    @SuppressWarnings("unchecked")
     public void splitRules() {
         // splitRulesWithLC = new BinaryRule[numStates][];
         // splitRulesWithRC = new BinaryRule[numStates][];
@@ -1201,9 +1190,9 @@ public class Grammar implements java.io.Serializable {
     }
 
     /**
-     * @param pState
-     * @param cState
-     * @return
+     * @param pState Parent state
+     * @param cState Child state
+     * @return The unary rule matching <code>pState</code> and <code>cState</code>
      */
     public UnaryRule getUnaryRule(final short pState, final short cState) {
         final UnaryRule uRule = new UnaryRule(pState, cState);
@@ -1238,10 +1227,10 @@ public class Grammar implements java.io.Serializable {
     }
 
     /**
-     * @param pState
-     * @param lState
-     * @param rState
-     * @return
+     * @param pState Parent
+     * @param lState Left child
+     * @param rState Right child
+     * @return The binary rule matching the specified parent and child states
      */
     public BinaryRule getBinaryRule(final short pState, final short lState, final short rState) {
         final BinaryRule bRule = new BinaryRule(pState, lState, rState);
@@ -1264,22 +1253,6 @@ public class Grammar implements java.io.Serializable {
         return bscores;
     }
 
-    public void printSymbolCounter(final Numberer tagNumberer) {
-        final Set<Integer> set = symbolCounter.keySet();
-        final PriorityQueue<String> pq = new PriorityQueue<String>(set.size());
-        for (final Integer i : set) {
-            pq.add((String) tagNumberer.object(i), symbolCounter.getCount(i, 0));
-            // System.out.println(i+". "+(String)tagNumberer.object(i)+"\t
-            // "+symbolCounter.getCount(i,0));
-        }
-        int i = 0;
-        while (pq.hasNext()) {
-            i++;
-            final int p = (int) pq.getPriority();
-            System.out.println(i + ". " + pq.next() + "\t " + p);
-        }
-    }
-
     public int getSymbolCount(final Integer i) {
         return (int) symbolCounter.getCount(i, 0);
     }
@@ -1288,7 +1261,7 @@ public class Grammar implements java.io.Serializable {
      * Split all substates into two new ones. This produces a new Grammar with updated rules.
      * 
      * @param randomness percent randomness applied in splitting rules
-     * @return
+     * @return a new grammar, with all states split in 2
      */
     public Grammar splitAllStates(final double randomness, final int[] counts) {
         final short[] newNumSubStates = new short[numSubStates.length];

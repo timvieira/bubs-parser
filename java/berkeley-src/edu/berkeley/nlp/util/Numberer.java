@@ -12,15 +12,28 @@ import java.util.Set;
  * precisely because it maintains a global name space for numbered object families, and provides facilities for mapping
  * across numberings within that space. At any rate, it's widely used in some existing packages.
  * 
- * TODO Replace with SymbolSet? (Maybe rename SymbolSet - Numberer or Index is more descriptive)
- * 
  * @author Dan Klein
  */
 public class Numberer implements Serializable {
 
-    private static Map numbererMap = new HashMap();
+    private static final long serialVersionUID = 1L;
 
-    public static Map getNumberers() {
+    private static Map<String, Numberer> numbererMap = new HashMap<String, Numberer>();
+
+    private int total;
+    private Map<MutableInteger, Object> intToObject;
+    private Map<Object, MutableInteger> objectToInt;
+    private MutableInteger tempInt;
+    private boolean locked = false;
+
+    public Numberer() {
+        total = 0;
+        tempInt = new MutableInteger();
+        intToObject = new HashMap<MutableInteger, Object>();
+        objectToInt = new HashMap<Object, MutableInteger>();
+    }
+
+    public static Map<String, Numberer> getNumberers() {
         return numbererMap;
     }
 
@@ -28,12 +41,12 @@ public class Numberer implements Serializable {
      * You need to call this after deserializing Numberer objects to restore the global namespace, since static objects
      * aren't serialized.
      */
-    public static void setNumberers(final Map numbs) {
+    public static void setNumberers(final Map<String, Numberer> numbs) {
         numbererMap = numbs;
     }
 
     public static Numberer getGlobalNumberer(final String type) {
-        Numberer n = (Numberer) numbererMap.get(type);
+        Numberer n = numbererMap.get(type);
         if (n == null) {
             n = new Numberer();
             numbererMap.put(type, n);
@@ -62,12 +75,6 @@ public class Numberer implements Serializable {
         return getGlobalNumberer(targetType).number(getGlobalNumberer(sourceType).object(n));
     }
 
-    private int total;
-    private Map intToObject;
-    private Map objectToInt;
-    private MutableInteger tempInt;
-    private boolean locked = false;
-
     public int total() {
         return total;
     }
@@ -80,7 +87,7 @@ public class Numberer implements Serializable {
         return objectToInt.keySet().contains(o);
     }
 
-    public Set objects() {
+    public Set<Object> objects() {
         return objectToInt.keySet();
     }
 
@@ -89,7 +96,7 @@ public class Numberer implements Serializable {
     }
 
     public int number(final Object o) {
-        MutableInteger i = (MutableInteger) objectToInt.get(o);
+        MutableInteger i = objectToInt.get(o);
         if (i == null) {
             if (locked) {
                 throw new NoSuchElementException("no object: " + o);
@@ -122,14 +129,4 @@ public class Numberer implements Serializable {
         sb.append("]");
         return sb.toString();
     }
-
-    public Numberer() {
-        total = 0;
-        tempInt = new MutableInteger();
-        intToObject = new HashMap();
-        objectToInt = new HashMap();
-    }
-
-    private static final long serialVersionUID = 1L;
-
 }

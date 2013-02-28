@@ -39,12 +39,12 @@ public class WriteGrammarToTextFile {
             System.exit(1);
         }
 
+        @SuppressWarnings("null")
         final Grammar grammar = pData.getGrammar();
-        // if (grammar instanceof HierarchicalGrammar)
-        // grammar = (HierarchicalGrammar)grammar;
+
         final Lexicon lexicon = pData.getLexicon();
         Numberer.setNumberers(pData.getNumbs());
-        final Numberer tagNumberer = Numberer.getGlobalNumberer("tags");
+        // final Numberer tagNumberer = Numberer.getGlobalNumberer("tags");
         grammar.splitRules();
 
         if (args.length > 2) {
@@ -59,22 +59,22 @@ public class WriteGrammarToTextFile {
             output = new BufferedWriter(new FileWriter(outName + ".grammar"));
             // output.write(grammar.toString());
             grammar.writeData(output);
-            if (output != null)
-                output.close();
+            output.close();
+
             output = new BufferedWriter(new FileWriter(outName + ".splits"));
             // output.write(grammar.toString());
             grammar.writeSplitTrees(output);
-            if (output != null)
-                output.close();
+            output.close();
+
             output = new BufferedWriter(new FileWriter(outName + ".lexicon"));
             output.write(lexicon.toString());
-            if (output != null)
-                output.close();
+            output.close();
+
             output = new BufferedWriter(new FileWriter(outName + ".words"));
-            for (final String word : lexicon.wordCounter.keySet())
+            for (final String word : lexicon.wordCounter.keySet()) {
                 output.write(word + "\n");
-            if (output != null)
-                output.close();
+            }
+            output.close();
 
         } catch (final IOException ex) {
             ex.printStackTrace();

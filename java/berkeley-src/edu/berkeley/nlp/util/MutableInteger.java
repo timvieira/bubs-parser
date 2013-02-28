@@ -3,14 +3,16 @@ package edu.berkeley.nlp.util;
 /**
  * A class for Integer objects that you can change.
  * 
+ * TODO This will be obsoleted when we replace Indexer with SymbolSet
+ * 
  * @author Dan Klein
  */
-public final class MutableInteger extends Number implements Comparable {
+public final class MutableInteger extends Number implements Comparable<MutableInteger> {
 
     private int i;
 
     // Mutable
-    public void set(int i) {
+    public void set(final int i) {
         this.i = i;
     }
 
@@ -28,7 +30,7 @@ public final class MutableInteger extends Number implements Comparable {
      * @return <code>true</code> if the objects are the same; <code>false</code> otherwise.
      */
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(final Object obj) {
         if (obj instanceof MutableInteger) {
             return i == ((MutableInteger) obj).i;
         }
@@ -52,25 +54,10 @@ public final class MutableInteger extends Number implements Comparable {
      *         if this <code>MutableInteger</code> is numerically greater than the argument <code>MutableInteger</code>
      *         (signed comparison).
      */
-    public int compareTo(MutableInteger anotherMutableInteger) {
-        int thisVal = this.i;
-        int anotherVal = anotherMutableInteger.i;
+    public int compareTo(final MutableInteger anotherMutableInteger) {
+        final int thisVal = this.i;
+        final int anotherVal = anotherMutableInteger.i;
         return (thisVal < anotherVal ? -1 : (thisVal == anotherVal ? 0 : 1));
-    }
-
-    /**
-     * Compares this <code>MutableInteger</code> object to another object. If the object is an
-     * <code>MutableInteger</code>, this function behaves like <code>compareTo(MutableInteger)</code>. Otherwise, it
-     * throws a <code>ClassCastException</code> (as <code>MutableInteger</code> objects are only comparable to other
-     * <code>MutableInteger</code> objects).
-     * 
-     * @param o the <code>Object</code> to be compared.
-     * @return 0/-1/1
-     * @throws <code>ClassCastException</code> if the argument is not an <code>MutableInteger</code>.
-     * @see java.lang.Comparable
-     */
-    public int compareTo(Object o) {
-        return compareTo((MutableInteger) o);
     }
 
     // Number interface
@@ -108,7 +95,7 @@ public final class MutableInteger extends Number implements Comparable {
         this(0);
     }
 
-    public MutableInteger(int i) {
+    public MutableInteger(final int i) {
         this.i = i;
     }
 
