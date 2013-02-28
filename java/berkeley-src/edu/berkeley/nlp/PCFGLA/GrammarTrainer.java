@@ -184,7 +184,7 @@ public class GrammarTrainer extends BaseCommandlineTool {
 
         if (VERBOSE) {
             for (int i = 0; i < numSubStatesArray.length; i++) {
-                System.out.println("Tag " + (String) tagNumberer.object(i) + " " + i);
+                System.out.println("Tag " + (String) tagNumberer.symbol(i) + " " + i);
             }
         }
 
@@ -241,7 +241,6 @@ public class GrammarTrainer extends BaseCommandlineTool {
             grammar = new Grammar(numSubStatesArray, findClosedUnaryPaths, new NoSmoothing(), null, filter);
             final Lexicon tmp_lexicon = new Lexicon(numSubStatesArray, Lexicon.DEFAULT_SMOOTHING_CUTOFF, smoothParams,
                     new NoSmoothing(), filter);
-            final int n = 0;
             for (final Tree<StateSet> stateSetTree : trainStateSetTrees) {
                 tmp_lexicon.trainTree(stateSetTree, randomness, null, false, rare);
             }
@@ -287,7 +286,7 @@ public class GrammarTrainer extends BaseCommandlineTool {
                 final int[] counts = corpusStatistics.getSymbolCounts();
 
                 maxGrammar = maxGrammar.splitAllStates(randomness, counts);
-                maxLexicon = maxLexicon.splitAllStates(counts, false, 0);
+                maxLexicon = maxLexicon.splitAllStates(counts, false);
                 final Smoother grSmoother = new NoSmoothing();
                 final Smoother lexSmoother = new NoSmoothing();
                 maxGrammar.setSmoother(grSmoother);
@@ -480,30 +479,29 @@ public class GrammarTrainer extends BaseCommandlineTool {
     /**
      * @param maxGrammar
      * @param maxLexicon
-     * @param validationStateSetTrees
-     * @return
+     * @param corpus
+     * @return The log likelihood of a corpus
      */
     public static double calculateLogLikelihood(final Grammar maxGrammar, final Lexicon maxLexicon,
-            final StateSetTreeList validationStateSetTrees) {
+            final StateSetTreeList corpus) {
+
         final ArrayParser parser = new ArrayParser(maxGrammar, maxLexicon);
-        int unparsable = 0;
-        double maxLikelihood = 0;
-        for (final Tree<StateSet> stateSetTree : validationStateSetTrees) {
+        double totalLogLikelihood = 0;
+
+        for (final Tree<StateSet> stateSetTree : corpus) {
             // Only the inside scores are needed here
             parser.doInsideScores(stateSetTree, false, null);
             double ll = stateSetTree.getLabel().getIScore(0);
             ll = Math.log(ll) + (100 * stateSetTree.getLabel().getIScale());
 
-            if (Double.isInfinite(ll) || Double.isNaN(ll)) {
-                unparsable++;
-                // printBadLLReason(stateSetTree, lexicon);
-            } else
-                maxLikelihood += ll; // there are for some reason some sentences
-                                     // that are unparsable
+            // A few sentences are unparsable
+            if (!Double.isInfinite(ll) && !Double.isNaN(ll)) {
+                totalLogLikelihood += ll;
+            }
         }
         // if (unparsable>0)
         // System.out.print("Number of unparsable trees: "+unparsable+".");
-        return maxLikelihood;
+        return totalLogLikelihood;
     }
 
     /**
@@ -579,10 +577,10 @@ public class GrammarTrainer extends BaseCommandlineTool {
     /**
      * Convert a single Tree[String] to Tree[StateSet]
      * 
-     * @param tree
-     * @param numStates
+     * @param trainTrees
+     * @param validationTrees
      * @param tagNumberer
-     * @return
+     * @return Substate array
      */
 
     public static short[] initializeSubStateArray(final List<Tree<String>> trainTrees,
@@ -593,11 +591,10 @@ public class GrammarTrainer extends BaseCommandlineTool {
         nSub[0] = 1;
         nSub[1] = nSubStates;
 
-        // do the validation set so that the numberer sees all tags and we can
-        // allocate big enough arrays
-        // note: although this variable is never read, this constructor adds the
-        // validation trees into the tagNumberer as a side effect, which is
-        // important
+        // do the training and validation sets, so that the numberer sees all tags and we can allocate big enough arrays
+        // Note: although these variables are never read, this constructors add the validation trees into the
+        // tagNumberer as a side effect, which is important
+        @SuppressWarnings("unused")
         final StateSetTreeList trainStateSetTrees = new StateSetTreeList(trainTrees, nSub, true, tagNumberer);
         @SuppressWarnings("unused")
         final StateSetTreeList validationStateSetTrees = new StateSetTreeList(validationTrees, nSub, true, tagNumberer);

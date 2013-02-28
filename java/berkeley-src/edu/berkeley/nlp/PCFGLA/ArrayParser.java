@@ -467,7 +467,7 @@ public class ArrayParser {
             for (int pos = 1; pos < path.size() - 1; pos++) {
                 final int tmp = path.get(pos)[0];
                 final int interState = tmp;
-                final Tree<String> intermediate = new Tree<String>((String) tagNumberer.object(interState),
+                final Tree<String> intermediate = new Tree<String>((String) tagNumberer.symbol(interState),
                         parent.getChildren());
                 final List<Tree<String>> children = new ArrayList<Tree<String>>();
                 children.add(intermediate);

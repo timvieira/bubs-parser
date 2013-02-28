@@ -93,12 +93,12 @@ public class UnaryRule extends Rule implements java.io.Serializable, Comparable<
     @Override
     public String toString() {
         final Numberer n = Numberer.getGlobalNumberer("tags");
-        String cState = (String) n.object(childState);
+        String cState = (String) n.symbol(childState);
         if (cState.endsWith("^g")) {
             cState = cState.substring(0, cState.length() - 2);
         }
 
-        String pState = (String) n.object(parentState);
+        String pState = (String) n.symbol(parentState);
         if (pState.endsWith("^g")) {
             pState = pState.substring(0, pState.length() - 2);
         }

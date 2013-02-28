@@ -218,9 +218,9 @@ public class SmoothAcrossParentBits implements Smoother, Serializable {
     }
 
     private short translateState(final int state, final Numberer baseNumberer, final Numberer translationNumberer) {
-        final Object object = baseNumberer.object(state);
-        if (translationNumberer.hasSeen(object)) {
-            return (short) translationNumberer.number(object);
+        final String symbol = baseNumberer.symbol(state);
+        if (translationNumberer.hasSeen(symbol)) {
+            return (short) translationNumberer.number(symbol);
         }
         return (short) -1;
     }

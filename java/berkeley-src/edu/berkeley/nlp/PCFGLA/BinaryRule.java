@@ -68,18 +68,18 @@ public class BinaryRule extends Rule implements Serializable, java.lang.Comparab
     public String toString() {
 
         final Numberer n = Numberer.getGlobalNumberer("tags");
-        String lState = (String) n.object(leftChildState);
+        String lState = (String) n.symbol(leftChildState);
 
         if (lState.endsWith("^g")) {
             lState = lState.substring(0, lState.length() - 2);
         }
 
-        String rState = (String) n.object(rightChildState);
+        String rState = (String) n.symbol(rightChildState);
         if (rState.endsWith("^g")) {
             rState = rState.substring(0, rState.length() - 2);
         }
 
-        String pState = (String) n.object(parentState);
+        String pState = (String) n.symbol(parentState);
         if (pState.endsWith("^g")) {
             pState = pState.substring(0, pState.length() - 2);
         }

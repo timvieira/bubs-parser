@@ -245,7 +245,7 @@ public class ConstrainedArrayParser extends ArrayParser {
                         for (int s = 0; s < grammar.numSubStates[state]; s++) {
                             final Numberer n = grammar.tagNumberer;
                             System.out.print("("
-                                    + StringUtils.escapeString(n.object(state).toString(), new char[] { '\"' }, '\\')
+                                    + StringUtils.escapeString(n.symbol(state).toString(), new char[] { '\"' }, '\\')
                                     + "[" + s + "] " + scores[start][end][state][s] + ")");
                         }
                     }
@@ -264,7 +264,7 @@ public class ConstrainedArrayParser extends ArrayParser {
         // find sources of inside score
         // no backtraces so we can speed up the parsing for its primary use
         final double bestScore = iScore[start][end][gState][gp];
-        final String goalStr = (String) tagNumberer.object(gState);
+        final String goalStr = (String) tagNumberer.symbol(gState);
         // System.out.println("Looking for "+goalStr+" from "+start+" to "+end+" with score "+
         // bestScore+".");
         if (end - start == 1) {
@@ -301,7 +301,7 @@ public class ConstrainedArrayParser extends ArrayParser {
             }
             final List<Tree<String>> child1 = new ArrayList<Tree<String>>();
             child1.add(new Tree<String>(sentence.get(start)));
-            final String goalStr1 = (String) tagNumberer.object(newIndex);
+            final String goalStr1 = (String) tagNumberer.symbol(newIndex);
             if (goalStr1 == null)
                 System.out.println("goalStr1==null with newIndex==" + newIndex + " goalStr==" + goalStr);
             final List<Tree<String>> child = new ArrayList<Tree<String>>();
@@ -556,7 +556,7 @@ public class ConstrainedArrayParser extends ArrayParser {
                                         // restored
             final List<Tree<String>> child = new ArrayList<Tree<String>>();
             child.add(new Tree<String>(t.getChildren().get(0).getLabel().getWord()));
-            return new Tree<String>((String) tagNumberer.object(t.getLabel().getState()), child);
+            return new Tree<String>((String) tagNumberer.symbol(t.getLabel().getState()), child);
         } else if (t.getChildren().size() != 1) { // nothing to restore
             // build binary split
             final Tree<String> leftChildTree = restoreStateSetTreeUnaries(t.getChildren().get(0));
@@ -564,7 +564,7 @@ public class ConstrainedArrayParser extends ArrayParser {
             final List<Tree<String>> children = new ArrayList<Tree<String>>();
             children.add(leftChildTree);
             children.add(rightChildTree);
-            return new Tree<String>((String) tagNumberer.object(t.getLabel().getState()), children);
+            return new Tree<String>((String) tagNumberer.symbol(t.getLabel().getState()), children);
         } // the interesting part:
           // System.out.println("Not skipping node: "+node.getLabel());
         final StateSet parent = t.getLabel();
@@ -581,7 +581,7 @@ public class ConstrainedArrayParser extends ArrayParser {
 
         // System.out.println("Got path: "+path);
         // if (path.size()==1) return goodChild;
-        final Tree<String> result = new Tree<String>((String) tagNumberer.object(pLabel), goodChild);
+        final Tree<String> result = new Tree<String>((String) tagNumberer.symbol(pLabel), goodChild);
         final Tree<String> working = result;
         // List<short[]> path = grammar.getBestViterbiPath(pLabel,pSubState,
         // cLabel,cSubState);

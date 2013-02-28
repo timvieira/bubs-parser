@@ -1,6 +1,7 @@
 package edu.berkeley.nlp.util;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -14,30 +15,17 @@ import java.util.Set;
  */
 public class CounterMap<K, V> implements java.io.Serializable {
     private static final long serialVersionUID = 1L;
-    MapFactory<V, Double> mf;
-    Map<K, Counter<V>> counterMap;
+    HashMap<K, Counter<V>> counterMap;
     double defltVal = 0.0;
 
     public CounterMap() {
-        this(false);
-    }
-
-    public CounterMap(final MapFactory<K, Counter<V>> outerMF, final MapFactory<V, Double> innerMF) {
-        mf = innerMF;
-        counterMap = outerMF.buildMap();
-    }
-
-    public CounterMap(final boolean identityHashMap) {
-        this(identityHashMap ? new MapFactory.IdentityHashMapFactory<K, Counter<V>>()
-                : new MapFactory.HashMapFactory<K, Counter<V>>(),
-                identityHashMap ? new MapFactory.IdentityHashMapFactory<V, Double>()
-                        : new MapFactory.HashMapFactory<V, Double>());
+        counterMap = new HashMap<K, Counter<V>>();
     }
 
     protected Counter<V> ensureCounter(final K key) {
         Counter<V> valueCounter = counterMap.get(key);
         if (valueCounter == null) {
-            valueCounter = new Counter<V>(mf);
+            valueCounter = new Counter<V>();
             valueCounter.setDeflt(defltVal);
             counterMap.put(key, valueCounter);
         }

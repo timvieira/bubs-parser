@@ -29,13 +29,6 @@ public class StringUtils {
     }
 
     /**
-     * Pads the toString value of the given Object.
-     */
-    public static String pad(final Object obj, final int totalChars) {
-        return pad(obj.toString(), totalChars);
-    }
-
-    /**
      * Pad or trim so as to produce a string of exactly a certain length.
      * 
      * @param str The String to be padded or truncated
@@ -59,13 +52,6 @@ public class StringUtils {
     }
 
     /**
-     * Pad or trim the toString value of the given Object.
-     */
-    public static String padOrTrim(final Object obj, final int totalChars) {
-        return padOrTrim(obj.toString(), totalChars);
-    }
-
-    /**
      * Pads the given String to the left with spaces to ensure that it's at least totalChars long.
      */
     public static String padLeft(String str, final int totalChars) {
@@ -77,18 +63,6 @@ public class StringUtils {
         }
         sb.append(str);
         return sb.toString();
-    }
-
-    public static String padLeft(final Object obj, final int totalChars) {
-        return padLeft(obj.toString(), totalChars);
-    }
-
-    public static String padLeft(final int i, final int totalChars) {
-        return padLeft(new Integer(i), totalChars);
-    }
-
-    public static String padLeft(final double d, final int totalChars) {
-        return padLeft(new Double(d), totalChars);
     }
 
     public static String escapeString(final String s, final char[] charsToEscape, final char escapeChar) {

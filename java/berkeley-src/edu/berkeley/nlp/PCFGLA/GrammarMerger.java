@@ -297,12 +297,12 @@ public class GrammarMerger {
         final short[] newNumSubStatesArray = newGrammar.numSubStates;
         final Numberer tagNumberer = grammar.tagNumberer;
         for (short state = 0; state < numSubStatesArray.length; state++) {
-            System.out.print("\nState " + tagNumberer.object(state) + " had " + numSubStatesArray[state]
+            System.out.print("\nState " + tagNumberer.symbol(state) + " had " + numSubStatesArray[state]
                     + " substates and now has " + newNumSubStatesArray[state] + ".");
             if (!grammar.isGrammarTag(state)) {
-                lexiconStates.add((String) tagNumberer.object(state), newNumSubStatesArray[state]);
+                lexiconStates.add((String) tagNumberer.symbol(state), newNumSubStatesArray[state]);
             } else {
-                grammarStates.add((String) tagNumberer.object(state), newNumSubStatesArray[state]);
+                grammarStates.add((String) tagNumberer.symbol(state), newNumSubStatesArray[state]);
             }
         }
 
@@ -404,7 +404,7 @@ public class GrammarMerger {
      * @param lexicon
      * @param mergeWeights
      * @param trainStateSetTrees
-     * @return
+     * @return Deltas
      */
     public static double[][][] computeDeltas(final Grammar grammar, final Lexicon lexicon,
             final double[][] mergeWeights, final StateSetTreeList trainStateSetTrees) {
@@ -429,7 +429,7 @@ public class GrammarMerger {
      * @param grammar
      * @param lexicon
      * @param trainStateSetTrees
-     * @return
+     * @return Merge weights
      */
     public static double[][] computeMergeWeights(final Grammar grammar, final Lexicon lexicon,
             final StateSetTreeList trainStateSetTrees) {
@@ -461,7 +461,7 @@ public class GrammarMerger {
 
     /**
      * @param deltas
-     * @return
+     * @return Merge pairs
      */
     public static boolean[][][] determineMergePairs(final double[][][] deltas, final boolean separateMerge,
             final double mergingPercentage, final Grammar grammar) {
@@ -472,7 +472,7 @@ public class GrammarMerger {
         final ArrayList<Double> deltaPairs = new ArrayList<Double>();
         final ArrayList<Double> deltaLexicon = new ArrayList<Double>();
         final ArrayList<Double> deltaGrammar = new ArrayList<Double>();
-        int nSiblings = 0, nPairs = 0, nSiblingsGr = 0, nSiblingsLex = 0;
+        int nSiblings = 0, nSiblingsGr = 0, nSiblingsLex = 0;
         for (int state = 0; state < mergeThesePairs.length; state++) {
             for (int sub1 = 0; sub1 < numSubStatesArray[state] - 1; sub1++) {
                 if (sub1 % 2 == 0 && deltas[state][sub1][sub1 + 1] != 0) {
@@ -491,7 +491,6 @@ public class GrammarMerger {
                 for (int sub2 = sub1 + 1; sub2 < numSubStatesArray[state]; sub2++) {
                     if (!(sub2 != sub1 + 1 && sub1 % 2 != 0) && deltas[state][sub1][sub2] != 0) {
                         deltaPairs.add(deltas[state][sub1][sub2]);
-                        nPairs++;
                     }
                 }
             }
@@ -559,7 +558,7 @@ public class GrammarMerger {
         }
         System.out.println("Merging " + mergeSiblings + " siblings and " + mergePair + " other pairs.");
         for (short state = 0; state < deltas.length; state++) {
-            System.out.print("State " + grammar.tagNumberer.object(state));
+            System.out.print("State " + grammar.tagNumberer.symbol(state));
             for (int i = 0; i < numSubStatesArray[state]; i++) {
                 for (int j = i + 1; j < numSubStatesArray[state]; j++) {
                     if (mergeThesePairs[state][i][j])

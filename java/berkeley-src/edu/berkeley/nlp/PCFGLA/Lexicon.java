@@ -1,6 +1,5 @@
 package edu.berkeley.nlp.PCFGLA;
 
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.io.Writer;
@@ -112,7 +111,7 @@ public class Lexicon implements java.io.Serializable {
         return wordCounter.keySet().contains(word);
     }
 
-    public void writeData(final Writer w) throws IOException {
+    public void writeData(final Writer w) {
         final PrintWriter out = new PrintWriter(w);
         final Numberer n = Numberer.getGlobalNumberer("tags");
 
@@ -128,7 +127,7 @@ public class Lexicon implements java.io.Serializable {
         out.print("--------------------------------------------------\n");
         out.print("TAG-COUNTER (c_T):\n");
         for (int state = 0; state < tagCounter.length; state++) {
-            final String tagState = (String) n.object(state);
+            final String tagState = (String) n.symbol(state);
             for (int substate = 0; substate < tagCounter[state].length; substate++) {
                 final double prob = tagCounter[state][substate];
                 if (prob == 0)
@@ -140,7 +139,7 @@ public class Lexicon implements java.io.Serializable {
         out.print("--------------------------------------------------\n");
         out.print("UNSEEN-TAG-COUNTER (c_T):\n");
         for (int state = 0; state < unseenTagCounter.length; state++) {
-            final String tagState = (String) n.object(state);
+            final String tagState = (String) n.symbol(state);
             for (int substate = 0; substate < unseenTagCounter[state].length; substate++) {
                 final double prob = unseenTagCounter[state][substate];
                 if (prob == 0)
@@ -154,7 +153,7 @@ public class Lexicon implements java.io.Serializable {
         for (int tag = 0; tag < wordToTagCounters.length; tag++) {
             if (wordToTagCounters[tag] == null)
                 continue;
-            final String tagState = (String) n.object(tag);
+            final String tagState = (String) n.symbol(tag);
             for (final String word : wordToTagCounters[tag].keySet()) {
                 out.print(tagState + " " + word + " " + Arrays.toString(wordToTagCounters[tag].get(word)) + "\n");
             }
@@ -165,7 +164,7 @@ public class Lexicon implements java.io.Serializable {
         for (int tag = 0; tag < unseenWordToTagCounters.length; tag++) {
             if (unseenWordToTagCounters[tag] == null)
                 continue;
-            final String tagState = (String) n.object(tag);
+            final String tagState = (String) n.symbol(tag);
             for (final String word : unseenWordToTagCounters[tag].keySet()) {
                 out.print(tagState + " " + word + " " + Arrays.toString(unseenWordToTagCounters[tag].get(word)) + "\n");
             }
@@ -181,7 +180,7 @@ public class Lexicon implements java.io.Serializable {
         final StringBuilder sb = new StringBuilder(1024 * 1024);
 
         for (int tag = 0; tag < wordToTagCounters.length; tag++) {
-            final String tagState = (String) n.object(tag);
+            final String tagState = (String) n.symbol(tag);
 
             if (wordToTagCounters[tag] != null) {
                 for (final String word : wordToTagCounters[tag].keySet()) {
@@ -377,7 +376,7 @@ public class Lexicon implements java.io.Serializable {
     public void printTagCounter(final Numberer tagNumberer) {
         final PriorityQueue<String> pq = new PriorityQueue<String>(tagCounter.length);
         for (int i = 0; i < tagCounter.length; i++) {
-            pq.add((String) tagNumberer.object(i), tagCounter[i][0]);
+            pq.add((String) tagNumberer.symbol(i), tagCounter[i][0]);
             // System.out.println(i+". "+(String)tagNumberer.object(i)+"\t "+symbolCounter.getCount(i,0));
         }
         int i = 0;
@@ -393,11 +392,12 @@ public class Lexicon implements java.io.Serializable {
      * split versions of the tag. (Leon says: It may not be okay to use the same scores, but I think that symmetry is
      * sufficiently broken in Grammar.splitAllStates to ignore the randomness here.)
      * 
-     * @param randomness , mode (currently ignored)
-     * @return
+     * @param counts
+     * @param moreSubstatesThanCounts
+     * @return A new lexicon, with all states split in 2
      */
     @SuppressWarnings("unchecked")
-    public Lexicon splitAllStates(final int[] counts, final boolean moreSubstatesThanCounts, final int mode) {
+    public Lexicon splitAllStates(final int[] counts, final boolean moreSubstatesThanCounts) {
         final short[] newNumSubStates = new short[numSubStates.length];
         newNumSubStates[0] = 1; // never split ROOT
         for (short i = 1; i < numSubStates.length; i++) {
@@ -820,7 +820,6 @@ public class Lexicon implements java.io.Serializable {
      * Unseen: c_TS = count(T,Sig|Unseen) c_S = count(Sig) c_T = count(T|Unseen) c_U = totalUnseen above p_T_U =
      * Pmle(T|Unseen) pb_T_S = Bayes smooth of Pmle(T|S) with P(T|Unseen) [smooth[0]] pb_W_T = P(W|T) inverted
      * 
-     * @param iTW An IntTaggedWord pairing a word and POS tag
      * @param loc The position in the sentence. <i>In the default implementation this is used only for unknown words to
      *            change their probability distribution when sentence initial
      * @return A double valued score, usually P(word|tag)
@@ -1298,7 +1297,7 @@ public class Lexicon implements java.io.Serializable {
         return map;
     }
 
-    public void removeUnlikelyTags(final double threshold, final double exponent) {
+    public void removeUnlikelyTags(final double filteringThreshold, final double exponent) {
         // System.out.print("Removing unlikely tags...");
 
         if (isConditional) {
@@ -1307,7 +1306,7 @@ public class Lexicon implements java.io.Serializable {
                     if (conditionalWeights[i][j] == null)
                         continue;
                     for (int k = 0; k < conditionalWeights[i][j].length; k++) {
-                        if (conditionalWeights[i][j][k] < threshold) {
+                        if (conditionalWeights[i][j][k] < filteringThreshold) {
                             conditionalWeights[i][j][k] = 0;
                         }
                     }
@@ -1320,7 +1319,7 @@ public class Lexicon implements java.io.Serializable {
                     for (final String word : wordToTagCounters[tag].keySet()) {
                         c_TW = wordToTagCounters[tag].get(word);
                         for (int substate = 0; substate < numSubStates[tag]; substate++) {
-                            if (c_TW[substate] < threshold) {
+                            if (c_TW[substate] < filteringThreshold) {
                                 c_TW[substate] = 0;
                             }
                         }
@@ -1440,9 +1439,6 @@ public class Lexicon implements java.io.Serializable {
 
     class ChineseLexicon implements Serializable {
         private static final long serialVersionUID = 1L;
-
-        private static final String encoding = "GB18030"; // used only for
-                                                          // debugging
 
         /*
          * These strings are stored in ascii-stype Unicode encoding. To edit them, either use the Unicode codes or use

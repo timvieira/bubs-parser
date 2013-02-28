@@ -26,7 +26,6 @@ public class Counter<E> implements Serializable {
     Map<E, Double> entries;
     boolean dirty = true;
     double cacheTotal = 0.0;
-    MapFactory<E, Double> mf;
     double deflt = 0.0;
 
     public double getDeflt() {
@@ -295,21 +294,10 @@ public class Counter<E> implements Serializable {
     }
 
     public Counter() {
-        this(false);
+        entries = new HashMap<E, Double>();
     }
 
-    public Counter(final boolean identityHashMap) {
-        this(identityHashMap ? new MapFactory.IdentityHashMapFactory<E, Double>()
-                : new MapFactory.HashMapFactory<E, Double>());
-    }
-
-    public Counter(final MapFactory<E, Double> mf) {
-        this.mf = mf;
-        entries = mf.buildMap();
-    }
-
-    public Counter(final Map<? extends E, Double> mapCounts) {
-        this(false);
+    public Counter(final HashMap<E, Double> mapCounts) {
         this.entries = new HashMap<E, Double>();
         for (final Entry<? extends E, Double> entry : mapCounts.entrySet()) {
             incrementCount(entry.getKey(), entry.getValue());
@@ -343,7 +331,7 @@ public class Counter<E> implements Serializable {
     }
 
     public void clear() {
-        entries = mf.buildMap();
+        entries = new HashMap<E, Double>();
         dirty = true;
     }
 

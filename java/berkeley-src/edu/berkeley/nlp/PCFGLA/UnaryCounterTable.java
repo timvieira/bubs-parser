@@ -1,11 +1,11 @@
 package edu.berkeley.nlp.PCFGLA;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
 import edu.berkeley.nlp.util.ArrayUtil;
-import edu.berkeley.nlp.util.MapFactory;
 
 public class UnaryCounterTable implements Serializable {
     /**
@@ -130,11 +130,7 @@ public class UnaryCounterTable implements Serializable {
     }
 
     public UnaryCounterTable(final short[] numSubStates) {
-        this(new MapFactory.HashMapFactory<UnaryRule, double[][]>(), numSubStates);
-    }
-
-    public UnaryCounterTable(final MapFactory<UnaryRule, double[][]> mf, final short[] numSubStates) {
-        entries = mf.buildMap();
+        entries = new HashMap<UnaryRule, double[][]>();
         searchKey = new UnaryRule((short) 0, (short) 0);
         this.numSubStates = numSubStates;
     }

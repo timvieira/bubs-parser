@@ -1,5 +1,8 @@
 package edu.berkeley.nlp.util;
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
@@ -12,6 +15,8 @@ import java.util.Set;
  * precisely because it maintains a global name space for numbered object families, and provides facilities for mapping
  * across numberings within that space. At any rate, it's widely used in some existing packages.
  * 
+ * TODO Use shorts instead of ints?
+ * 
  * @author Dan Klein
  */
 public class Numberer implements Serializable {
@@ -21,16 +26,15 @@ public class Numberer implements Serializable {
     private static Map<String, Numberer> numbererMap = new HashMap<String, Numberer>();
 
     private int total;
-    private Map<MutableInteger, Object> intToObject;
-    private Map<Object, MutableInteger> objectToInt;
-    private MutableInteger tempInt;
+    private Int2ObjectOpenHashMap<String> intToObject;
+    private Object2IntOpenHashMap<String> objectToInt;
     private boolean locked = false;
 
     public Numberer() {
         total = 0;
-        tempInt = new MutableInteger();
-        intToObject = new HashMap<MutableInteger, Object>();
-        objectToInt = new HashMap<Object, MutableInteger>();
+        intToObject = new Int2ObjectOpenHashMap<String>();
+        objectToInt = new Object2IntOpenHashMap<String>();
+        objectToInt.defaultReturnValue(-1);
     }
 
     public static Map<String, Numberer> getNumberers() {
@@ -58,12 +62,12 @@ public class Numberer implements Serializable {
      * Get a number for an object in namespace type. This looks up the Numberer for <code>type</code> in the global
      * namespace map (creating it if none previously existed), and then returns the appropriate number for the key.
      */
-    public static int number(final String type, final Object o) {
+    public static int number(final String type, final String o) {
         return getGlobalNumberer(type).number(o);
     }
 
     public static Object object(final String type, final int n) {
-        return getGlobalNumberer(type).object(n);
+        return getGlobalNumberer(type).symbol(n);
     }
 
     /**
@@ -72,7 +76,7 @@ public class Numberer implements Serializable {
      * <i>targetType</i> Numberer.
      */
     public static int translate(final String sourceType, final String targetType, final int n) {
-        return getGlobalNumberer(targetType).number(getGlobalNumberer(sourceType).object(n));
+        return getGlobalNumberer(targetType).number(getGlobalNumberer(sourceType).symbol(n));
     }
 
     public int total() {
@@ -87,7 +91,7 @@ public class Numberer implements Serializable {
         return objectToInt.keySet().contains(o);
     }
 
-    public Set<Object> objects() {
+    public Set<String> objects() {
         return objectToInt.keySet();
     }
 
@@ -95,23 +99,22 @@ public class Numberer implements Serializable {
         return objectToInt.size();
     }
 
-    public int number(final Object o) {
-        MutableInteger i = objectToInt.get(o);
-        if (i == null) {
+    public int number(final String o) {
+        int i = objectToInt.getInt(o);
+        if (i < 0) {
             if (locked) {
                 throw new NoSuchElementException("no object: " + o);
             }
-            i = new MutableInteger(total);
+            i = total;
             total++;
             objectToInt.put(o, i);
             intToObject.put(i, o);
         }
-        return i.intValue();
+        return i;
     }
 
-    public Object object(final int n) {
-        tempInt.set(n);
-        return intToObject.get(tempInt);
+    public String symbol(final int n) {
+        return intToObject.get(n);
     }
 
     @Override
@@ -121,7 +124,7 @@ public class Numberer implements Serializable {
         for (int i = 0; i < total; i++) {
             sb.append(i);
             sb.append("->");
-            sb.append(object(i));
+            sb.append(symbol(i));
             if (i < total - 1) {
                 sb.append(", ");
             }

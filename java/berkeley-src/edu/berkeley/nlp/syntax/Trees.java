@@ -13,7 +13,6 @@ import java.util.NoSuchElementException;
 
 import edu.berkeley.nlp.util.CollectionUtils;
 import edu.berkeley.nlp.util.Filter;
-import edu.berkeley.nlp.util.StrUtils;
 
 /**
  * Tools for displaying, reading, and modifying trees.
@@ -398,35 +397,6 @@ public class Trees {
                 }
                 firstSibling = false;
             }
-        }
-    }
-
-    public static void main(final String[] args) {
-        // Basic Test
-        String parse = "((S (NP (DT the) (JJ quick) (JJ brown) (NN fox)) (VP (VBD jumped) (PP (IN over) (NP (DT the) (JJ lazy) (NN dog)))) (. .)))";
-        if (args.length > 0) {
-            parse = StrUtils.join(args);
-        }
-        final PennTreeReader reader = new PennTreeReader(new StringReader(parse));
-        final Tree<String> tree = reader.next();
-        System.out.println(PennTreeRenderer.render(tree));
-        System.out.println(tree);
-
-        // Robustness Tests
-        if (args.length == 0) {
-            System.out.println("Testing robustness");
-            final String unbalanced1 = "((S (NP (DT the) (JJ quick) (JJ brown) (NN fox)) (VP (VBD jumped) (PP (IN over) (NP (DT the) (JJ lazy) (NN dog)))) (. .))";
-            final String unbalanced2 = "((S (NP (DT the) (JJ quick) (JJ brown) (NN fox))) (VP (VBD jumped) (PP (IN over) (NP (DT the) (JJ lazy) (NN dog)))) (. .)))";
-            System.out.println("\nMissing a paren:");
-            System.out.println(unbalanced1);
-            System.out.println(PennTreeReader.parseEasy(unbalanced1, false));
-            System.out.println("\nExtra paren:");
-            System.out.println(unbalanced2);
-            System.out.println(PennTreeReader.parseEasy(unbalanced2, false));
-            final String parens = "((S (NP (DT the) (SYM () (JJ quick) (JJ brown) (SYM )) (NN fox)) (VP (VBD jumped) (PP (IN over) (NP (DT the) (JJ lazy) (NN dog)))) (. .)))";
-            System.out.println("\nParens as characters:");
-            System.out.println(parens);
-            System.out.println(PennTreeReader.parseEasy(parens, false));
         }
     }
 

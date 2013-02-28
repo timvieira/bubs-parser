@@ -43,7 +43,7 @@ public class StateSet {
     public String toString() {
         if (word != null)
             return word + " " + from + "-" + to;// + " " + substates.length;
-        final String s = Numberer.getGlobalNumberer("tags").object(state) + " ";// "[";
+        final String s = Numberer.getGlobalNumberer("tags").symbol(state) + " ";// "[";
         // for (int i = 0; i < numSubStates; i++){
         // NumberFormat f = NumberFormat.getInstance();
         // f.setMaximumFractionDigits(5);
