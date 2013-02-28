@@ -66,7 +66,6 @@ public class Lexicon implements java.io.Serializable {
     Smoother smoother;
     double threshold;
 
-    boolean isConditional;
     double[][][] conditionalWeights; // wordIndex, tag, substate -> weight
     Numberer wordNumberer;
 
@@ -827,164 +826,132 @@ public class Lexicon implements java.io.Serializable {
     public double[] score(final String word, final short tag, final int loc, final boolean noSmoothing,
             final boolean isSignature) {
 
-        if (isConditional) {
-            return scoreConditional(word, tag, loc, noSmoothing, isSignature);
-        }
-
         final double c_W = wordCounter.getCount(word);
-        double pb_W_T = 0; // always set below
+        final boolean seen = (c_W > 0.0);
 
         // simulate no smoothing
         // smooth[0] = 0.0; smooth[1] = 0.0;
 
-        final double[] resultArray = new double[numSubStates[tag]];
+        final double[] tagStateCounter = tagCounter[tag];
+        final double[] unseenTagStateCounter = unseenTagCounter[tag];
+        final HashMap<String, double[]> wordTagCounter = wordToTagCounters[tag];
 
-        for (int substate = 0; substate < numSubStates[tag]; substate++) {
-            final boolean seen = (c_W > 0.0);
-            if (!isSignature && (seen || noSmoothing)) {
-                // known word model for P(T|W)
-                final double c_tag = tagCounter[tag][substate];
-                final double c_T = c_tag;// seenCounter.getCount(iTW);
-                if (c_T == 0)
-                    continue;
+        double[] pb_W_T;
+        if (!isSignature && (seen || noSmoothing)) {
+            pb_W_T = scoreObservedWord(word, tag, noSmoothing, c_W, tagStateCounter, unseenTagStateCounter,
+                    wordTagCounter);
+        } else {
+            pb_W_T = scoreUnobservedWord(word, tag, loc, isSignature);
+        }
 
-                double c_TW = 0;
-                if (wordToTagCounters[tag] != null && wordToTagCounters[tag].get(word) != null) {
-                    c_TW = wordToTagCounters[tag].get(word)[substate];
-                }
-                // if (c_TW==0) continue;
-
-                final double c_Tunseen = unseenTagCounter[tag][substate];
-                final double total = totalTokens;
-                final double totalUnseen = totalUnseenTokens;
-
-                final double p_T_U = (totalUnseen == 0) ? 1 : c_Tunseen / totalUnseen;
-                double pb_T_W; // always set below
-
-                // System.err.println("c_W is " + c_W + " THRESH is " +
-                // smoothInUnknownsThreshold + " mle = " + (c_TW/c_W));
-                if (c_W > smoothInUnknownsThreshold || noSmoothing) {
-                    // we've seen the word enough times to have confidence in
-                    // its tagging
-                    if (noSmoothing && c_W == 0)
-                        pb_T_W = c_TW / 1;
-                    else
-                        pb_T_W = (c_TW + 0.0001 * p_T_U) / (c_W + 0.0001);
-                    // pb_T_W = c_TW / c_W;
-                    // System.out.println("c_TW "+c_TW+" c_W "+c_W);
-                } else {
-                    // we haven't seen the word enough times to have confidence
-                    // in its tagging
-                    pb_T_W = (c_TW + smooth[1] * p_T_U) / (c_W + smooth[1]);
-                    // System.out.println("smoothed c_TW "+c_TW+" c_W "+c_W);
-                }
-                if (pb_T_W == 0)
-                    continue;
-                // Sometimes we run up against unknown tags. This should only happen when we're calculating the
-                // likelihood for a given tree, not when we're parsing. In that case, return a LL of 0.
-
-                // NO NO NO, this is wrong, slav
-                // if (c_T==0) {
-                // resultArray[substate] = 1;
-                // continue;
-                // }
-
-                final double p_T = (c_T / total);
-                final double p_W = (c_W / total);
-                pb_W_T = pb_T_W * p_W / p_T;
-
-            } else {
-
-                // // test against simple Chinese lexical constants
-                // if (Corpus.myTreebank == Corpus.TreeBankType.CHINESE) {
-                // final Numberer tagNumberer = Numberer.getGlobalNumberer("tags");
-                // double prob;
-                // if (word.matches(ChineseLexicon.dateMatch)) {
-                // // EncodingPrintWriter.out.println("Date match for " +
-                // // word,encoding);
-                // if (tag == tagNumberer.number("NT")) { // (tag.equals("NT"))
-                // // {
-                // prob = 1.0;
-                // } else {
-                // prob = 0.0;
-                // }
-                // Arrays.fill(resultArray, prob);
-                // return resultArray;
-                // } else if (word.matches(ChineseLexicon.numberMatch)) {
-                // // EncodingPrintWriter.out.println("Number match for " +
-                // // word,encoding);
-                // if (tag == tagNumberer.number("CD") /* tag.equals("CD") */
-                // && (!word.matches(ChineseLexicon.ordinalMatch))) {
-                // prob = 1.0;
-                // } else if (tag == tagNumberer.number("OD") /*
-                // * tag.equals ("OD")
-                // */
-                // && word.matches(ChineseLexicon.ordinalMatch)) {
-                // prob = 1.0;
-                // } else {
-                // prob = 0.0;
-                // }
-                // Arrays.fill(resultArray, prob);
-                // return resultArray;
-                // } else if (word.matches(ChineseLexicon.properNameMatch)) {
-                // // EncodingPrintWriter.out.println("Proper name match for "
-                // // + word,encoding);
-                // if (tag == tagNumberer.number("NR")) { // tag.equals("NR"))
-                // // {
-                // prob = 1.0;
-                // } else {
-                // prob = 0.0;
-                // }
-                // Arrays.fill(resultArray, prob);
-                // return resultArray;
-                // }
-                // }
-
-                // unknown word model for P(T|S)
-                final String sig = (isSignature) ? word : getCachedSignature(word, loc);
-
-                // iTW.word = sig;
-                // double c_TS = unSeenCounter.getCount(iTW);
-                double c_TS = 0;
-                if (unseenWordToTagCounters[tag] != null && unseenWordToTagCounters[tag].get(sig) != null) {
-                    c_TS = unseenWordToTagCounters[tag].get(sig)[substate];
-                }
-                // if (c_TS == 0) continue;
-
-                // how often did we see this signature
-                double c_S = wordCounter.getCount(sig);
-                final double c_U = totalUnseenTokens;
-                final double total = totalTokens; // seenCounter.getCount(iTW);
-                final double c_T = unseenTagCounter[tag][substate];// unSeenCounter.getCount(iTW);
-                final double c_Tseen = tagCounter[tag][substate]; // seenCounter.getCount(iTW);
-                final double p_T_U = c_T / c_U;
-
-                if (unknownLevel == 0) {
-                    c_TS = 0;
-                    c_S = 0;
-                }
-                // System.out.println(" sig " + sig
-                // +" c_TS "+c_TS+" p_T_U "+p_T_U+" c_S "+c_S);
-                // smooth[0]=10;
-                final double pb_T_S = (c_TS + smooth[0] * p_T_U) / (c_S + smooth[0]);
-
-                final double p_T = (c_Tseen / total);
-                final double p_W = 1.0 / total;
-                pb_W_T = pb_T_S * p_W / p_T;
-            }
-
-            // give very low scores when needed, but try to avoid -Infinity
-            if (pb_W_T == 0) {// NOT sure whether this is a good idea - slav
-                resultArray[substate] = 1e-87;
-            } else {
-                resultArray[substate] = pb_W_T;
+        // give very low scores when needed, but try to avoid -Infinity
+        // NOT sure whether this is a good idea - slav
+        for (int i = 0; i < pb_W_T.length; i++) {
+            if (pb_W_T[i] == 0) {
+                pb_W_T[i] = 1e-87;
             }
 
         }
-        smoother.smooth(tag, resultArray);
+        smoother.smooth(tag, pb_W_T);
 
-        return resultArray;
+        return pb_W_T;
     } // end score()
+
+    private double[] scoreObservedWord(final String word, final short tag, final boolean noSmoothing, final double c_W,
+            final double[] tagStateCounter, final double[] unseenTagStateCounter,
+            final HashMap<String, double[]> wordTagCounter) {
+
+        final double[] pb_W_T = new double[numSubStates[tag]];
+        for (int substate = 0; substate < pb_W_T.length; substate++) {
+            // known word model for P(T|W)
+            final double c_tag = tagStateCounter[substate];
+            final double c_T = c_tag;// seenCounter.getCount(iTW);
+            if (c_T == 0)
+                continue;
+
+            double c_TW = 0;
+            if (wordTagCounter != null) {
+                final double[] c = wordTagCounter.get(word);
+                if (c != null) {
+                    c_TW = c[substate];
+                }
+            }
+
+            final double c_Tunseen = unseenTagStateCounter[substate];
+            final double total = totalTokens;
+            final double totalUnseen = totalUnseenTokens;
+
+            final double p_T_U = (totalUnseen == 0) ? 1 : c_Tunseen / totalUnseen;
+            double pb_T_W;
+
+            if (c_W > smoothInUnknownsThreshold || noSmoothing) {
+                // we've seen the word enough times to have confidence in its tagging
+                if (noSmoothing && c_W == 0) {
+                    pb_T_W = c_TW / 1;
+                } else {
+                    pb_T_W = (c_TW + 0.0001 * p_T_U) / (c_W + 0.0001);
+                }
+            } else {
+                // we haven't seen the word enough times to have confidence in its tagging
+                pb_T_W = (c_TW + smooth[1] * p_T_U) / (c_W + smooth[1]);
+            }
+
+            // Sometimes we run up against unknown tags. This should only happen when we're calculating the
+            // likelihood for a given tree, not when we're parsing. In that case, return a LL of 0.
+
+            final double p_T = (c_T / total);
+            final double p_W = (c_W / total);
+            pb_W_T[substate] = pb_T_W * p_W / p_T;
+
+            // give very low scores when needed, but try to avoid -Infinity
+            if (pb_W_T[substate] == 0) {// NOT sure whether this is a good idea - slav
+                pb_W_T[substate] = 1e-87;
+            }
+        }
+        return pb_W_T;
+    }
+
+    private double[] scoreUnobservedWord(final String word, final short tag, final int loc, final boolean isSignature) {
+        double pb_W_T;
+        final double[] resultArray = new double[numSubStates[tag]];
+        for (int substate = 0; substate < resultArray.length; substate++) {
+
+            // unknown word model for P(T|S)
+            final String sig = (isSignature) ? word : getCachedSignature(word, loc);
+
+            // iTW.word = sig;
+            // double c_TS = unSeenCounter.getCount(iTW);
+            double c_TS = 0;
+            if (unseenWordToTagCounters[tag] != null && unseenWordToTagCounters[tag].get(sig) != null) {
+                c_TS = unseenWordToTagCounters[tag].get(sig)[substate];
+            }
+            // if (c_TS == 0) continue;
+
+            // how often did we see this signature
+            double c_S = wordCounter.getCount(sig);
+            final double c_U = totalUnseenTokens;
+            final double total = totalTokens; // seenCounter.getCount(iTW);
+            final double c_T = unseenTagCounter[tag][substate];// unSeenCounter.getCount(iTW);
+            final double c_Tseen = tagCounter[tag][substate]; // seenCounter.getCount(iTW);
+            final double p_T_U = c_T / c_U;
+
+            if (unknownLevel == 0) {
+                c_TS = 0;
+                c_S = 0;
+            }
+            // System.out.println(" sig " + sig
+            // +" c_TS "+c_TS+" p_T_U "+p_T_U+" c_S "+c_S);
+            // smooth[0]=10;
+            final double pb_T_S = (c_TS + smooth[0] * p_T_U) / (c_S + smooth[0]);
+
+            final double p_T = (c_Tseen / total);
+            final double p_W = 1.0 / total;
+            pb_W_T = pb_T_S * p_W / p_T;
+
+            resultArray[substate] = pb_W_T;
+        }
+        return resultArray;
+    }
 
     /*
      * public void tune(Collection<Tree> trees) { double bestScore = Double.NEGATIVE_INFINITY; double[] bestSmooth =
@@ -1298,44 +1265,30 @@ public class Lexicon implements java.io.Serializable {
     public void removeUnlikelyTags(final double filteringThreshold, final double exponent) {
         // System.out.print("Removing unlikely tags...");
 
-        if (isConditional) {
-            for (int i = 0; i < conditionalWeights.length; i++) {
-                for (int j = 0; j < conditionalWeights[i].length; j++) {
-                    if (conditionalWeights[i][j] == null)
-                        continue;
-                    for (int k = 0; k < conditionalWeights[i][j].length; k++) {
-                        if (conditionalWeights[i][j][k] < filteringThreshold) {
-                            conditionalWeights[i][j][k] = 0;
+        for (int tag = 0; tag < numSubStates.length; tag++) {
+            double[] c_TW;
+            if (wordToTagCounters[tag] != null) {
+                for (final String word : wordToTagCounters[tag].keySet()) {
+                    c_TW = wordToTagCounters[tag].get(word);
+                    for (int substate = 0; substate < numSubStates[tag]; substate++) {
+                        if (c_TW[substate] < filteringThreshold) {
+                            c_TW[substate] = 0;
                         }
                     }
                 }
             }
-        } else {
-            for (int tag = 0; tag < numSubStates.length; tag++) {
-                double[] c_TW;
-                if (wordToTagCounters[tag] != null) {
-                    for (final String word : wordToTagCounters[tag].keySet()) {
-                        c_TW = wordToTagCounters[tag].get(word);
-                        for (int substate = 0; substate < numSubStates[tag]; substate++) {
-                            if (c_TW[substate] < filteringThreshold) {
-                                c_TW[substate] = 0;
-                            }
-                        }
-                    }
-                }
-            }
-            /*
-             * if (unseenWordToTagCounters[tag]!=null){ for (String word : unseenWordToTagCounters[tag].keySet()){ c_TW
-             * = unseenWordToTagCounters[tag].get(word); for (int substate=0; substate<numSubStates[tag]; substate++) {
-             * // if (c_TW[substate]<threshold) c_TW[substate] = 0; } } }
-             */
-            // double[] c_tag = tagCounter[tag];
-            // double[] c_Tunseen = unseenTagCounter[tag];
-            // for (int substate=0; substate<numSubStates[tag]; substate++) {
-            // if (c_tag[substate]<threshold) c_tag[substate] = 0;
-            // if (c_Tunseen[substate]<threshold) c_Tunseen[substate] = 0;
-            // }
         }
+        /*
+         * if (unseenWordToTagCounters[tag]!=null){ for (String word : unseenWordToTagCounters[tag].keySet()){ c_TW =
+         * unseenWordToTagCounters[tag].get(word); for (int substate=0; substate<numSubStates[tag]; substate++) { // if
+         * (c_TW[substate]<threshold) c_TW[substate] = 0; } } }
+         */
+        // double[] c_tag = tagCounter[tag];
+        // double[] c_Tunseen = unseenTagCounter[tag];
+        // for (int substate=0; substate<numSubStates[tag]; substate++) {
+        // if (c_tag[substate]<threshold) c_tag[substate] = 0;
+        // if (c_Tunseen[substate]<threshold) c_Tunseen[substate] = 0;
+        // }
         // System.out.print(" done.\n Removed "+removed+" word tag combinations out of "+total+".");
     }
 
@@ -1368,55 +1321,6 @@ public class Lexicon implements java.io.Serializable {
             conditionalWeights = new double[wordNumberer.total()][numSubStates.length][];
         }
         return nEntries;
-    }
-
-    private double[] scoreConditional(final String word, final short tag, final int loc, final boolean noSmoothing,
-            final boolean isSignature) {
-        if (isSignature)
-            return getConditionalSignatureScore(word, tag, noSmoothing);
-        else if (!isKnown(word))
-            return getConditionalSignatureScore(getCachedSignature(word, loc), tag, noSmoothing);
-        // else if(!isKnown(word)) return getConditionalSignatureScore("#UNK#",
-        // tag, noSmoothing);
-        // else if(isKnown(word))return getConditionalSignatureScore(word, tag,
-        // noSmoothing);
-        final double[] resultArray = new double[numSubStates[tag]];
-        final double[] wordScore = getConditionalWordScore(word, tag, noSmoothing);
-        final String sig = getCachedSignature(word, loc);
-        final double[] sigScore = getConditionalSignatureScore(sig, tag, noSmoothing);
-        for (int i = 0; i < resultArray.length; i++) {
-            resultArray[i] = wordScore[i] + sigScore[i];
-        }
-        return resultArray;
-    }
-
-    private double[] getConditionalSignatureScore(final String sig, final short tag, final boolean noSmoothing) {
-        final double[] resultArray = new double[numSubStates[tag]];
-        final int ind = wordNumberer.number(sig);
-        if (ind >= conditionalWeights.length) {
-            System.out.println(" We have a problem! sig " + sig + " ind " + ind);
-            return resultArray;
-        }
-        final double[] tmpArray = conditionalWeights[ind][tag];
-        if (tmpArray != null) {
-            for (int i = 0; i < resultArray.length; i++) {
-                resultArray[i] += tmpArray[i];
-            }
-        }
-        return resultArray;
-    }
-
-    public double[] getConditionalWordScore(final String word, final short tag, final boolean noSmoothing) {
-        final double[] resultArray = new double[numSubStates[tag]];
-        final int ind = wordNumberer.number(word);
-        final double[] tmpArray = conditionalWeights[ind][tag];
-        if (tmpArray != null) {
-            for (int i = 0; i < resultArray.length; i++) {
-                resultArray[i] = tmpArray[i];
-            }
-        }
-
-        return resultArray;
     }
 
     public void setSmoother(final Smoother smoother) {
