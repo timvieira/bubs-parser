@@ -16,7 +16,6 @@ import java.util.Set;
 public class CounterMap<K, V> implements java.io.Serializable {
     private static final long serialVersionUID = 1L;
     HashMap<K, Counter<V>> counterMap;
-    double defltVal = 0.0;
 
     public CounterMap() {
         counterMap = new HashMap<K, Counter<V>>();
@@ -26,7 +25,6 @@ public class CounterMap<K, V> implements java.io.Serializable {
         Counter<V> valueCounter = counterMap.get(key);
         if (valueCounter == null) {
             valueCounter = new Counter<V>();
-            valueCounter.setDeflt(defltVal);
             counterMap.put(key, valueCounter);
         }
         return valueCounter;
@@ -53,8 +51,9 @@ public class CounterMap<K, V> implements java.io.Serializable {
      */
     public double getCount(final K key, final V value) {
         final Counter<V> valueCounter = counterMap.get(key);
-        if (valueCounter == null)
-            return defltVal;
+        if (valueCounter == null) {
+            return 0.0;
+        }
         return valueCounter.getCount(value);
     }
 

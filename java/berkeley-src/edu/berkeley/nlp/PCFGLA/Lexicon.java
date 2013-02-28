@@ -73,13 +73,11 @@ public class Lexicon implements java.io.Serializable {
     // additions from the stanford parser which are needed for a better
     // unknown word model...
     /**
-     * We cache the last signature looked up, because it asks for the same one many times when an unknown word is
-     * encountered! (Note that under the current scheme, one unknown word, if seen sentence-initially and non-initially,
-     * will be parsed with two different signatures....)
+     * Cache unknown-word signatures - we'll always return the same signature for a word; the signature for a word
+     * differs in sentence-initial position, so we maintain 2 caches
      */
-    protected transient String lastSignature = "";
-    protected transient int lastSentencePosition = -1;
-    protected transient String lastWordToSignaturize = "";
+    protected transient HashMap<String, String> cachedSignatures = new HashMap<String, String>();
+    protected transient HashMap<String, String> cachedSentenceInitialSignatures = new HashMap<String, String>();
     private int unknownLevel = 5; // different modes for unknown words, 5 is
                                   // english specific
     /**
@@ -127,7 +125,7 @@ public class Lexicon implements java.io.Serializable {
         out.print("--------------------------------------------------\n");
         out.print("TAG-COUNTER (c_T):\n");
         for (int state = 0; state < tagCounter.length; state++) {
-            final String tagState = (String) n.symbol(state);
+            final String tagState = n.symbol(state);
             for (int substate = 0; substate < tagCounter[state].length; substate++) {
                 final double prob = tagCounter[state][substate];
                 if (prob == 0)
@@ -139,7 +137,7 @@ public class Lexicon implements java.io.Serializable {
         out.print("--------------------------------------------------\n");
         out.print("UNSEEN-TAG-COUNTER (c_T):\n");
         for (int state = 0; state < unseenTagCounter.length; state++) {
-            final String tagState = (String) n.symbol(state);
+            final String tagState = n.symbol(state);
             for (int substate = 0; substate < unseenTagCounter[state].length; substate++) {
                 final double prob = unseenTagCounter[state][substate];
                 if (prob == 0)
@@ -153,7 +151,7 @@ public class Lexicon implements java.io.Serializable {
         for (int tag = 0; tag < wordToTagCounters.length; tag++) {
             if (wordToTagCounters[tag] == null)
                 continue;
-            final String tagState = (String) n.symbol(tag);
+            final String tagState = n.symbol(tag);
             for (final String word : wordToTagCounters[tag].keySet()) {
                 out.print(tagState + " " + word + " " + Arrays.toString(wordToTagCounters[tag].get(word)) + "\n");
             }
@@ -164,7 +162,7 @@ public class Lexicon implements java.io.Serializable {
         for (int tag = 0; tag < unseenWordToTagCounters.length; tag++) {
             if (unseenWordToTagCounters[tag] == null)
                 continue;
-            final String tagState = (String) n.symbol(tag);
+            final String tagState = n.symbol(tag);
             for (final String word : unseenWordToTagCounters[tag].keySet()) {
                 out.print(tagState + " " + word + " " + Arrays.toString(unseenWordToTagCounters[tag].get(word)) + "\n");
             }
@@ -180,7 +178,7 @@ public class Lexicon implements java.io.Serializable {
         final StringBuilder sb = new StringBuilder(1024 * 1024);
 
         for (int tag = 0; tag < wordToTagCounters.length; tag++) {
-            final String tagState = (String) n.symbol(tag);
+            final String tagState = n.symbol(tag);
 
             if (wordToTagCounters[tag] != null) {
                 for (final String word : wordToTagCounters[tag].keySet()) {
@@ -376,7 +374,7 @@ public class Lexicon implements java.io.Serializable {
     public void printTagCounter(final Numberer tagNumberer) {
         final PriorityQueue<String> pq = new PriorityQueue<String>(tagCounter.length);
         for (int i = 0; i < tagCounter.length; i++) {
-            pq.add((String) tagNumberer.symbol(i), tagCounter[i][0]);
+            pq.add(tagNumberer.symbol(i), tagCounter[i][0]);
             // System.out.println(i+". "+(String)tagNumberer.object(i)+"\t "+symbolCounter.getCount(i,0));
         }
         int i = 0;
@@ -504,12 +502,14 @@ public class Lexicon implements java.io.Serializable {
      * @param loc Its position in the sentence (mainly so sentence-initial capitalized words can be treated differently)
      * @return A String that is its signature (equivalence class)
      */
-    public String getSignature(final String word, final int loc) {
+    public String getSignature(final String word, final boolean sentenceInitial) {
         // int unknownLevel = Options.get().useUnknownWordSignatures;
-        final StringBuffer sb = new StringBuffer("UNK");
+        final StringBuilder sb = new StringBuilder(12);
+        sb.append("UNK");
 
-        if (word.length() == 0)
+        if (word.length() == 0) {
             return sb.toString();
+        }
 
         switch (unknownLevel) {
 
@@ -545,7 +545,7 @@ public class Lexicon implements java.io.Serializable {
             final char ch0 = word.charAt(0);
             final String lowered = word.toLowerCase();
             if (Character.isUpperCase(ch0) || Character.isTitleCase(ch0)) {
-                if (loc == 0 && numCaps == 1) {
+                if (sentenceInitial && numCaps == 1) {
                     sb.append("-INITC");
                     if (isKnown(lowered)) {
                         sb.append("-KNOWNLC");
@@ -638,7 +638,7 @@ public class Lexicon implements java.io.Serializable {
             if (Character.isUpperCase(word.charAt(0)) || Character.isTitleCase(word.charAt(0))) {
                 if (!hasLower) {
                     sb.append("-AC");
-                } else if (loc == 0) {
+                } else if (sentenceInitial) {
                     sb.append("-SC");
                 } else {
                     sb.append("-C");
@@ -690,7 +690,7 @@ public class Lexicon implements java.io.Serializable {
             for (int i = 0; i < word.length(); i++) {
                 final char ch = word.charAt(i);
                 if (Character.isUpperCase(ch) || Character.isTitleCase(ch)) {
-                    if (loc == 0) {
+                    if (sentenceInitial) {
                         newClass = 'S';
                     } else {
                         newClass = 'L';
@@ -751,7 +751,7 @@ public class Lexicon implements java.io.Serializable {
             if (Character.isUpperCase(word.charAt(0)) || Character.isTitleCase(word.charAt(0))) {
                 if (!hasLower) {
                     sb.append("-ALLC");
-                } else if (loc == 0) {
+                } else if (sentenceInitial) {
                     sb.append("-INIT");
                 } else {
                     sb.append("-UC");
@@ -788,7 +788,7 @@ public class Lexicon implements java.io.Serializable {
                 sb.append("LOWER");
             } else {
                 if (Character.isUpperCase(word.charAt(0))) {
-                    if (loc == 0) {
+                    if (sentenceInitial) {
                         sb.append("INIT");
                     } else {
                         sb.append("UPPER");
@@ -826,8 +826,11 @@ public class Lexicon implements java.io.Serializable {
      */
     public double[] score(final String word, final short tag, final int loc, final boolean noSmoothing,
             final boolean isSignature) {
-        if (isConditional)
+
+        if (isConditional) {
             return scoreConditional(word, tag, loc, noSmoothing, isSignature);
+        }
+
         final double c_W = wordCounter.getCount(word);
         double pb_W_T = 0; // always set below
 
@@ -877,11 +880,8 @@ public class Lexicon implements java.io.Serializable {
                 }
                 if (pb_T_W == 0)
                     continue;
-                // Sometimes we run up against unknown tags. This should only
-                // happen
-                // when we're calculating the likelihood for a given tree, not
-                // when
-                // we're parsing. In that case, return a LL of 0.
+                // Sometimes we run up against unknown tags. This should only happen when we're calculating the
+                // likelihood for a given tree, not when we're parsing. In that case, return a LL of 0.
 
                 // NO NO NO, this is wrong, slav
                 // if (c_T==0) {
@@ -970,11 +970,7 @@ public class Lexicon implements java.io.Serializable {
 
                 final double p_T = (c_Tseen / total);
                 final double p_W = 1.0 / total;
-                // if we've never before seen this tag, then just say the
-                // probability is 1
-                /*
-                 * if (p_T == 0) { resultArray[substate] = 1; continue; }
-                 */pb_W_T = pb_T_S * p_W / p_T;
+                pb_W_T = pb_T_S * p_W / p_T;
             }
 
             // give very low scores when needed, but try to avoid -Infinity
@@ -1179,26 +1175,28 @@ public class Lexicon implements java.io.Serializable {
     }
 
     /**
-     * Returns the index of the signature of the word numbered wordIndex, where the signature is the String
-     * representation of unknown word features. Caches the last signature index returned.
+     * Returns a String representation of unknown-word features, retrieved from {@link #cachedSignatures} or
+     * {@link #cachedSentenceInitialSignatures} if possible.
+     * 
+     * @return a String representation of unknown-word features
      */
     protected String getCachedSignature(final String word, final int sentencePosition) {
 
-        if (word == null) {
-            return lastWordToSignaturize;
+        if (sentencePosition == 0) {
+            String signature = cachedSentenceInitialSignatures.get(word);
+            if (signature == null) {
+                signature = getSignature(word, true);
+                cachedSentenceInitialSignatures.put(word, signature);
+            }
+            return signature;
         }
 
-        if (word.equals(lastWordToSignaturize) && sentencePosition == lastSentencePosition) {
-            // System.err.println("Signature: cache mapped " + wordIndex +
-            // " to " + lastSignatureIndex);
-            return lastSignature;
+        String signature = cachedSignatures.get(word);
+        if (signature == null) {
+            signature = getSignature(word, false);
+            cachedSignatures.put(word, signature);
         }
-
-        final String uwSig = getSignature(word, sentencePosition);
-        lastSignature = uwSig;
-        lastSentencePosition = sentencePosition;
-        lastWordToSignaturize = word;
-        return uwSig;
+        return signature;
     }
 
     /**

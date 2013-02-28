@@ -1,5 +1,7 @@
 package edu.berkeley.nlp.util;
 
+import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
+
 import java.io.Serializable;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -23,17 +25,38 @@ import java.util.TreeSet;
  */
 public class Counter<E> implements Serializable {
     private static final long serialVersionUID = 1L;
-    Map<E, Double> entries;
+    Object2DoubleOpenHashMap<E> entries;
+
     boolean dirty = true;
     double cacheTotal = 0.0;
-    double deflt = 0.0;
+
+    public Counter() {
+        entries = new Object2DoubleOpenHashMap<E>();
+    }
+
+    public Counter(final HashMap<E, Double> mapCounts) {
+        this();
+        for (final Entry<? extends E, Double> entry : mapCounts.entrySet()) {
+            incrementCount(entry.getKey(), entry.getValue());
+        }
+    }
+
+    public Counter(final Counter<? extends E> counter) {
+        this();
+        incrementAll(counter);
+    }
+
+    public Counter(final Collection<? extends E> collection) {
+        this();
+        incrementAll(collection, 1.0);
+    }
 
     public double getDeflt() {
-        return deflt;
+        return entries.defaultReturnValue();
     }
 
     public void setDeflt(final double deflt) {
-        this.deflt = deflt;
+        entries.defaultReturnValue(deflt);
     }
 
     /**
@@ -80,10 +103,7 @@ public class Counter<E> implements Serializable {
      * @return the count of the specified <code>key</code>, or zero if <code>key</code> is not present in the counter.
      */
     public double getCount(final E key) {
-        final Double value = entries.get(key);
-        if (value == null)
-            return deflt;
-        return value;
+        return entries.getDouble(key);
     }
 
     /**
@@ -293,27 +313,6 @@ public class Counter<E> implements Serializable {
         return pq;
     }
 
-    public Counter() {
-        entries = new HashMap<E, Double>();
-    }
-
-    public Counter(final HashMap<E, Double> mapCounts) {
-        this.entries = new HashMap<E, Double>();
-        for (final Entry<? extends E, Double> entry : mapCounts.entrySet()) {
-            incrementCount(entry.getKey(), entry.getValue());
-        }
-    }
-
-    public Counter(final Counter<? extends E> counter) {
-        this();
-        incrementAll(counter);
-    }
-
-    public Counter(final Collection<? extends E> collection) {
-        this();
-        incrementAll(collection, 1.0);
-    }
-
     public void pruneKeysBelowThreshold(final double cutoff) {
         final Iterator<E> it = entries.keySet().iterator();
         while (it.hasNext()) {
@@ -331,7 +330,7 @@ public class Counter<E> implements Serializable {
     }
 
     public void clear() {
-        entries = new HashMap<E, Double>();
+        entries = new Object2DoubleOpenHashMap<E>();
         dirty = true;
     }
 
