@@ -2284,4 +2284,12 @@ public class Grammar implements java.io.Serializable {
         return closedSumPaths;
     }
 
+    public int maxSubStates() {
+        int max = 0;
+        for (int i = 0; i < numSubStates.length; i++) {
+            if (numSubStates[i] > max)
+                max = numSubStates[i];
+        }
+        return max;
+    }
 }

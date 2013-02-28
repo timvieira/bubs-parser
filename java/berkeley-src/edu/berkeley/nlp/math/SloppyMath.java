@@ -1,10 +1,5 @@
 package edu.berkeley.nlp.math;
 
-import java.util.List;
-import java.util.Map;
-
-import edu.berkeley.nlp.util.Counter;
-
 /**
  * The class <code>SloppyMath</code> contains methods for performing basic numeric operations. In some cases, such as
  * max and min, they cut a few corners in the implementation for the sake of efficiency. In particular, they may not
@@ -19,18 +14,18 @@ public final class SloppyMath {
     /**
      * Returns true if the argument is a "dangerous" double to have around, namely one that is infinite, NaN or zero.
      */
-    public static boolean isDangerous(double d) {
+    public static boolean isDangerous(final double d) {
         return Double.isInfinite(d) || Double.isNaN(d) || d == 0.0;
     }
 
-    public static boolean isDangerous(float d) {
+    public static boolean isDangerous(final float d) {
         return Float.isInfinite(d) || Float.isNaN(d) || d == 0.0;
     }
 
     /**
      * Returns true if the argument is a "very dangerous" double to have around, namely one that is infinite or NaN.
      */
-    public static boolean isVeryDangerous(double d) {
+    public static boolean isVeryDangerous(final double d) {
         return Double.isInfinite(d) || Double.isNaN(d);
     }
 
@@ -51,7 +46,7 @@ public final class SloppyMath {
      * @param ly Second number, in log form
      * @return log(exp(lx) + exp(ly))
      */
-    public static float logAdd(float lx, float ly) {
+    public static float logAdd(final float lx, final float ly) {
         float max, negDiff;
         if (lx > ly) {
             max = lx;
@@ -79,7 +74,7 @@ public final class SloppyMath {
      * @param ly Second number, in log form
      * @return log(exp(lx) + exp(ly))
      */
-    public static double logAdd(double lx, double ly) {
+    public static double logAdd(final double lx, final double ly) {
         double max, negDiff;
         if (lx > ly) {
             max = lx;
@@ -97,7 +92,7 @@ public final class SloppyMath {
         }
     }
 
-    public static double logAdd(float[] logV) {
+    public static double logAdd(final float[] logV) {
         double maxIndex = 0;
         double max = Double.NEGATIVE_INFINITY;
         for (int i = 0; i < logV.length; i++) {
@@ -109,7 +104,7 @@ public final class SloppyMath {
         if (max == Double.NEGATIVE_INFINITY)
             return Double.NEGATIVE_INFINITY;
         // compute the negative difference
-        double threshold = max - LOGTOLERANCE;
+        final double threshold = max - LOGTOLERANCE;
         double sumNegativeDifferences = 0.0;
         for (int i = 0; i < logV.length; i++) {
             if (i != maxIndex && logV[i] > threshold) {
@@ -118,12 +113,11 @@ public final class SloppyMath {
         }
         if (sumNegativeDifferences > 0.0) {
             return max + Math.log(1.0 + sumNegativeDifferences);
-        } else {
-            return max;
         }
+        return max;
     }
 
-    public static double logAdd(double[] logV) {
+    public static double logAdd(final double[] logV) {
         double maxIndex = 0;
         double max = Double.NEGATIVE_INFINITY;
         for (int i = 0; i < logV.length; i++) {
@@ -135,7 +129,7 @@ public final class SloppyMath {
         if (max == Double.NEGATIVE_INFINITY)
             return Double.NEGATIVE_INFINITY;
         // compute the negative difference
-        double threshold = max - LOGTOLERANCE;
+        final double threshold = max - LOGTOLERANCE;
         double sumNegativeDifferences = 0.0;
         for (int i = 0; i < logV.length; i++) {
             if (i != maxIndex && logV[i] > threshold) {
@@ -144,24 +138,23 @@ public final class SloppyMath {
         }
         if (sumNegativeDifferences > 0.0) {
             return max + Math.log(1.0 + sumNegativeDifferences);
-        } else {
-            return max;
         }
+        return max;
     }
 
-    public static double exp(double logX) {
+    public static double exp(final double logX) {
         // if x is very near one, use the linear approximation
         if (Math.abs(logX) < 0.001)
             return 1 + logX;
         return Math.exp(logX);
     }
 
-    public static double approxLog(double val) {
+    public static double approxLog(final double val) {
         if (val < 0.0)
             return Double.NaN;
         if (val == 0.0)
             return Double.NEGATIVE_INFINITY;
-        double r = val - 1;
+        final double r = val - 1;
         if (Math.abs(r) < 0.3) {
             // use first few terms of taylor series
 
@@ -173,7 +166,7 @@ public final class SloppyMath {
 
     }
 
-    public static double approxExp(double val) {
+    public static double approxExp(final double val) {
 
         if (Math.abs(val) < 0.1)
             return 1 + val;

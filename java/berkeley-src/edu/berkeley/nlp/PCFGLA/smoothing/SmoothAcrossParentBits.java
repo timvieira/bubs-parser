@@ -203,12 +203,6 @@ public class SmoothAcrossParentBits implements Smoother, Serializable {
         diffWeights = newWeights;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see edu.berkeley.nlp.PCFGLA.smoothing.Smoother#remapStates(edu.berkeley.nlp .util.Numberer,
-     * edu.berkeley.nlp.util.Numberer)
-     */
     public Smoother remapStates(final Numberer thisNumberer, final Numberer newNumberer) {
         final SmoothAcrossParentBits remappedSmoother = copy();
         remappedSmoother.diffWeights = new double[newNumberer.size()][][];
@@ -227,9 +221,7 @@ public class SmoothAcrossParentBits implements Smoother, Serializable {
         final Object object = baseNumberer.object(state);
         if (translationNumberer.hasSeen(object)) {
             return (short) translationNumberer.number(object);
-        } else {
-            return (short) -1;
         }
+        return (short) -1;
     }
-
 }

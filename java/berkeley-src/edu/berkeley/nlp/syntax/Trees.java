@@ -42,7 +42,7 @@ public class Trees {
 
         /**
          * @param tree
-         * @return
+         * @return The transformation of the specified tree's label
          */
         public static String transformLabel(final Tree<String> tree) {
             String transformedLabel = tree.getLabel();
@@ -127,8 +127,6 @@ public class Trees {
             return (nextTree != null);
         }
 
-        private static int x = 0;
-
         public Tree<String> next() {
             if (!hasNext())
                 throw new NoSuchElementException();
@@ -169,10 +167,9 @@ public class Trees {
             if (!lowercase || children.size() > 0) {
                 return isRoot ? new NamedTree<String>(label, children, currTreeName)
                         : new Tree<String>(label, children);
-            } else {
-                return isRoot ? new NamedTree<String>(label.toLowerCase().intern(), children, currTreeName)
-                        : new Tree<String>(label.toLowerCase().intern(), children);
             }
+            return isRoot ? new NamedTree<String>(label.toLowerCase().intern(), children, currTreeName)
+                    : new Tree<String>(label.toLowerCase().intern(), children);
         }
 
         private String readLabel() throws IOException {
@@ -205,7 +202,6 @@ public class Trees {
                         children.add(readTree(false));
                     }
                 } else if (peek() == 65535) {
-                    final int peek = peek();
                     throw new RuntimeException("Unmatched parentheses in tree input.");
                 } else {
                     children.add(readLeaf());
@@ -440,7 +436,7 @@ public class Trees {
      * 
      * @param tree
      * @param filter
-     * @return
+     * @return A new tree with all matching nodes spliced
      */
     public static <L> Tree<L> spliceNodes(final Tree<L> tree, final Filter<L> filter) {
         return spliceNodes(tree, filter, true);
@@ -477,15 +473,15 @@ public class Trees {
         if (tree.getChildren().get(0).isLeaf()) {
             // Base case; preterminals become terminals.
             return new Tree<String>(tree.getLabel());
-        } else {
-            final List<Tree<String>> children = new ArrayList<Tree<String>>();
-            final Tree<String> newTree = new Tree<String>(tree.getLabel());
-            for (final Tree<String> child : tree.getChildren()) {
-                children.add(stripLeaves(child));
-            }
-            newTree.setChildren(children);
-            return newTree;
         }
+
+        final List<Tree<String>> children = new ArrayList<Tree<String>>();
+        final Tree<String> newTree = new Tree<String>(tree.getLabel());
+        for (final Tree<String> child : tree.getChildren()) {
+            children.add(stripLeaves(child));
+        }
+        newTree.setChildren(children);
+        return newTree;
     }
 
     public static <T> int getMaxBranchingFactor(final Tree<T> tree) {

@@ -35,20 +35,25 @@ public class Constituent<L> implements Serializable {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o)
+    public boolean equals(final Object o) {
+        if (this == o) {
             return true;
-        if (!(o instanceof Constituent))
-            return false;
+        }
 
-        final Constituent constituent = (Constituent) o;
+        if (!(o instanceof Constituent)) {
+            return false;
+        }
 
-        if (end != constituent.end)
+        @SuppressWarnings("unchecked")
+        final Constituent<L> constituent = (Constituent<L>) o;
+
+        if (end != constituent.end || start != constituent.start) {
             return false;
-        if (start != constituent.start)
+        }
+
+        if (label != null ? !label.equals(constituent.label) : constituent.label != null) {
             return false;
-        if (label != null ? !label.equals(constituent.label) : constituent.label != null)
-            return false;
+        }
 
         return true;
     }
@@ -62,7 +67,7 @@ public class Constituent<L> implements Serializable {
         return result;
     }
 
-    public Constituent(L label, int start, int end) {
+    public Constituent(final L label, final int start, final int end) {
         this.label = label;
         this.start = start;
         this.end = end;

@@ -127,7 +127,7 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>>, Iterable<Tree
     /**
      * Clone the structure of the tree. Unfortunately, the new labels are copied by reference from the current tree.
      * 
-     * @return
+     * @return A shallow copy of this {@link Tree}
      */
     public Tree<L> shallowClone() {
         final ArrayList<Tree<L>> newChildren = new ArrayList<Tree<L>>(children.size());
@@ -140,7 +140,7 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>>, Iterable<Tree
     /**
      * Return a clone of just the root node of this tree (with no children)
      * 
-     * @return
+     * @return a clone of just the root node of this tree (with no children)
      */
     public Tree<L> shallowCloneJustRoot() {
 
@@ -422,7 +422,7 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>>, Iterable<Tree
      * 
      * @param <O>
      * @param trans
-     * @return
+     * @return The new tree resulting from the specified transform
      */
     public <O> Tree<O> transformNodesUsingNode(final MyMethod<Tree<L>, O> trans) {
         final ArrayList<Tree<O>> newChildren = new ArrayList<Tree<O>>(children.size());
@@ -455,31 +455,39 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>>, Iterable<Tree
 
     @Override
     public boolean equals(final Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+
+        if (obj == null || getClass() != obj.getClass() || !(obj instanceof Tree)) {
             return false;
-        if (getClass() != obj.getClass())
-            return false;
-        if (!(obj instanceof Tree))
-            return false;
+        }
+
+        @SuppressWarnings("unchecked")
         final Tree<L> other = (Tree<L>) obj;
-        if (!this.label.equals(other.label))
+
+        if (!this.label.equals(other.label)) {
             return false;
-        if (this.getChildren().size() != other.getChildren().size())
+        }
+
+        if (this.getChildren().size() != other.getChildren().size()) {
             return false;
+        }
+
         for (int i = 0; i < getChildren().size(); ++i) {
 
             if (!getChildren().get(i).equals(other.getChildren().get(i)))
                 return false;
         }
-        return true;
 
+        return true;
     }
 
     public int compareTo(final Tree<L> o) {
         if (!(o.getLabel() instanceof Comparable && getLabel() instanceof Comparable))
             throw new IllegalArgumentException("Tree labels are not comparable");
+
+        @SuppressWarnings({ "unchecked", "rawtypes" })
         final int cmp = ((Comparable) o.getLabel()).compareTo(getLabel());
         if (cmp != 0)
             return cmp;
@@ -552,10 +560,11 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>>, Iterable<Tree
             if (currStart <= i && currEnd >= j) {
                 final Constituent<L> leastCommonAncestorConstituentHelper = getLeastCommonAncestorConstituentHelper(
                         remove, currStart, currEnd, i, j);
-                if (leastCommonAncestorConstituentHelper != null)
+                if (leastCommonAncestorConstituentHelper != null) {
                     return leastCommonAncestorConstituentHelper;
-                else
-                    break;
+                }
+
+                break;
             }
             currStart += currYield.size();
         }
@@ -587,17 +596,18 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>>, Iterable<Tree
     private boolean hasUnaryChainHelper(final Tree<L> tree, final boolean unaryAbove) {
         boolean result = false;
         if (tree.getChildren().size() == 1) {
-            if (unaryAbove)
+            if (unaryAbove) {
                 return true;
-            else if (tree.getChildren().get(0).isPreTerminal())
+            } else if (tree.getChildren().get(0).isPreTerminal()) {
                 return false;
-            else
+            } else {
                 return hasUnaryChainHelper(tree.getChildren().get(0), true);
-        } else {
-            for (final Tree<L> child : tree.getChildren()) {
-                if (!child.isPreTerminal())
-                    result = result || hasUnaryChainHelper(child, false);
             }
+        }
+
+        for (final Tree<L> child : tree.getChildren()) {
+            if (!child.isPreTerminal())
+                result = result || hasUnaryChainHelper(child, false);
         }
         return result;
     }

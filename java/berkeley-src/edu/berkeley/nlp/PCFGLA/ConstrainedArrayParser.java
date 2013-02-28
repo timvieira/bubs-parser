@@ -403,9 +403,9 @@ public class ConstrainedArrayParser extends ArrayParser {
             // anything but the word below it
             if (!grammar.isGrammarTag(gState)) {
                 final List<Tree<StateSet>> child = new ArrayList<Tree<StateSet>>();
-                final StateSet node = new StateSet(zero, zero, sentence.get(start), start, end);
+                final StateSet node = new StateSet(ZERO, ZERO, sentence.get(start), start, end);
                 child.add(new Tree<StateSet>(node));
-                final StateSet root = new StateSet(gState, one, null, start, end);
+                final StateSet root = new StateSet(gState, ONE, null, start, end);
                 root.allocate();
                 root.setIScore(0, gp);
                 return new Tree<StateSet>(root, child);
@@ -435,16 +435,16 @@ public class ConstrainedArrayParser extends ArrayParser {
                 }
             }
             final List<Tree<StateSet>> child1 = new ArrayList<Tree<StateSet>>();
-            final StateSet node1 = new StateSet(zero, zero, sentence.get(start), start, end);
+            final StateSet node1 = new StateSet(ZERO, ZERO, sentence.get(start), start, end);
             child1.add(new Tree<StateSet>(node1));
             if (newIndex == -1)
                 System.out.println("goalStr1==null with newIndex==" + newIndex + " goalState==" + gState);
             final List<Tree<StateSet>> child = new ArrayList<Tree<StateSet>>();
-            final StateSet node = new StateSet(newIndex, one, null, start, end);
+            final StateSet node = new StateSet(newIndex, ONE, null, start, end);
             node.allocate();
             node.setIScore(0, newSubstate);
             child.add(new Tree<StateSet>(node, child1));
-            final StateSet root = new StateSet(gState, one, null, start, end);
+            final StateSet root = new StateSet(gState, ONE, null, start, end);
             root.allocate();
             root.setIScore(0, gp);
             // totalUsedUnaries++;
@@ -487,7 +487,7 @@ public class ConstrainedArrayParser extends ArrayParser {
                             final List<Tree<StateSet>> children = new ArrayList<Tree<StateSet>>();
                             children.add(leftChildTree);
                             children.add(rightChildTree);
-                            final StateSet root = new StateSet(gState, one, null, start, end);
+                            final StateSet root = new StateSet(gState, ONE, null, start, end);
                             root.allocate();
                             root.setIScore(0, gp);
                             final Tree<StateSet> result = new Tree<StateSet>(root, children);
@@ -523,7 +523,7 @@ public class ConstrainedArrayParser extends ArrayParser {
                     final Tree<StateSet> childTree = extractBestStateSetTree(cState, cp, start, end, sentence);
                     final List<Tree<StateSet>> children = new ArrayList<Tree<StateSet>>();
                     children.add(childTree);
-                    final StateSet root = new StateSet(gState, one, null, start, end);
+                    final StateSet root = new StateSet(gState, ONE, null, start, end);
                     root.allocate();
                     root.setIScore(0, gp);
                     final Tree<StateSet> result = new Tree<StateSet>(root, children);

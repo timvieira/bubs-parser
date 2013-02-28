@@ -43,7 +43,7 @@ public class StateSet {
     public String toString() {
         if (word != null)
             return word + " " + from + "-" + to;// + " " + substates.length;
-        String s = Numberer.getGlobalNumberer("tags").object(state) + " ";// "[";
+        final String s = Numberer.getGlobalNumberer("tags").object(state) + " ";// "[";
         // for (int i = 0; i < numSubStates; i++){
         // NumberFormat f = NumberFormat.getInstance();
         // f.setMaximumFractionDigits(5);
@@ -69,7 +69,7 @@ public class StateSet {
         return state;
     }
 
-    public final double getIScore(int i) {
+    public final double getIScore(final int i) {
         return iScores[i];
     }
 
@@ -77,7 +77,7 @@ public class StateSet {
         return iScores;
     }
 
-    public final double getOScore(int i) {
+    public final double getOScore(final int i) {
         return oScores[i];
     }
 
@@ -85,21 +85,21 @@ public class StateSet {
         return oScores;
     }
 
-    public final void setIScores(double[] s) {
+    public final void setIScores(final double[] s) {
         iScores = s;
     }
 
-    public final void setIScore(int i, double s) {
+    public final void setIScore(final int i, final double s) {
         if (iScores == null)
             iScores = new double[numSubStates];
         iScores[i] = s;
     }
 
-    public final void setOScores(double[] s) {
+    public final void setOScores(final double[] s) {
         oScores = s;
     }
 
-    public final void setOScore(int i, double s) {
+    public final void setOScore(final int i, final double s) {
         if (oScores == null)
             oScores = new double[numSubStates];
         oScores[i] = s;
@@ -121,12 +121,12 @@ public class StateSet {
      * Double.NEGATIVE_INFINITY; oScores[i] = Double.NEGATIVE_INFINITY; } }
      */
 
-    public StateSet(short state, short nSubStates) {
+    public StateSet(final short state, final short nSubStates) {
         this.numSubStates = nSubStates;
         this.state = state;
     }
 
-    public StateSet(short s, short nSubStates, String word, short from, short to) {
+    public StateSet(final short s, final short nSubStates, final String word, final short from, final short to) {
         this.numSubStates = nSubStates;
         this.state = s;
         this.word = word;
@@ -135,7 +135,7 @@ public class StateSet {
 
     }
 
-    public StateSet(StateSet oldS, short nSubStates) {
+    public StateSet(final StateSet oldS, final short nSubStates) {
         this.numSubStates = nSubStates;
         this.state = oldS.state;
         this.word = oldS.word;
@@ -148,11 +148,11 @@ public class StateSet {
         return word;
     }
 
-    public void setWord(String word) {
+    public void setWord(final String word) {
         this.word = word;
     }
 
-    public void scaleIScores(int previousScale) {
+    public void scaleIScores(final int previousScale) {
         iScale = ScalingTools.scaleArray(iScores, previousScale);
         // int logScale = 0;
         // double scale = 1.0;
@@ -180,7 +180,7 @@ public class StateSet {
         // iScale = previousScale + logScale;
     }
 
-    public void scaleOScores(int previousScale) {
+    public void scaleOScores(final int previousScale) {
         oScale = ScalingTools.scaleArray(oScores, previousScale);
         // int logScale = 0;
         // double scale = 1.0;
@@ -212,7 +212,7 @@ public class StateSet {
         return iScale;
     }
 
-    public void setIScale(int scale) {
+    public void setIScale(final int scale) {
         iScale = scale;
     }
 
@@ -220,12 +220,12 @@ public class StateSet {
         return oScale;
     }
 
-    public void setOScale(int scale) {
+    public void setOScale(final int scale) {
         oScale = scale;
     }
 
     /**
-     * @return
+     * @return a copy of this {@link StateSet}
      */
     public StateSet copy() {
         return new StateSet(this, this.numSubStates);
