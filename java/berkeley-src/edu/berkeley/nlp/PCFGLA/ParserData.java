@@ -11,6 +11,7 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import edu.berkeley.nlp.util.Numberer;
+import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 
 /**
  * Stores the serialized material representing the grammar and lexicon of a parser, and an Options that specifies things

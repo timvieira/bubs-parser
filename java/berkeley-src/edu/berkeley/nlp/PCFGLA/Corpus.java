@@ -12,6 +12,7 @@ import java.util.List;
 import edu.berkeley.nlp.syntax.Tree;
 import edu.berkeley.nlp.syntax.Trees;
 import edu.berkeley.nlp.syntax.Trees.PennTreeReader;
+import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 
 /**
  * Class Corpus will give easy access to loading the training, validation, development testing, and testing sets from

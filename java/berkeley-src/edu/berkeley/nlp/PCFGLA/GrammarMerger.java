@@ -323,9 +323,9 @@ public class GrammarMerger {
      * returns a new grammar object and changes the lexicon in place!
      * 
      * @param grammar
-     * @param newGrammar
      * @param lexicon
      * @param mergeThesePairs
+     * @param mergeWeights
      */
     public static Grammar doTheMerges(Grammar grammar, final Lexicon lexicon, final boolean[][][] mergeThesePairs,
             final double[][] mergeWeights) {
@@ -408,15 +408,19 @@ public class GrammarMerger {
      */
     public static double[][][] computeDeltas(final Grammar grammar, final Lexicon lexicon,
             final double[][] mergeWeights, final StateSetTreeList trainStateSetTrees) {
+
         final ArrayParser parser = new ArrayParser(grammar, lexicon);
         final double[][][] deltas = new double[grammar.numSubStates.length][mergeWeights[0].length][mergeWeights[0].length];
+
         for (final Tree<StateSet> stateSetTree : trainStateSetTrees) {
-            parser.doInsideOutsideScores(stateSetTree, false); // E
-                                                                                  // Step
+
+            parser.doInsideOutsideScores(stateSetTree, false); // E-step
             double ll = stateSetTree.getLabel().getIScore(0);
-            ll = Math.log(ll) + (100 * stateSetTree.getLabel().getIScale());// System.out.println(stateSetTree);
-            if (!Double.isInfinite(ll))
+            ll = Math.log(ll) + (100 * stateSetTree.getLabel().getIScale());
+
+            if (!Double.isInfinite(ll)) {
                 grammar.tallyMergeScores(stateSetTree, deltas, mergeWeights);
+            }
         }
         return deltas;
     }
@@ -436,7 +440,7 @@ public class GrammarMerger {
         int n = 0;
         for (final Tree<StateSet> stateSetTree : trainStateSetTrees) {
             parser.doInsideOutsideScores(stateSetTree, false); // E
-                                                                                  // Step
+                                                               // Step
             double ll = stateSetTree.getLabel().getIScore(0);
             ll = Math.log(ll) + (100 * stateSetTree.getLabel().getIScale());// System.out.println(stateSetTree);
             if (Double.isInfinite(ll)) {
@@ -493,7 +497,6 @@ public class GrammarMerger {
             }
         }
         double threshold = -1;
-        final double threshold2 = -1;
         double thresholdGr = -1, thresholdLex = -1;
         if (separateMerge) {
             System.out.println("Going to merge " + (int) (mergingPercentage * 100) + "% of the substates siblings.");

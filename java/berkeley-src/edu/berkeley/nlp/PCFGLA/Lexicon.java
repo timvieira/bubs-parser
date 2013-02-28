@@ -1301,17 +1301,14 @@ public class Lexicon implements java.io.Serializable {
     public void removeUnlikelyTags(final double threshold, final double exponent) {
         // System.out.print("Removing unlikely tags...");
 
-        int removed = 0, total = 0;
         if (isConditional) {
             for (int i = 0; i < conditionalWeights.length; i++) {
                 for (int j = 0; j < conditionalWeights[i].length; j++) {
                     if (conditionalWeights[i][j] == null)
                         continue;
                     for (int k = 0; k < conditionalWeights[i][j].length; k++) {
-                        total++;
                         if (conditionalWeights[i][j][k] < threshold) {
                             conditionalWeights[i][j][k] = 0;
-                            removed++;
                         }
                     }
                 }
@@ -1323,10 +1320,8 @@ public class Lexicon implements java.io.Serializable {
                     for (final String word : wordToTagCounters[tag].keySet()) {
                         c_TW = wordToTagCounters[tag].get(word);
                         for (int substate = 0; substate < numSubStates[tag]; substate++) {
-                            total++;
                             if (c_TW[substate] < threshold) {
                                 c_TW[substate] = 0;
-                                removed++;
                             }
                         }
                     }

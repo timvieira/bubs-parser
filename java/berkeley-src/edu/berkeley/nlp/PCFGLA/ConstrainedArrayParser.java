@@ -10,6 +10,7 @@ import edu.berkeley.nlp.util.Counter;
 import edu.berkeley.nlp.util.Numberer;
 import edu.berkeley.nlp.util.PriorityQueue;
 import edu.berkeley.nlp.util.StringUtils;
+import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 
 public class ConstrainedArrayParser extends ArrayParser {
 

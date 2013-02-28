@@ -21,6 +21,7 @@ import edu.berkeley.nlp.PCFGLA.smoothing.Smoother;
 import edu.berkeley.nlp.syntax.StateSet;
 import edu.berkeley.nlp.syntax.Tree;
 import edu.berkeley.nlp.util.Numberer;
+import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 
 /**
  * Reads in the Penn Treebank and generates N_GRAMMARS different grammars.

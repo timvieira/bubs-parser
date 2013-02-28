@@ -9,6 +9,7 @@ import java.util.List;
 import edu.berkeley.nlp.syntax.Tree;
 import edu.berkeley.nlp.syntax.Trees;
 import edu.berkeley.nlp.util.Filter;
+import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 
 /**
  * Class which contains code for annotating and binarizing trees for the parser's use, and debinarizing and unannotating
