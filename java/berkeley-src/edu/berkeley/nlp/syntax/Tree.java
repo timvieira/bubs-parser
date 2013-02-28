@@ -4,13 +4,10 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-import java.util.Set;
 
 import edu.berkeley.nlp.util.MyMethod;
 
@@ -21,13 +18,23 @@ import edu.berkeley.nlp.util.MyMethod;
  * 
  *         Added function to get a map of subtrees to constituents.
  */
-public class Tree<L> implements Serializable, Comparable<Tree<L>>, Iterable<Tree<L>> {
+public class Tree<L> implements Serializable, Comparable<Tree<L>> {
 
     private static final long serialVersionUID = 1L;
 
     L label;
 
     List<Tree<L>> children;
+
+    public Tree(final L label, final List<Tree<L>> children) {
+        this.label = label;
+        this.children = children;
+    }
+
+    public Tree(final L label) {
+        this.label = label;
+        this.children = Collections.emptyList();
+    }
 
     public void setChild(final int i, final Tree<L> child) {
         children.set(i, child);
@@ -193,18 +200,6 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>>, Iterable<Tree
         }
     }
 
-    public List<Tree<L>> getPreOrderTraversal() {
-        final ArrayList<Tree<L>> traversal = new ArrayList<Tree<L>>();
-        traversalHelper(this, traversal, true);
-        return traversal;
-    }
-
-    public List<Tree<L>> getPostOrderTraversal() {
-        final ArrayList<Tree<L>> traversal = new ArrayList<Tree<L>>();
-        traversalHelper(this, traversal, false);
-        return traversal;
-    }
-
     private static <L> void traversalHelper(final Tree<L> tree, final List<Tree<L>> traversal, final boolean preOrder) {
         if (preOrder)
             traversal.add(tree);
@@ -275,130 +270,6 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>>, Iterable<Tree
             }
             sb.append(')');
         }
-    }
-
-    /**
-     * Same as toString(), but escapes terminals like so: ( becomes -LRB- ) becomes -RRB- \ becomes -BACKSLASH- ("\"
-     * does not occur in PTB; this is our own convention) This is useful because otherwise it's hard to tell a "("
-     * terminal from the tree's bracket structure, or tell an escaping \ from a literal.
-     */
-    public String toEscapedString() {
-        final StringBuilder sb = new StringBuilder();
-        toStringBuilderEscaped(sb);
-        return sb.toString();
-    }
-
-    public void toStringBuilderEscaped(final StringBuilder sb) {
-        if (!isLeaf())
-            sb.append('(');
-        if (getLabel() != null) {
-            if (isLeaf()) {
-                String escapedLabel = getLabel().toString();
-                escapedLabel = escapedLabel.replaceAll("\\(", "-LRB-");
-                escapedLabel = escapedLabel.replaceAll("\\)", "-RRB-");
-                escapedLabel = escapedLabel.replaceAll("\\\\", "-BACKSLASH-");
-                sb.append(escapedLabel);
-            } else {
-                sb.append(getLabel());
-            }
-        }
-        if (!isLeaf()) {
-            for (final Tree<L> child : getChildren()) {
-                sb.append(' ');
-                child.toStringBuilderEscaped(sb);
-            }
-            sb.append(')');
-        }
-    }
-
-    public Tree(final L label, final List<Tree<L>> children) {
-        this.label = label;
-        this.children = children;
-    }
-
-    public Tree(final L label) {
-        this.label = label;
-        this.children = Collections.emptyList();
-    }
-
-    /**
-     * Get the set of all subtrees inside the tree by returning a tree rooted at each node. These are <i>not</i> copies,
-     * but all share structure. The tree is regarded as a subtree of itself.
-     * 
-     * @return the <code>Set</code> of all subtrees in the tree.
-     */
-    public Set<Tree<L>> subTrees() {
-        return (Set<Tree<L>>) subTrees(new HashSet<Tree<L>>());
-    }
-
-    /**
-     * Get the list of all subtrees inside the tree by returning a tree rooted at each node. These are <i>not</i>
-     * copies, but all share structure. The tree is regarded as a subtree of itself.
-     * 
-     * @return the <code>List</code> of all subtrees in the tree.
-     */
-    public List<Tree<L>> subTreeList() {
-        return (List<Tree<L>>) subTrees(new ArrayList<Tree<L>>());
-    }
-
-    /**
-     * Add the set of all subtrees inside a tree (including the tree itself) to the given <code>Collection</code>.
-     * 
-     * @param n A collection of nodes to which the subtrees will be added
-     * @return The collection parameter with the subtrees added
-     */
-    public Collection<Tree<L>> subTrees(final Collection<Tree<L>> n) {
-        n.add(this);
-        final List<Tree<L>> kids = getChildren();
-        for (final Tree<L> kid : kids) {
-            kid.subTrees(n);
-        }
-        return n;
-    }
-
-    /**
-     * Returns an iterator over the nodes of the tree. This method implements the <code>iterator()</code> method
-     * required by the <code>Collections</code> interface. It does a preorder (children after node) traversal of the
-     * tree. (A possible extension to the class at some point would be to allow different traversal orderings via
-     * variant iterators.)
-     * 
-     * @return An iterator over the nodes of the tree
-     */
-    public Iterator<Tree<L>> iterator() {
-        return new TreeIterator();
-    }
-
-    private class TreeIterator implements Iterator<Tree<L>> {
-
-        private List<Tree<L>> treeStack;
-
-        private TreeIterator() {
-            treeStack = new ArrayList<Tree<L>>();
-            treeStack.add(Tree.this);
-        }
-
-        public boolean hasNext() {
-            return (!treeStack.isEmpty());
-        }
-
-        public Tree<L> next() {
-            final int lastIndex = treeStack.size() - 1;
-            final Tree<L> tr = treeStack.remove(lastIndex);
-            final List<Tree<L>> kids = tr.getChildren();
-            // so that we can efficiently use one List, we reverse them
-            for (int i = kids.size() - 1; i >= 0; i--) {
-                treeStack.add(kids.get(i));
-            }
-            return tr;
-        }
-
-        /**
-         * Not supported
-         */
-        public void remove() {
-            throw new UnsupportedOperationException();
-        }
-
     }
 
     /**
@@ -500,19 +371,6 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>>, Iterable<Tree
         return getYield().size() > 1;
     }
 
-    public Constituent<L> getLeastCommonAncestorConstituent(final int i, final int j) {
-        final List<L> yield = getYield();
-        final Constituent<L> leastCommonAncestorConstituentHelper = getLeastCommonAncestorConstituentHelper(this, 0,
-                yield.size(), i, j);
-
-        return leastCommonAncestorConstituentHelper;
-    }
-
-    public Tree<L> getTopTreeForSpan(final int i, final int j) {
-        final List<L> yield = getYield();
-        return getTopTreeForSpanHelper(this, 0, yield.size(), i, j);
-    }
-
     private static <L> Tree<L> getTopTreeForSpanHelper(final Tree<L> tree, final int start, final int end, final int i,
             final int j) {
 
@@ -552,76 +410,13 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>>, Iterable<Tree
             if (currStart <= i && currEnd >= j) {
                 final Constituent<L> leastCommonAncestorConstituentHelper = getLeastCommonAncestorConstituentHelper(
                         remove, currStart, currEnd, i, j);
-                if (leastCommonAncestorConstituentHelper != null)
+                if (leastCommonAncestorConstituentHelper != null) {
                     return leastCommonAncestorConstituentHelper;
-                else
-                    break;
+                }
+                break;
             }
             currStart += currYield.size();
         }
         return new Constituent<L>(tree.getLabel(), start, end);
     }
-
-    public boolean hasUnariesOtherThanRoot() {
-        assert children.size() == 1;
-        return hasUnariesHelper(children.get(0));
-
-    }
-
-    private boolean hasUnariesHelper(final Tree<L> tree) {
-        if (tree.isPreTerminal())
-            return false;
-        if (tree.getChildren().size() == 1)
-            return true;
-        for (final Tree<L> child : tree.getChildren()) {
-            if (hasUnariesHelper(child))
-                return true;
-        }
-        return false;
-    }
-
-    public boolean hasUnaryChain() {
-        return hasUnaryChainHelper(this, false);
-    }
-
-    private boolean hasUnaryChainHelper(final Tree<L> tree, final boolean unaryAbove) {
-        boolean result = false;
-        if (tree.getChildren().size() == 1) {
-            if (unaryAbove)
-                return true;
-            else if (tree.getChildren().get(0).isPreTerminal())
-                return false;
-            else
-                return hasUnaryChainHelper(tree.getChildren().get(0), true);
-        } else {
-            for (final Tree<L> child : tree.getChildren()) {
-                if (!child.isPreTerminal())
-                    result = result || hasUnaryChainHelper(child, false);
-            }
-        }
-        return result;
-    }
-
-    public void removeUnaryChains() {
-        removeUnaryChainHelper(this, null);
-    }
-
-    private void removeUnaryChainHelper(Tree<L> tree, final Tree<L> parent) {
-        if (tree.isLeaf())
-            return;
-        if (tree.getChildren().size() == 1 && !tree.isPreTerminal()) {
-            if (parent != null) {
-                tree = tree.getChildren().get(0);
-                parent.getChildren().set(0, tree);
-                removeUnaryChainHelper(tree, parent);
-            } else
-                removeUnaryChainHelper(tree.getChildren().get(0), tree);
-        } else {
-            for (final Tree<L> child : tree.getChildren()) {
-                if (!child.isPreTerminal())
-                    removeUnaryChainHelper(child, null);
-            }
-        }
-    }
-
 }
