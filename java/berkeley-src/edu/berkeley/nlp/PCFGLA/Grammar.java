@@ -1585,7 +1585,8 @@ public class Grammar implements java.io.Serializable {
     private void pruneSplitTree(final short[][][] partners, final short[][] mapping) {
         for (int tag = 0; tag < splitTrees.length; tag++) {
             final Tree<Short> splitTree = splitTrees[tag];
-            final int maxDepth = splitTree.getDepth();
+
+            final int maxDepth = splitTree.height();
             for (final Tree<Short> preTerminal : splitTree.getAtDepth(maxDepth - 2)) {
                 final List<Tree<Short>> children = preTerminal.children();
                 final ArrayList<Tree<Short>> newChildren = new ArrayList<Tree<Short>>(2);

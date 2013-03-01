@@ -2,23 +2,16 @@ package edu.berkeley.nlp.syntax;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedList;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-
-import edu.berkeley.nlp.util.MyMethod;
 
 /**
  * Represent linguistic trees, with each node consisting of a label and a list of children.
  * 
  * @author Dan Klein
- * 
- *         Added function to get a map of subtrees to constituents.
  */
-public class Tree<L> implements Serializable, Comparable<Tree<L>> {
+public class Tree<L> implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -34,10 +27,6 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>> {
     public Tree(final L label) {
         this.label = label;
         this.children = Collections.emptyList();
-    }
-
-    public void setChild(final int i, final Tree<L> child) {
-        children.set(i, child);
     }
 
     public void setChildren(final List<Tree<L>> c) {
@@ -77,51 +66,6 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>> {
         }
         for (final Tree<L> child : tree.children()) {
             appendYield(child, yield);
-        }
-    }
-
-    private static <L> int appendConstituent(final Tree<L> tree, final Map<Tree<L>, Constituent<L>> constituents,
-            final int index) {
-        if (tree.isLeaf()) {
-            final Constituent<L> c = new Constituent<L>(tree.label(), index, index);
-            constituents.put(tree, c);
-            return 1; // Length of a leaf constituent
-        }
-
-        int nextIndex = index;
-        for (final Tree<L> kid : tree.children()) {
-            nextIndex += appendConstituent(kid, constituents, nextIndex);
-        }
-        final Constituent<L> c = new Constituent<L>(tree.label(), index, nextIndex - 1);
-        constituents.put(tree, c);
-        return nextIndex - index; // Length of a leaf constituent
-    }
-
-    private static <L> int appendConstituent(final Tree<L> tree, final Collection<Constituent<L>> constituents,
-            final int index) {
-        if (tree.isLeaf() || tree.isPreTerminal()) {
-            final Constituent<L> c = new Constituent<L>(tree.label(), index, index);
-            constituents.add(c);
-            return 1; // Length of a leaf constituent
-        }
-
-        int nextIndex = index;
-        for (final Tree<L> kid : tree.children()) {
-            nextIndex += appendConstituent(kid, constituents, nextIndex);
-        }
-        final Constituent<L> c = new Constituent<L>(tree.label(), index, nextIndex - 1);
-        constituents.add(c);
-        return nextIndex - index; // Length of a leaf constituent
-    }
-
-    private static <L> void appendNonTerminals(final Tree<L> tree, final List<Tree<L>> yield) {
-        if (tree.isLeaf()) {
-
-            return;
-        }
-        yield.add(tree);
-        for (final Tree<L> child : tree.children()) {
-            appendNonTerminals(child, yield);
         }
     }
 
@@ -170,44 +114,14 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>> {
         }
     }
 
-    private static <L> void appendPreTerminals(final Tree<L> tree, final List<Tree<L>> yield) {
-        if (tree.isPreTerminal()) {
-            yield.add(tree);
-            return;
-        }
-        for (final Tree<L> child : tree.children()) {
-            appendPreTerminals(child, yield);
-        }
-    }
-
-    private static <L> void appendTreesOfDepth(final Tree<L> tree, final List<Tree<L>> yield, final int depth) {
-        if (tree.getDepth() == depth) {
-            yield.add(tree);
-            return;
-        }
-        for (final Tree<L> child : tree.children()) {
-            appendTreesOfDepth(child, yield, depth);
-        }
-    }
-
-    private static <L> void traversalHelper(final Tree<L> tree, final List<Tree<L>> traversal, final boolean preOrder) {
-        if (preOrder)
-            traversal.add(tree);
-        for (final Tree<L> child : tree.children()) {
-            traversalHelper(child, traversal, preOrder);
-        }
-        if (!preOrder)
-            traversal.add(tree);
-    }
-
-    public int getDepth() {
-        int maxDepth = 0;
+    public int height() {
+        int maxHeight = 0;
         for (final Tree<L> child : children) {
-            final int depth = child.getDepth();
-            if (depth > maxDepth)
-                maxDepth = depth;
+            final int depth = child.height();
+            if (depth > maxHeight)
+                maxHeight = depth;
         }
-        return maxDepth + 1;
+        return maxHeight + 1;
     }
 
     public int size() {
@@ -236,6 +150,35 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>> {
         }
     }
 
+    public List<Tree<L>> preterminals() {
+        final List<Tree<L>> preterminals = new ArrayList<Tree<L>>();
+        for (final Tree<L> node : inOrderList()) {
+            if (node.isPreTerminal()) {
+                preterminals.add(node);
+            }
+        }
+        return preterminals;
+    }
+
+    private List<Tree<L>> inOrderList() {
+        return inOrderList(this, new ArrayList<Tree<L>>(25));
+    }
+
+    private List<Tree<L>> inOrderList(final Tree<L> tree, final List<Tree<L>> list) {
+        final Iterator<Tree<L>> i = tree.children.iterator();
+        if (i.hasNext()) {
+            inOrderList(i.next(), list);
+        }
+
+        list.add(tree);
+
+        while (i.hasNext()) {
+            inOrderList(i.next(), list);
+        }
+
+        return list;
+    }
+
     public void setLabel(final L label) {
         this.label = label;
     }
@@ -247,7 +190,7 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>> {
         return sb.toString();
     }
 
-    public void toStringBuilder(final StringBuilder sb) {
+    private void toStringBuilder(final StringBuilder sb) {
         if (!isLeaf())
             sb.append('(');
         if (label() != null) {
@@ -260,47 +203,6 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>> {
             }
             sb.append(')');
         }
-    }
-
-    /**
-     * Applies a transformation to all labels in the tree and returns the resulting tree.
-     * 
-     * @param <O> Output type of the transformation
-     * @param trans The transformation to apply
-     * @return Transformed tree
-     */
-    public <O> Tree<O> transformNodes(final MyMethod<L, O> trans) {
-        final ArrayList<Tree<O>> newChildren = new ArrayList<Tree<O>>(children.size());
-        for (final Tree<L> child : children) {
-            newChildren.add(child.transformNodes(trans));
-        }
-        return new Tree<O>(trans.call(label), newChildren);
-    }
-
-    /**
-     * Applies a transformation to all nodes in the tree and returns the resulting tree. Different from
-     * <code>transformNodes</code> in that you get the full node and not just the label
-     * 
-     * @param <O>
-     * @param trans
-     * @return A transformed version of this tree
-     */
-    public <O> Tree<O> transformNodesUsingNode(final MyMethod<Tree<L>, O> trans) {
-        final ArrayList<Tree<O>> newChildren = new ArrayList<Tree<O>>(children.size());
-        final O newLabel = trans.call(this);
-        for (final Tree<L> child : children) {
-            newChildren.add(child.transformNodesUsingNode(trans));
-        }
-        return new Tree<O>(newLabel, newChildren);
-    }
-
-    public <O> Tree<O> transformNodesUsingNodePostOrder(final MyMethod<Tree<L>, O> trans) {
-        final ArrayList<Tree<O>> newChildren = new ArrayList<Tree<O>>(children.size());
-        for (final Tree<L> child : children) {
-            newChildren.add(child.transformNodesUsingNode(trans));
-        }
-        final O newLabel = trans.call(this);
-        return new Tree<O>(newLabel, newChildren);
     }
 
     @Override
@@ -333,81 +235,5 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>> {
                 return false;
         }
         return true;
-    }
-
-    public int compareTo(final Tree<L> o) {
-        if (!(o.label() instanceof Comparable && label() instanceof Comparable)) {
-            throw new IllegalArgumentException("Tree labels are not comparable");
-        }
-
-        @SuppressWarnings("unchecked")
-        final int cmp = ((Comparable<L>) o.label()).compareTo(label());
-        if (cmp != 0) {
-            return cmp;
-        }
-
-        final int cmp2 = Integer.compare(this.children().size(), o.children().size());
-        if (cmp2 != 0) {
-            return cmp2;
-        }
-
-        for (int i = 0; i < children().size(); ++i) {
-
-            final int cmp3 = children().get(i).compareTo(o.children().get(i));
-            if (cmp3 != 0) {
-                return cmp3;
-            }
-        }
-        return 0;
-
-    }
-
-    private static <L> Tree<L> getTopTreeForSpanHelper(final Tree<L> tree, final int start, final int end, final int i,
-            final int j) {
-
-        assert i <= j;
-        if (start == i && end == j) {
-            assert tree.label().toString().matches("\\w+");
-            return tree;
-        }
-
-        final Queue<Tree<L>> queue = new LinkedList<Tree<L>>();
-        queue.addAll(tree.children());
-        int currStart = start;
-        while (!queue.isEmpty()) {
-            final Tree<L> remove = queue.remove();
-            final List<L> currYield = remove.leafLabels();
-            final int currEnd = currStart + currYield.size();
-            if (currStart <= i && currEnd >= j)
-                return getTopTreeForSpanHelper(remove, currStart, currEnd, i, j);
-            currStart += currYield.size();
-        }
-        return null;
-    }
-
-    private static <L> Constituent<L> getLeastCommonAncestorConstituentHelper(final Tree<L> tree, final int start,
-            final int end, final int i, final int j) {
-
-        if (start == i && end == j)
-            return new Constituent<L>(tree.label(), start, end);
-
-        final Queue<Tree<L>> queue = new LinkedList<Tree<L>>();
-        queue.addAll(tree.children());
-        int currStart = start;
-        while (!queue.isEmpty()) {
-            final Tree<L> remove = queue.remove();
-            final List<L> currYield = remove.leafLabels();
-            final int currEnd = currStart + currYield.size();
-            if (currStart <= i && currEnd >= j) {
-                final Constituent<L> leastCommonAncestorConstituentHelper = getLeastCommonAncestorConstituentHelper(
-                        remove, currStart, currEnd, i, j);
-                if (leastCommonAncestorConstituentHelper != null) {
-                    return leastCommonAncestorConstituentHelper;
-                }
-                break;
-            }
-            currStart += currYield.size();
-        }
-        return new Constituent<L>(tree.label(), start, end);
     }
 }

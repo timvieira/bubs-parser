@@ -8,10 +8,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
 
-import edu.berkeley.nlp.util.CollectionUtils;
 import edu.berkeley.nlp.util.Filter;
 
 /**
@@ -349,8 +347,7 @@ public class Trees {
             }
             sb.append('(');
             sb.append(tree.label());
-            renderChildren(tree.children(), indent + 1, tree.label() == null
-                    || tree.label().toString() == null, sb);
+            renderChildren(tree.children(), indent + 1, tree.label() == null || tree.label().toString() == null, sb);
             sb.append(')');
         }
 
@@ -444,16 +441,6 @@ public class Trees {
             max = Math.max(max, getMaxBranchingFactor(child));
         }
         return max;
-    }
-
-    public static <T> Tree<T> buildTree(final T rootLabel, final Map<T, List<T>> parent2ChildrenMap) {
-        final List<T> childrenLabels = CollectionUtils.getValueList(parent2ChildrenMap, rootLabel);
-        final List<Tree<T>> children = new ArrayList<Tree<T>>();
-        for (final T c : childrenLabels) {
-            final Tree<T> node = buildTree(c, parent2ChildrenMap);
-            children.add(node);
-        }
-        return new Tree<T>(rootLabel, children);
     }
 
     public interface LabelTransformer<S, T> {
