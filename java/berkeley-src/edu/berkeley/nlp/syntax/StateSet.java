@@ -41,28 +41,10 @@ public class StateSet {
 
     @Override
     public String toString() {
-        if (word != null)
-            return word + " " + from + "-" + to;// + " " + substates.length;
-        final String s = Numberer.getGlobalNumberer("tags").symbol(state) + " ";// "[";
-        // for (int i = 0; i < numSubStates; i++){
-        // NumberFormat f = NumberFormat.getInstance();
-        // f.setMaximumFractionDigits(5);
-        // String iS = "";
-        // String oS = "";
-        // if (iScores != null && iScores[i]!=0)
-        // iS = ": iS="+f.format(iScores[i]);//Math.log(iScores[i])+100*iScale);
-        // if (oScores != null && oScores[i]!=0)
-        // oS = " oS="+f.format(oScores[i]);//Math.log(oScores[i])+100*oScale);
-        // // String iS = Double.toString(Math.log(iScores[i])+100*iScale);
-        // // String oS = Double.toString(Math.log(oScores[i])+100*oScale);
-        // // String iS = "";
-        // // String oS = "";
-        // if (iScores != null && DoubleArrays.max(iScores)==0) iS = ", iS=0";
-        // if (oScores != null && DoubleArrays.max(oScores)==0) oS = ", oS=0";
-        // s=s.concat(" ["+state+"-"+i+iS+oS+"]");
-        // }
-        // s=s.concat(" ]");
-        return s;
+        if (word != null) {
+            return word + " " + from + "-" + to;
+        }
+        return Numberer.getGlobalNumberer("tags").symbol(state) + " ";
     }
 
     public final short getState() {
@@ -73,6 +55,7 @@ public class StateSet {
         return iScores[i];
     }
 
+    // TODO Currently unused
     public final double[] getIScores() {
         return iScores;
     }

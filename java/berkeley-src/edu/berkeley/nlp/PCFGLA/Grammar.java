@@ -1587,7 +1587,18 @@ public class Grammar implements java.io.Serializable {
             final Tree<Short> splitTree = splitTrees[tag];
 
             final int maxDepth = splitTree.height();
-            for (final Tree<Short> preTerminal : splitTree.getAtDepth(maxDepth - 2)) {
+
+            // // Compare getAtDepth(maxDepth - 2) to preterminals()
+            // final List<Tree<Short>> getAtDepth = splitTree.getAtDepth(maxDepth - 2);
+            // final List<Tree<Short>> preterminals = splitTree.preterminals();
+            //
+            // assertEquals(getAtDepth.size(), splitTree.preterminals().size());
+            // for (Iterator<Tree<Short>> iter1 = getAtDepth.iterator(), iter2 = preterminals.iterator();
+            // iter1.hasNext();) {
+            // assertEquals(iter1.next().label(), iter2.next().label());
+            // }
+            //
+            for (final Tree<Short> preTerminal : splitTree.subtrees(maxDepth - 2)) {
                 final List<Tree<Short>> children = preTerminal.children();
                 final ArrayList<Tree<Short>> newChildren = new ArrayList<Tree<Short>>(2);
                 for (int i = 0; i < children.size(); i++) {

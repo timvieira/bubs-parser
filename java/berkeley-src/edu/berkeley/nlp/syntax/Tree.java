@@ -3,7 +3,6 @@ package edu.berkeley.nlp.syntax;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -46,11 +45,11 @@ public class Tree<L> implements Serializable {
     }
 
     public boolean isLeaf() {
-        return children().isEmpty();
+        return children.isEmpty();
     }
 
     public boolean isPreTerminal() {
-        return children().size() == 1 && children().get(0).isLeaf();
+        return children.size() == 1 && children.get(0).isLeaf();
     }
 
     public List<L> leafLabels() {
@@ -132,51 +131,31 @@ public class Tree<L> implements Serializable {
         return sum + 1;
     }
 
-    public List<Tree<L>> getAtDepth(final int depth) {
+    /**
+     * Returns all subtrees of the specified depth
+     * 
+     * @param depth
+     * @return All subtrees of the specified depth
+     */
+    public List<Tree<L>> subtrees(final int depth) {
         final List<Tree<L>> yield = new ArrayList<Tree<L>>();
-        appendAtDepth(depth, this, yield);
+        appendSubtrees(depth, this, yield);
         return yield;
     }
 
-    private static <L> void appendAtDepth(final int depth, final Tree<L> tree, final List<Tree<L>> yield) {
-        if (depth < 0)
+    private static <L> void appendSubtrees(final int depth, final Tree<L> tree, final List<Tree<L>> yield) {
+        if (depth < 0) {
             return;
+        }
+
         if (depth == 0) {
             yield.add(tree);
             return;
         }
+
         for (final Tree<L> child : tree.children()) {
-            appendAtDepth(depth - 1, child, yield);
+            appendSubtrees(depth - 1, child, yield);
         }
-    }
-
-    public List<Tree<L>> preterminals() {
-        final List<Tree<L>> preterminals = new ArrayList<Tree<L>>();
-        for (final Tree<L> node : inOrderList()) {
-            if (node.isPreTerminal()) {
-                preterminals.add(node);
-            }
-        }
-        return preterminals;
-    }
-
-    private List<Tree<L>> inOrderList() {
-        return inOrderList(this, new ArrayList<Tree<L>>(25));
-    }
-
-    private List<Tree<L>> inOrderList(final Tree<L> tree, final List<Tree<L>> list) {
-        final Iterator<Tree<L>> i = tree.children.iterator();
-        if (i.hasNext()) {
-            inOrderList(i.next(), list);
-        }
-
-        list.add(tree);
-
-        while (i.hasNext()) {
-            inOrderList(i.next(), list);
-        }
-
-        return list;
     }
 
     public void setLabel(final L label) {
