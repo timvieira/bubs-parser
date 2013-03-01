@@ -12,17 +12,14 @@ import edu.berkeley.nlp.util.Numberer;
  */
 public class UnaryRule extends Rule implements java.io.Serializable, Comparable<UnaryRule> {
 
+    private static final long serialVersionUID = 2L;
+
     public short childState = -1;
     /**
      * NEW: scores[childSubState][parentSubState]
      */
     public double[][] scores;
 
-    /*
-     * public UnaryRule(String s, Numberer n) { String[] fields = StringUtils.splitOnCharWithQuoting(s, ' ', '\"',
-     * '\\'); // System.out.println("fields:\n" + fields[0] + "\n" + fields[2] + "\n" + fields[3]); this.parent =
-     * n.number(fields[0]); this.child = n.number(fields[2]); this.score = Double.parseDouble(fields[3]); }
-     */
     public UnaryRule(final short pState, final short cState, final double[][] scores) {
         this.parentState = pState;
         this.childState = cState;
@@ -32,7 +29,6 @@ public class UnaryRule extends Rule implements java.io.Serializable, Comparable<
     public UnaryRule(final short pState, final short cState) {
         this.parentState = pState;
         this.childState = cState;
-        // this.scores = new double[1][1];
     }
 
     /** Copy constructor */
@@ -93,12 +89,12 @@ public class UnaryRule extends Rule implements java.io.Serializable, Comparable<
     @Override
     public String toString() {
         final Numberer n = Numberer.getGlobalNumberer("tags");
-        String cState = (String) n.symbol(childState);
+        String cState = n.symbol(childState);
         if (cState.endsWith("^g")) {
             cState = cState.substring(0, cState.length() - 2);
         }
 
-        String pState = (String) n.symbol(parentState);
+        String pState = n.symbol(parentState);
         if (pState.endsWith("^g")) {
             pState = pState.substring(0, pState.length() - 2);
         }
@@ -135,8 +131,6 @@ public class UnaryRule extends Rule implements java.io.Serializable, Comparable<
     public double getScore(final int pS, final int cS) {
         // gets the score for a particular combination of substates
         if (scores[cS] == null) {
-            if (logarithmMode)
-                return Double.NEGATIVE_INFINITY;
             return 0;
         }
         return scores[cS][pS];
@@ -157,8 +151,6 @@ public class UnaryRule extends Rule implements java.io.Serializable, Comparable<
         this.parentState = pState;
         this.childState = cState;
     }
-
-    private static final long serialVersionUID = 2L;
 
     /**
      * @return Split rule

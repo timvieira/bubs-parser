@@ -2,7 +2,6 @@ package edu.berkeley.nlp.syntax;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -16,23 +15,23 @@ public class Tree<L> implements Serializable {
 
     L label;
 
-    List<Tree<L>> children;
+    ArrayList<Tree<L>> children;
 
-    public Tree(final L label, final List<Tree<L>> children) {
+    public Tree(final L label, final ArrayList<Tree<L>> children) {
         this.label = label;
         this.children = children;
     }
 
     public Tree(final L label) {
         this.label = label;
-        this.children = Collections.emptyList();
+        this.children = new ArrayList<Tree<L>>(2);
     }
 
-    public void setChildren(final List<Tree<L>> c) {
+    public void setChildren(final ArrayList<Tree<L>> c) {
         this.children = c;
     }
 
-    public List<Tree<L>> children() {
+    public ArrayList<Tree<L>> children() {
         return children;
     }
 
@@ -95,6 +94,19 @@ public class Tree<L> implements Serializable {
             newChildren.add(child.shallowClone());
         }
         return new Tree<L>(label, newChildren);
+    }
+
+    public Iterable<Tree<L>> postOrderTraversal() {
+        return postOrderList(new ArrayList<Tree<L>>());
+    }
+
+    private List<Tree<L>> postOrderList(final List<Tree<L>> list) {
+        for (final Tree<L> child : children) {
+            child.postOrderList(list);
+        }
+        list.add(this);
+
+        return list;
     }
 
     public List<L> preterminalLabels() {

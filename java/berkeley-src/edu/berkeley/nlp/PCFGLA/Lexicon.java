@@ -1041,7 +1041,7 @@ public class Lexicon implements java.io.Serializable {
             final short tag = tags.get(position).getState();
 
             final String sig = getCachedSignature(word, position);
-            wordCounter.incrementCount(sig, 0);
+            // wordCounter.incrementCount(sig, 0);
 
             if (unseenWordToTagCounters[tag] == null) {
                 unseenWordToTagCounters[tag] = new HashMap<String, double[]>();
@@ -1085,7 +1085,7 @@ public class Lexicon implements java.io.Serializable {
                                 - Math.log(sentenceScore) + Math.log(currentState.getOScore(substate))
                                 + Math.log(oldLexiconScores[substate]));
                     }
-                    // weightSum+=weight;
+
                 } else if (randomness == 0) {
                     // for the baseline
                     weight = 1;
@@ -1093,9 +1093,11 @@ public class Lexicon implements java.io.Serializable {
                     // add a bit of randomness
                     weight = GrammarTrainer.RANDOM.nextDouble() * randomness / 100.0 + 1.0;
                 }
+
                 if (weight == 0) {
                     continue;
                 }
+
                 // tally in the tag with the given weight
                 substateCounter[substate] += weight;
                 // update the counters
@@ -1104,7 +1106,7 @@ public class Lexicon implements java.io.Serializable {
                 totalTokens += weight;
 
                 if (Double.isNaN(totalTokens)) {
-                    throw new Error("totalTokens is NaN: this would fail if we let it continue!");
+                    throw new IllegalArgumentException("totalTokens is NaN");
                 }
 
                 if (oldLexicon != null && oldWordCounter.getCount(word) < threshold + 0.5) {
@@ -1113,30 +1115,6 @@ public class Lexicon implements java.io.Serializable {
                     unseenTagCounter[tag][substate] += weight;
                     totalUnseenTokens += weight;
                 }
-                // if (secondHalf) {
-                // // start doing this once we're halfway through the trees
-                // // it's an entirely unknown word
-                // if (wordCounter.getCount(word) < 2) {
-                // wordCounter.incrementCount(sig, weight);
-                //
-                // if (unseenWordToTagCounters[tag] == null) {
-                // unseenWordToTagCounters[tag] = new HashMap<String,
-                // double[]>();
-                // }
-                // substateCounter = unseenWordToTagCounters[tag].get(sig);
-                // if (substateCounter == null) {
-                // //System.out.print("Sig "+sig+" word "+
-                // word+" pos "+position);
-                // substateCounter = new double[numSubStates[tag]];
-                // unseenWordToTagCounters[tag].put(sig, substateCounter);
-                // }
-                //
-                // substateCounter[substate] += weight;
-                // unseenTagCounter[tag][substate] += weight;
-                // totalUnseenTokens += weight;
-                // } else {
-                // }
-                // }
             }
         }
     }

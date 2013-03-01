@@ -2,7 +2,6 @@ package edu.berkeley.nlp.PCFGLA;
 
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 
@@ -94,7 +93,7 @@ public class TreeAnnotations implements java.io.Serializable {
                                                // Tree<String>(tree.getLabel());//
                                                // + parentLabel);
         } else {
-            final List<Tree<String>> children = new ArrayList<Tree<String>>();
+            final ArrayList<Tree<String>> children = new ArrayList<Tree<String>>();
             for (final Tree<String> child : tree.children()) {
                 // children.add(annotateVerticallyTwice(child,
                 // parentLabel2,"^"+tree.getLabel()));
@@ -112,7 +111,7 @@ public class TreeAnnotations implements java.io.Serializable {
                                               // Tree<String>(tree.getLabel());//
                                               // + parentLabel);
         } else {
-            final List<Tree<String>> children = new ArrayList<Tree<String>>();
+            final ArrayList<Tree<String>> children = new ArrayList<Tree<String>>();
             for (final Tree<String> child : tree.children()) {
                 children.add(annotateVertically(child, "^" + tree.label()));
             }
@@ -128,7 +127,7 @@ public class TreeAnnotations implements java.io.Serializable {
                                               // Tree<String>(tree.getLabel());//
                                               // + parentLabel);
         } else {
-            final List<Tree<String>> children = new ArrayList<Tree<String>>();
+            final ArrayList<Tree<String>> children = new ArrayList<Tree<String>>();
             for (final Tree<String> child : tree.children()) {
                 children.add(markGrammarNonterminals(child, "^g"));// ""));//
             }
@@ -144,7 +143,7 @@ public class TreeAnnotations implements java.io.Serializable {
                                               // Tree<String>(tree.getLabel());//
                                               // + parentLabel);
         } else {
-            final List<Tree<String>> children = new ArrayList<Tree<String>>();
+            final ArrayList<Tree<String>> children = new ArrayList<Tree<String>>();
             for (final Tree<String> child : tree.children()) {
                 children.add(markUnaryParents(child));//
             }
@@ -171,7 +170,7 @@ public class TreeAnnotations implements java.io.Serializable {
                                                   // + parentLabel);
             }
         } else {
-            final List<Tree<String>> children = new ArrayList<Tree<String>>();
+            final ArrayList<Tree<String>> children = new ArrayList<Tree<String>>();
             for (final Tree<String> child : tree.children()) {
                 children.add(annotateManuallyVertically(child, "^" + tree.label()));
             }
@@ -213,7 +212,7 @@ public class TreeAnnotations implements java.io.Serializable {
                 throw new Error("code does not exist to horizontally annotate at level " + nHorizontalAnnotation);
             }
         }
-        final List<Tree<String>> transformedChildren = new ArrayList<Tree<String>>();
+        final ArrayList<Tree<String>> transformedChildren = new ArrayList<Tree<String>>();
         for (final Tree<String> child : tree.children()) {
             transformedChildren.add(forgetLabels(child, nHorizontalAnnotation));
         }
@@ -237,11 +236,15 @@ public class TreeAnnotations implements java.io.Serializable {
 
     static Tree<String> leftBinarizeTree(final Tree<String> tree) {
         final String label = tree.label();
-        final List<Tree<String>> children = tree.children();
-        if (tree.isLeaf())
+        final ArrayList<Tree<String>> children = tree.children();
+        if (tree.isLeaf()) {
             return new Tree<String>(label);
-        else if (children.size() == 1) {
-            return new Tree<String>(label, Collections.singletonList(leftBinarizeTree(children.get(0))));
+        }
+
+        if (children.size() == 1) {
+            final ArrayList<Tree<String>> newChildren = new ArrayList<Tree<String>>(1);
+            newChildren.add(leftBinarizeTree(children.get(0)));
+            return new Tree<String>(label, newChildren);
         }
         // otherwise, it's a binary-or-more local tree, so decompose it into a
         // sequence of binary and unary trees.
@@ -253,7 +256,7 @@ public class TreeAnnotations implements java.io.Serializable {
     private static Tree<String> leftBinarizeTreeHelper(final Tree<String> tree, final int numChildrenGenerated,
             final String intermediateLabel) {
         final Tree<String> leftTree = tree.children().get(numChildrenGenerated);
-        final List<Tree<String>> children = new ArrayList<Tree<String>>(2);
+        final ArrayList<Tree<String>> children = new ArrayList<Tree<String>>(2);
         children.add(leftBinarizeTree(leftTree));
         if (numChildrenGenerated == tree.children().size() - 2) {
             children.add(leftBinarizeTree(tree.children().get(numChildrenGenerated + 1)));
@@ -267,11 +270,13 @@ public class TreeAnnotations implements java.io.Serializable {
 
     static Tree<String> rightBinarizeTree(final Tree<String> tree) {
         final String label = tree.label();
-        final List<Tree<String>> children = tree.children();
+        final ArrayList<Tree<String>> children = tree.children();
         if (tree.isLeaf())
             return new Tree<String>(label);
         else if (children.size() == 1) {
-            return new Tree<String>(label, Collections.singletonList(rightBinarizeTree(children.get(0))));
+            final ArrayList<Tree<String>> newChildren = new ArrayList<Tree<String>>(1);
+            newChildren.add(rightBinarizeTree(children.get(0)));
+            return new Tree<String>(label, newChildren);
         }
         // otherwise, it's a binary-or-more local tree, so decompose it into a
         // sequence of binary and unary trees.
@@ -283,7 +288,7 @@ public class TreeAnnotations implements java.io.Serializable {
     private static Tree<String> rightBinarizeTreeHelper(final Tree<String> tree, final int numChildrenLeft,
             final String intermediateLabel) {
         final Tree<String> rightTree = tree.children().get(numChildrenLeft);
-        final List<Tree<String>> children = new ArrayList<Tree<String>>(2);
+        final ArrayList<Tree<String>> children = new ArrayList<Tree<String>>(2);
         if (numChildrenLeft == 1) {
             children.add(rightBinarizeTree(tree.children().get(numChildrenLeft - 1)));
         } else if (numChildrenLeft > 1) {

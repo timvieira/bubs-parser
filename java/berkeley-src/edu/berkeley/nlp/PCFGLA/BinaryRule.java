@@ -68,18 +68,18 @@ public class BinaryRule extends Rule implements Serializable, java.lang.Comparab
     public String toString() {
 
         final Numberer n = Numberer.getGlobalNumberer("tags");
-        String lState = (String) n.symbol(leftChildState);
+        String lState = n.symbol(leftChildState);
 
         if (lState.endsWith("^g")) {
             lState = lState.substring(0, lState.length() - 2);
         }
 
-        String rState = (String) n.symbol(rightChildState);
+        String rState = n.symbol(rightChildState);
         if (rState.endsWith("^g")) {
             rState = rState.substring(0, rState.length() - 2);
         }
 
-        String pState = (String) n.symbol(parentState);
+        String pState = n.symbol(parentState);
         if (pState.endsWith("^g")) {
             pState = pState.substring(0, pState.length() - 2);
         }
@@ -145,8 +145,6 @@ public class BinaryRule extends Rule implements Serializable, java.lang.Comparab
     public double getScore(final int pS, final int lS, final int rS) {
         // gets the score for a particular combination of substates
         if (scores[lS][rS] == null) {
-            if (logarithmMode)
-                return Double.NEGATIVE_INFINITY;
             return 0;
         }
         return scores[lS][rS][pS];

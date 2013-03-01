@@ -29,7 +29,7 @@ public class Trees {
             if (tree.isLeaf()) {
                 return new Tree<String>(tree.label);
             }
-            final List<Tree<String>> transformedChildren = new ArrayList<Tree<String>>();
+            final ArrayList<Tree<String>> transformedChildren = new ArrayList<Tree<String>>();
             for (final Tree<String> child : tree.children()) {
                 transformedChildren.add(transformTree(child));
             }
@@ -66,7 +66,7 @@ public class Trees {
                 return new Tree<String>(label);
             }
             final List<Tree<String>> children = tree.children();
-            final List<Tree<String>> transformedChildren = new ArrayList<Tree<String>>();
+            final ArrayList<Tree<String>> transformedChildren = new ArrayList<Tree<String>>();
             for (final Tree<String> child : children) {
                 final Tree<String> transformedChild = transformTree(child);
                 if (transformedChild != null)
@@ -85,7 +85,7 @@ public class Trees {
             while (children.size() == 1 && !children.get(0).isLeaf() && label.equals(children.get(0).label())) {
                 children = children.get(0).children();
             }
-            final List<Tree<E>> transformedChildren = new ArrayList<Tree<E>>();
+            final ArrayList<Tree<E>> transformedChildren = new ArrayList<Tree<E>>();
             for (final Tree<E> child : children) {
                 transformedChildren.add(transformTree(child));
             }
@@ -154,7 +154,7 @@ public class Trees {
                 readRightParen();
                 return new Tree<String>(label);
             }
-            final List<Tree<String>> children = readChildren();
+            final ArrayList<Tree<String>> children = readChildren();
             readRightParen();
             if (!lowercase || children.size() > 0) {
                 return new Tree<String>(label, children);
@@ -180,9 +180,9 @@ public class Trees {
             return sb.toString().intern();
         }
 
-        private List<Tree<String>> readChildren() throws IOException {
+        private ArrayList<Tree<String>> readChildren() throws IOException {
             readWhiteSpace();
-            final List<Tree<String>> children = new ArrayList<Tree<String>>();
+            final ArrayList<Tree<String>> children = new ArrayList<Tree<String>>();
             while (!isRightParen(peek()) || children.size() == 0) {
                 readWhiteSpace();
                 if (isLeftParen(peek())) {
@@ -403,7 +403,7 @@ public class Trees {
     }
 
     private static <L> List<Tree<L>> spliceNodesHelper(final Tree<L> tree, final Filter<L> filter, final boolean splice) {
-        final List<Tree<L>> splicedChildren = new ArrayList<Tree<L>>();
+        final ArrayList<Tree<L>> splicedChildren = new ArrayList<Tree<L>>();
         for (final Tree<L> child : tree.children()) {
             final List<Tree<L>> splicedChildList = spliceNodesHelper(child, filter, splice);
             splicedChildren.addAll(splicedChildList);
@@ -426,7 +426,7 @@ public class Trees {
             return new Tree<String>(tree.label());
         }
 
-        final List<Tree<String>> children = new ArrayList<Tree<String>>();
+        final ArrayList<Tree<String>> children = new ArrayList<Tree<String>>();
         final Tree<String> newTree = new Tree<String>(tree.label());
         for (final Tree<String> child : tree.children()) {
             children.add(stripLeaves(child));
@@ -452,7 +452,7 @@ public class Trees {
         if (origTree.isLeaf()) {
             return new Tree<T>(newLabel);
         }
-        final List<Tree<T>> children = new ArrayList<Tree<T>>();
+        final ArrayList<Tree<T>> children = new ArrayList<Tree<T>>();
         for (final Tree<S> child : origTree.children()) {
             children.add(transformLabels(child, labelTransform));
         }

@@ -12,19 +12,44 @@ import edu.berkeley.nlp.util.ScalingTools;
  * @author Romain Thibaux
  */
 public class StateSet {
+
     public static final double SCALE = Math.exp(100);
 
     double[] iScores; // the log-probabilities for each sublabels
     double[] oScores;
     int iScale;
     int oScale;
-    String word;
-    /** the word of this node, if it is a terminal node; else null */
-    public int wordIndex, sigIndex;
 
-    short numSubStates;
-    short state;
+    // TODO Map this word to an integer index, and use that in Lexicon.trainTree() and Lexicon.score()
+    final String word;
+
+    private final short numSubStates;
+    private final short state;
     public short from, to;
+
+    public StateSet(final short state, final short nSubStates) {
+        this.numSubStates = nSubStates;
+        this.state = state;
+        this.word = null;
+    }
+
+    public StateSet(final short s, final short nSubStates, final String word, final short from, final short to) {
+        this.numSubStates = nSubStates;
+        this.state = s;
+        this.word = word;
+        this.from = from;
+        this.to = to;
+
+    }
+
+    public StateSet(final StateSet oldS, final short nSubStates) {
+        this.numSubStates = nSubStates;
+        this.state = oldS.state;
+        this.word = oldS.word;
+        this.from = oldS.from;
+        this.to = oldS.to;
+
+    }
 
     // Run allocate() before any other operation
     public void allocate() {
@@ -88,107 +113,20 @@ public class StateSet {
         oScores[i] = s;
     }
 
-    /*
-     * public void logAddIScore(short i, double s) { iScores[i] = SloppyMath.logAdd(iScores[i], s); }
-     * 
-     * public void logAddOScore(short i,double s) { oScores[i] = SloppyMath.logAdd(oScores[i], s); }
-     */
-
     public final int numSubStates() {
         return numSubStates;
-    }
-
-    /*
-     * public StateSet(int nSubStates) { this.numSubStates = nSubStates; this.iScores = new double[nSubStates];
-     * this.oScores = new double[nSubStates]; for ( int i = 0; i < nSubStates; i++ ) { iScores[i] =
-     * Double.NEGATIVE_INFINITY; oScores[i] = Double.NEGATIVE_INFINITY; } }
-     */
-
-    public StateSet(final short state, final short nSubStates) {
-        this.numSubStates = nSubStates;
-        this.state = state;
-    }
-
-    public StateSet(final short s, final short nSubStates, final String word, final short from, final short to) {
-        this.numSubStates = nSubStates;
-        this.state = s;
-        this.word = word;
-        this.from = from;
-        this.to = to;
-
-    }
-
-    public StateSet(final StateSet oldS, final short nSubStates) {
-        this.numSubStates = nSubStates;
-        this.state = oldS.state;
-        this.word = oldS.word;
-        this.from = oldS.from;
-        this.to = oldS.to;
-
     }
 
     public String getWord() {
         return word;
     }
 
-    public void setWord(final String word) {
-        this.word = word;
-    }
-
     public void scaleIScores(final int previousScale) {
         iScale = ScalingTools.scaleArray(iScores, previousScale);
-        // int logScale = 0;
-        // double scale = 1.0;
-        // double max = ArrayMath.max(iScores);
-        // //if (max==0) System.out.println("All iScores are 0!");
-        // if (SloppyMath.isVeryDangerous(max)) return;
-        // while (max > SCALE) {
-        // max /= SCALE;
-        // scale *= SCALE;
-        // logScale += 1;
-        // }
-        // while (max > 0.0 && max < 1.0 / SCALE) {
-        // max *= SCALE;
-        // scale /= SCALE;
-        // logScale -= 1;
-        // }
-        // if (logScale != 0) {
-        // for (int i = 0; i < numSubStates; i++) {
-        // iScores[i] /= scale;
-        // }
-        // }
-        // if ((max!=0) && ArrayMath.max(iScores)==0){
-        // System.out.println("Undeflow when scaling iScores!");
-        // }
-        // iScale = previousScale + logScale;
     }
 
     public void scaleOScores(final int previousScale) {
         oScale = ScalingTools.scaleArray(oScores, previousScale);
-        // int logScale = 0;
-        // double scale = 1.0;
-        // double max = ArrayMath.max(oScores);
-        // if (SloppyMath.isVeryDangerous(max)) return;
-        // //if (max==0) System.out.println("All oScores are 0!");
-        // while (max > SCALE) {
-        // max /= SCALE;
-        // scale *= SCALE;
-        // logScale += 1;
-        // }
-        // while (max > 0.0 && max < 1.0 / SCALE) {
-        // max *= SCALE;
-        // scale /= SCALE;
-        // logScale -= 1;
-        // }
-        // if (logScale != 0) {
-        // for (int i = 0; i < numSubStates; i++) {
-        // oScores[i] /= scale;
-        // }
-        // }
-        // if ((max!=0) && ArrayMath.max(oScores)==0){
-        // System.out.println("Undeflow when scaling oScores!");
-        // }
-        // oScale = previousScale + logScale;
     }
 
     public int getIScale() {
