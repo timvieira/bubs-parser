@@ -234,6 +234,14 @@ public class BinaryTree<E> implements Tree<E>, Serializable {
         return leftChild == null;
     }
 
+    public boolean isPreterminal() {
+        return (leftChild != null && leftChild.leftChild == null);
+    }
+
+    public boolean isLeafOrPreterminal() {
+        return (leftChild == null || leftChild.leftChild == null);
+    }
+
     @Override
     public boolean isLeftmostChild() {
         BinaryTree<E> child = this;
@@ -493,7 +501,7 @@ public class BinaryTree<E> implements Tree<E>, Serializable {
         return postOrderLabelList(new ArrayList<E>(size));
     }
 
-    private List<BinaryTree<E>> leafList(final List<BinaryTree<E>> list) {
+    public List<BinaryTree<E>> leafList(final List<BinaryTree<E>> list) {
         for (final BinaryTree<E> node : inOrderList()) {
             if (node.isLeaf()) {
                 list.add(node);
