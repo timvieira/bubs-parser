@@ -3,9 +3,6 @@
  */
 package edu.berkeley.nlp.util;
 
-import java.util.Arrays;
-
-import edu.berkeley.nlp.math.SloppyMath;
 
 /**
  * @author petrov
@@ -50,7 +47,7 @@ public class ScalingTools {
         // if (true) return previousScale;
         int logScale = 0;
         double scale = 1.0;
-        double max = max(scores);
+        double max = ArrayUtil.max(scores);
         if (max == Double.POSITIVE_INFINITY) {
             // System.out.println("Infinity");
             return 0;
@@ -76,65 +73,5 @@ public class ScalingTools {
         // System.out.println("Undeflow when scaling scores!");
         // }
         return previousScale + logScale;
-    }
-
-    public static void scaleArrayToScale(final double[] scores, final int previousScale, final int newScale) {
-        final int scaleDiff = previousScale - newScale;
-        if (scaleDiff == 0)
-            return; // nothing to do
-        final double max = max(scores);
-        if (SloppyMath.isDangerous(max))
-            return;
-
-        final double scale = calcScaleFactor(scaleDiff);
-
-        if (Math.abs(scaleDiff) >= 800) {
-            // under-/overflow...
-            Arrays.fill(scores, 0.0);
-            return;
-        }
-
-        for (int i = 0; i < scores.length; i++) {
-            scores[i] *= scale;
-        }
-        // if (SloppyMath.isDangerous(ArrayMath.max(scores))){
-        // System.out.println("Undeflow when scaling scores!");
-        // }
-    }
-
-    public static double scaleToScale(double score, final int previousScale, final int newScale) {
-        final int scaleDiff = previousScale - newScale;
-        if (scaleDiff == 0)
-            return score; // nothing to do
-        final double max = score;
-
-        if (SloppyMath.isDangerous(max))
-            return 0;
-
-        final double scale = calcScaleFactor(scaleDiff);
-
-        if (Math.abs(scaleDiff) >= 800) {
-            // under-/overflow...
-            return 0;
-        }
-
-        score *= scale;
-
-        return score;
-    }
-
-    public static boolean isBadScale(final int scale) {
-        return scale == Integer.MIN_VALUE || scale == Integer.MAX_VALUE || scale == Integer.MAX_VALUE - 1
-                || scale == Integer.MIN_VALUE + 1 || scale == Integer.MAX_VALUE - 2 || scale == Integer.MIN_VALUE + 2;
-    }
-
-    private static double max(final double[] v) {
-        double maxV = Double.NEGATIVE_INFINITY;
-        for (int i = 0; i < v.length; i++) {
-            if (v[i] > maxV) {
-                maxV = v[i];
-            }
-        }
-        return maxV;
     }
 }

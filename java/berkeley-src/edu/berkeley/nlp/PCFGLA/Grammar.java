@@ -625,7 +625,7 @@ public class Grammar implements java.io.Serializable {
                 }
             }
             if (allZero) {
-                System.out.println("Maybe an underflow? Rule: " + unaryRule + "\n" + ArrayUtil.toString(unaryCounts));
+                throw new IllegalArgumentException("Maybe an underflow? Rule: " + unaryRule + "\n");
             }
             unaryRuleCounter.setCount(unaryRule, unaryCounts);
         }
@@ -770,21 +770,21 @@ public class Grammar implements java.io.Serializable {
 
     public void tallyStateSetTree(final Tree<StateSet> tree, double tree_score, final double tree_scale,
             final Grammar old_grammar) {
-        if (tree.isLeaf())
+
+        if (tree.isLeaf() || tree.isPreTerminal()) {
             return;
-        if (tree.isPreTerminal())
-            return;
+        }
+
         final List<Tree<StateSet>> children = tree.children();
         final StateSet parent = tree.label();
         final short parentState = parent.getState();
         final int nParentSubStates = numSubStates[parentState];
         switch (children.size()) {
         case 0:
-            // This is a leaf (a preterminal node, if we count the words
-            // themselves),
-            // nothing to do
+            // This is a preterminal node; nothing to do
             break;
-        case 1:
+
+        case 1: // Unary
             final StateSet child = children.get(0).label();
             final short childState = child.getState();
             final int nChildSubStates = numSubStates[childState];
@@ -822,70 +822,79 @@ public class Grammar implements java.io.Serializable {
             // urule.setScores2(ucounts);
             unaryRuleCounter.setCount(urule, ucounts);
             break;
-        case 2:
+
+        case 2: // Binary
             final StateSet leftChild = children.get(0).label();
             final short lChildState = leftChild.getState();
             final StateSet rightChild = children.get(1).label();
             final short rChildState = rightChild.getState();
+
             final int nLeftChildSubStates = numSubStates[lChildState];
             final int nRightChildSubStates = numSubStates[rChildState];
-            // new double[nLeftChildSubStates][nRightChildSubStates][];
+
             final BinaryRule brule = new BinaryRule(parentState, lChildState, rChildState);
-            double[][][] oldBScores = old_grammar.getBinaryScore(brule); // rule
-                                                                         // score
+            double[][][] oldBScores = old_grammar.getBinaryScore(brule);
+
             if (oldBScores == null) {
-                // rule was not in the grammar
-                // parent.setIScores(iScores2);
-                // break;
+                // The rule was not found in the grammar
                 oldBScores = new double[nLeftChildSubStates][nRightChildSubStates][nParentSubStates];
                 ArrayUtil.fill(oldBScores, 1.0);
             }
             double[][][] bcounts = binaryRuleCounter.getCount(brule);
-            if (bcounts == null)
+            if (bcounts == null) {
                 bcounts = new double[nLeftChildSubStates][nRightChildSubStates][];
+            }
+
             scalingFactor = ScalingTools.calcScaleFactor(parent.getOScale() + leftChild.getIScale()
                     + rightChild.getIScale() - tree_scale);
-            // if (scalingFactor==0){
-            // System.out.println("p: "+parent.getOScale()+" l: "+leftChild.getIScale()+" r:"+rightChild.getIScale()+" t:"+tree_scale);
-            // }
+
             for (short i = 0; i < nLeftChildSubStates; i++) {
                 final double lcIS = leftChild.getIScore(i);
-                if (lcIS == 0)
+                if (lcIS == 0) {
                     continue;
+                }
+
                 for (short j = 0; j < nRightChildSubStates; j++) {
-                    if (oldBScores[i][j] == null)
+                    if (oldBScores[i][j] == null) {
                         continue;
+                    }
+
                     final double rcIS = rightChild.getIScore(j);
-                    if (rcIS == 0)
+                    if (rcIS == 0) {
                         continue;
+                    }
+
                     // allocate parent array
-                    if (bcounts[i][j] == null)
+                    if (bcounts[i][j] == null) {
                         bcounts[i][j] = new double[nParentSubStates];
+                    }
+
                     for (short k = 0; k < nParentSubStates; k++) {
                         final double pOS = parent.getOScore(k); // Parent outside
                         // score
-                        if (pOS == 0)
+                        if (pOS == 0) {
                             continue;
+                        }
+
                         final double rS = oldBScores[i][j][k];
-                        if (rS == 0)
+                        if (rS == 0) {
                             continue;
-                        if (tree_score == 0)
+                        }
+
+                        if (tree_score == 0) {
                             tree_score = 1;
-                        final double logRuleCount = (rS * lcIS / tree_score) * rcIS * scalingFactor * pOS;
-                        /*
-                         * if (logRuleCount == 0) { System.out.println("rS "+rS+", lcIS "
-                         * +lcIS+", rcIS "+rcIS+", tree_score "+tree_score+
-                         * ", scalingFactor "+scalingFactor+", pOS "+pOS); System.out.println("Possibly underflow?"); //
-                         * logRuleCount = Double.MIN_VALUE; }
-                         */
-                        bcounts[i][j][k] += logRuleCount;
+                        }
+
+                        final double scaledRuleCount = (rS * lcIS / tree_score) * rcIS * scalingFactor * pOS;
+                        bcounts[i][j][k] += scaledRuleCount;
                     }
                 }
             }
             binaryRuleCounter.setCount(brule, bcounts);
             break;
+
         default:
-            throw new Error("Malformed tree: more than two children");
+            throw new IllegalArgumentException("Malformed tree: more than two children");
         }
 
         for (final Tree<StateSet> child : children) {

@@ -13,7 +13,6 @@ import java.util.Set;
 import edu.berkeley.nlp.PCFGLA.smoothing.Smoother;
 import edu.berkeley.nlp.syntax.StateSet;
 import edu.berkeley.nlp.syntax.Tree;
-import edu.berkeley.nlp.util.ArrayUtil;
 import edu.berkeley.nlp.util.Counter;
 import edu.berkeley.nlp.util.Numberer;
 import edu.berkeley.nlp.util.PriorityQueue;
@@ -211,68 +210,6 @@ public class Lexicon implements java.io.Serializable {
         return sb.toString();
     }
 
-    public String toString_old() {
-        String s = "";
-        for (final String w : wordCounter.keySet()) {
-            s += w + "\n";
-        }
-        final String t = "";
-        /*
-         * for (int i = 1; i < numSubStates.length; i++){ if (wordToTagCounters[i]!=null) { t = t + "\nTAG:" + i; for
-         * (String w : wordToTagCounters[i].keySet()){ t = t + "\n"+w+": "+Arrays.toString(wordToTagCounters[i].get(w));
-         * break; } } }
-         */
-        return s + ArrayUtil.toString(tagCounter) + "\n" + t;
-    }
-
-    public void newMstep() {
-        return;
-        // // overwrite tagCounter to contain P(T)
-        // double total = totalTokens + totalUnseenTokens;
-        // for (int state=0; state<tagCounter.length; state++){
-        // for (int substate=0; substate<tagCounter[state].length; substate++){
-        // //tagCounter[state][substate] = (tagCounter[state][substate] +
-        // unseenTagCounter[state][substate])/total;
-        // }
-        // }
-        //
-        //
-        // // overwrite wordToTagCounters to contain P(W|T)
-        // HashMap<String, double[]>[] probCounter = new
-        // HashMap[numSubStates.length];
-        // for (int tag=0; tag<wordToTagCounters.length; tag++){
-        // double sum = 0;
-        // if (wordToTagCounters[tag]==null) continue;
-        // probCounter[tag] = new HashMap<String,double[]>();
-        // for (String word : wordToTagCounters[tag].keySet()){
-        // double[] probs = wordToTagCounters[tag].get(word);
-        // for (int substate=0; substate<probs.length; substate++){
-        // probs[substate] /= (tagCounter[tag][substate]);
-        // sum += probs[substate];
-        // }
-        // probCounter[tag].put(word,probs);
-        // }
-        // if (unseenWordToTagCounters[tag]==null) continue;
-        // for (String word : unseenWordToTagCounters[tag].keySet()){
-        // double c_S = wordCounter.getCount(word);
-        // double[] probs = unseenWordToTagCounters[tag].get(word);
-        // for (int substate=0; substate<probs.length; substate++){
-        // probs[substate] /= (tagCounter[tag][substate]*c_S);
-        // sum += probs[substate];
-        // }
-        // probCounter[tag].put(word,probs);
-        // }
-        // /*for (String word : probCounter[tag].keySet()){
-        // double[] probs = probCounter[tag].get(word);
-        // for (int substate=0; substate<probs.length; substate++){
-        // probs[substate] /= sum;
-        // }
-        // probCounter[tag].put(word,probs);
-        // }*/
-        // }
-        // wordToTagCounters = probCounter;
-    }
-
     public double[] score2(final String word, final short tag, final int loc, final boolean noSmoothing) {
         if (wordToTagCounters[tag] == null) // this is not a lexical category
             return new double[numSubStates[tag]];
@@ -316,30 +253,6 @@ public class Lexicon implements java.io.Serializable {
         }
         // remove the unlikely ones
         removeUnlikelyTags(threshold, -1.0);
-        // // add MMT randomization if necessary
-        // if
-        // (randomInitializationType==Grammar.RandomInitializationType.INITIALIZE_LIKE_MMT)
-        // {
-        // Random r = new Random();
-        // for (short tag=0; tag<wordToTagCounters.length; tag++) {
-        // if (wordToTagCounters[tag]==null)
-        // continue;
-        // for (String word : wordToTagCounters[tag].keySet()) {
-        // double[] localCounter = wordToTagCounters[tag].get(word);
-        // if (localCounter==null)
-        // continue;
-        // for (short substate =0; substate<localCounter.length; substate++) {
-        // double oldValue = localCounter[substate];
-        // localCounter[substate] *= Grammar.generateMMTRandomNumber(r);
-        // double delta = localCounter[substate]-oldValue;
-        // //fix all other counters
-        // wordCounter.incrementCount(word,delta);
-        // tagCounter[tag][substate] += delta;
-        // totalTokens += delta;
-        // }
-        // }
-        // }
-        // }
     }
 
     /**
