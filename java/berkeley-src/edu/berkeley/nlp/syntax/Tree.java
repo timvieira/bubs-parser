@@ -44,7 +44,7 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>> {
         this.children = c;
     }
 
-    public List<Tree<L>> getChildren() {
+    public List<Tree<L>> children() {
         return children;
     }
 
@@ -52,37 +52,47 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>> {
         return children.get(i);
     }
 
-    public L getLabel() {
+    public L label() {
         return label;
     }
 
     public boolean isLeaf() {
-        return getChildren().isEmpty();
+        return children().isEmpty();
     }
 
     public boolean isPreTerminal() {
-        return getChildren().size() == 1 && getChildren().get(0).isLeaf();
+        return children().size() == 1 && children().get(0).isLeaf();
     }
 
-    public List<L> getYield() {
+    public List<L> leafLabels() {
         final List<L> yield = new ArrayList<L>();
         appendYield(this, yield);
         return yield;
     }
 
+    private static <L> void appendYield(final Tree<L> tree, final List<L> yield) {
+        if (tree.isLeaf()) {
+            yield.add(tree.label());
+            return;
+        }
+        for (final Tree<L> child : tree.children()) {
+            appendYield(child, yield);
+        }
+    }
+
     private static <L> int appendConstituent(final Tree<L> tree, final Map<Tree<L>, Constituent<L>> constituents,
             final int index) {
         if (tree.isLeaf()) {
-            final Constituent<L> c = new Constituent<L>(tree.getLabel(), index, index);
+            final Constituent<L> c = new Constituent<L>(tree.label(), index, index);
             constituents.put(tree, c);
             return 1; // Length of a leaf constituent
         }
 
         int nextIndex = index;
-        for (final Tree<L> kid : tree.getChildren()) {
+        for (final Tree<L> kid : tree.children()) {
             nextIndex += appendConstituent(kid, constituents, nextIndex);
         }
-        final Constituent<L> c = new Constituent<L>(tree.getLabel(), index, nextIndex - 1);
+        final Constituent<L> c = new Constituent<L>(tree.label(), index, nextIndex - 1);
         constituents.put(tree, c);
         return nextIndex - index; // Length of a leaf constituent
     }
@@ -90,16 +100,16 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>> {
     private static <L> int appendConstituent(final Tree<L> tree, final Collection<Constituent<L>> constituents,
             final int index) {
         if (tree.isLeaf() || tree.isPreTerminal()) {
-            final Constituent<L> c = new Constituent<L>(tree.getLabel(), index, index);
+            final Constituent<L> c = new Constituent<L>(tree.label(), index, index);
             constituents.add(c);
             return 1; // Length of a leaf constituent
         }
 
         int nextIndex = index;
-        for (final Tree<L> kid : tree.getChildren()) {
+        for (final Tree<L> kid : tree.children()) {
             nextIndex += appendConstituent(kid, constituents, nextIndex);
         }
-        final Constituent<L> c = new Constituent<L>(tree.getLabel(), index, nextIndex - 1);
+        final Constituent<L> c = new Constituent<L>(tree.label(), index, nextIndex - 1);
         constituents.add(c);
         return nextIndex - index; // Length of a leaf constituent
     }
@@ -110,12 +120,12 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>> {
             return;
         }
         yield.add(tree);
-        for (final Tree<L> child : tree.getChildren()) {
+        for (final Tree<L> child : tree.children()) {
             appendNonTerminals(child, yield);
         }
     }
 
-    public List<Tree<L>> getTerminals() {
+    public List<Tree<L>> leafList() {
         final List<Tree<L>> yield = new ArrayList<Tree<L>>();
         appendTerminals(this, yield);
         return yield;
@@ -126,7 +136,7 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>> {
             yield.add(tree);
             return;
         }
-        for (final Tree<L> child : tree.getChildren()) {
+        for (final Tree<L> child : tree.children()) {
             appendTerminals(child, yield);
         }
     }
@@ -144,17 +154,7 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>> {
         return new Tree<L>(label, newChildren);
     }
 
-    private static <L> void appendYield(final Tree<L> tree, final List<L> yield) {
-        if (tree.isLeaf()) {
-            yield.add(tree.getLabel());
-            return;
-        }
-        for (final Tree<L> child : tree.getChildren()) {
-            appendYield(child, yield);
-        }
-    }
-
-    public List<L> getPreTerminalYield() {
+    public List<L> preterminalLabels() {
         final List<L> yield = new ArrayList<L>();
         appendPreTerminalYield(this, yield);
         return yield;
@@ -162,10 +162,10 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>> {
 
     private static <L> void appendPreTerminalYield(final Tree<L> tree, final List<L> yield) {
         if (tree.isPreTerminal()) {
-            yield.add(tree.getLabel());
+            yield.add(tree.label());
             return;
         }
-        for (final Tree<L> child : tree.getChildren()) {
+        for (final Tree<L> child : tree.children()) {
             appendPreTerminalYield(child, yield);
         }
     }
@@ -175,7 +175,7 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>> {
             yield.add(tree);
             return;
         }
-        for (final Tree<L> child : tree.getChildren()) {
+        for (final Tree<L> child : tree.children()) {
             appendPreTerminals(child, yield);
         }
     }
@@ -185,7 +185,7 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>> {
             yield.add(tree);
             return;
         }
-        for (final Tree<L> child : tree.getChildren()) {
+        for (final Tree<L> child : tree.children()) {
             appendTreesOfDepth(child, yield, depth);
         }
     }
@@ -193,7 +193,7 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>> {
     private static <L> void traversalHelper(final Tree<L> tree, final List<Tree<L>> traversal, final boolean preOrder) {
         if (preOrder)
             traversal.add(tree);
-        for (final Tree<L> child : tree.getChildren()) {
+        for (final Tree<L> child : tree.children()) {
             traversalHelper(child, traversal, preOrder);
         }
         if (!preOrder)
@@ -231,7 +231,7 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>> {
             yield.add(tree);
             return;
         }
-        for (final Tree<L> child : tree.getChildren()) {
+        for (final Tree<L> child : tree.children()) {
             appendAtDepth(depth - 1, child, yield);
         }
     }
@@ -250,11 +250,11 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>> {
     public void toStringBuilder(final StringBuilder sb) {
         if (!isLeaf())
             sb.append('(');
-        if (getLabel() != null) {
-            sb.append(getLabel());
+        if (label() != null) {
+            sb.append(label());
         }
         if (!isLeaf()) {
-            for (final Tree<L> child : getChildren()) {
+            for (final Tree<L> child : children()) {
                 sb.append(' ');
                 child.toStringBuilder(sb);
             }
@@ -324,36 +324,36 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>> {
 
         @SuppressWarnings("unchecked")
         final Tree<L> other = (Tree<L>) obj;
-        if (!this.label.equals(other.label) || this.getChildren().size() != other.getChildren().size()) {
+        if (!this.label.equals(other.label) || this.children().size() != other.children().size()) {
             return false;
         }
 
-        for (int i = 0; i < getChildren().size(); ++i) {
-            if (!getChildren().get(i).equals(other.getChildren().get(i)))
+        for (int i = 0; i < children().size(); ++i) {
+            if (!children().get(i).equals(other.children().get(i)))
                 return false;
         }
         return true;
     }
 
     public int compareTo(final Tree<L> o) {
-        if (!(o.getLabel() instanceof Comparable && getLabel() instanceof Comparable)) {
+        if (!(o.label() instanceof Comparable && label() instanceof Comparable)) {
             throw new IllegalArgumentException("Tree labels are not comparable");
         }
 
         @SuppressWarnings("unchecked")
-        final int cmp = ((Comparable<L>) o.getLabel()).compareTo(getLabel());
+        final int cmp = ((Comparable<L>) o.label()).compareTo(label());
         if (cmp != 0) {
             return cmp;
         }
 
-        final int cmp2 = Integer.compare(this.getChildren().size(), o.getChildren().size());
+        final int cmp2 = Integer.compare(this.children().size(), o.children().size());
         if (cmp2 != 0) {
             return cmp2;
         }
 
-        for (int i = 0; i < getChildren().size(); ++i) {
+        for (int i = 0; i < children().size(); ++i) {
 
-            final int cmp3 = getChildren().get(i).compareTo(o.getChildren().get(i));
+            final int cmp3 = children().get(i).compareTo(o.children().get(i));
             if (cmp3 != 0) {
                 return cmp3;
             }
@@ -367,16 +367,16 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>> {
 
         assert i <= j;
         if (start == i && end == j) {
-            assert tree.getLabel().toString().matches("\\w+");
+            assert tree.label().toString().matches("\\w+");
             return tree;
         }
 
         final Queue<Tree<L>> queue = new LinkedList<Tree<L>>();
-        queue.addAll(tree.getChildren());
+        queue.addAll(tree.children());
         int currStart = start;
         while (!queue.isEmpty()) {
             final Tree<L> remove = queue.remove();
-            final List<L> currYield = remove.getYield();
+            final List<L> currYield = remove.leafLabels();
             final int currEnd = currStart + currYield.size();
             if (currStart <= i && currEnd >= j)
                 return getTopTreeForSpanHelper(remove, currStart, currEnd, i, j);
@@ -389,14 +389,14 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>> {
             final int end, final int i, final int j) {
 
         if (start == i && end == j)
-            return new Constituent<L>(tree.getLabel(), start, end);
+            return new Constituent<L>(tree.label(), start, end);
 
         final Queue<Tree<L>> queue = new LinkedList<Tree<L>>();
-        queue.addAll(tree.getChildren());
+        queue.addAll(tree.children());
         int currStart = start;
         while (!queue.isEmpty()) {
             final Tree<L> remove = queue.remove();
-            final List<L> currYield = remove.getYield();
+            final List<L> currYield = remove.leafLabels();
             final int currEnd = currStart + currYield.size();
             if (currStart <= i && currEnd >= j) {
                 final Constituent<L> leastCommonAncestorConstituentHelper = getLeastCommonAncestorConstituentHelper(
@@ -408,6 +408,6 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>> {
             }
             currStart += currYield.size();
         }
-        return new Constituent<L>(tree.getLabel(), start, end);
+        return new Constituent<L>(tree.label(), start, end);
     }
 }

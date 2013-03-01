@@ -228,7 +228,7 @@ public class Corpus {
                     + horizontalAnnotations);
 
         for (final Tree<String> tree : trees) {
-            final List<String> testSentence = tree.getYield();
+            final List<String> testSentence = tree.leafLabels();
             if (testSentence.size() > sentenceMaxLength) {
                 continue;
             }
@@ -269,9 +269,9 @@ public class Corpus {
 
     public static void lowercaseWords(final List<Tree<String>> trainTrees) {
         for (final Tree<String> tree : trainTrees) {
-            final List<Tree<String>> words = tree.getTerminals();
+            final List<Tree<String>> words = tree.leafList();
             for (final Tree<String> word : words) {
-                final String lWord = word.getLabel().toLowerCase();
+                final String lWord = word.label().toLowerCase();
                 word.setLabel(lWord);
             }
         }

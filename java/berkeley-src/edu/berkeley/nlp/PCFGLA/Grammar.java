@@ -751,7 +751,7 @@ public class Grammar implements java.io.Serializable {
             return;
         if (tree.isPreTerminal())
             return;
-        final StateSet node = tree.getLabel();
+        final StateSet node = tree.label();
         if (node.numSubStates() != 1) {
             System.err.println("The top symbol is split!");
             System.out.println(tree);
@@ -774,8 +774,8 @@ public class Grammar implements java.io.Serializable {
             return;
         if (tree.isPreTerminal())
             return;
-        final List<Tree<StateSet>> children = tree.getChildren();
-        final StateSet parent = tree.getLabel();
+        final List<Tree<StateSet>> children = tree.children();
+        final StateSet parent = tree.label();
         final short parentState = parent.getState();
         final int nParentSubStates = numSubStates[parentState];
         switch (children.size()) {
@@ -785,7 +785,7 @@ public class Grammar implements java.io.Serializable {
             // nothing to do
             break;
         case 1:
-            final StateSet child = children.get(0).getLabel();
+            final StateSet child = children.get(0).label();
             final short childState = child.getState();
             final int nChildSubStates = numSubStates[childState];
             final UnaryRule urule = new UnaryRule(parentState, childState);
@@ -823,9 +823,9 @@ public class Grammar implements java.io.Serializable {
             unaryRuleCounter.setCount(urule, ucounts);
             break;
         case 2:
-            final StateSet leftChild = children.get(0).getLabel();
+            final StateSet leftChild = children.get(0).label();
             final short lChildState = leftChild.getState();
-            final StateSet rightChild = children.get(1).getLabel();
+            final StateSet rightChild = children.get(1).label();
             final short rChildState = rightChild.getState();
             final int nLeftChildSubStates = numSubStates[lChildState];
             final int nRightChildSubStates = numSubStates[rChildState];
@@ -899,8 +899,8 @@ public class Grammar implements java.io.Serializable {
         // the lexicon handles preterminal nodes
         if (tree.isPreTerminal())
             return;
-        final List<Tree<StateSet>> children = tree.getChildren();
-        final StateSet parent = tree.getLabel();
+        final List<Tree<StateSet>> children = tree.children();
+        final StateSet parent = tree.label();
         final short parentState = parent.getState();
         final int nParentSubStates = parent.numSubStates(); // numSubStates[parentState];
         switch (children.size()) {
@@ -909,7 +909,7 @@ public class Grammar implements java.io.Serializable {
             // themselves), nothing to do
             break;
         case 1:
-            final StateSet child = children.get(0).getLabel();
+            final StateSet child = children.get(0).label();
             final short childState = child.getState();
             final int nChildSubStates = child.numSubStates(); // numSubStates[childState];
             final double[][] counts = new double[nChildSubStates][nParentSubStates];
@@ -917,9 +917,9 @@ public class Grammar implements java.io.Serializable {
             unaryRuleCounter.incrementCount(urule, 1.0);
             break;
         case 2:
-            final StateSet leftChild = children.get(0).getLabel();
+            final StateSet leftChild = children.get(0).label();
             final short lChildState = leftChild.getState();
-            final StateSet rightChild = children.get(1).getLabel();
+            final StateSet rightChild = children.get(1).label();
             final short rChildState = rightChild.getState();
             final int nLeftChildSubStates = leftChild.numSubStates(); // numSubStates[lChildState];
             final int nRightChildSubStates = rightChild.numSubStates();// numSubStates[rChildState];
@@ -1293,13 +1293,13 @@ public class Grammar implements java.io.Serializable {
         this.splitTrees = new Tree[numStates];
         for (int tag = 0; tag < splitTrees.length; tag++) {
             final Tree<Short> splitTree = trees[tag].shallowClone();
-            for (final Tree<Short> leaf : splitTree.getTerminals()) {
-                final List<Tree<Short>> children = leaf.getChildren();
+            for (final Tree<Short> leaf : splitTree.leafList()) {
+                final List<Tree<Short>> children = leaf.children();
                 if (numSubStates[tag] > oldNumSubStates[tag]) {
-                    children.add(new Tree<Short>((short) (2 * leaf.getLabel())));
-                    children.add(new Tree<Short>((short) (2 * leaf.getLabel() + 1)));
+                    children.add(new Tree<Short>((short) (2 * leaf.label())));
+                    children.add(new Tree<Short>((short) (2 * leaf.label() + 1)));
                 } else {
-                    children.add(new Tree<Short>(leaf.getLabel()));
+                    children.add(new Tree<Short>(leaf.label()));
                 }
             }
             this.splitTrees[tag] = splitTree;
@@ -1324,7 +1324,7 @@ public class Grammar implements java.io.Serializable {
     public void tallyMergeWeights(final Tree<StateSet> tree, final double mergeWeights[][]) {
         if (tree.isLeaf())
             return;
-        final StateSet label = tree.getLabel();
+        final StateSet label = tree.label();
         final short state = label.getState();
         final double probs[] = new double[label.numSubStates()];
         double total = 0, tmp;
@@ -1339,7 +1339,7 @@ public class Grammar implements java.io.Serializable {
         for (short i = 0; i < label.numSubStates(); i++) {
             mergeWeights[state][i] += probs[i] / total;
         }
-        for (final Tree<StateSet> child : tree.getChildren()) {
+        for (final Tree<StateSet> child : tree.children()) {
             tallyMergeWeights(child, mergeWeights);
         }
     }
@@ -1373,7 +1373,7 @@ public class Grammar implements java.io.Serializable {
     public void tallyMergeScores(final Tree<StateSet> tree, final double[][][] deltas, final double[][] mergeWeights) {
         if (tree.isLeaf())
             return;
-        final StateSet label = tree.getLabel();
+        final StateSet label = tree.label();
         final short state = label.getState();
         final double[] separatedScores = new double[label.numSubStates()];
         final double[] combinedScores = new double[label.numSubStates()];
@@ -1419,7 +1419,7 @@ public class Grammar implements java.io.Serializable {
             }
         }
 
-        for (final Tree<StateSet> child : tree.getChildren()) {
+        for (final Tree<StateSet> child : tree.children()) {
             tallyMergeScores(child, deltas, mergeWeights);
         }
     }
@@ -1587,11 +1587,11 @@ public class Grammar implements java.io.Serializable {
             final Tree<Short> splitTree = splitTrees[tag];
             final int maxDepth = splitTree.getDepth();
             for (final Tree<Short> preTerminal : splitTree.getAtDepth(maxDepth - 2)) {
-                final List<Tree<Short>> children = preTerminal.getChildren();
+                final List<Tree<Short>> children = preTerminal.children();
                 final ArrayList<Tree<Short>> newChildren = new ArrayList<Tree<Short>>(2);
                 for (int i = 0; i < children.size(); i++) {
                     final Tree<Short> child = children.get(i);
-                    final int curLoc = child.getLabel();
+                    final int curLoc = child.label();
                     if (partners[tag][curLoc][0] == curLoc) {
                         newChildren.add(new Tree<Short>(mapping[tag][curLoc]));
                     }

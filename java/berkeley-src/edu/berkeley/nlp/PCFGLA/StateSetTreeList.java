@@ -30,8 +30,8 @@ public class StateSetTreeList extends AbstractCollection<Tree<StateSet>> {
      * Allocate the inside and outside score arrays for the whole tree
      */
     void allocate(final Tree<StateSet> tree) {
-        tree.getLabel().allocate();
-        for (final Tree<StateSet> child : tree.getChildren()) {
+        tree.label().allocate();
+        for (final Tree<StateSet> child : tree.children()) {
             allocate(child);
         }
     }
@@ -40,8 +40,8 @@ public class StateSetTreeList extends AbstractCollection<Tree<StateSet>> {
      * Deallocate the inside and outside score arrays for the whole tree
      */
     void deallocate(final Tree<StateSet> tree) {
-        tree.getLabel().deallocate();
-        for (final Tree<StateSet> child : tree.getChildren()) {
+        tree.label().deallocate();
+        for (final Tree<StateSet> child : tree.children()) {
             deallocate(child);
         }
     }
@@ -62,11 +62,11 @@ public class StateSetTreeList extends AbstractCollection<Tree<StateSet>> {
      * @return
      */
     private Tree<StateSet> copyTree(final Tree<StateSet> tree) {
-        final ArrayList<Tree<StateSet>> newChildren = new ArrayList<Tree<StateSet>>(tree.getChildren().size());
-        for (final Tree<StateSet> child : tree.getChildren()) {
+        final ArrayList<Tree<StateSet>> newChildren = new ArrayList<Tree<StateSet>>(tree.children().size());
+        for (final Tree<StateSet> child : tree.children()) {
             newChildren.add(copyTree(child));
         }
-        return new Tree<StateSet>(tree.getLabel().copy(), newChildren);
+        return new Tree<StateSet>(tree.label().copy(), newChildren);
     }
 
     public class StateSetTreeListIterator implements Iterator<Tree<StateSet>> {
@@ -165,9 +165,9 @@ public class StateSetTreeList extends AbstractCollection<Tree<StateSet>> {
     public static Tree<StateSet> stringTreeToStatesetTree(final Tree<String> tree, final short[] numStates,
             final boolean allSplitTheSame, final Numberer tagNumberer) {
         final Tree<StateSet> result = stringTreeToStatesetTree(tree, numStates, allSplitTheSame, tagNumberer, false, 0,
-                tree.getYield().size());
+                tree.leafLabels().size());
         // set the positions properly:
-        final List<StateSet> words = result.getYield();
+        final List<StateSet> words = result.leafLabels();
         // for all words in sentence
         for (short position = 0; position < words.size(); position++) {
             words.get(position).from = position;
@@ -179,10 +179,10 @@ public class StateSetTreeList extends AbstractCollection<Tree<StateSet>> {
     private static Tree<StateSet> stringTreeToStatesetTree(final Tree<String> tree, final short[] numStates,
             final boolean allSplitTheSame, final Numberer tagNumberer, final boolean splitRoot, int from, final int to) {
         if (tree.isLeaf()) {
-            final StateSet newState = new StateSet(zero, one, tree.getLabel().intern(), (short) from, (short) to);
+            final StateSet newState = new StateSet(zero, one, tree.label().intern(), (short) from, (short) to);
             return new Tree<StateSet>(newState);
         }
-        short label = (short) tagNumberer.number(tree.getLabel());
+        short label = (short) tagNumberer.number(tree.label());
         if (label < 0)
             label = 0;
         // System.out.println(label + " " +tree.getLabel());
@@ -198,8 +198,8 @@ public class StateSetTreeList extends AbstractCollection<Tree<StateSet>> {
         final StateSet newState = new StateSet(label, nodeNumStates, null, (short) from, (short) to);
         final Tree<StateSet> newTree = new Tree<StateSet>(newState);
         final List<Tree<StateSet>> newChildren = new ArrayList<Tree<StateSet>>();
-        for (final Tree<String> child : tree.getChildren()) {
-            final short length = (short) child.getYield().size();
+        for (final Tree<String> child : tree.children()) {
+            final short length = (short) child.leafLabels().size();
             final Tree<StateSet> newChild = stringTreeToStatesetTree(child, numStates, allSplitTheSame, tagNumberer,
                     true, from, from + length);
             from += length;
@@ -214,12 +214,12 @@ public class StateSetTreeList extends AbstractCollection<Tree<StateSet>> {
         if (tree.isLeaf()) {
             return tree;
         }
-        final short state = tree.getLabel().getState();
+        final short state = tree.label().getState();
         final short newNumStates = constant ? numStates[0] : numStates[state];
-        final StateSet newState = new StateSet(tree.getLabel(), newNumStates);
+        final StateSet newState = new StateSet(tree.label(), newNumStates);
         final Tree<StateSet> newTree = new Tree<StateSet>(newState);
         final List<Tree<StateSet>> newChildren = new ArrayList<Tree<StateSet>>();
-        for (final Tree<StateSet> child : tree.getChildren()) {
+        for (final Tree<StateSet> child : tree.children()) {
             newChildren.add(resizeStateSetTree(child, numStates, constant));
         }
         newTree.setChildren(newChildren);

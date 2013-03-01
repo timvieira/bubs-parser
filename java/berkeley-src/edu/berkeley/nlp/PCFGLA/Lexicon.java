@@ -1013,16 +1013,16 @@ public class Lexicon implements java.io.Serializable {
         // for all substates that the word's preterminal tag has
         double sentenceScore = 0;
         if (randomness == -1) {
-            sentenceScore = trainTree.getLabel().getIScore(0);
+            sentenceScore = trainTree.label().getIScore(0);
             if (sentenceScore == 0) {
                 System.out.println("Something is wrong with this tree. I will skip it.");
                 return;
             }
         }
-        final int sentenceScale = trainTree.getLabel().getIScale();
+        final int sentenceScale = trainTree.label().getIScale();
 
-        final List<StateSet> words = trainTree.getYield();
-        final List<StateSet> tags = trainTree.getPreTerminalYield();
+        final List<StateSet> words = trainTree.leafLabels();
+        final List<StateSet> tags = trainTree.preterminalLabels();
         if (words.size() != tags.size()) {
             System.out.println("Yield an preterminal yield do not match!");
             System.out.println(words.toString());

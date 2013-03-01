@@ -41,9 +41,9 @@ public class CorpusStatistics {
     }
 
     private void addCount(final Tree<StateSet> tree) {
-        counts[tree.getLabel().getState()] += 1.0;
+        counts[tree.label().getState()] += 1.0;
         if (!tree.isPreTerminal()) {
-            for (final Tree<StateSet> child : tree.getChildren()) {
+            for (final Tree<StateSet> child : tree.children()) {
                 addCount(child);
             }
         }

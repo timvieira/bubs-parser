@@ -455,13 +455,13 @@ public class GrammarTrainer extends BaseCommandlineTool {
 
         for (final Tree<StateSet> stateSetTree : trainStateSetTrees) {
             parser.doInsideOutsideScores(stateSetTree, true); // E step
-            double ll = stateSetTree.getLabel().getIScore(0);
-            ll = Math.log(ll) + (100 * stateSetTree.getLabel().getIScale());
+            double ll = stateSetTree.label().getIScore(0);
+            ll = Math.log(ll) + (100 * stateSetTree.label().getIScale());
             if ((Double.isInfinite(ll) || Double.isNaN(ll))) {
                 if (VERBOSE) {
                     System.out.println("Training sentence " + n + " is given " + ll + " log likelihood!");
-                    System.out.println("Root iScore " + stateSetTree.getLabel().getIScore(0) + " scale "
-                            + stateSetTree.getLabel().getIScale());
+                    System.out.println("Root iScore " + stateSetTree.label().getIScore(0) + " scale "
+                            + stateSetTree.label().getIScale());
                 }
             } else {
                 lexicon.trainTree(stateSetTree, -1, previousLexicon, true, unkThreshold);
@@ -491,8 +491,8 @@ public class GrammarTrainer extends BaseCommandlineTool {
         for (final Tree<StateSet> stateSetTree : corpus) {
             // Only the inside scores are needed here
             parser.doInsideScores(stateSetTree, false, null);
-            double ll = stateSetTree.getLabel().getIScore(0);
-            ll = Math.log(ll) + (100 * stateSetTree.getLabel().getIScale());
+            double ll = stateSetTree.label().getIScore(0);
+            ll = Math.log(ll) + (100 * stateSetTree.label().getIScale());
 
             // A few sentences are unparsable
             if (!Double.isInfinite(ll) && !Double.isNaN(ll)) {
@@ -510,9 +510,9 @@ public class GrammarTrainer extends BaseCommandlineTool {
     public static void printBadLLReason(final Tree<StateSet> stateSetTree, final Lexicon lexicon) {
         System.out.println(stateSetTree.toString());
         boolean lexiconProblem = false;
-        final List<StateSet> words = stateSetTree.getYield();
+        final List<StateSet> words = stateSetTree.leafLabels();
         final Iterator<StateSet> wordIterator = words.iterator();
-        for (final StateSet stateSet : stateSetTree.getPreTerminalYield()) {
+        for (final StateSet stateSet : stateSetTree.preterminalLabels()) {
             final String word = wordIterator.next().getWord();
             boolean lexiconProblemHere = true;
             for (int i = 0; i < stateSet.numSubStates(); i++) {
@@ -549,7 +549,7 @@ public class GrammarTrainer extends BaseCommandlineTool {
     public static double logLikelihood(final List<Tree<StateSet>> trees, final boolean verbose) {
         double likelihood = 0, l = 0;
         for (final Tree<StateSet> tree : trees) {
-            l = tree.getLabel().getIScore(0);
+            l = tree.label().getIScore(0);
             if (verbose)
                 System.out.println("LL is " + l + ".");
             if (Double.isInfinite(l) || Double.isNaN(l)) {

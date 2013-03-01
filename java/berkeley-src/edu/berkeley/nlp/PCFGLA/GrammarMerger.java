@@ -415,8 +415,8 @@ public class GrammarMerger {
         for (final Tree<StateSet> stateSetTree : trainStateSetTrees) {
 
             parser.doInsideOutsideScores(stateSetTree, false); // E-step
-            double ll = stateSetTree.getLabel().getIScore(0);
-            ll = Math.log(ll) + (100 * stateSetTree.getLabel().getIScale());
+            double ll = stateSetTree.label().getIScore(0);
+            ll = Math.log(ll) + (100 * stateSetTree.label().getIScale());
 
             if (!Double.isInfinite(ll)) {
                 grammar.tallyMergeScores(stateSetTree, deltas, mergeWeights);
@@ -441,8 +441,8 @@ public class GrammarMerger {
         for (final Tree<StateSet> stateSetTree : trainStateSetTrees) {
             parser.doInsideOutsideScores(stateSetTree, false); // E
                                                                // Step
-            double ll = stateSetTree.getLabel().getIScore(0);
-            ll = Math.log(ll) + (100 * stateSetTree.getLabel().getIScale());// System.out.println(stateSetTree);
+            double ll = stateSetTree.label().getIScore(0);
+            ll = Math.log(ll) + (100 * stateSetTree.label().getIScale());// System.out.println(stateSetTree);
             if (Double.isInfinite(ll)) {
                 System.out.println("Training sentence " + n + " is given -inf log likelihood!");
             } else {

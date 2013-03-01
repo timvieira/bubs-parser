@@ -42,7 +42,7 @@ public class SmoothAcrossParentBits implements Smoother, Serializable {
         diffWeights = new double[nStates][][];
         for (short state = 0; state < nStates; state++) {
             Tree<Short> splitTree = splitTrees[state];
-            final List<Short> allSubstates = splitTree.getYield();
+            final List<Short> allSubstates = splitTree.leafLabels();
             int nSubstates = 1;
             for (int i = 0; i < allSubstates.size(); i++) {
                 if (allSubstates.get(i) >= nSubstates)
@@ -57,8 +57,8 @@ public class SmoothAcrossParentBits implements Smoother, Serializable {
                 // TODO: weighted smoothing
 
                 // descend down to first split first
-                while (splitTree.getChildren().size() == 1) {
-                    splitTree = splitTree.getChildren().get(0);
+                while (splitTree.children().size() == 1) {
+                    splitTree = splitTree.children().get(0);
                 }
                 // for (short substate=0; substate<nSubstates; substate++){
                 // for (int branch=0; branch<2; branch++){
@@ -81,7 +81,7 @@ public class SmoothAcrossParentBits implements Smoother, Serializable {
 
                 for (int branch = 0; branch < 2; branch++) {
                     // compute weights for substates in top-level branch
-                    final List<Short> substatesInBranch = splitTree.getChildren().get(branch).getYield();
+                    final List<Short> substatesInBranch = splitTree.children().get(branch).leafLabels();
                     final int total = substatesInBranch.size();
                     final double normalizedSmooth = smooth / (total - 1);
 

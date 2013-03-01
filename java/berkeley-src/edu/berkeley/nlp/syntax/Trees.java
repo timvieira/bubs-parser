@@ -32,7 +32,7 @@ public class Trees {
                 return new Tree<String>(tree.label);
             }
             final List<Tree<String>> transformedChildren = new ArrayList<Tree<String>>();
-            for (final Tree<String> child : tree.getChildren()) {
+            for (final Tree<String> child : tree.children()) {
                 transformedChildren.add(transformTree(child));
             }
             return new Tree<String>(transformedLabel, transformedChildren);
@@ -43,7 +43,7 @@ public class Trees {
          * @return The transformation of the specified tree's label
          */
         public static String transformLabel(final Tree<String> tree) {
-            String transformedLabel = tree.getLabel();
+            String transformedLabel = tree.label();
             int cutIndex = transformedLabel.indexOf('-');
             int cutIndex2 = transformedLabel.indexOf('=');
             final int cutIndex3 = transformedLabel.indexOf('^');
@@ -60,14 +60,14 @@ public class Trees {
 
     public static class EmptyNodeStripper implements TreeTransformer<String> {
         public Tree<String> transformTree(final Tree<String> tree) {
-            final String label = tree.getLabel();
+            final String label = tree.label();
             if (label.equals("-NONE-")) {
                 return null;
             }
             if (tree.isLeaf()) {
                 return new Tree<String>(label);
             }
-            final List<Tree<String>> children = tree.getChildren();
+            final List<Tree<String>> children = tree.children();
             final List<Tree<String>> transformedChildren = new ArrayList<Tree<String>>();
             for (final Tree<String> child : children) {
                 final Tree<String> transformedChild = transformTree(child);
@@ -82,10 +82,10 @@ public class Trees {
 
     public static class XOverXRemover<E> implements TreeTransformer<E> {
         public Tree<E> transformTree(final Tree<E> tree) {
-            final E label = tree.getLabel();
-            List<Tree<E>> children = tree.getChildren();
-            while (children.size() == 1 && !children.get(0).isLeaf() && label.equals(children.get(0).getLabel())) {
-                children = children.get(0).getChildren();
+            final E label = tree.label();
+            List<Tree<E>> children = tree.children();
+            while (children.size() == 1 && !children.get(0).isLeaf() && label.equals(children.get(0).label())) {
+                children = children.get(0).children();
             }
             final List<Tree<E>> transformedChildren = new ArrayList<Tree<E>>();
             for (final Tree<E> child : children) {
@@ -332,7 +332,7 @@ public class Trees {
                 final StringBuilder sb) {
             // the condition for staying on the same line in Penn Treebank
             final boolean suppressIndent = (parentLabelNull || (firstSibling && tree.isPreTerminal()) || (leftSiblingPreTerminal
-                    && tree.isPreTerminal() && (tree.getLabel() == null || !tree.getLabel().toString().startsWith("CC"))));
+                    && tree.isPreTerminal() && (tree.label() == null || !tree.label().toString().startsWith("CC"))));
             if (suppressIndent) {
                 sb.append(' ');
             } else {
@@ -348,24 +348,24 @@ public class Trees {
                 return;
             }
             sb.append('(');
-            sb.append(tree.getLabel());
-            renderChildren(tree.getChildren(), indent + 1, tree.getLabel() == null
-                    || tree.getLabel().toString() == null, sb);
+            sb.append(tree.label());
+            renderChildren(tree.children(), indent + 1, tree.label() == null
+                    || tree.label().toString() == null, sb);
             sb.append(')');
         }
 
         private static <L> void renderFlat(final Tree<L> tree, final StringBuilder sb) {
             if (tree.isLeaf()) {
-                sb.append(tree.getLabel().toString());
+                sb.append(tree.label().toString());
                 return;
             }
             sb.append('(');
-            if (tree.getLabel() == null)
+            if (tree.label() == null)
                 sb.append("<null>");
             else
-                sb.append(tree.getLabel().toString());
+                sb.append(tree.label().toString());
             sb.append(' ');
-            sb.append(tree.getChildren().get(0).getLabel().toString());
+            sb.append(tree.children().get(0).label().toString());
             sb.append(')');
         }
 
@@ -377,7 +377,7 @@ public class Trees {
                 renderTree(child, indent, parentLabelNull, firstSibling, leftSibIsPreTerm, false, sb);
                 leftSibIsPreTerm = child.isPreTerminal();
                 // CC is a special case
-                if (child.getLabel() != null && child.getLabel().toString().startsWith("CC")) {
+                if (child.label() != null && child.label().toString().startsWith("CC")) {
                     leftSibIsPreTerm = false;
                 }
                 firstSibling = false;
@@ -407,12 +407,12 @@ public class Trees {
 
     private static <L> List<Tree<L>> spliceNodesHelper(final Tree<L> tree, final Filter<L> filter, final boolean splice) {
         final List<Tree<L>> splicedChildren = new ArrayList<Tree<L>>();
-        for (final Tree<L> child : tree.getChildren()) {
+        for (final Tree<L> child : tree.children()) {
             final List<Tree<L>> splicedChildList = spliceNodesHelper(child, filter, splice);
             splicedChildren.addAll(splicedChildList);
         }
 
-        if (filter.accept(tree.getLabel()) && !tree.isLeaf())
+        if (filter.accept(tree.label()) && !tree.isLeaf())
             return splice ? splicedChildren : new ArrayList<Tree<L>>();
         // assert !(tree.getLabel().equals("NP") && splicedChildren.isEmpty());
         final Tree<L> newTree = new Tree<L>(tree.label);
@@ -424,14 +424,14 @@ public class Trees {
         if (tree.isLeaf()) {
             throw new RuntimeException("Can't strip leaves from " + tree.toString());
         }
-        if (tree.getChildren().get(0).isLeaf()) {
+        if (tree.children().get(0).isLeaf()) {
             // Base case; preterminals become terminals.
-            return new Tree<String>(tree.getLabel());
+            return new Tree<String>(tree.label());
         }
 
         final List<Tree<String>> children = new ArrayList<Tree<String>>();
-        final Tree<String> newTree = new Tree<String>(tree.getLabel());
-        for (final Tree<String> child : tree.getChildren()) {
+        final Tree<String> newTree = new Tree<String>(tree.label());
+        for (final Tree<String> child : tree.children()) {
             children.add(stripLeaves(child));
         }
         newTree.setChildren(children);
@@ -439,8 +439,8 @@ public class Trees {
     }
 
     public static <T> int getMaxBranchingFactor(final Tree<T> tree) {
-        int max = tree.getChildren().size();
-        for (final Tree<T> child : tree.getChildren()) {
+        int max = tree.children().size();
+        for (final Tree<T> child : tree.children()) {
             max = Math.max(max, getMaxBranchingFactor(child));
         }
         return max;
@@ -466,7 +466,7 @@ public class Trees {
             return new Tree<T>(newLabel);
         }
         final List<Tree<T>> children = new ArrayList<Tree<T>>();
-        for (final Tree<S> child : origTree.getChildren()) {
+        for (final Tree<S> child : origTree.children()) {
             children.add(transformLabels(child, labelTransform));
         }
         return new Tree<T>(newLabel, children);
