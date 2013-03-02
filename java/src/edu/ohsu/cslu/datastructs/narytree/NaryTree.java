@@ -41,6 +41,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
 
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 
@@ -276,8 +277,14 @@ public class NaryTree<E> implements Tree<E>, Serializable {
     }
 
     public Iterable<NaryTree<E>> preOrderTraversal() {
-        // A simple and stupid implementation, but we can tune for performance if needed
-        return preOrderList(new ArrayList<NaryTree<E>>(size));
+        final NaryTree<E> root = this;
+
+        return new Iterable<NaryTree<E>>() {
+            @Override
+            public Iterator<NaryTree<E>> iterator() {
+                return new PreOrderIterator(root);
+            }
+        };
     }
 
     private List<NaryTree<E>> preOrderList(final List<NaryTree<E>> list) {
@@ -303,9 +310,44 @@ public class NaryTree<E> implements Tree<E>, Serializable {
         return preOrderLabelList(new ArrayList<E>(size));
     }
 
+    private class PreOrderIterator implements Iterator<NaryTree<E>> {
+
+        final Stack<NaryTree<E>> stack = new Stack<NaryTree<E>>();
+
+        public PreOrderIterator(final NaryTree<E> root) {
+            stack.push(root);
+        }
+
+        @Override
+        public boolean hasNext() {
+            return !stack.isEmpty();
+        }
+
+        public NaryTree<E> next() {
+            final NaryTree<E> next = stack.pop();
+
+            for (final Iterator<NaryTree<E>> iter = next.childList.descendingIterator(); iter.hasNext();) {
+                stack.push(iter.next());
+            }
+            return next;
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+
+    }
+
     public Iterable<NaryTree<E>> postOrderTraversal() {
-        // A simple and stupid implementation, but we can tune for performance if needed
-        return postOrderList(new ArrayList<NaryTree<E>>(size));
+        final NaryTree<E> root = this;
+
+        return new Iterable<NaryTree<E>>() {
+            @Override
+            public Iterator<NaryTree<E>> iterator() {
+                return new PostOrderIterator(root);
+            }
+        };
     }
 
     private List<NaryTree<E>> postOrderList(final List<NaryTree<E>> list) {
@@ -329,6 +371,38 @@ public class NaryTree<E> implements Tree<E>, Serializable {
     @Override
     public Iterable<E> postOrderLabelTraversal() {
         return postOrderLabelList(new LinkedList<E>());
+    }
+
+    private class PostOrderIterator implements Iterator<NaryTree<E>> {
+
+        final Stack<NaryTree<E>> stack2 = new Stack<NaryTree<E>>();
+
+        public PostOrderIterator(final NaryTree<E> root) {
+            final Stack<NaryTree<E>> stack1 = new Stack<NaryTree<E>>();
+            stack1.push(root);
+
+            while (!stack1.isEmpty()) {
+                final NaryTree<E> node = stack1.pop();
+                stack2.push(node);
+                for (final NaryTree<E> child : node.childList) {
+                    stack1.push(child);
+                }
+            }
+        }
+
+        @Override
+        public boolean hasNext() {
+            return !stack2.isEmpty();
+        }
+
+        public NaryTree<E> next() {
+            return stack2.pop();
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
     }
 
     private List<NaryTree<E>> leafList(final List<NaryTree<E>> list) {
