@@ -2,7 +2,9 @@ package edu.berkeley.nlp.syntax;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Stack;
 
 /**
  * Represent linguistic trees, with each node consisting of a label and a list of children.
@@ -97,16 +99,46 @@ public class Tree<L> implements Serializable {
     }
 
     public Iterable<Tree<L>> postOrderTraversal() {
-        return postOrderList(new ArrayList<Tree<L>>());
+        final Tree<L> root = this;
+
+        return new Iterable<Tree<L>>() {
+            @Override
+            public Iterator<Tree<L>> iterator() {
+                return new PostOrderIterator(root);
+            }
+        };
     }
 
-    private List<Tree<L>> postOrderList(final List<Tree<L>> list) {
-        for (final Tree<L> child : children) {
-            child.postOrderList(list);
-        }
-        list.add(this);
+    private class PostOrderIterator implements Iterator<Tree<L>> {
 
-        return list;
+        final Stack<Tree<L>> stack2 = new Stack<Tree<L>>();
+
+        public PostOrderIterator(final Tree<L> root) {
+            final Stack<Tree<L>> stack1 = new Stack<Tree<L>>();
+            stack1.push(root);
+
+            while (!stack1.isEmpty()) {
+                final Tree<L> node = stack1.pop();
+                stack2.push(node);
+                for (final Tree<L> child : node.children) {
+                    stack1.push(child);
+                }
+            }
+        }
+
+        @Override
+        public boolean hasNext() {
+            return !stack2.isEmpty();
+        }
+
+        public Tree<L> next() {
+            return stack2.pop();
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
     }
 
     public List<L> preterminalLabels() {

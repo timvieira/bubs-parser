@@ -27,18 +27,7 @@ import edu.berkeley.nlp.util.ScalingTools;
  */
 public class Grammar implements java.io.Serializable {
 
-    /**
-     * @author leon
-     * 
-     */
-    public static enum RandomInitializationType {
-        INITIALIZE_WITH_SMALL_RANDOMIZATION, INITIALIZE_LIKE_MMT
-        // initialize like in the Matzuyaki, Miyao, and Tsujii paper
-    }
-
-    public static class RuleNotFoundException extends Exception {
-        private static final long serialVersionUID = 2L;
-    }
+    private static final long serialVersionUID = 1L;
 
     public boolean[] isGrammarTag;
 
@@ -59,7 +48,6 @@ public class Grammar implements java.io.Serializable {
 
     private Map<BinaryRule, BinaryRule> binaryRuleMap;
     private Map<UnaryRule, UnaryRule> unaryRuleMap;
-    private UnaryRule uSearchRule;
 
     private UnaryCounterTable unaryRuleCounter = null;
 
@@ -67,8 +55,6 @@ public class Grammar implements java.io.Serializable {
 
     // TODO Replace with a FastUtil implementation
     private CounterMap<Integer, Integer> symbolCounter = new CounterMap<Integer, Integer>();
-
-    private static final long serialVersionUID = 1L;
 
     protected Numberer tagNumberer;
 
@@ -79,10 +65,8 @@ public class Grammar implements java.io.Serializable {
     private List<UnaryRule>[] closedViterbiRulesWithChild = null;
 
     private UnaryRule[][] closedSumRulesWithP = null;
-    private UnaryRule[][] closedSumRulesWithC = null;
 
     private UnaryRule[][] closedViterbiRulesWithP = null;
-    public UnaryRule[][] closedViterbiRulesWithC = null;
 
     private Map<UnaryRule, UnaryRule> bestViterbiRulesUnderMax = null;
     public double threshold;
@@ -351,7 +335,6 @@ public class Grammar implements java.io.Serializable {
         symbolCounter = new CounterMap<Integer, Integer>();
         numStates = (short) nSubStates.length;
         numSubStates = nSubStates;
-        uSearchRule = new UnaryRule((short) 0, (short) 0);
         if (oldGrammar != null) {
             splitTrees = oldGrammar.splitTrees;
         } else {
@@ -846,47 +829,47 @@ public class Grammar implements java.io.Serializable {
             }
 
             scalingFactor = ScalingTools.calcScaleFactor(parent.getOScale() + leftChild.getIScale()
-                    + rightChild.getIScale() - tree_scale);
+                + rightChild.getIScale() - tree_scale);
 
-            for (short i = 0; i < nLeftChildSubStates; i++) {
-                final double lcIS = leftChild.getIScore(i);
-                if (lcIS == 0) {
+        for (short i = 0; i < nLeftChildSubStates; i++) {
+            final double lcIS = leftChild.getIScore(i);
+            if (lcIS == 0) {
+                continue;
+            }
+
+            for (short j = 0; j < nRightChildSubStates; j++) {
+                if (oldBScores[i][j] == null) {
                     continue;
                 }
 
-                for (short j = 0; j < nRightChildSubStates; j++) {
-                    if (oldBScores[i][j] == null) {
+                final double rcIS = rightChild.getIScore(j);
+                if (rcIS == 0) {
+                    continue;
+                }
+
+                // allocate parent array
+                if (bcounts[i][j] == null) {
+                    bcounts[i][j] = new double[nParentSubStates];
+                }
+
+                for (short k = 0; k < nParentSubStates; k++) {
+                    final double pOS = parent.getOScore(k); // Parent outside
+                    // score
+                    if (pOS == 0) {
                         continue;
                     }
 
-                    final double rcIS = rightChild.getIScore(j);
-                    if (rcIS == 0) {
+                    final double rS = oldBScores[i][j][k];
+                    if (rS == 0) {
                         continue;
                     }
 
-                    // allocate parent array
-                    if (bcounts[i][j] == null) {
-                        bcounts[i][j] = new double[nParentSubStates];
+                    if (tree_score == 0) {
+                        tree_score = 1;
                     }
 
-                    for (short k = 0; k < nParentSubStates; k++) {
-                        final double pOS = parent.getOScore(k); // Parent outside
-                        // score
-                        if (pOS == 0) {
-                            continue;
-                        }
-
-                        final double rS = oldBScores[i][j][k];
-                        if (rS == 0) {
-                            continue;
-                        }
-
-                        if (tree_score == 0) {
-                            tree_score = 1;
-                        }
-
-                        final double scaledRuleCount = (rS * lcIS / tree_score) * rcIS * scalingFactor * pOS;
-                        bcounts[i][j][k] += scaledRuleCount;
+                    final double scaledRuleCount = (rS * lcIS / tree_score) * rcIS * scalingFactor * pOS;
+                    bcounts[i][j][k] += scaledRuleCount;
                     }
                 }
             }
@@ -948,15 +931,11 @@ public class Grammar implements java.io.Serializable {
     public void makeCRArrays() {
         // int numStates = closedRulesWithParent.length;
         closedSumRulesWithP = new UnaryRule[numStates][];
-        closedSumRulesWithC = new UnaryRule[numStates][];
         closedViterbiRulesWithP = new UnaryRule[numStates][];
-        closedViterbiRulesWithC = new UnaryRule[numStates][];
 
         for (int i = 0; i < numStates; i++) {
             closedSumRulesWithP[i] = closedSumRulesWithParent[i].toArray(new UnaryRule[0]);
-            closedSumRulesWithC[i] = closedSumRulesWithChild[i].toArray(new UnaryRule[0]);
             closedViterbiRulesWithP[i] = closedViterbiRulesWithParent[i].toArray(new UnaryRule[0]);
-            closedViterbiRulesWithC[i] = closedViterbiRulesWithChild[i].toArray(new UnaryRule[0]);
         }
     }
 
@@ -1147,8 +1126,10 @@ public class Grammar implements java.io.Serializable {
         // splitRulesWithRC = new BinaryRule[numStates][];
         // makeRulesAccessibleByChild();
 
-        if (binaryRulesWithParent == null)
+        if (binaryRulesWithParent == null) {
             return;
+        }
+
         splitRulesWithP = new BinaryRule[numStates][];
         splitRulesWithLC = new BinaryRule[numStates][];
         splitRulesWithRC = new BinaryRule[numStates][];
@@ -1190,10 +1171,9 @@ public class Grammar implements java.io.Serializable {
 
     public double[][] getUnaryScore(final short pState, final short cState) {
         final UnaryRule r = getUnaryRule(pState, cState);
-        if (r != null)
+        if (r != null) {
             return r.getScores2();
-        if (GrammarTrainer.VERBOSE)
-            System.out.println("The requested rule (" + uSearchRule + ") is not in the grammar!");
+        }
         final double[][] uscores = new double[numSubStates[cState]][numSubStates[pState]];
         ArrayUtil.fill(uscores, 0.0);
         return uscores;
