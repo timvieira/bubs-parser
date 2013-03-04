@@ -866,23 +866,6 @@ public class Lexicon implements java.io.Serializable {
         return resultArray;
     }
 
-    /*
-     * public void tune(Collection<Tree> trees) { double bestScore = Double.NEGATIVE_INFINITY; double[] bestSmooth =
-     * {0.0, 0.0}; for (smooth[0] = 1; smooth[0] <= 1; smooth[0] *= 2.0) {//64 for (smooth[1] = 0.2; smooth[1] <= 0.2;
-     * smooth[1] *= 2.0) {//3 //for (smooth[0]=0.5; smooth[0]<=64; smooth[0] *= 2.0) {//64 //for (smooth[1]=0.1;
-     * smooth[1]<=12.8; smooth[1] *= 2.0) {//3 double score = 0.0; //score = scoreAll(trees); if (Test.verbose) {
-     * System.out.println("Tuning lexicon: s0 " + smooth[0] + " s1 " + smooth[1] + " is " + score + " " + trees.size() +
-     * " trees."); } if (score > bestScore) { System.arraycopy(smooth, 0, bestSmooth, 0, smooth.length); bestScore =
-     * score; } } } System.arraycopy(bestSmooth, 0, smooth, 0, bestSmooth.length); if (smartMutation) { smooth[0] = 8.0;
-     * //smooth[1] = 1.6; //smooth[0] = 0.5; smooth[1] = 0.1; } if (Test.unseenSmooth > 0.0) { smooth[0] =
-     * Test.unseenSmooth; } if (Test.verbose) { System.out.println("Tuning selected smoothUnseen " + smooth[0] +
-     * " smoothSeen " + smooth[1] + " at " + bestScore); } }
-     */
-
-    public Counter<String> getWordCounter() {
-        return wordCounter;
-    }
-
     public void tieRareWordStats(final int threshold) {
         // ni = unsplit non-terminal index
         for (int ni = 0; ni < numSubStates.length; ni++) {
@@ -942,10 +925,6 @@ public class Lexicon implements java.io.Serializable {
             System.out.println(tags.toString());
         }
 
-        Counter<String> oldWordCounter = null;
-        if (oldLexicon != null) {
-            oldWordCounter = oldLexicon.getWordCounter();
-        }
         // for all words in sentence
         for (int position = 0; position < words.size(); position++) {
             totalWords++;
@@ -988,7 +967,7 @@ public class Lexicon implements java.io.Serializable {
 
             for (short substate = 0; substate < nSubStates; substate++) {
                 double weight = 1;
-                if (randomness == -1) {
+                if (oldLexiconScores != null) {
                     // weight by the probability of seeing the tag and word
                     // together, given the sentence
                     if (!Double.isInfinite(scale)) {
@@ -1022,7 +1001,7 @@ public class Lexicon implements java.io.Serializable {
                     throw new IllegalArgumentException("totalTokens is NaN");
                 }
 
-                if (oldLexicon != null && oldWordCounter.getCount(word) < threshold + 0.5) {
+                if (oldLexicon != null && oldLexicon.wordCounter.getCount(word) < threshold + 0.5) {
                     wordCounter.incrementCount(sig, weight);
                     substateCounter2[substate] += weight;
                     unseenTagCounter[tag][substate] += weight;
