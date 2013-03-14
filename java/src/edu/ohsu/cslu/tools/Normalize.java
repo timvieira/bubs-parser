@@ -17,19 +17,32 @@ import edu.ohsu.cslu.grammar.Tokenizer;
  */
 public class Normalize extends BaseCommandlineTool {
 
-    @Option(name = "-cd", metaVar = "count", usage = "Normalize cardinal numbers (children of CD) which occur n or fewer times")
-    private int cdThreshold;
+    @Option(name = "-t", required = true, metaVar = "tag", separator = ",", usage = "Tag(s) to normalize (replace with their unknown-word class)")
+    private OpenClassTags[] tags;
 
-    @Option(name = "-nnp", metaVar = "count", usage = "Normalize children of NNP nodes which occur n or fewer times")
-    private int nnpThreshold;
+    @Option(name = "-th", required = true, metaVar = "count", separator = ",", usage = "Normalization threshold(s) - observation count in the corpus")
+    private int[] thresholds;
+
+    private Object2IntOpenHashMap<String> thresholdMap = new Object2IntOpenHashMap<String>();
+
+    @Override
+    protected void setup() throws Exception {
+        if (tags.length != thresholds.length) {
+            throw new IllegalArgumentException("The number of specified thresholds (" + thresholds.length
+                    + ") does not match the number of specified tags (" + tags.length + ")");
+        }
+        for (int i = 0; i < tags.length; i++) {
+            thresholdMap.put(tags[i].name(), thresholds[i]);
+        }
+    }
 
     @Override
     protected void run() throws Exception {
 
         // Read the entire corpus and count token occurrences
         final BufferedReader br = inputAsBufferedReader();
-        // Allow re-reading up to 25 MB
-        br.mark(25 * 1024 * 10240);
+        // Allow re-reading up to 50 MB
+        br.mark(50 * 1024 * 1024);
 
         final Object2IntOpenHashMap<String> lexicon = new Object2IntOpenHashMap<String>();
         for (final String line : inputLines(br)) {
@@ -48,13 +61,8 @@ public class Normalize extends BaseCommandlineTool {
 
             for (final NaryTree<String> node : tree.inOrderTraversal()) {
 
-                // Normalize cardinal numbers
-                if (node.isLeaf() && node.parent().label().equals("CD") && lexicon.getInt(key(node)) <= cdThreshold) {
-                    node.setLabel(Tokenizer.berkeleyGetSignature(node.label(), false, null));
-                }
-
-                // Normalize proper nouns (NNP)
-                if (node.isLeaf() && node.parent().label().equals("NNP") && lexicon.getInt(key(node)) <= nnpThreshold) {
+                if (node.isLeaf() && thresholdMap.containsKey(node.parentLabel())
+                        && lexicon.getInt(key(node)) <= thresholdMap.getInt(node.parentLabel())) {
                     node.setLabel(Tokenizer.berkeleyGetSignature(node.label(), false, null));
                 }
             }
@@ -69,5 +77,9 @@ public class Normalize extends BaseCommandlineTool {
 
     public static void main(final String[] args) {
         run(args);
+    }
+
+    public static enum OpenClassTags {
+        CD, JJ, NN, NNP, NNPS, NNS, RB, VB, VBD, VBG, VBN, VBP, VBZ;
     }
 }
