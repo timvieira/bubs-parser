@@ -26,7 +26,6 @@ public class ParserData implements Serializable {
     Map<String, Numberer> numbs;
     short[] numSubStatesArray;
     int h_markov;
-    int v_markov;
     Binarization bin;
 
     public Binarization getBinarization() {
@@ -53,18 +52,13 @@ public class ParserData implements Serializable {
         return h_markov;
     }
 
-    public int getV_markov() {
-        return v_markov;
-    }
-
     public ParserData(final Lexicon lex, final Grammar gr, final Map<String, Numberer> numbs, final short[] nSub,
-            final int v_m, final int h_m, final Binarization b) {
+            final int h_m, final Binarization b) {
         this.lex = lex;
         this.gr = gr;
         this.numbs = numbs;
         this.numSubStatesArray = nSub;
         this.h_markov = h_m;
-        this.v_markov = v_m;
         this.bin = b;
     }
 

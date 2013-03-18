@@ -88,6 +88,10 @@ public class UnaryRule extends Rule implements java.io.Serializable, Comparable<
 
     @Override
     public String toString() {
+        return toString(0);
+    }
+
+    public String toString(final double minimumRuleProbability) {
         final Numberer n = Numberer.getGlobalNumberer("tags");
         String cState = n.symbol(childState);
         if (cState.endsWith("^g")) {
@@ -111,7 +115,7 @@ public class UnaryRule extends Rule implements java.io.Serializable, Comparable<
 
             for (int pS = 0; pS < scores[cS].length; pS++) {
                 final double p = scores[cS][pS];
-                if (p > 0) {
+                if (p > minimumRuleProbability) {
                     sb.append(String.format("%s_%d -> %s_%d %.10f\n", pState, pS, cState, cS, Math.log(p)));
                 }
             }

@@ -107,12 +107,10 @@ public class Trees {
     }
 
     public static class PennTreeReader implements Iterator<Tree<String>> {
-        public static String ROOT_LABEL = "ROOT";
+        public final static String ROOT_LABEL = "ROOT";
 
         PushbackReader in;
         Tree<String> nextTree;
-        int num = 0;
-        int treeNum = 0;
 
         private boolean lowercase = false;
 
@@ -133,9 +131,10 @@ public class Trees {
         private Tree<String> readRootTree() {
             try {
                 readWhiteSpace();
-                if (!isLeftParen(peek()))
+                if (!isLeftParen(peek())) {
                     return null;
-                treeNum++;
+                }
+
                 return readTree(true);
             } catch (final IOException e) {
                 throw new RuntimeException(e);
@@ -264,7 +263,8 @@ public class Trees {
         }
 
         public PennTreeReader(final Reader in) {
-            this(in, false);
+            this.in = new PushbackReader(in, 2);
+            nextTree = readRootTree();
         }
 
         public PennTreeReader(final Reader in, final boolean lowercase) {
@@ -441,21 +441,5 @@ public class Trees {
             max = Math.max(max, getMaxBranchingFactor(child));
         }
         return max;
-    }
-
-    public interface LabelTransformer<S, T> {
-        public T transform(Tree<S> node);
-    }
-
-    public static <S, T> Tree<T> transformLabels(final Tree<S> origTree, final LabelTransformer<S, T> labelTransform) {
-        final T newLabel = labelTransform.transform(origTree);
-        if (origTree.isLeaf()) {
-            return new Tree<T>(newLabel);
-        }
-        final ArrayList<Tree<T>> children = new ArrayList<Tree<T>>();
-        for (final Tree<S> child : origTree.children()) {
-            children.add(transformLabels(child, labelTransform));
-        }
-        return new Tree<T>(newLabel, children);
     }
 }

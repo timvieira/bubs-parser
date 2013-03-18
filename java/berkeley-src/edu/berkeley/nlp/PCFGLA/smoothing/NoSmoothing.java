@@ -10,62 +10,28 @@ import edu.berkeley.nlp.PCFGLA.UnaryCounterTable;
 import edu.berkeley.nlp.util.Numberer;
 
 /**
- * @author leon
+ * Noop implementation of {@link Smoother}
  * 
+ * @author leon
  */
 public class NoSmoothing implements Smoother, Serializable {
 
-    /**
-	 * 
-	 */
     private static final long serialVersionUID = 1L;
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see edu.berkeley.nlp.PCFGLA.smoothing.Smoother#smooth(edu.berkeley.nlp.util .UnaryCounterTable,
-     * edu.berkeley.nlp.util.BinaryCounterTable)
-     */
-    public void smooth(UnaryCounterTable unaryCounter, BinaryCounterTable binaryCounter) {
-        // perform no smoothing at all
+    public void smooth(final UnaryCounterTable unaryCounter, final BinaryCounterTable binaryCounter) {
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see edu.berkeley.nlp.PCFGLA.smoothing.Smoother#smooth(short, float[])
-     */
-    public void smooth(short tag, double[] ruleScores) {
-        // do nothing
+    public void smooth(final short tag, final double[] ruleScores) {
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see edu.berkeley.nlp.PCFGLA.smoothing.Smoother#copy()
-     */
     public Smoother copy() {
         return this;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see edu.berkeley.nlp.PCFGLA.smoothing.Smoother#updateWeights(int[][])
-     */
-    public void updateWeights(int[][] toSubstateMapping) {
-        // TODO Auto-generated method stub
-
+    public void updateWeights(final int[][] toSubstateMapping) {
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see edu.berkeley.nlp.PCFGLA.smoothing.Smoother#remapStates(edu.berkeley.nlp .util.Numberer,
-     * edu.berkeley.nlp.util.Numberer)
-     */
-    public Smoother remapStates(Numberer thisNumberer, Numberer newNumberer) {
-        // TODO Auto-generated method stub
+    public Smoother remapStates(final Numberer thisNumberer, final Numberer newNumberer) {
         return null;
     }
 

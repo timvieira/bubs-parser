@@ -1,13 +1,8 @@
 package edu.berkeley.nlp.PCFGLA;
 
-import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
 
 import edu.berkeley.nlp.syntax.Tree;
-import edu.berkeley.nlp.syntax.Trees;
-import edu.berkeley.nlp.util.Filter;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 
 /**
@@ -15,58 +10,8 @@ import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
  * them for scoring.
  */
 public class TreeAnnotations implements java.io.Serializable {
+
     private static final long serialVersionUID = 1L;
-
-    // static CollinsHeadFinder headFinder = new CollinsHeadFinder();
-
-    /**
-     * This annotates the parse tree by adding ancestors to the tags, and then by forgetfully binarizing the tree. The
-     * format goes as follows: Tag becomes Tag^Parent^Grandparent Then, this is binarized, so that
-     * Tag^Parent^Grandparent produces A^Tag^Parent B... C... becomes Tag^Parent^Grandparent produces A^Tag^Parent
-     * 
-     * @Tag^Parent^Grandparent-&gt;_A^Tag^Parent
-     * 
-     * @Tag^Parent^Grandparent-&gt;_A^Tag^Parent produces B^Tag^Parent
-     * @Tag^Parent ^Grandparent-&gt;_A^Tag ^Parent_B^Tag^Parent and finally we trim the excess _* off to control the
-     *             amount of horizontal history
-     * 
-     * */
-    public static Tree<String> processTree(final Tree<String> unAnnotatedTree, final int nVerticalAnnotations,
-            final int nHorizontalAnnotations, final Binarization binarization, final boolean manualAnnotation) {
-        return processTree(unAnnotatedTree, nVerticalAnnotations, nHorizontalAnnotations, binarization,
-                manualAnnotation, false, true);
-    }
-
-    public static Tree<String> processTree(final Tree<String> unAnnotatedTree, final int nVerticalAnnotations,
-            final int nHorizontalAnnotations, final Binarization binarization, final boolean manualAnnotation,
-            final boolean annotateUnaryParents, final boolean markGrammarSymbols) {
-        Tree<String> verticallyAnnotated = unAnnotatedTree;
-        if (nVerticalAnnotations == 3) {
-            verticallyAnnotated = annotateVerticallyTwice(unAnnotatedTree, "", "");
-        } else if (nVerticalAnnotations == 2) {
-            if (manualAnnotation) {
-                verticallyAnnotated = annotateManuallyVertically(unAnnotatedTree, "");
-            } else {
-                verticallyAnnotated = annotateVertically(unAnnotatedTree, "");
-            }
-        } else if (nVerticalAnnotations == 1) {
-            if (markGrammarSymbols)
-                verticallyAnnotated = markGrammarNonterminals(unAnnotatedTree, "");
-            if (annotateUnaryParents)
-                verticallyAnnotated = markUnaryParents(verticallyAnnotated);
-        } else {
-            throw new Error("the code does not exist to annotate vertically " + nVerticalAnnotations + " times");
-        }
-        final Tree<String> binarizedTree = binarizeTree(verticallyAnnotated, binarization);
-        // removeUnaryChains(binarizedTree);
-        // System.out.println(binarizedTree);
-
-        // if (deleteLabels) return deleteLabels(binarizedTree,true);
-        // else if (deletePC) return deletePC(binarizedTree,true);
-        // else
-        return forgetLabels(binarizedTree, nHorizontalAnnotations);
-
-    }
 
     /**
      * Binarize a tree with the given binarization style; e.g. head binarization, left binarization, etc.
@@ -85,101 +30,7 @@ public class TreeAnnotations implements java.io.Serializable {
         return null;
     }
 
-    private static Tree<String> annotateVerticallyTwice(final Tree<String> tree, final String parentLabel1,
-            final String parentLabel2) {
-        Tree<String> verticallyMarkovizatedTree;
-        if (tree.isLeaf()) {
-            verticallyMarkovizatedTree = tree; // new
-                                               // Tree<String>(tree.getLabel());//
-                                               // + parentLabel);
-        } else {
-            final ArrayList<Tree<String>> children = new ArrayList<Tree<String>>();
-            for (final Tree<String> child : tree.children()) {
-                // children.add(annotateVerticallyTwice(child,
-                // parentLabel2,"^"+tree.getLabel()));
-                children.add(annotateVerticallyTwice(child, "^" + tree.label(), parentLabel1));
-            }
-            verticallyMarkovizatedTree = new Tree<String>(tree.label() + parentLabel1 + parentLabel2, children);
-        }
-        return verticallyMarkovizatedTree;
-    }
-
-    private static Tree<String> annotateVertically(final Tree<String> tree, final String parentLabel) {
-        Tree<String> verticallyMarkovizatedTree;
-        if (tree.isLeaf()) {
-            verticallyMarkovizatedTree = tree;// new
-                                              // Tree<String>(tree.getLabel());//
-                                              // + parentLabel);
-        } else {
-            final ArrayList<Tree<String>> children = new ArrayList<Tree<String>>();
-            for (final Tree<String> child : tree.children()) {
-                children.add(annotateVertically(child, "^" + tree.label()));
-            }
-            verticallyMarkovizatedTree = new Tree<String>(tree.label() + parentLabel, children);
-        }
-        return verticallyMarkovizatedTree;
-    }
-
-    private static Tree<String> markGrammarNonterminals(final Tree<String> tree, final String parentLabel) {
-        Tree<String> verticallyMarkovizatedTree;
-        if (tree.isPreTerminal()) {
-            verticallyMarkovizatedTree = tree;// new
-                                              // Tree<String>(tree.getLabel());//
-                                              // + parentLabel);
-        } else {
-            final ArrayList<Tree<String>> children = new ArrayList<Tree<String>>();
-            for (final Tree<String> child : tree.children()) {
-                children.add(markGrammarNonterminals(child, "^g"));// ""));//
-            }
-            verticallyMarkovizatedTree = new Tree<String>(tree.label() + parentLabel, children);
-        }
-        return verticallyMarkovizatedTree;
-    }
-
-    private static Tree<String> markUnaryParents(final Tree<String> tree) {
-        Tree<String> verticallyMarkovizatedTree;
-        if (tree.isPreTerminal()) {
-            verticallyMarkovizatedTree = tree;// new
-                                              // Tree<String>(tree.getLabel());//
-                                              // + parentLabel);
-        } else {
-            final ArrayList<Tree<String>> children = new ArrayList<Tree<String>>();
-            for (final Tree<String> child : tree.children()) {
-                children.add(markUnaryParents(child));//
-            }
-            String add = "";
-            if (!tree.label().equals("ROOT"))
-                add = (children.size() == 1 ? "^u" : "");
-            verticallyMarkovizatedTree = new Tree<String>(tree.label() + add, children);
-        }
-        return verticallyMarkovizatedTree;
-    }
-
-    private static Tree<String> annotateManuallyVertically(final Tree<String> tree, final String parentLabel) {
-        Tree<String> verticallyMarkovizatedTree;
-        if (tree.isPreTerminal()) {
-            // split only some of the POS tags
-            // DT, RB, IN, AUX, CC, %
-            final String label = tree.label();
-            if (label.contains("DT") || label.contains("RB") || label.contains("IN") || label.contains("AUX")
-                    || label.contains("CC") || label.contains("%")) {
-                verticallyMarkovizatedTree = new Tree<String>(tree.label() + parentLabel, tree.children());
-            } else {
-                verticallyMarkovizatedTree = tree;// new
-                                                  // Tree<String>(tree.getLabel());//
-                                                  // + parentLabel);
-            }
-        } else {
-            final ArrayList<Tree<String>> children = new ArrayList<Tree<String>>();
-            for (final Tree<String> child : tree.children()) {
-                children.add(annotateManuallyVertically(child, "^" + tree.label()));
-            }
-            verticallyMarkovizatedTree = new Tree<String>(tree.label() + parentLabel, children);
-        }
-        return verticallyMarkovizatedTree;
-    }
-
-    private static Tree<String> forgetLabels(final Tree<String> tree, final int nHorizontalAnnotation) {
+    static Tree<String> forgetLabels(final Tree<String> tree, final int nHorizontalAnnotation) {
         if (nHorizontalAnnotation == -1)
             return tree;
         String transformedLabel = tree.label();
@@ -198,6 +49,7 @@ public class TreeAnnotations implements java.io.Serializable {
             firstCutIndex = secondCutIndex;
             secondCutIndex = transformedLabel.indexOf('_', firstCutIndex + 1);
         }
+
         if (nHorizontalAnnotation == 0) {
             cutIndex = transformedLabel.indexOf('>') - 1;
             if (cutIndex > 0)
@@ -216,21 +68,7 @@ public class TreeAnnotations implements java.io.Serializable {
         for (final Tree<String> child : tree.children()) {
             transformedChildren.add(forgetLabels(child, nHorizontalAnnotation));
         }
-        /*
-         * if (!transformedLabel.equals("ROOT")&& transformedLabel.length()>1){ transformedLabel =
-         * transformedLabel.substring(0,2); }
-         */
 
-        /*
-         * if (tree.isPreTerminal() && transformedLabel.length()>1){ if (transformedLabel.substring(0,2).equals("NN")){
-         * transformedLabel = "NNX"; } else if (transformedLabel.equals("VBZ") || transformedLabel.equals("VBP") ||
-         * transformedLabel.equals("VBD") || transformedLabel.equals("VB") ){ transformedLabel = "VBX"; } else if
-         * (transformedLabel.substring(0,3).equals("PRP")){ transformedLabel = "PRPX"; } else if
-         * (transformedLabel.equals("JJR") || transformedLabel.equals("JJS") ){ transformedLabel = "JJX"; } else if
-         * (transformedLabel.equals("RBR") || transformedLabel.equals("RBS") ){ transformedLabel = "RBX"; } else if
-         * (transformedLabel.equals("WDT") || transformedLabel.equals("WP") || transformedLabel.equals("WP$")){
-         * transformedLabel = "WBX"; } }
-         */
         return new Tree<String>(transformedLabel, transformedChildren);
     }
 
@@ -299,155 +137,4 @@ public class TreeAnnotations implements java.io.Serializable {
         children.add(rightBinarizeTree(rightTree));
         return new Tree<String>(intermediateLabel, children);
     }
-
-    public static Tree<String> unAnnotateTreeSpecial(final Tree<String> annotatedTree) {
-        // Remove intermediate nodes (labels beginning with "Y"
-        // Remove all material on node labels which follow their base symbol
-        // (cuts at the leftmost -, ^, or : character)
-        // Examples: a node with label @NP->DT_JJ will be spliced out, and a
-        // node with label NP^S will be reduced to NP
-        final Tree<String> debinarizedTree = Trees.spliceNodes(annotatedTree, new Filter<String>() {
-            public boolean accept(final String s) {
-                return s.startsWith("Y");
-            }
-        });
-        final Tree<String> unAnnotatedTree = (new Trees.FunctionNodeStripper()).transformTree(debinarizedTree);
-        return unAnnotatedTree;
-    }
-
-    public static Tree<String> debinarizeTree(final Tree<String> annotatedTree) {
-        // Remove intermediate nodes (labels beginning with "@"
-        // Remove all material on node labels which follow their base symbol
-        // (cuts at the leftmost -, ^, or : character)
-        // Examples: a node with label @NP->DT_JJ will be spliced out, and a
-        // node with label NP^S will be reduced to NP
-        final Tree<String> debinarizedTree = Trees.spliceNodes(annotatedTree, new Filter<String>() {
-            public boolean accept(final String s) {
-                return s.startsWith("@") && !s.equals("@");
-            }
-        });
-        return debinarizedTree;
-    }
-
-    public static Tree<String> unAnnotateTree(final Tree<String> annotatedTree, final boolean keepFunctionLabel) {
-        // Remove intermediate nodes (labels beginning with "@"
-        // Remove all material on node labels which follow their base symbol
-        // (cuts at the leftmost -, ^, or : character)
-        // Examples: a node with label @NP->DT_JJ will be spliced out, and a
-        // node with label NP^S will be reduced to NP
-        final Tree<String> debinarizedTree = Trees.spliceNodes(annotatedTree, new Filter<String>() {
-            public boolean accept(final String s) {
-                return s.startsWith("@") && !s.equals("@");
-            }
-        });
-        if (keepFunctionLabel)
-            return debinarizedTree;
-        final Tree<String> unAnnotatedTree = (new Trees.FunctionNodeStripper()).transformTree(debinarizedTree);
-        return unAnnotatedTree;
-    }
-
-    public static void main(final String args[]) {
-        // test the binarization
-        final Trees.PennTreeReader reader = new Trees.PennTreeReader(
-                new StringReader(
-                        "((S (NP (DT the) (JJ quick) (JJ (AA (BB (CC brown)))) (NN fox)) (VP (VBD jumped) (PP (IN over) (NP (DT the) (JJ lazy) (NN dog)))) (. .)))"));
-        final Tree<String> tree = reader.next();
-        System.out.println("tree");
-        System.out.println(Trees.PennTreeRenderer.render(tree));
-        for (final Binarization binarization : Binarization.values()) {
-            System.out.println("binarization type " + binarization.name());
-            // print the binarization
-            try {
-                final Tree<String> binarizedTree = binarizeTree(tree, binarization);
-                System.out.println(Trees.PennTreeRenderer.render(binarizedTree));
-                System.out.println("unbinarized");
-                final Tree<String> unBinarizedTree = unAnnotateTree(binarizedTree, false);
-                System.out.println(Trees.PennTreeRenderer.render(unBinarizedTree));
-                System.out.println("------------");
-            } catch (final Error e) {
-                System.out.println("binarization not implemented");
-            }
-        }
-    }
-
-    public static Tree<String> removeSuperfluousNodes(Tree<String> tree) {
-        if (tree.isPreTerminal())
-            return tree;
-        if (tree.isLeaf())
-            return tree;
-        final List<Tree<String>> gChildren = tree.children();
-        if (gChildren.size() != 1) {
-            // nothing to do, just recurse
-            final ArrayList<Tree<String>> children = new ArrayList<Tree<String>>();
-            for (int i = 0; i < gChildren.size(); i++) {
-                final Tree<String> cChild = removeSuperfluousNodes(tree.children().get(i));
-                children.add(cChild);
-            }
-            tree.setChildren(children);
-            return tree;
-        }
-        Tree<String> result = null;
-        final String parent = tree.label();
-        final HashSet<String> nodesInChain = new HashSet<String>();
-        tree = tree.children().get(0);
-        while (!tree.isPreTerminal() && tree.children().size() == 1) {
-            if (!nodesInChain.contains(tree.label())) {
-                nodesInChain.add(tree.label());
-            }
-            tree = tree.children().get(0);
-        }
-        final Tree<String> child = removeSuperfluousNodes(tree);
-        final String cLabel = child.label();
-        ArrayList<Tree<String>> childs = new ArrayList<Tree<String>>();
-        childs.add(child);
-        if (cLabel.equals(parent)) {
-            result = child;
-        } else {
-            result = new Tree<String>(parent, childs);
-        }
-        for (final String node : nodesInChain) {
-            if (node.equals(parent) || node.equals(cLabel))
-                continue;
-            final Tree<String> intermediate = new Tree<String>(node, result.children());
-            childs = new ArrayList<Tree<String>>();
-            childs.add(intermediate);
-            result.setChildren(childs);
-        }
-        return result;
-    }
-
-    public static void displayUnaryChains(final Tree<String> tree, final String parent) {
-        if (tree.children().size() == 1) {
-            if (!parent.equals("") && !tree.isPreTerminal())
-                System.out.println("Unary chain: " + parent + " -> " + tree.label() + " -> "
-                        + tree.children().get(0).label());
-            if (!tree.isPreTerminal())
-                displayUnaryChains(tree.children().get(0), tree.label());
-        } else {
-            for (final Tree<String> child : tree.children()) {
-                if (!child.isPreTerminal())
-                    displayUnaryChains(child, "");
-            }
-        }
-
-    }
-
-    public static void removeUnaryChains(final Tree<String> tree) {
-        if (tree.isPreTerminal())
-            return;
-        if (tree.children().size() == 1 && tree.children().get(0).children().size() == 1) {
-            // unary chain
-            if (tree.children().get(0).isPreTerminal()) {
-                return; // if we are just above a preterminal, dont do anything
-            }
-
-            final ArrayList<Tree<String>> newChildren = new ArrayList<Tree<String>>();
-            newChildren.add(tree.children().get(0).children().get(0));
-            tree.setChildren(newChildren);
-        }
-        for (final Tree<String> child : tree.children()) {
-            removeUnaryChains(child);
-        }
-    }
-
 }

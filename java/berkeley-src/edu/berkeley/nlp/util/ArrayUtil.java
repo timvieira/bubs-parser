@@ -86,12 +86,6 @@ public class ArrayUtil {
         }
     }
 
-    public static void fill(final double[][] a, final int until1, final int until2, final double val) {
-        for (int i = 0; i < until1; ++i) {
-            Arrays.fill(a[i], 0, until2 == Integer.MAX_VALUE ? a[i].length : until2, val);
-        }
-    }
-
     public static void fill(final double[][][] a, final double val) {
         for (int i = 0; i < a.length; i++) {
             fill(a[i], val);

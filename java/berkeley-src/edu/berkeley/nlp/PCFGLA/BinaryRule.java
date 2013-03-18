@@ -66,6 +66,10 @@ public class BinaryRule extends Rule implements Serializable, java.lang.Comparab
 
     @Override
     public String toString() {
+        return toString(0);
+    }
+
+    public String toString(final double minimumRuleProbability) {
 
         final Numberer n = Numberer.getGlobalNumberer("tags");
         String lState = n.symbol(leftChildState);
@@ -97,7 +101,7 @@ public class BinaryRule extends Rule implements Serializable, java.lang.Comparab
 
                 for (int pS = 0; pS < scores[lS][rS].length; pS++) {
                     final double p = scores[lS][rS][pS];
-                    if (p > 0) {
+                    if (p > minimumRuleProbability) {
                         sb.append(String.format("%s_%d -> %s_%d %s_%d %.10f\n", pState, pS, lState, lS, rState, rS,
                                 Math.log(p)));
                     }
@@ -135,19 +139,6 @@ public class BinaryRule extends Rule implements Serializable, java.lang.Comparab
 
     public short getRightChildState() {
         return rightChildState;
-    }
-
-    // public void setScore(int pS, int lS, int rS, double score){
-    // // sets the score for a particular combination of substates
-    // scores[lS][rS][pS] = score;
-    // }
-
-    public double getScore(final int pS, final int lS, final int rS) {
-        // gets the score for a particular combination of substates
-        if (scores[lS][rS] == null) {
-            return 0;
-        }
-        return scores[lS][rS][pS];
     }
 
     public void setScores2(final double[][][] scores) {

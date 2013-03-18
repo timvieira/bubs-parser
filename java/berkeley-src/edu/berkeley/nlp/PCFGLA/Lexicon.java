@@ -171,6 +171,10 @@ public class Lexicon implements java.io.Serializable {
 
     @Override
     public String toString() {
+        return toString(0);
+    }
+
+    public String toString(final double minimumRuleProbability) {
 
         final Numberer n = Numberer.getGlobalNumberer("tags");
         final StringBuilder sb = new StringBuilder(1024 * 1024);
@@ -183,7 +187,10 @@ public class Lexicon implements java.io.Serializable {
 
                     final double[] scores = score(word, (short) tag, 0, false, false);
                     for (int split = 0; split < scores.length; split++) {
-                        sb.append(String.format("%s_%d -> %s %.10f\n", tagState, split, word, Math.log(scores[split])));
+                        if (scores[split] > minimumRuleProbability) {
+                            sb.append(String.format("%s_%d -> %s %.10f\n", tagState, split, word,
+                                    Math.log(scores[split])));
+                        }
                     }
                 }
             }
@@ -193,7 +200,10 @@ public class Lexicon implements java.io.Serializable {
 
                     final double[] scores = score(word, (short) tag, 0, false, true);
                     for (int split = 0; split < scores.length; split++) {
-                        sb.append(String.format("%s_%d -> %s %.10f\n", tagState, split, word, Math.log(scores[split])));
+                        if (scores[split] > minimumRuleProbability) {
+                            sb.append(String.format("%s_%d -> %s %.10f\n", tagState, split, word,
+                                    Math.log(scores[split])));
+                        }
                     }
                 }
             }
@@ -308,19 +318,15 @@ public class Lexicon implements java.io.Serializable {
      */
     @SuppressWarnings("unchecked")
     public Lexicon splitAllStates(final int[] counts, final boolean moreSubstatesThanCounts) {
+
         final short[] newNumSubStates = new short[numSubStates.length];
         newNumSubStates[0] = 1; // never split ROOT
         for (short i = 1; i < numSubStates.length; i++) {
-            // don't split a state into more substates than times it was
-            // actaully seen
-            // if (!moreSubstatesThanCounts && numSubStates[i]>=counts[i]) {
-            // newNumSubStates[i]=numSubStates[i];
-            // }
-            // else{
             newNumSubStates[i] = (short) (numSubStates[i] * 2);
-            // }
         }
+
         final Lexicon lexicon = new Lexicon(newNumSubStates, this.smoothingCutoff, smooth, smoother, this.threshold);
+
         // copy and alter all data structures
         lexicon.wordToTagCounters = new HashMap[numSubStates.length];
         lexicon.unseenWordToTagCounters = new HashMap[numSubStates.length];
@@ -342,6 +348,7 @@ public class Lexicon implements java.io.Serializable {
                 }
             }
         }
+
         for (int tag = 0; tag < unseenWordToTagCounters.length; tag++) {
             if (unseenWordToTagCounters[tag] != null) {
                 lexicon.unseenWordToTagCounters[tag] = new HashMap<String, double[]>();
@@ -360,6 +367,7 @@ public class Lexicon implements java.io.Serializable {
                 }
             }
         }
+
         lexicon.totalWordTypes = totalWordTypes;
         lexicon.totalTokens = totalTokens;
         lexicon.totalUnseenTokens = totalUnseenTokens;
@@ -369,16 +377,19 @@ public class Lexicon implements java.io.Serializable {
         lexicon.tagCounter = new double[tagCounter.length][];
         lexicon.unseenTagCounter = new double[unseenTagCounter.length][];
         lexicon.simpleTagCounter = new double[tagCounter.length];
+
         for (int tag = 0; tag < typeTagCounter.length; tag++) {
             lexicon.typeTagCounter[tag] = new double[newNumSubStates[tag]];
             lexicon.tagCounter[tag] = new double[newNumSubStates[tag]];
             lexicon.unseenTagCounter[tag] = new double[newNumSubStates[tag]];
             lexicon.simpleTagCounter[tag] = simpleTagCounter[tag];
+
             for (int substate = 0; substate < typeTagCounter[tag].length; substate++) {
                 int splitFactor = 2;
                 if (newNumSubStates[tag] == numSubStates[tag]) {
                     splitFactor = 1;
                 }
+
                 for (int i = 0; i < splitFactor; i++) {
                     lexicon.typeTagCounter[tag][substate * splitFactor + i] = (1.f / splitFactor)
                             * typeTagCounter[tag][substate];
@@ -389,16 +400,19 @@ public class Lexicon implements java.io.Serializable {
                 }
             }
         }
+
         lexicon.allTags = new HashSet<Short>(allTags);
         lexicon.wordCounter = new Counter<String>();
+
         for (final String word : wordCounter.keySet()) {
             lexicon.wordCounter.setCount(word, wordCounter.getCount(word));
         }
+
         lexicon.smoothingCutoff = smoothingCutoff;
         lexicon.addXSmoothing = addXSmoothing;
         lexicon.smoothInUnknownsThreshold = smoothInUnknownsThreshold;
-
         lexicon.wordNumberer = wordNumberer;
+
         return lexicon;
     }
 
@@ -411,7 +425,7 @@ public class Lexicon implements java.io.Serializable {
      * classification by capitalization.
      * 
      * @param word The word to make a signature for
-     * @param loc Its position in the sentence (mainly so sentence-initial capitalized words can be treated differently)
+     * @param sentenceInitial Sentence-initial capitalized words are treated differently
      * @return A String that is its signature (equivalence class)
      */
     public String getSignature(final String word, final boolean sentenceInitial) {

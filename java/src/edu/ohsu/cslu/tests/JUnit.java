@@ -113,6 +113,37 @@ public class JUnit {
         assertArrayEquals(null, expected, actual, delta);
     }
 
+    public static void assertArrayEquals(final String message, final double[][] expected, final double[][] actual,
+            final double delta) {
+        for (int i = 0; i < actual.length; i++) {
+            if (expected[i] == null || actual[i] == null) {
+                if (expected[i] == null && actual[i] == null) {
+                    continue;
+                }
+                fail(message);
+            }
+
+            for (int j = 0; j < actual[i].length; j++) {
+                org.junit.Assert.assertEquals(message, expected[i][j], actual[i][j], delta);
+            }
+        }
+    }
+
+    public static void assertArrayEquals(final double[][] expected, final double[][] actual, final double delta) {
+        assertArrayEquals(null, expected, actual, delta);
+    }
+
+    public static void assertArrayEquals(final String message, final double[][][] expected, final double[][][] actual,
+            final double delta) {
+        for (int i = 0; i < actual.length; i++) {
+            assertArrayEquals(message, expected[i], actual[i], delta);
+        }
+    }
+
+    public static void assertArrayEquals(final double[][][] expected, final double[][][] actual, final double delta) {
+        assertArrayEquals(null, expected, actual, delta);
+    }
+
     public static void assertArrayEquals(final String message, final int[][] expected, final int[][] actual) {
         for (int i = 0; i < actual.length; i++) {
             for (int j = 0; j < actual[0].length; j++) {

@@ -9,7 +9,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
-import java.util.logging.Level;
 import java.util.zip.GZIPOutputStream;
 
 import cltool4j.BaseCommandlineTool;
@@ -17,11 +16,11 @@ import cltool4j.BaseLogger;
 import cltool4j.args4j.Option;
 import edu.berkeley.nlp.PCFGLA.smoothing.NoSmoothing;
 import edu.berkeley.nlp.PCFGLA.smoothing.SmoothAcrossParentBits;
-import edu.berkeley.nlp.PCFGLA.smoothing.Smoother;
 import edu.berkeley.nlp.syntax.StateSet;
 import edu.berkeley.nlp.syntax.Tree;
 import edu.berkeley.nlp.util.Numberer;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
+import edu.ohsu.cslu.lela.FractionalCountGrammar;
 
 /**
  * Reads in the Penn Treebank and generates N_GRAMMARS different grammars.
@@ -29,8 +28,6 @@ import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
  * @author Slav Petrov
  */
 public class GrammarTrainer extends BaseCommandlineTool {
-
-    public static boolean VERBOSE = false;
 
     public static Random RANDOM = new Random(0);
 
@@ -55,14 +52,14 @@ public class GrammarTrainer extends BaseCommandlineTool {
     @Option(name = "-si", metaVar = "iterations", usage = "EM iterations during smoothing")
     private int emIterationsWithSmoothing = 10;
 
-    @Option(name = "-di", usage = "The number of allowed iterations in which the validation likelihood drops.")
-    private int di = 6;
+    @Option(name = "-di", usage = "The number of allowed iterations in which the dev-set likelihood drops.")
+    private int maxDroppingLLIterations = 6;
 
     @Option(name = "-filter", usage = "Filter rules with prob below this threshold")
-    private double filter = 1.0e-60;
+    private double minRuleProbability = 1.0e-60;
 
     @Option(name = "-smooth", usage = "Type of grammar smoothing used.")
-    private String smooth = "SmoothAcrossParentBits";
+    private SmoothingType smooth = SmoothingType.SmoothAcrossParentBits;
 
     @Option(name = "-maxL", metaVar = "length", usage = "Maximum sentence length (Default <=10000)")
     private int maxSentenceLength = 10000;
@@ -70,29 +67,17 @@ public class GrammarTrainer extends BaseCommandlineTool {
     @Option(name = "-b", metaVar = "direction", usage = "LEFT/RIGHT Binarization")
     private Binarization binarization = Binarization.RIGHT;
 
-    @Option(name = "-noSplit", usage = "Don't split - just load and continue training an existing grammar (true/false) (Default:false)")
-    private boolean noSplit = false;
-
     @Option(name = "-in", usage = "Input File for Grammar")
     private String inFile = null;
 
     @Option(name = "-randSeed", usage = "Seed for random number generator (Two works well for English)")
     private int randSeed = 2;
 
-    @Option(name = "-sep", usage = "Set merging threshold for grammar and lexicon separately")
-    private boolean separateMergingThreshold = false;
-
-    @Option(name = "-trainOnDevSet", usage = "Include the development set into the training set")
-    private boolean trainOnDevSet = false;
-
     @Option(name = "-hor", metaVar = "markovization", usage = "Horizontal Markovization")
     private int horizontalMarkovization = 0;
 
     @Option(name = "-sub", metaVar = "states", usage = "Number of substates to split")
     private short nSubStates = 1;
-
-    @Option(name = "-ver", metaVar = "markovization", usage = "Vertical Markovization")
-    private int verticalMarkovization = 1;
 
     @Option(name = "-lowercase", usage = "Lowercase all words in the treebank")
     private boolean lowercase = false;
@@ -107,7 +92,7 @@ public class GrammarTrainer extends BaseCommandlineTool {
     private double smoothingParameter2 = 0.1;
 
     @Option(name = "-rare", metaVar = "threshold", usage = "Rare word threshold")
-    private int rare = 20;
+    private int rareWordThreshold = 20;
 
     // Reverse this variable, so we can continue to use a boolean
     @Option(name = "-spath", usage = "Whether or not to store the best path info (true/false) (Default: true)")
@@ -128,9 +113,6 @@ public class GrammarTrainer extends BaseCommandlineTool {
         System.out.println("Loading trees from " + path);
         System.out.println("Will remove sentences with more than " + maxSentenceLength + " words.");
 
-        System.out.println("Using horizontal=" + horizontalMarkovization + " and vertical=" + verticalMarkovization
-                + " markovization.");
-
         System.out.println("Using " + binarization.name() + " binarization.");// and
                                                                               // "+annotateString+".");
 
@@ -143,7 +125,6 @@ public class GrammarTrainer extends BaseCommandlineTool {
         } else
             System.out.println("Using grammar output file " + outFileName + ".");
 
-        VERBOSE = BaseLogger.singleton().isLoggable(Level.FINE);
         RANDOM = new Random(randSeed);
         System.out.println("Random number generator seeded at " + randSeed + ".");
 
@@ -153,51 +134,28 @@ public class GrammarTrainer extends BaseCommandlineTool {
         System.out.println("Using smoothing parameters " + smoothParams[0] + " and " + smoothParams[1]);
 
         Corpus corpus = new Corpus(path, false, skipSection, skipBilingual);
-        List<Tree<String>> trainTrees = Corpus.binarizeAndFilterTrees(corpus.getTrainTrees(), verticalMarkovization,
-                horizontalMarkovization, maxSentenceLength, binarization, false, VERBOSE);
-        List<Tree<String>> validationTrees = Corpus.binarizeAndFilterTrees(corpus.getValidationTrees(),
-                verticalMarkovization, horizontalMarkovization, maxSentenceLength, binarization, false, VERBOSE);
+        List<Tree<String>> trainTrees = Corpus.binarizeAndFilterTrees(corpus.getTrainTrees(), horizontalMarkovization,
+                maxSentenceLength, binarization);
+        List<Tree<String>> devSetTrees = Corpus.binarizeAndFilterTrees(corpus.getDevSetTrees(),
+                horizontalMarkovization, maxSentenceLength, binarization);
         Numberer tagNumberer = Numberer.getGlobalNumberer("tags");
 
-        if (trainOnDevSet) {
-            System.out.println("Adding devSet to training data.");
-            trainTrees.addAll(validationTrees);
-        }
-
         if (lowercase) {
-            System.out.println("Lowercasing the treebank.");
+            BaseLogger.singleton().config("Lowercasing the treebank.");
             Corpus.lowercaseWords(trainTrees);
-            Corpus.lowercaseWords(validationTrees);
+            Corpus.lowercaseWords(devSetTrees);
         }
 
         System.out.println("There are " + trainTrees.size() + " trees in the training set.");
 
-        if (filter > 0)
-            System.out
-                    .println("Will remove rules with prob under "
-                            + filter
-                            + ".\nEven though only unlikely rules are pruned the training LL is not guaranteed to increase in every round anymore "
-                            + "(especially when we are close to converging)."
-                            + "\nFurthermore it increases the variance because 'good' rules can be pruned away in early stages.");
-
-        short[] numSubStatesArray = initializeSubStateArray(trainTrees, validationTrees, tagNumberer, nSubStates);
-
-        if (VERBOSE) {
-            for (int i = 0; i < numSubStatesArray.length; i++) {
-                System.out.println("Tag " + (String) tagNumberer.symbol(i) + " " + i);
-            }
-        }
+        short[] numSubStatesArray = initializeSubStateArray(trainTrees, devSetTrees, tagNumberer, nSubStates);
 
         System.out.println("There are " + numSubStatesArray.length + " observed categories.");
 
         // initialize lexicon and grammar
-        Lexicon lexicon = null, maxLexicon = null, previousLexicon = null;
-        Grammar grammar = null, maxGrammar = null, previousGrammar = null;
-        double maxLikelihood = Double.NEGATIVE_INFINITY;
-
-        // EM: iterate until the validation likelihood drops for four consecutive iterations
-        int iter = 0;
-        int droppingIter = 0;
+        Lexicon lexicon = null, maxLexicon = null;
+        Grammar grammar = null, maxGrammar = null;
+        double maxDevSetLikelihood = Double.NEGATIVE_INFINITY;
 
         // If we are splitting, we load the old grammar and start off by splitting.
         int startSplit = 0;
@@ -208,183 +166,172 @@ public class GrammarTrainer extends BaseCommandlineTool {
             maxGrammar = pData.gr;
             maxLexicon = pData.lex;
             numSubStatesArray = maxGrammar.numSubStates;
-            previousGrammar = grammar = maxGrammar;
-            previousLexicon = lexicon = maxLexicon;
+            grammar = maxGrammar;
+            lexicon = maxLexicon;
             Numberer.setNumberers(pData.getNumbs());
             tagNumberer = Numberer.getGlobalNumberer("tags");
             System.out.println("Loading old grammar complete.");
-            if (noSplit) {
-                System.out.println("Will NOT split the loaded grammar.");
-                startSplit = 1;
-            }
-        }
-
-        if (mergeFraction > 0) {
-            System.out.println("Will merge " + (int) (mergeFraction * 100) + "% of the splits in each round.");
-            System.out.println("The threshold for merging lexical and phrasal categories will be set separately: "
-                    + separateMergingThreshold);
         }
 
         StateSetTreeList trainStateSetTrees = new StateSetTreeList(trainTrees, numSubStatesArray, false, tagNumberer);
-        StateSetTreeList validationStateSetTrees = new StateSetTreeList(validationTrees, numSubStatesArray, false,
-                tagNumberer);// deletePC);
+        StateSetTreeList devSetStateSetTrees = new StateSetTreeList(devSetTrees, numSubStatesArray, false, tagNumberer);// deletePC);
 
         // get rid of the old trees
         trainTrees = null;
-        validationTrees = null;
+        devSetTrees = null;
         corpus = null;
-        System.gc();
 
         // If we're training without loading a split grammar, then we run once
         // without splitting.
         if (inFile == null) {
-            grammar = new Grammar(numSubStatesArray, findClosedUnaryPaths, new NoSmoothing(), null, filter);
+
+            // Induce M0 grammar from training corpus
+            BaseLogger.singleton().info("Inducing M0 grammar...");
+
+            grammar = new Grammar(numSubStatesArray, findClosedUnaryPaths, new NoSmoothing(), null, minRuleProbability);
             final Lexicon tmp_lexicon = new Lexicon(numSubStatesArray, Lexicon.DEFAULT_SMOOTHING_CUTOFF, smoothParams,
-                    new NoSmoothing(), filter);
+                    new NoSmoothing(), minRuleProbability);
             for (final Tree<StateSet> stateSetTree : trainStateSetTrees) {
-                tmp_lexicon.trainTree(stateSetTree, randomness, null, false, rare);
+                tmp_lexicon.trainTree(stateSetTree, randomness, null, false, rareWordThreshold);
             }
             lexicon = new Lexicon(numSubStatesArray, Lexicon.DEFAULT_SMOOTHING_CUTOFF, smoothParams, new NoSmoothing(),
-                    filter);
+                    minRuleProbability);
+
+            // TODO BaseLogger.singleton().config("Markov-0 grammar size: " + grammarSummaryString(markov0Grammar));
+
+            BaseLogger.singleton().info("Performing one I/O iteration");
+
             for (final Tree<StateSet> stateSetTree : trainStateSetTrees) {
-                lexicon.trainTree(stateSetTree, randomness, tmp_lexicon, false, rare);
+                lexicon.trainTree(stateSetTree, randomness, tmp_lexicon, false, rareWordThreshold);
                 grammar.tallyUninitializedStateSetTree(stateSetTree);
             }
-            lexicon.tieRareWordStats(rare);
+            lexicon.tieRareWordStats(rareWordThreshold);
             lexicon.optimize();
             grammar.optimize(randomness);
-            // System.out.println(grammar);
-            previousGrammar = maxGrammar = grammar; // needed for baseline -
-                                                    // when there is no EM loop
-            previousLexicon = maxLexicon = lexicon;
+
+            maxGrammar = grammar;
+            maxLexicon = lexicon;
         }
 
-        // the main loop: split and train the grammar
+        // for (int cycle = 1; cycle <= splitMergeCycles; cycle++) {
+        // //
+        // // Split
+        // //
+        //
+        // //
+        // // Merge
+        // //
+        //
+        // //
+        // // Smooth
+        // //
+        // }
+
         for (int splitIndex = startSplit; splitIndex < splitMergeCycles * 3; splitIndex++) {
 
             // now do either a merge or a split and the end a smooth
             // on odd iterations merge, on even iterations split
             String opString = "";
             if (splitIndex % 3 == 2) {// (splitIndex==numSplitTimes*2){
-                if (smooth.equals("NoSmoothing"))
+                if (smooth == SmoothingType.None) {
                     continue;
-                System.out.println("Setting smoother for grammar and lexicon.");
-                final Smoother grSmoother = new SmoothAcrossParentBits(0.01, maxGrammar.splitTrees);
-                final Smoother lexSmoother = new SmoothAcrossParentBits(0.1, maxGrammar.splitTrees);
+                }
 
-                maxGrammar.setSmoother(grSmoother);
-                maxLexicon.setSmoother(lexSmoother);
+                maxGrammar.setSmoother(new SmoothAcrossParentBits(0.01, maxGrammar.splitTrees));
+                maxLexicon.setSmoother(new SmoothAcrossParentBits(0.1, maxGrammar.splitTrees));
                 emIterations = emIterationsWithSmoothing;
                 opString = "smoothing";
+
+                // update the substate dependent objects
+                grammar = maxGrammar;
+                lexicon = maxLexicon;
+
             } else if (splitIndex % 3 == 0) {
                 // the case where we split
-                if (noSplit)
-                    continue;
-                System.out.println("Before splitting, we have a total of " + maxGrammar.totalSubStates()
-                        + " substates.");
+                System.out.println("Before splitting, we have a total of " + grammar.totalSubStates() + " substates.");
                 final CorpusStatistics corpusStatistics = new CorpusStatistics(tagNumberer, trainStateSetTrees);
                 final int[] counts = corpusStatistics.getSymbolCounts();
 
                 maxGrammar = maxGrammar.splitAllStates(randomness, counts);
                 maxLexicon = maxLexicon.splitAllStates(counts, false);
-                final Smoother grSmoother = new NoSmoothing();
-                final Smoother lexSmoother = new NoSmoothing();
-                maxGrammar.setSmoother(grSmoother);
-                maxLexicon.setSmoother(lexSmoother);
-                System.out
-                        .println("After splitting, we have a total of " + maxGrammar.totalSubStates() + " substates.");
-                System.out
-                        .println("Rule probabilities are NOT normalized in the split, therefore the training LL is not guaranteed to improve between iteration 0 and 1!");
+
+                maxGrammar.setSmoother(new NoSmoothing());
+                maxLexicon.setSmoother(new NoSmoothing());
+
+                BaseLogger.singleton()
+                        .info(String.format("After splitting, we have a total of " + grammar.totalSubStates()
+                                + " substates."));
                 opString = "splitting";
                 emIterations = emIterationsPerCycle;
+
+                // update the substate dependent objects
+                grammar = maxGrammar;
+                lexicon = maxLexicon;
+
             } else {
-                if (mergeFraction == 0)
+
+                // Merge
+                if (mergeFraction == 0) {
                     continue;
-                // the case where we merge
+                }
+
                 final double[][] mergeWeights = GrammarMerger.computeMergeWeights(maxGrammar, maxLexicon,
                         trainStateSetTrees);
                 final double[][][] deltas = GrammarMerger.computeDeltas(maxGrammar, maxLexicon, mergeWeights,
                         trainStateSetTrees);
-                final boolean[][][] mergeThesePairs = GrammarMerger.determineMergePairs(deltas,
-                        separateMergingThreshold, mergeFraction, maxGrammar);
+                final boolean[][][] mergeThesePairs = GrammarMerger.determineMergePairs(deltas, mergeFraction,
+                        maxGrammar);
 
                 grammar = GrammarMerger.doTheMerges(maxGrammar, maxLexicon, mergeThesePairs, mergeWeights);
-                final short[] newNumSubStatesArray = grammar.numSubStates;
-                trainStateSetTrees = new StateSetTreeList(trainStateSetTrees, newNumSubStatesArray, false);
-                validationStateSetTrees = new StateSetTreeList(validationStateSetTrees, newNumSubStatesArray, false);
+                trainStateSetTrees = new StateSetTreeList(trainStateSetTrees, grammar.numSubStates, false);
+                devSetStateSetTrees = new StateSetTreeList(devSetStateSetTrees, grammar.numSubStates, false);
 
-                // retrain lexicon to finish the lexicon merge (updates the
-                // unknown words model)...
-                lexicon = new Lexicon(newNumSubStatesArray, Lexicon.DEFAULT_SMOOTHING_CUTOFF,
+                // Retrain lexicon to finish the lexicon merge (updates the unknown-word model)
+                lexicon = new Lexicon(grammar.numSubStates, Lexicon.DEFAULT_SMOOTHING_CUTOFF,
                         maxLexicon.getSmoothingParams(), maxLexicon.getSmoother(), maxLexicon.getPruningThreshold());
-                final double trainingLikelihood = GrammarTrainer.doOneEStep(grammar, maxLexicon, null, lexicon,
-                        trainStateSetTrees, rare);
-                // System.out.println("The training LL is "+trainingLikelihood);
-                lexicon.optimize();// Grammar.RandomInitializationType.INITIALIZE_WITH_SMALL_RANDOMIZATION);
-                                   // // M Step
+                doOneEStep(grammar, maxLexicon, null, lexicon, trainStateSetTrees, rareWordThreshold);
+                lexicon.optimize();
 
                 GrammarMerger.printMergingStatistics(maxGrammar, grammar);
                 opString = "merging";
                 maxGrammar = grammar;
                 maxLexicon = lexicon;
                 emIterations = emIterationsAfterMerge;
+
+                // update the substate dependent objects
+                grammar = maxGrammar;
+                lexicon = maxLexicon;
             }
-            // update the substate dependent objects
-            previousGrammar = grammar = maxGrammar;
-            previousLexicon = lexicon = maxLexicon;
-            droppingIter = 0;
-            numSubStatesArray = grammar.numSubStates;
-            trainStateSetTrees = new StateSetTreeList(trainStateSetTrees, numSubStatesArray, false);
-            validationStateSetTrees = new StateSetTreeList(validationStateSetTrees, numSubStatesArray, false);
-            maxLikelihood = calculateLogLikelihood(maxGrammar, maxLexicon, validationStateSetTrees);
-            System.out.println("After " + opString + " in the " + (splitIndex / 3 + 1)
-                    + "th round, we get a validation likelihood of " + maxLikelihood);
-            iter = 0;
 
-            // the inner loop: train the grammar via EM until validation
-            // likelihood reliably drops
-            do {
-                iter += 1;
-                System.out.println("Beginning iteration " + (iter - 1) + ":");
+            //
+            // TODO Extract this as a method
+            //
+            trainStateSetTrees = new StateSetTreeList(trainStateSetTrees, grammar.numSubStates, false);
+            devSetStateSetTrees = new StateSetTreeList(devSetStateSetTrees, grammar.numSubStates, false);
+            maxDevSetLikelihood = calculateLogLikelihood(maxGrammar, maxLexicon, devSetStateSetTrees);
 
-                // 1) Compute the validation likelihood of the previous
-                // iteration
-                System.out.print("Calculating validation likelihood...");
-                final double validationLikelihood = calculateLogLikelihood(previousGrammar, previousLexicon,
-                        validationStateSetTrees); // The validation LL of
-                                                  // previousGrammar/previousLexicon
-                System.out.println("done: " + validationLikelihood);
+            // Train the grammar for a fixed number of iterations, or if using a dev-set, until dev-set likelihood
+            // reliably drops
+            for (int iteration = 1, droppingIterations = 0; iteration <= emIterations
+                    && droppingIterations < maxDroppingLLIterations; iteration++) {
 
-                // 2) Perform the E step while computing the training likelihood
-                // of the previous iteration
-                System.out.print("Calculating training likelihood...");
-                grammar = new Grammar(grammar.numSubStates, grammar.findClosedPaths, grammar.smoother, grammar,
-                        grammar.threshold);
-                lexicon = new Lexicon(grammar.numSubStates, Lexicon.DEFAULT_SMOOTHING_CUTOFF,
-                        lexicon.getSmoothingParams(), lexicon.getSmoother(), lexicon.getPruningThreshold());
-                final double trainingLikelihood = doOneEStep(previousGrammar, previousLexicon, grammar, lexicon,
-                        trainStateSetTrees, rare); // The training LL of
-                                                   // previousGrammar/previousLexicon
-                System.out.println("done: " + trainingLikelihood);
+                final EmIterationResult result = emIteration(iteration, grammar, lexicon, trainStateSetTrees,
+                        devSetStateSetTrees, minRuleProbability);
 
-                // 3) Perform the M-Step
-                lexicon.optimize(); // M Step
-                grammar.optimize(0); // M Step
-
-                // 4) Check whether previousGrammar/previousLexicon was in fact better than the best
-                if (iter < emIterations || validationLikelihood >= maxLikelihood) {
-                    maxLikelihood = validationLikelihood;
-                    maxGrammar = previousGrammar;
-                    maxLexicon = previousLexicon;
-                    droppingIter = 0;
+                // Record the best-performing grammar
+                if (result.devSetLikelihood >= maxDevSetLikelihood) {
+                    maxDevSetLikelihood = result.devSetLikelihood;
+                    maxGrammar = grammar;
+                    maxLexicon = lexicon;
+                    droppingIterations = 0;
                 } else {
-                    droppingIter++;
+                    droppingIterations++;
                 }
 
-                // 5) advance the 'pointers'
-                previousGrammar = grammar;
-                previousLexicon = lexicon;
-            } while ((droppingIter < di) && (iter < emIterations));
+                grammar = result.grammar;
+                lexicon = result.lexicon;
+            }
+            // End method
 
             // Dump a grammar file to disk from time to time
             if (writeIntermediateGrammars || "smoothing".equals(opString)) {
@@ -394,30 +341,95 @@ public class GrammarTrainer extends BaseCommandlineTool {
             }
         }
 
-        // The last grammar/lexicon has not yet been evaluated. Even though the validation likelihood has been dropping
-        // in the past few iteration, there is still a chance that the last one was in fact the best so just in case we
-        // evaluate it.
-        System.out.print("Calculating last validation likelihood...");
-        final double validationLikelihood = calculateLogLikelihood(grammar, lexicon, validationStateSetTrees);
-        System.out.println("done.\n  Iteration " + iter + " (final) gives validation likelihood "
-                + validationLikelihood);
-        if (validationLikelihood > maxLikelihood) {
-            maxLikelihood = validationLikelihood;
-            maxGrammar = previousGrammar;
-            maxLexicon = previousLexicon;
+        // The last grammar/lexicon has not yet been evaluated. The dev-set likelihood may have dropped in the past
+        // few iteration, but even if so, there is still a chance that the last one was the best
+        final double devSetLikelihood = calculateLogLikelihood(grammar, lexicon, devSetStateSetTrees);
+        if (devSetLikelihood > maxDevSetLikelihood) {
+            maxDevSetLikelihood = devSetLikelihood;
+            maxGrammar = grammar;
+            maxLexicon = lexicon;
         }
 
         BaseLogger.singleton().info("Saving grammar to " + outFileName + ".");
-        System.out.println("It gives a validation data log likelihood of: " + maxLikelihood);
+        if (maxDevSetLikelihood != 0) {
+            BaseLogger.singleton().info("Dev-set log likelihood: " + maxDevSetLikelihood);
+        }
         writeGrammar(maxGrammar, maxLexicon, new File(outFileName));
+    }
+
+    /**
+     * Execute a single EM iteration
+     * 
+     * @param grammar
+     * @param lexicon
+     * @param trainStateSetTrees
+     * @param validationStateSetTrees
+     * @param minimumRuleProbability
+     * @return EM result, including the newly trained {@link FractionalCountGrammar}
+     */
+    private EmIterationResult emIteration(final int iteration, final Grammar grammar, final Lexicon lexicon,
+            final StateSetTreeList trainStateSetTrees, final StateSetTreeList validationStateSetTrees,
+            final double minimumRuleProbability) {
+
+        final long t0 = System.currentTimeMillis();
+
+        double validationLikelihood = 0;
+
+        if (validationStateSetTrees != null && !validationStateSetTrees.isEmpty()) {
+            // Compute and report the validation likelihood of the previous iteration
+            validationLikelihood = calculateLogLikelihood(grammar, lexicon, validationStateSetTrees);
+            BaseLogger.singleton().info(String.format("Validation set likelihood: %.3f", validationLikelihood));
+        }
+
+        //
+        // Compute training likelihood (E-step)
+        //
+        final Grammar newGrammar = new Grammar(grammar.numSubStates, grammar.findClosedPaths, grammar.smoother,
+                grammar, grammar.threshold);
+        final Lexicon newLexicon = new Lexicon(grammar.numSubStates, Lexicon.DEFAULT_SMOOTHING_CUTOFF,
+                lexicon.getSmoothingParams(), lexicon.getSmoother(), lexicon.getPruningThreshold());
+
+        final ArrayParser parser = new ArrayParser(grammar, lexicon);
+        double trainingLikelihood = 0;
+
+        for (final Tree<StateSet> stateSetTree : trainStateSetTrees) {
+
+            parser.doInsideOutsideScores(stateSetTree, true);
+
+            double ll = stateSetTree.label().getIScore(0);
+            ll = Math.log(ll) + (100 * stateSetTree.label().getIScale());
+
+            // Skip sentences we couldn't parse
+            if (Double.isInfinite(ll) || Double.isNaN(ll)) {
+                continue;
+            }
+
+            // Maximize (M-step)
+            newLexicon.trainTree(stateSetTree, -1, lexicon, true, rareWordThreshold);
+            newGrammar.tallyStateSetTree(stateSetTree, grammar);
+            trainingLikelihood += ll;
+        }
+        newLexicon.tieRareWordStats(rareWordThreshold);
+
+        BaseLogger.singleton().info(
+                String.format("Iteration: %2d  Training set likelihood: %.4f", iteration, trainingLikelihood));
+
+        // Maximize (M-step)
+        newLexicon.optimize();
+        newGrammar.optimize(0);
+
+        return new EmIterationResult(newGrammar, newLexicon, trainingLikelihood, validationLikelihood,
+                (int) (System.currentTimeMillis() - t0));
     }
 
     void writeGrammar(final Grammar grammar, final Lexicon lexicon, final File f) {
         try {
+            // TODO Clone and remove unlikely rules
+
             // Write a Java Serialized Object
             final String serFilename = f.getParent() + "/" + f.getName().replaceAll("\\.gz", "") + ".ser";
             final ParserData pData = new ParserData(lexicon, grammar, Numberer.getNumberers(), grammar.numSubStates,
-                    verticalMarkovization, horizontalMarkovization, binarization);
+                    horizontalMarkovization, binarization);
 
             System.out.println("Saving grammar to " + serFilename + ".");
             if (pData.Save(serFilename)) {
@@ -428,9 +440,9 @@ public class GrammarTrainer extends BaseCommandlineTool {
 
             // And a gzipped-text representation
             final Writer w = new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(f)));
-            w.write(grammar.toString(lexicon.getNumberOfEntries()));
+            w.write(grammar.toString(lexicon.getNumberOfEntries(), minRuleProbability));
             w.write("===== LEXICON =====\n");
-            w.write(lexicon.toString());
+            w.write(lexicon.toString(minRuleProbability));
             w.close();
         } catch (final IOException e) {
             throw new RuntimeException(e);
@@ -458,19 +470,18 @@ public class GrammarTrainer extends BaseCommandlineTool {
             double ll = stateSetTree.label().getIScore(0);
             ll = Math.log(ll) + (100 * stateSetTree.label().getIScale());
             if ((Double.isInfinite(ll) || Double.isNaN(ll))) {
-                if (VERBOSE) {
-                    System.out.println("Training sentence " + n + " is given " + ll + " log likelihood!");
-                    System.out.println("Root iScore " + stateSetTree.label().getIScore(0) + " scale "
-                            + stateSetTree.label().getIScale());
-                }
-            } else {
-                lexicon.trainTree(stateSetTree, -1, previousLexicon, true, unkThreshold);
-                if (grammar != null) {
-                    grammar.tallyStateSetTree(stateSetTree, previousGrammar); // E step
-                }
-                trainingLikelihood += ll; // there are for some reason some
-                                          // sentences that are unparsable
+                BaseLogger.singleton().finer(
+                        String.format("Training sentence %d :%f  Root iScore: %.3f  Scale: %d", n, ll, stateSetTree
+                                .label().getIScore(0), stateSetTree.label().getIScale()));
+                continue;
             }
+
+            lexicon.trainTree(stateSetTree, -1, previousLexicon, true, unkThreshold);
+            if (grammar != null) {
+                grammar.tallyStateSetTree(stateSetTree, previousGrammar); // E step
+            }
+            trainingLikelihood += ll; // there are for some reason some
+                                      // sentences that are unparsable
         }
         lexicon.tieRareWordStats(unkThreshold);
         return trainingLikelihood;
@@ -613,5 +624,27 @@ public class GrammarTrainer extends BaseCommandlineTool {
 
     public static void main(final String[] args) {
         run(args);
+    }
+
+    private static class EmIterationResult {
+        final Grammar grammar;
+        final Lexicon lexicon;
+        final double trainingSetLikelihood;
+        final double devSetLikelihood;
+        final int emTime;
+
+        public EmIterationResult(final Grammar grammar, final Lexicon lexicon, final double trainingSetLikelihood,
+                final double validationSetLikelihood, final int emTime) {
+            this.grammar = grammar;
+            this.lexicon = lexicon;
+            this.trainingSetLikelihood = trainingSetLikelihood;
+            this.devSetLikelihood = validationSetLikelihood;
+            this.emTime = emTime;
+        }
+
+    }
+
+    private static enum SmoothingType {
+        SmoothAcrossParentBits, None;
     }
 }

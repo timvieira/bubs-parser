@@ -4,33 +4,37 @@ import edu.berkeley.nlp.util.Numberer;
 import edu.berkeley.nlp.util.ScalingTools;
 
 /**
- * Represent parsetrees, with each node consisting of a label and a list of children. The score tables are not allocated
- * by the constructor and allocate() and deallocate() must be called manually. This is to allow more control over memory
- * usage.
+ * Represent a parse tree, with each node consisting of a label and a list of children. The score tables are not
+ * allocated by the constructor and {@link #allocate()} and {@link #deallocate()} must be called manually. This is to
+ * allow more control over memory usage.
  * 
  * @author Slav Petrov
  * @author Romain Thibaux
  */
 public class StateSet {
 
-    public static final double SCALE = Math.exp(100);
-
-    double[] iScores; // the log-probabilities for each sublabels
+    /** Scaled inside probabilities for each substate */
+    double[] iScores;
+    /** Scaled outside probabilities for each substate */
     double[] oScores;
+
+    /** Inside scale */
     int iScale;
+    /** Outside scale */
     int oScale;
 
-    // TODO Map this word to an integer index, and use that in Lexicon.trainTree() and Lexicon.score()
-    final String word;
+    String word;
 
-    private final short numSubStates;
-    private final short state;
+    /** the word of this node, if it is a terminal node; else null */
+    public int wordIndex, sigIndex;
+
+    short numSubStates;
+    short state;
     public short from, to;
 
     public StateSet(final short state, final short nSubStates) {
         this.numSubStates = nSubStates;
         this.state = state;
-        this.word = null;
     }
 
     public StateSet(final short s, final short nSubStates, final String word, final short from, final short to) {
@@ -48,7 +52,6 @@ public class StateSet {
         this.word = oldS.word;
         this.from = oldS.from;
         this.to = oldS.to;
-
     }
 
     // Run allocate() before any other operation
@@ -67,8 +70,9 @@ public class StateSet {
     @Override
     public String toString() {
         if (word != null) {
-            return word + " " + from + "-" + to;
+            return word + " " + from + "-" + to;// + " " + substates.length;
         }
+
         return Numberer.getGlobalNumberer("tags").symbol(state) + " ";
     }
 
@@ -78,11 +82,6 @@ public class StateSet {
 
     public final double getIScore(final int i) {
         return iScores[i];
-    }
-
-    // TODO Currently unused
-    public final double[] getIScores() {
-        return iScores;
     }
 
     public final double getOScore(final int i) {

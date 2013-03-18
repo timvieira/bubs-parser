@@ -7,19 +7,23 @@ import java.util.Set;
 
 import edu.berkeley.nlp.util.ArrayUtil;
 
+/**
+ * Based on Counter.
+ * 
+ * A map from objects to doubles. Includes convenience methods for getting, setting, and incrementing element counts.
+ * Objects not in the counter will return a count of zero. The counter is backed by a HashMap (unless specified
+ * otherwise with the MapFactory constructor).
+ * 
+ * TODO Replace with FastUtil implementation
+ * 
+ * @author Slav Petrov
+ */
 public class BinaryCounterTable implements Serializable {
-    /**
-     * Based on Counter.
-     * 
-     * A map from objects to doubles. Includes convenience methods for getting, setting, and incrementing element
-     * counts. Objects not in the counter will return a count of zero. The counter is backed by a HashMap (unless
-     * specified otherwise with the MapFactory constructor).
-     * 
-     * @author Slav Petrov
-     */
+
     private static final long serialVersionUID = 1L;
     Map<BinaryRule, double[][][]> entries;
     short[] numSubStates;
+    // TODO Remove?
     BinaryRule searchKey;
 
     /**

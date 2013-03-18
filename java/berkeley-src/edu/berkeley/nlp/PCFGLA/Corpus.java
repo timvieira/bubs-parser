@@ -9,6 +9,7 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 
+import cltool4j.BaseLogger;
 import edu.berkeley.nlp.syntax.Tree;
 import edu.berkeley.nlp.syntax.Trees;
 import edu.berkeley.nlp.syntax.Trees.PennTreeReader;
@@ -24,26 +25,16 @@ import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 public class Corpus {
 
     ArrayList<Tree<String>> trainTrees = new ArrayList<Tree<String>>();
-    ArrayList<Tree<String>> validationTrees = new ArrayList<Tree<String>>();
-    ArrayList<Tree<String>> devTestTrees = new ArrayList<Tree<String>>();
-    ArrayList<Tree<String>> finalTestTrees = new ArrayList<Tree<String>>();
-
-    /**
-     * Load the WSJ, Brown, and Chinese corpora from the given locations. If either is null, don't load it. If both are
-     * null, use the dummy sentence. Then, throw away all but *fraction* of the data. To train on only the part of the
-     * Chinese Treebank that Levy and Manning do, use fraction=0.22225.
-     */
-    public Corpus(final String path, final boolean onlyTest) {
-        this(path, onlyTest, -1, false);
-    }
+    ArrayList<Tree<String>> devSetTrees = new ArrayList<Tree<String>>();
 
     /**
      * Load the WSJ, Brown, and Chinese corpora from the given locations. If any is null, don't load it. If all are
      * null, use the dummy sentence. Don't load the English corpora if we load the Chinese one.
      */
     public Corpus(final String path, final boolean onlyTest, final int skipSection, final boolean skipBilingual) {
-        final boolean dummy = path == null;
-        if (dummy) {
+
+        if (path == null) {
+            // Construct a dummy corpus
             System.out.println("Loading one dummy sentence into training set only.");
             Trees.PennTreeReader reader;
             Tree<String> tree;
@@ -165,8 +156,7 @@ public class Corpus {
                 final Tree<String> normalizedTree = treeTransformer.transformTree(tree);
                 tree = normalizedTree;
                 trainTrees.add(tree);
-                devTestTrees.add(tree);
-                validationTrees.add(tree);
+                devSetTrees.add(tree);
             }
         }
         // load from at least one corpus
@@ -183,7 +173,7 @@ public class Corpus {
     }
 
     private void loadSingleFile(final String path) throws Exception {
-        System.out.print("Loading trees from single file...");
+        BaseLogger.singleton().info("Loading trees from single file...");
         final InputStreamReader inputData = new InputStreamReader(new FileInputStream(path), "UTF-8");
         final PennTreeReader treeReader = new PennTreeReader(inputData);
 
@@ -201,41 +191,20 @@ public class Corpus {
             throw new Exception("failed to load any trees at " + path);
         }
         trainTrees = normalizedTreeList;
-
-        devTestTrees = trainTrees;
-        System.out.println("done");
-
-        // trainTrees.addAll(readTrees(path,-1,
-        // Integer.MAX_VALUE,Charset.defaultCharset()));
     }
 
     public static List<Tree<String>> binarizeAndFilterTrees(final List<Tree<String>> trees,
-            final int verticalAnnotations, final int horizontalAnnotations, final int sentenceMaxLength,
-            final Binarization binarization, final boolean manualAnnotation, final boolean VERBOSE) {
-        return binarizeAndFilterTrees(trees, verticalAnnotations, horizontalAnnotations, sentenceMaxLength,
-                binarization, manualAnnotation, VERBOSE, false);
-    }
-
-    public static List<Tree<String>> binarizeAndFilterTrees(final List<Tree<String>> trees,
-            final int verticalAnnotations, final int horizontalAnnotations, final int sentenceMaxLength,
-            final Binarization binarization, final boolean manualAnnotation, final boolean VERBOSE,
-            final boolean markUnaryParents) {
+            final int horizontalAnnotations, final int sentenceMaxLength, final Binarization binarization) {
         final List<Tree<String>> binarizedTrees = new ArrayList<Tree<String>>();
-        System.out.print("Binarizing and annotating trees...");
-
-        if (VERBOSE)
-            System.out.println("annotation levels: vertical=" + verticalAnnotations + " horizontal="
-                    + horizontalAnnotations);
 
         for (final Tree<String> tree : trees) {
             final List<String> testSentence = tree.leafLabels();
             if (testSentence.size() > sentenceMaxLength) {
                 continue;
             }
-            binarizedTrees.add(TreeAnnotations.processTree(tree, verticalAnnotations, horizontalAnnotations,
-                    binarization, manualAnnotation, markUnaryParents, true));
+            binarizedTrees.add(TreeAnnotations.forgetLabels(TreeAnnotations.binarizeTree(tree, binarization),
+                    horizontalAnnotations));
         }
-        System.out.print("done.\n");
         return binarizedTrees;
     }
 
@@ -249,22 +218,8 @@ public class Corpus {
     /**
      * @return validation-set trees
      */
-    public List<Tree<String>> getValidationTrees() {
-        return validationTrees;
-    }
-
-    /**
-     * @return development-set trees
-     */
-    public List<Tree<String>> getDevTestingTrees() {
-        return devTestTrees;
-    }
-
-    /**
-     * @return final test-set trees
-     */
-    public List<Tree<String>> getFinalTestingTrees() {
-        return finalTestTrees;
+    public List<Tree<String>> getDevSetTrees() {
+        return devSetTrees;
     }
 
     public static void lowercaseWords(final List<Tree<String>> trainTrees) {
