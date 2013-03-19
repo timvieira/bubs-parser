@@ -118,13 +118,8 @@ public class SmoothAcrossParentBits implements Smoother, Serializable {
         this.totalWeight = totalWeight2;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see edu.berkeley.nlp.PCFGLA.smoothing.Smoother#smooth(edu.berkeley.nlp.util .UnaryCounterTable,
-     * edu.berkeley.nlp.util.BinaryCounterTable)
-     */
     public void smooth(final UnaryCounterTable unaryCounter, final BinaryCounterTable binaryCounter) {
+
         for (final UnaryRule r : unaryCounter.keySet()) {
             final double[][] scores = unaryCounter.getCount(r);
             final double[][] scopy = new double[scores.length][];
@@ -142,6 +137,7 @@ public class SmoothAcrossParentBits implements Smoother, Serializable {
             }
             unaryCounter.setCount(r, scopy);
         }
+
         for (final BinaryRule r : binaryCounter.keySet()) {
             final double[][][] scores = binaryCounter.getCount(r);
             final double[][][] scopy = new double[scores.length][scores[0].length][];

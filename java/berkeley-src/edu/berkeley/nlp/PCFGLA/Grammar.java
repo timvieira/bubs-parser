@@ -20,7 +20,6 @@ import edu.berkeley.nlp.math.SloppyMath;
 import edu.berkeley.nlp.syntax.StateSet;
 import edu.berkeley.nlp.syntax.Tree;
 import edu.berkeley.nlp.util.ArrayUtil;
-import edu.berkeley.nlp.util.CounterMap;
 import edu.berkeley.nlp.util.Numberer;
 import edu.berkeley.nlp.util.ScalingTools;
 
@@ -60,9 +59,6 @@ public class Grammar implements Serializable, Cloneable {
     private UnaryCounterTable unaryRuleCounter = null;
 
     private BinaryCounterTable binaryRuleCounter = null;
-
-    // TODO Replace with a FastUtil implementation
-    private CounterMap<Integer, Integer> symbolCounter = new CounterMap<Integer, Integer>();
 
     protected Numberer tagNumberer;
 
@@ -109,7 +105,6 @@ public class Grammar implements Serializable, Cloneable {
         this.threshold = thresh;
         unaryRuleCounter = new UnaryCounterTable(nSubStates);
         binaryRuleCounter = new BinaryCounterTable(nSubStates);
-        symbolCounter = new CounterMap<Integer, Integer>();
         numStates = (short) nSubStates.length;
         numSubStates = nSubStates;
 
@@ -386,14 +381,6 @@ public class Grammar implements Serializable, Cloneable {
         // Reset all counters:
         unaryRuleCounter = new UnaryCounterTable(numSubStates);
         binaryRuleCounter = new BinaryCounterTable(numSubStates);
-        symbolCounter = new CounterMap<Integer, Integer>();
-    }
-
-    public void clearCounts() {
-        unaryRuleCounter = new UnaryCounterTable(numSubStates);
-        binaryRuleCounter = new BinaryCounterTable(numSubStates);
-        symbolCounter = new CounterMap<Integer, Integer>();
-
     }
 
     /**
@@ -401,114 +388,113 @@ public class Grammar implements Serializable, Cloneable {
      * unaryRuleCounter are assumed to contain probabilities, NOT log probabilities!
      */
     public void normalize() {
-        // tally the parent counts
-        tallyParentCounts();
+
+        final double[][] parentCounts = observedParentCounts();
+
         // turn the rule scores into fractions
         for (final UnaryRule unaryRule : unaryRuleCounter.keySet()) {
             final double[][] unaryCounts = unaryRuleCounter.getCount(unaryRule);
             final int parentState = unaryRule.getParentState();
             final int nParentSubStates = numSubStates[parentState];
             final int nChildStates = numSubStates[unaryRule.childState];
-            final double[] parentCount = new double[nParentSubStates];
-            for (int i = 0; i < nParentSubStates; i++) {
-                parentCount[i] = symbolCounter.getCount(parentState, i);
-            }
+
             boolean allZero = true;
             for (int j = 0; j < nChildStates; j++) {
                 if (unaryCounts[j] == null)
                     continue;
-                for (int i = 0; i < nParentSubStates; i++) {
-                    if (parentCount[i] != 0) {
-                        double nVal = (unaryCounts[j][i] / parentCount[i]);
-                        if (nVal < threshold || SloppyMath.isVeryDangerous(nVal))
+                for (int parentSplit = 0; parentSplit < nParentSubStates; parentSplit++) {
+                    if (parentCounts[parentState][parentSplit] != 0) {
+                        double nVal = (unaryCounts[j][parentSplit] / parentCounts[parentState][parentSplit]);
+                        if (nVal < threshold || SloppyMath.isVeryDangerous(nVal)) {
                             nVal = 0;
-                        unaryCounts[j][i] = nVal;
+                        }
+                        unaryCounts[j][parentSplit] = nVal;
                     }
-                    allZero = allZero && (unaryCounts[j][i] == 0);
+                    allZero = allZero && (unaryCounts[j][parentSplit] == 0);
                 }
             }
             if (allZero) {
                 throw new IllegalArgumentException("Maybe an underflow? Rule: " + unaryRule + "\n");
             }
-            unaryRuleCounter.setCount(unaryRule, unaryCounts);
         }
+
         for (final BinaryRule binaryRule : binaryRuleCounter.keySet()) {
             final double[][][] binaryCounts = binaryRuleCounter.getCount(binaryRule);
             final int parentState = binaryRule.parentState;
             final int nParentSubStates = numSubStates[parentState];
-            final double[] parentCount = new double[nParentSubStates];
-            for (int i = 0; i < nParentSubStates; i++) {
-                parentCount[i] = symbolCounter.getCount(parentState, i);
-            }
+
             for (int j = 0; j < binaryCounts.length; j++) {
                 for (int k = 0; k < binaryCounts[j].length; k++) {
-                    if (binaryCounts[j][k] == null)
+                    if (binaryCounts[j][k] == null) {
                         continue;
-                    for (int i = 0; i < nParentSubStates; i++) {
-                        if (parentCount[i] != 0) {
-                            double nVal = (binaryCounts[j][k][i] / parentCount[i]);
-                            if (nVal < threshold || SloppyMath.isVeryDangerous(nVal))
+                    }
+
+                    for (int parentSplit = 0; parentSplit < nParentSubStates; parentSplit++) {
+                        if (parentCounts[parentState][parentSplit] != 0) {
+                            double nVal = (binaryCounts[j][k][parentSplit] / parentCounts[parentState][parentSplit]);
+                            if (nVal < threshold || SloppyMath.isVeryDangerous(nVal)) {
                                 nVal = 0;
-                            binaryCounts[j][k][i] = nVal;
+                            }
+                            binaryCounts[j][k][parentSplit] = nVal;
                         }
                     }
                 }
             }
-            binaryRuleCounter.setCount(binaryRule, binaryCounts);
         }
     }
 
     /**
-     * Sum the parent symbol counter, symbolCounter. This is needed when the rule counters are altered, such as when
-     * adding randomness in optimize().
-     * <p>
-     * This assumes that the unaryRuleCounter and binaryRuleCounter contain probabilities, NOT log probabilities!
+     * Returns the total of all (fractional) parent counts observed in the training corpus, as an array indexed by
+     * unsplit parent and parent split.
+     * 
+     * @return the total of all (fractional) parent counts observed in the training corpus
      */
-    private void tallyParentCounts() {
-        symbolCounter = new CounterMap<Integer, Integer>();
+    private double[][] observedParentCounts() {
+
+        // Indexed by parent state
+        final double[][] parentCounts = new double[numStates][];
+        for (int unsplitParent = 0; unsplitParent < numStates; unsplitParent++) {
+            parentCounts[unsplitParent] = new double[numSubStates[unsplitParent]];
+        }
+
         for (final UnaryRule unaryRule : unaryRuleCounter.keySet()) {
             final double[][] unaryCounts = unaryRuleCounter.getCount(unaryRule);
             final int parentState = unaryRule.getParentState();
-            isGrammarTag[parentState] = true;
-            if (unaryRule.childState == parentState)
+
+            if (unaryRule.childState == parentState) {
                 continue;
-            final int nParentSubStates = numSubStates[parentState];
-            final double[] sum = new double[nParentSubStates];
-            for (int j = 0; j < unaryCounts.length; j++) {
-                if (unaryCounts[j] == null)
-                    continue;
-                for (int i = 0; i < nParentSubStates; i++) {
-                    final double val = unaryCounts[j][i];
-                    // if (val>=threshold)
-                    sum[i] += val;
-                }
-            }
-            for (int i = 0; i < nParentSubStates; i++) {
-                symbolCounter.incrementCount(parentState, i, sum[i]);
             }
 
+            for (int childSplit = 0; childSplit < unaryCounts.length; childSplit++) {
+                if (unaryCounts[childSplit] == null) {
+                    continue;
+                }
+
+                for (int parentSplit = 0; parentSplit < parentCounts[parentState].length; parentSplit++) {
+                    parentCounts[parentState][parentSplit] += unaryCounts[childSplit][parentSplit];
+                }
+            }
         }
+
         for (final BinaryRule binaryRule : binaryRuleCounter.keySet()) {
             final double[][][] binaryCounts = binaryRuleCounter.getCount(binaryRule);
             final int parentState = binaryRule.parentState;
-            isGrammarTag[parentState] = true;
-            final int nParentSubStates = numSubStates[parentState];
-            final double[] sum = new double[nParentSubStates];
-            for (int j = 0; j < binaryCounts.length; j++) {
-                for (int k = 0; k < binaryCounts[j].length; k++) {
-                    if (binaryCounts[j][k] == null)
+
+            for (int leftChildSplit = 0; leftChildSplit < binaryCounts.length; leftChildSplit++) {
+                for (int rightChildSplit = 0; rightChildSplit < binaryCounts[leftChildSplit].length; rightChildSplit++) {
+
+                    if (binaryCounts[leftChildSplit][rightChildSplit] == null) {
                         continue;
-                    for (int i = 0; i < nParentSubStates; i++) {
-                        final double val = binaryCounts[j][k][i];
-                        // if (val>=threshold)
-                        sum[i] += val;
+                    }
+
+                    for (int parentSplit = 0; parentSplit < parentCounts[parentState].length; parentSplit++) {
+                        parentCounts[parentState][parentSplit] += binaryCounts[leftChildSplit][rightChildSplit][parentSplit];
                     }
                 }
             }
-            for (int i = 0; i < nParentSubStates; i++) {
-                symbolCounter.incrementCount(parentState, i, sum[i]);
-            }
         }
+
+        return parentCounts;
     }
 
     public void tallyStateSetTree(final Tree<StateSet> tree, final Grammar old_grammar) {
@@ -628,6 +614,8 @@ public class Grammar implements Serializable, Cloneable {
                 final double scaledRuleCount = (packedBinaryRule.ruleScores[i] * leftChildInsideScore / treeInsideScore)
                         * rightChildInsideScore * scalingFactor * parentOutsideScore;
 
+                // TODO
+                // packedBinaryRule.ruleCounts[i] += scaledRuleCount;
                 if (bcounts[leftChildSplit][rightChildSplit] == null) {
                     bcounts[leftChildSplit][rightChildSplit] = new double[nParentSubStates];
                 }
@@ -1488,6 +1476,9 @@ public class Grammar implements Serializable, Cloneable {
         /** Production probabilities for each split rule, sorted by by parent split, left child split, right child split */
         public final double[] ruleScores;
 
+        // /** Fractional observation counts for each rule */
+        // public final double[] ruleCounts;
+
         /**
          * Parent, left child, and right child substates for each rule. Something of a parallel array to
          * {@link #ruleScores}, but each entry in {@link #ruleScores} corresponds to 3 in {@link #substates}, so it is
@@ -1522,6 +1513,7 @@ public class Grammar implements Serializable, Cloneable {
             }
 
             this.ruleScores = new double[totalRules];
+            // this.ruleCounts = new double[totalRules];
             this.substates = new short[totalRules * 3];
 
             // Populate them in order in the new arrays, sorted by parent, left child, right child
@@ -1551,47 +1543,6 @@ public class Grammar implements Serializable, Cloneable {
                     }
                 }
             }
-
-            //
-            // for (int i = 0, j = 0; i < this.ruleScores.length; i++, j += 3) {
-            // final short parentSplit = substates[j];
-            // final short leftChildSplit = substates[j + 1];
-            // final short rightChildSplit = substates[j + 2];
-            //
-            // assert ruleScores[leftChildSplit][rightChildSplit][parentSplit] == this.ruleScores[i];
-            // }
-            //
-        }
-
-        public void assertEquals(final double[][][] oldRuleScores) {
-
-            // Verify the number of populated scores
-            int count = 0;
-            for (short splitLeftChild = 0; splitLeftChild < oldRuleScores.length; splitLeftChild++) {
-                if (oldRuleScores[splitLeftChild] == null) {
-                    continue;
-                }
-                for (short splitRightChild = 0; splitRightChild < oldRuleScores[splitLeftChild].length; splitRightChild++) {
-                    if (oldRuleScores[splitLeftChild][splitRightChild] == null) {
-                        continue;
-                    }
-                    for (short splitParent = 0; splitParent < oldRuleScores[splitLeftChild][splitRightChild].length; splitParent++) {
-                        if (oldRuleScores[splitLeftChild][splitRightChild][splitParent] > 0) {
-                            count++;
-                        }
-                    }
-                }
-            }
-            // Assert.assertEquals(count, ruleScores.length);
-            //
-            // for (int offset = 0; offset < ruleScores.length; offset++) {
-            // final short splitLeftChild = substates[offset * 3];
-            // final short splitRightChild = substates[offset * 3 + 1];
-            // final short splitParent = substates[offset * 3 + 2];
-            // final double delta = ruleScores[offset] * 1e-10;
-            // Assert.assertEquals(oldRuleScores[splitLeftChild][splitRightChild][splitParent], ruleScores[offset],
-            // delta);
-            // }
         }
     }
 
