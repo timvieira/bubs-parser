@@ -16,9 +16,8 @@ public class BinaryRule extends Rule implements Serializable, java.lang.Comparab
 
     public short leftChildState = -1;
     public short rightChildState = -1;
-    /**
-     * NEW: scores[leftSubState][rightSubState][parentSubState] gives score for this rule
-     */
+
+    /** Rule probabilities. Indexed by leftSubState, rightSubState, parentSubState */
     public double[][][] scores;
 
     public BinaryRule(final short pState, final short lState, final short rState, final double[][][] scores) {
@@ -32,7 +31,6 @@ public class BinaryRule extends Rule implements Serializable, java.lang.Comparab
         this.parentState = pState;
         this.leftChildState = lState;
         this.rightChildState = rState;
-        // this.scores = new double[1][1][1];
     }
 
     /** Copy constructor */
@@ -44,9 +42,13 @@ public class BinaryRule extends Rule implements Serializable, java.lang.Comparab
         this(b.parentState, b.leftChildState, b.rightChildState, newScores);
     }
 
+    public int key() {
+        return Grammar.binaryKey(parentState, leftChildState, rightChildState);
+    }
+
     @Override
     public int hashCode() {
-        return (parentState << 16) ^ (leftChildState << 8) ^ (rightChildState);
+        return key();
     }
 
     @Override

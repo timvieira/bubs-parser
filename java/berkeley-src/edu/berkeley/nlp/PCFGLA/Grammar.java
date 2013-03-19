@@ -15,8 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import org.junit.Assert;
-
 import edu.berkeley.nlp.PCFGLA.smoothing.Smoother;
 import edu.berkeley.nlp.math.SloppyMath;
 import edu.berkeley.nlp.syntax.StateSet;
@@ -185,7 +183,7 @@ public class Grammar implements Serializable, Cloneable {
      * @param unsplitRightChild
      * @return an integer key representing the specified binary rule
      */
-    private int binaryKey(final short unsplitParent, final short unsplitLeftChild, final short unsplitRightChild) {
+    public static int binaryKey(final short unsplitParent, final short unsplitLeftChild, final short unsplitRightChild) {
         assert unsplitParent < 1024;
         assert unsplitLeftChild < 1024;
         assert unsplitRightChild < 1024;
@@ -1657,16 +1655,16 @@ public class Grammar implements Serializable, Cloneable {
                     }
                 }
             }
-            Assert.assertEquals(count, ruleScores.length);
-
-            for (int offset = 0; offset < ruleScores.length; offset++) {
-                final short splitLeftChild = substates[offset * 3];
-                final short splitRightChild = substates[offset * 3 + 1];
-                final short splitParent = substates[offset * 3 + 2];
-                final double delta = ruleScores[offset] * 1e-10;
-                Assert.assertEquals(oldRuleScores[splitLeftChild][splitRightChild][splitParent], ruleScores[offset],
-                        delta);
-            }
+            // Assert.assertEquals(count, ruleScores.length);
+            //
+            // for (int offset = 0; offset < ruleScores.length; offset++) {
+            // final short splitLeftChild = substates[offset * 3];
+            // final short splitRightChild = substates[offset * 3 + 1];
+            // final short splitParent = substates[offset * 3 + 2];
+            // final double delta = ruleScores[offset] * 1e-10;
+            // Assert.assertEquals(oldRuleScores[splitLeftChild][splitRightChild][splitParent], ruleScores[offset],
+            // delta);
+            // }
         }
     }
 

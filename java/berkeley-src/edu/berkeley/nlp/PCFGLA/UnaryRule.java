@@ -53,7 +53,7 @@ public class UnaryRule extends Rule implements java.io.Serializable, Comparable<
 
     @Override
     public int hashCode() {
-        return (parentState << 18) ^ (childState);
+        return (parentState << 10) & (childState);
     }
 
     @Override
