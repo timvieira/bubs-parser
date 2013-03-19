@@ -556,36 +556,13 @@ public class Grammar implements Serializable, Cloneable {
             final short unsplitChild = child.getState();
             final int nChildSubStates = numSubStates[unsplitChild];
             final UnaryRule urule = new UnaryRule(unsplitParent, unsplitChild);
-            // final double[][] oldUScores = old_grammar.getUnaryScore(unsplitParent, unsplitChild);
 
             double[][] ucounts = unaryRuleCounter.getCount(urule);
             if (ucounts == null) {
                 ucounts = new double[nChildSubStates][];
+                unaryRuleCounter.setCount(urule, ucounts);
             }
             double scalingFactor = ScalingTools.calcScaleFactor(parent.getOScale() + child.getIScale() - tree_scale);
-
-            // for (short i = 0; i < nChildSubStates; i++) {
-            // if (oldUScores[i] == null)
-            // continue;
-            // final double childInsideScore = child.getIScore(i);
-            // if (childInsideScore == 0)
-            // continue;
-            // if (ucounts[i] == null)
-            // ucounts[i] = new double[nParentSubStates];
-            // for (short j = 0; j < nParentSubStates; j++) {
-            // final double parentOutsideScore = parent.getOScore(j); // Parent outside score
-            // if (parentOutsideScore == 0)
-            // continue;
-            // final double ruleScore = oldUScores[i][j];
-            // if (ruleScore == 0)
-            // continue;
-            // if (treeInsideScore == 0)
-            // treeInsideScore = 1;
-            // final double logRuleCount = (ruleScore * childInsideScore / treeInsideScore) * scalingFactor
-            // * parentOutsideScore;
-            // ucounts[i][j] += logRuleCount;
-            // }
-            // }
 
             final Grammar.PackedUnaryRule packedUnaryRule = old_grammar.getPackedUnaryScores(unsplitParent,
                     unsplitChild);
@@ -610,7 +587,6 @@ public class Grammar implements Serializable, Cloneable {
                 ucounts[childSplit][parentSplit] += scaledRuleCount;
             }
 
-            unaryRuleCounter.setCount(urule, ucounts);
             break;
 
         case 2:
@@ -628,10 +604,9 @@ public class Grammar implements Serializable, Cloneable {
             double[][][] bcounts = binaryRuleCounter.getCount(brule);
             if (bcounts == null) {
                 bcounts = new double[nLeftChildSubStates][nRightChildSubStates][];
+                binaryRuleCounter.setCount(brule, bcounts);
             }
-            // final double[][][] bcountsClone = bcounts.clone();
 
-            // double[][][] oldBScores = old_grammar.getBinaryScore(unsplitParent, unsplitLeftChild, unsplitRightChild);
             final Grammar.PackedBinaryRule packedBinaryRule = old_grammar.getPackedBinaryScores(unsplitParent,
                     unsplitLeftChild, unsplitRightChild);
 
@@ -659,54 +634,6 @@ public class Grammar implements Serializable, Cloneable {
                 bcounts[leftChildSplit][rightChildSplit][parentSplit] += scaledRuleCount;
             }
 
-            // double[][][] oldBScores = old_grammar.getBinaryScore(unsplitParent, unsplitLeftChild, unsplitRightChild);
-            // if (oldBScores == null) {
-            // // rule was not in the grammar
-            // oldBScores = new double[nLeftChildSubStates][nRightChildSubStates][nParentSubStates];
-            // ArrayUtil.fill(oldBScores, 1.0);
-            // }
-
-            // //
-            // for (short i = 0; i < nLeftChildSubStates; i++) {
-            // final double leftChildInsideScore = leftChild.getIScore(i);
-            // if (leftChildInsideScore == 0)
-            // continue;
-            // for (short j = 0; j < nRightChildSubStates; j++) {
-            // if (oldBScores[i][j] == null)
-            // continue;
-            // final double rightChildInsideScore = rightChild.getIScore(j);
-            // if (rightChildInsideScore == 0)
-            // continue;
-            // // allocate parent array
-            // if (bcountsClone[i][j] == null)
-            // bcountsClone[i][j] = new double[nParentSubStates];
-            // for (short k = 0; k < nParentSubStates; k++) {
-            // final double parentOutsideScore = parent.getOScore(k); // Parent outside
-            // // score
-            // if (parentOutsideScore == 0)
-            // continue;
-            // final double ruleScore = oldBScores[i][j][k];
-            // if (ruleScore == 0)
-            // continue;
-            // if (treeInsideScore == 0)
-            // treeInsideScore = 1;
-            // final double scaledRuleCount = (ruleScore * leftChildInsideScore / treeInsideScore)
-            // * rightChildInsideScore * scalingFactor * parentOutsideScore;
-            // /*
-            // * if (logRuleCount == 0) { System.out.println("rS "+rS+", lcIS "
-            // * +lcIS+", rcIS "+rcIS+", tree_score "+tree_score+
-            // * ", scalingFactor "+scalingFactor+", pOS "+pOS); System.out.println("Possibly underflow?"); //
-            // * logRuleCount = Double.MIN_VALUE; }
-            // */
-            // bcountsClone[i][j][k] += scaledRuleCount;
-            // }
-            // }
-            // }
-            // //
-
-            // JUnit.assertArrayEquals(bcountsClone, bcounts, 1e-15);
-
-            binaryRuleCounter.setCount(brule, bcounts);
             break;
 
         default:

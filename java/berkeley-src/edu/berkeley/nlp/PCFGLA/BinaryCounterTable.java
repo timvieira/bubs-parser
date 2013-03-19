@@ -21,10 +21,14 @@ import edu.berkeley.nlp.util.ArrayUtil;
 public class BinaryCounterTable implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
     Map<BinaryRule, double[][][]> entries;
-    short[] numSubStates;
-    // TODO Remove?
-    BinaryRule searchKey;
+    private final short[] numSubStates;
+
+    public BinaryCounterTable(final short[] numSubStates) {
+        entries = new HashMap<BinaryRule, double[][][]>();
+        this.numSubStates = numSubStates;
+    }
 
     /**
      * The elements in the counter.
@@ -36,44 +40,11 @@ public class BinaryCounterTable implements Serializable {
     }
 
     /**
-     * The number of entries in the counter (not the total count -- use totalCount() instead).
-     */
-    public int size() {
-        return entries.size();
-    }
-
-    /**
-     * True if there are no entries in the counter (false does not mean totalCount > 0)
-     */
-    public boolean isEmpty() {
-        return size() == 0;
-    }
-
-    /**
-     * Returns whether the counter contains the given key. Note that this is the way to distinguish keys which are in
-     * the counter with count zero, and those which are not in the counter (and will therefore return count zero from
-     * getCount().
-     * 
-     * @param key
-     * @return whether the counter contains the key
-     */
-    public boolean containsKey(final BinaryRule key) {
-        return entries.containsKey(key);
-    }
-
-    /**
      * @param key
      * @return the count of the specified element, or null if the element is not in the counter.
      */
     public double[][][] getCount(final BinaryRule key) {
-        final double[][][] value = entries.get(key);
-        return value;
-    }
-
-    public double[][][] getCount(final short pState, final short lState, final short rState) {
-        searchKey.setNodes(pState, lState, rState);
-        final double[][][] value = entries.get(searchKey);
-        return value;
+        return entries.get(key);
     }
 
     /**
@@ -136,11 +107,5 @@ public class BinaryCounterTable implements Serializable {
             }
         }
         setCount(key, current);
-    }
-
-    public BinaryCounterTable(final short[] numSubStates) {
-        entries = new HashMap<BinaryRule, double[][][]>();
-        searchKey = new BinaryRule((short) 0, (short) 0, (short) 0);
-        this.numSubStates = numSubStates;
     }
 }
