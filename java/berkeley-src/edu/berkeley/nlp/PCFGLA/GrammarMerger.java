@@ -3,11 +3,13 @@ package edu.berkeley.nlp.PCFGLA;
 import java.util.ArrayList;
 import java.util.Collections;
 
+import cltool4j.BaseLogger;
 import edu.berkeley.nlp.syntax.StateSet;
 import edu.berkeley.nlp.syntax.Tree;
 import edu.berkeley.nlp.util.ArrayUtil;
 import edu.berkeley.nlp.util.Numberer;
 import edu.berkeley.nlp.util.PriorityQueue;
+import edu.berkeley.nlp.util.IEEEDoubleScaling;
 
 public class GrammarMerger {
 
@@ -125,8 +127,8 @@ public class GrammarMerger {
         for (final Tree<StateSet> stateSetTree : trainStateSetTrees) {
 
             parser.doInsideOutsideScores(stateSetTree, false); // E-step
-            double ll = stateSetTree.label().getIScore(0);
-            ll = Math.log(ll) + (100 * stateSetTree.label().getIScale());
+            final double ll = IEEEDoubleScaling.logLikelihood(stateSetTree.label().getIScore(0), stateSetTree.label()
+                    .getIScale());
 
             if (!Double.isInfinite(ll)) {
                 grammar.tallyMergeScores(stateSetTree, deltas, mergeWeights);
@@ -151,10 +153,11 @@ public class GrammarMerger {
         int n = 0;
 
         for (final Tree<StateSet> stateSetTree : trainStateSetTrees) {
-            parser.doInsideOutsideScores(stateSetTree, false); // E
-                                                               // Step
-            double ll = stateSetTree.label().getIScore(0);
-            ll = Math.log(ll) + (100 * stateSetTree.label().getIScale());// System.out.println(stateSetTree);
+            parser.doInsideOutsideScores(stateSetTree, false); // E-step
+
+            final double ll = IEEEDoubleScaling.logLikelihood(stateSetTree.label().getIScore(0), stateSetTree.label()
+                    .getIScale());
+
             if (Double.isInfinite(ll)) {
                 System.out.println("Training sentence " + n + " is given -inf log likelihood!");
             } else {
@@ -163,7 +166,7 @@ public class GrammarMerger {
             }
             n++;
         }
-        System.out.println("The trainings LL before merging is " + trainingLikelihood);
+        BaseLogger.singleton().info("Training corpus LL before merging: " + trainingLikelihood);
         // normalize the weights
         grammar.normalizeMergeWeights(mergeWeights);
 

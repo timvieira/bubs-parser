@@ -1,7 +1,7 @@
 package edu.berkeley.nlp.syntax;
 
 import edu.berkeley.nlp.util.Numberer;
-import edu.berkeley.nlp.util.ScalingTools;
+import edu.berkeley.nlp.util.IEEEDoubleScaling;
 
 /**
  * Represent a parse tree, with each node consisting of a label and a list of children. The score tables are not
@@ -121,11 +121,11 @@ public class StateSet {
     }
 
     public void scaleIScores(final int previousScale) {
-        iScale = ScalingTools.scaleArray(iScores, previousScale);
+        iScale = IEEEDoubleScaling.scaleArray(iScores, previousScale);
     }
 
     public void scaleOScores(final int previousScale) {
-        oScale = ScalingTools.scaleArray(oScores, previousScale);
+        oScale = IEEEDoubleScaling.scaleArray(oScores, previousScale);
     }
 
     public int getIScale() {

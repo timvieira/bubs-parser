@@ -16,7 +16,7 @@ import edu.berkeley.nlp.syntax.Tree;
 import edu.berkeley.nlp.util.Counter;
 import edu.berkeley.nlp.util.Numberer;
 import edu.berkeley.nlp.util.PriorityQueue;
-import edu.berkeley.nlp.util.ScalingTools;
+import edu.berkeley.nlp.util.IEEEDoubleScaling;
 
 /**
  * Simple default implementation of a lexicon, which scores word, tag pairs with a smoothed estimate of
@@ -976,21 +976,14 @@ public class Lexicon implements java.io.Serializable {
             }
 
             final StateSet currentState = tags.get(position);
-            final double scale = ScalingTools.calcScaleFactor(currentState.getOScale() - sentenceScale) / sentenceScore;
-            // double weightSum = 0;
+            final double scale = IEEEDoubleScaling.scalingMultiplier(currentState.getOScale() - sentenceScale)
+                    / sentenceScore;
 
             for (short substate = 0; substate < nSubStates; substate++) {
                 double weight = 1;
                 if (oldLexiconScores != null) {
-                    // weight by the probability of seeing the tag and word
-                    // together, given the sentence
-                    if (!Double.isInfinite(scale)) {
-                        weight = currentState.getOScore(substate) * oldLexiconScores[substate] * scale;
-                    } else {
-                        weight = Math.exp(Math.log(ScalingTools.SCALE) * (currentState.getOScale() - sentenceScale)
-                                - Math.log(sentenceScore) + Math.log(currentState.getOScore(substate))
-                                + Math.log(oldLexiconScores[substate]));
-                    }
+                    // weight by the probability of seeing the tag and word together, given the sentence
+                    weight = currentState.getOScore(substate) * oldLexiconScores[substate] * scale;
 
                 } else if (randomness == 0) {
                     // for the baseline

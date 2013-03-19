@@ -15,13 +15,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import cltool4j.BaseLogger;
 import edu.berkeley.nlp.PCFGLA.smoothing.Smoother;
 import edu.berkeley.nlp.math.SloppyMath;
 import edu.berkeley.nlp.syntax.StateSet;
 import edu.berkeley.nlp.syntax.Tree;
 import edu.berkeley.nlp.util.ArrayUtil;
 import edu.berkeley.nlp.util.Numberer;
-import edu.berkeley.nlp.util.ScalingTools;
+import edu.berkeley.nlp.util.IEEEDoubleScaling;
 
 /**
  * Simple implementation of a PCFG grammar, offering the ability to look up rules by their child symbols. Rule
@@ -497,34 +498,39 @@ public class Grammar implements Serializable, Cloneable {
         return parentCounts;
     }
 
-    public void tallyStateSetTree(final Tree<StateSet> tree, final Grammar old_grammar) {
+    public void tallyStateSetTree(final Tree<StateSet> tree, final Grammar previousGrammar) {
+
+        // Skip 1-word trees
+        if (tree.isLeaf() || tree.isPreTerminal()) {
+            return;
+        }
+
         // Check that the top node is not split (it has only one substate)
-        if (tree.isLeaf())
-            return;
-        if (tree.isPreTerminal())
-            return;
         final StateSet node = tree.label();
         if (node.numSubStates() != 1) {
-            System.err.println("The top symbol is split!");
-            System.out.println(tree);
-            System.exit(1);
+            throw new IllegalArgumentException("The start symbol should never be split");
         }
-        // The inside score of its only substate is the (log) probability of the
-        // tree
-        final double tree_score = node.getIScore(0);
+
+        // The inside score of the start symbol is the (log) probability of the tree
+        final double treeProbability = node.getIScore(0);
         final int tree_scale = node.getIScale();
-        if (tree_score == 0) {
-            System.out.println("Something is wrong with this tree. I will skip it.");
+
+        if (treeProbability == 0) {
+            BaseLogger.singleton().config("Skipping a 0-probability tree.");
             return;
         }
-        tallyStateSetTree(tree, tree_score, tree_scale, old_grammar);
+        tallyStateSetTree(tree, treeProbability, tree_scale, previousGrammar);
     }
 
-    private void tallyStateSetTree(final Tree<StateSet> tree, double treeInsideScore, final double tree_scale,
-            final Grammar old_grammar) {
+    private void tallyStateSetTree(final Tree<StateSet> tree, double treeInsideScore, final int tree_scale,
+            final Grammar previousGrammar) {
 
         if (tree.isLeaf() || tree.isPreTerminal()) {
             return;
+        }
+
+        if (treeInsideScore == 0) {
+            treeInsideScore = 1;
         }
 
         final List<Tree<StateSet>> children = tree.children();
@@ -533,9 +539,6 @@ public class Grammar implements Serializable, Cloneable {
         final int nParentSubStates = numSubStates[unsplitParent];
 
         switch (children.size()) {
-        case 0:
-            // This is a preterminal node; nothing to do
-            break;
 
         case 1:
             final StateSet child = children.get(0).label();
@@ -548,10 +551,11 @@ public class Grammar implements Serializable, Cloneable {
                 ucounts = new double[nChildSubStates][];
                 unaryRuleCounter.setCount(urule, ucounts);
             }
-            double scalingFactor = ScalingTools.calcScaleFactor(parent.getOScale() + child.getIScale() - tree_scale);
+            double scalingFactor = IEEEDoubleScaling.scalingMultiplier(parent.getOScale() + child.getIScale() - tree_scale);
 
-            final Grammar.PackedUnaryRule packedUnaryRule = old_grammar.getPackedUnaryScores(unsplitParent,
+            final Grammar.PackedUnaryRule packedUnaryRule = previousGrammar.getPackedUnaryScores(unsplitParent,
                     unsplitChild);
+
             // Iterate through all splits of the rule. Most will have non-0 child and parent probability (since the
             // rule currently exists in the grammar), and this iteration order is very efficient
             for (int i = 0, j = 0; i < packedUnaryRule.ruleScores.length; i++, j += 2) {
@@ -561,9 +565,6 @@ public class Grammar implements Serializable, Cloneable {
                 final double parentOutsideScore = parent.getOScore(parentSplit);
                 final double childInsideScore = child.getIScore(childSplit);
 
-                if (treeInsideScore == 0) {
-                    treeInsideScore = 1;
-                }
                 final double scaledRuleCount = (packedUnaryRule.ruleScores[i] * childInsideScore / treeInsideScore)
                         * scalingFactor * parentOutsideScore;
 
@@ -583,7 +584,7 @@ public class Grammar implements Serializable, Cloneable {
             final int nLeftChildSubStates = numSubStates[unsplitLeftChild];
             final int nRightChildSubStates = numSubStates[unsplitRightChild];
 
-            scalingFactor = ScalingTools.calcScaleFactor(parent.getOScale() + leftChild.getIScale()
+            scalingFactor = IEEEDoubleScaling.scalingMultiplier(parent.getOScale() + leftChild.getIScale()
                     + rightChild.getIScale() - tree_scale);
 
             final BinaryRule brule = new BinaryRule(unsplitParent, unsplitLeftChild, unsplitRightChild);
@@ -593,7 +594,7 @@ public class Grammar implements Serializable, Cloneable {
                 binaryRuleCounter.setCount(brule, bcounts);
             }
 
-            final Grammar.PackedBinaryRule packedBinaryRule = old_grammar.getPackedBinaryScores(unsplitParent,
+            final Grammar.PackedBinaryRule packedBinaryRule = previousGrammar.getPackedBinaryScores(unsplitParent,
                     unsplitLeftChild, unsplitRightChild);
 
             // Iterate through all splits of the rule. Most will have non-0 child and parent probability (since the
@@ -606,11 +607,8 @@ public class Grammar implements Serializable, Cloneable {
                 final double leftChildInsideScore = leftChild.getIScore(leftChildSplit);
                 final double rightChildInsideScore = rightChild.getIScore(rightChildSplit);
 
-                final double parentOutsideScore = parent.getOScore(parentSplit); // Parent outside
+                final double parentOutsideScore = parent.getOScore(parentSplit);
 
-                if (treeInsideScore == 0) {
-                    treeInsideScore = 1;
-                }
                 final double scaledRuleCount = (packedBinaryRule.ruleScores[i] * leftChildInsideScore / treeInsideScore)
                         * rightChildInsideScore * scalingFactor * parentOutsideScore;
 
@@ -629,25 +627,24 @@ public class Grammar implements Serializable, Cloneable {
         }
 
         for (final Tree<StateSet> child : children) {
-            tallyStateSetTree(child, treeInsideScore, tree_scale, old_grammar);
+            tallyStateSetTree(child, treeInsideScore, tree_scale, previousGrammar);
         }
     }
 
     public void tallyUninitializedStateSetTree(final Tree<StateSet> tree) {
-        if (tree.isLeaf())
+
+        // The lexicon will handle preterminals
+        if (tree.isLeaf() || tree.isPreTerminal()) {
             return;
-        // the lexicon handles preterminal nodes
-        if (tree.isPreTerminal())
-            return;
+        }
+
         final List<Tree<StateSet>> children = tree.children();
         final StateSet parent = tree.label();
         final short parentState = parent.getState();
         final int nParentSubStates = parent.numSubStates(); // numSubStates[parentState];
+
         switch (children.size()) {
-        case 0:
-            // This is a leaf (a preterminal node, if we count the words
-            // themselves), nothing to do
-            break;
+
         case 1:
             final StateSet child = children.get(0).label();
             final short childState = child.getState();
@@ -656,6 +653,7 @@ public class Grammar implements Serializable, Cloneable {
             final UnaryRule urule = new UnaryRule(parentState, childState, counts);
             unaryRuleCounter.incrementCount(urule, 1.0);
             break;
+
         case 2:
             final StateSet leftChild = children.get(0).label();
             final short lChildState = leftChild.getState();
@@ -667,6 +665,7 @@ public class Grammar implements Serializable, Cloneable {
             final BinaryRule brule = new BinaryRule(parentState, lChildState, rChildState, bcounts);
             binaryRuleCounter.incrementCount(brule, 1.0);
             break;
+
         default:
             throw new Error("Malformed tree: more than two children");
         }

@@ -19,6 +19,7 @@ import edu.berkeley.nlp.PCFGLA.smoothing.SmoothAcrossParentBits;
 import edu.berkeley.nlp.syntax.StateSet;
 import edu.berkeley.nlp.syntax.Tree;
 import edu.berkeley.nlp.util.Numberer;
+import edu.berkeley.nlp.util.IEEEDoubleScaling;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.lela.FractionalCountGrammar;
 
@@ -396,8 +397,8 @@ public class GrammarTrainer extends BaseCommandlineTool {
 
             parser.doInsideOutsideScores(stateSetTree, true);
 
-            double ll = stateSetTree.label().getIScore(0);
-            ll = Math.log(ll) + (100 * stateSetTree.label().getIScale());
+            final double ll = IEEEDoubleScaling.logLikelihood(stateSetTree.label().getIScore(0), stateSetTree.label()
+                    .getIScale());
 
             // Skip sentences we couldn't parse
             if (Double.isInfinite(ll) || Double.isNaN(ll)) {
@@ -467,8 +468,10 @@ public class GrammarTrainer extends BaseCommandlineTool {
 
         for (final Tree<StateSet> stateSetTree : trainStateSetTrees) {
             parser.doInsideOutsideScores(stateSetTree, true); // E step
-            double ll = stateSetTree.label().getIScore(0);
-            ll = Math.log(ll) + (100 * stateSetTree.label().getIScale());
+
+            final double ll = IEEEDoubleScaling.logLikelihood(stateSetTree.label().getIScore(0), stateSetTree.label()
+                    .getIScale());
+
             if ((Double.isInfinite(ll) || Double.isNaN(ll))) {
                 BaseLogger.singleton().finer(
                         String.format("Training sentence %d :%f  Root iScore: %.3f  Scale: %d", n, ll, stateSetTree
@@ -502,8 +505,8 @@ public class GrammarTrainer extends BaseCommandlineTool {
         for (final Tree<StateSet> stateSetTree : corpus) {
             // Only the inside scores are needed here
             parser.doInsideScores(stateSetTree, false, null);
-            double ll = stateSetTree.label().getIScore(0);
-            ll = Math.log(ll) + (100 * stateSetTree.label().getIScale());
+            final double ll = IEEEDoubleScaling.logLikelihood(stateSetTree.label().getIScore(0), stateSetTree.label()
+                    .getIScale());
 
             // A few sentences are unparsable
             if (!Double.isInfinite(ll) && !Double.isNaN(ll)) {
