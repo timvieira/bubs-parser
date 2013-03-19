@@ -4,6 +4,7 @@ import java.util.List;
 
 import edu.berkeley.nlp.syntax.StateSet;
 import edu.berkeley.nlp.syntax.Tree;
+import edu.berkeley.nlp.util.IEEEDoubleScaling;
 import edu.berkeley.nlp.util.Numberer;
 
 /**
@@ -66,7 +67,7 @@ public class ArrayParser {
                         + nParentStates);
             }
             parent.setIScores(lexiconScores);
-            parent.scaleIScores(0);
+            parent.setIScale(IEEEDoubleScaling.scaleArray(lexiconScores, 0));
 
         } else {
             switch (children.size()) {
@@ -89,7 +90,7 @@ public class ArrayParser {
                 }
 
                 parent.setIScores(iScores);
-                parent.scaleIScores(child.getIScale());
+                parent.setIScale(IEEEDoubleScaling.scaleArray(iScores, child.getIScale()));
                 break;
 
             case 2:
@@ -124,7 +125,7 @@ public class ArrayParser {
                 }
 
                 parent.setIScores(iScores2);
-                parent.scaleIScores(leftChild.getIScale() + rightChild.getIScale());
+                parent.setIScale(IEEEDoubleScaling.scaleArray(iScores2, leftChild.getIScale() + rightChild.getIScale()));
                 break;
 
             default:
@@ -181,7 +182,7 @@ public class ArrayParser {
             }
 
             child.setOScores(oScores);
-            child.scaleOScores(parent.getOScale());
+            child.setOScale(IEEEDoubleScaling.scaleArray(oScores, parent.getOScale()));
             unaryAbove = true;
             break;
 
@@ -217,10 +218,10 @@ public class ArrayParser {
             }
 
             leftChild.setOScores(lOScores);
-            leftChild.scaleOScores(parent.getOScale() + rightChild.getIScale());
+            leftChild.setOScale(IEEEDoubleScaling.scaleArray(lOScores, parent.getOScale() + rightChild.getIScale()));
 
             rightChild.setOScores(rOScores);
-            rightChild.scaleOScores(parent.getOScale() + leftChild.getIScale());
+            rightChild.setOScale(IEEEDoubleScaling.scaleArray(rOScores, parent.getOScale() + leftChild.getIScale()));
 
             unaryAbove = false;
             break;

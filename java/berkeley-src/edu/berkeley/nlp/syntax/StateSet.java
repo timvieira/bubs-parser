@@ -1,7 +1,6 @@
 package edu.berkeley.nlp.syntax;
 
 import edu.berkeley.nlp.util.Numberer;
-import edu.berkeley.nlp.util.IEEEDoubleScaling;
 
 /**
  * Represent a parse tree, with each node consisting of a label and a list of children. The score tables are not
@@ -23,13 +22,14 @@ public class StateSet {
     /** Outside scale */
     int oScale;
 
+    /** the word of this node, if it is a terminal node; else null */
     String word;
 
-    /** the word of this node, if it is a terminal node; else null */
     public int wordIndex, sigIndex;
 
     short numSubStates;
     short state;
+    /** Start and end indices of the sentence span covered by this node */
     public short from, to;
 
     public StateSet(final short state, final short nSubStates) {
@@ -118,14 +118,6 @@ public class StateSet {
 
     public String getWord() {
         return word;
-    }
-
-    public void scaleIScores(final int previousScale) {
-        iScale = IEEEDoubleScaling.scaleArray(iScores, previousScale);
-    }
-
-    public void scaleOScores(final int previousScale) {
-        oScale = IEEEDoubleScaling.scaleArray(oScores, previousScale);
     }
 
     public int getIScale() {
