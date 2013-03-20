@@ -10,9 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 
 import cltool4j.BaseLogger;
@@ -21,8 +19,8 @@ import edu.berkeley.nlp.math.SloppyMath;
 import edu.berkeley.nlp.syntax.StateSet;
 import edu.berkeley.nlp.syntax.Tree;
 import edu.berkeley.nlp.util.ArrayUtil;
-import edu.berkeley.nlp.util.Numberer;
 import edu.berkeley.nlp.util.IEEEDoubleScaling;
+import edu.berkeley.nlp.util.Numberer;
 
 /**
  * Simple implementation of a PCFG grammar, offering the ability to look up rules by their child symbols. Rule
@@ -36,15 +34,13 @@ public class Grammar implements Serializable, Cloneable {
 
     /** Records the binary rules (before splitting) */
     private List<BinaryRule>[] binaryRulesWithParent;
-    private List<BinaryRule>[] binaryRulesWithLC;
-    private List<BinaryRule>[] binaryRulesWithRC;
 
     /** Used after splitting */
-    private BinaryRule[][] splitRulesWithRC;
     private BinaryRule[][] splitRulesWithP;
 
     private List<UnaryRule>[] unaryRulesWithParent;
     private List<UnaryRule>[] unaryRulesWithC;
+    private List<UnaryRule>[] closedViterbiRulesWithParent = null;
 
     /** the number of states */
     public short numStates;
@@ -63,17 +59,6 @@ public class Grammar implements Serializable, Cloneable {
 
     protected Numberer tagNumberer;
 
-    private List<UnaryRule>[] closedSumRulesWithParent = null;
-    private List<UnaryRule>[] closedSumRulesWithChild = null;
-
-    private List<UnaryRule>[] closedViterbiRulesWithParent = null;
-    private List<UnaryRule>[] closedViterbiRulesWithChild = null;
-
-    private UnaryRule[][] closedSumRulesWithP = null;
-
-    private UnaryRule[][] closedViterbiRulesWithP = null;
-
-    private Map<UnaryRule, UnaryRule> bestViterbiRulesUnderMax = null;
     public double threshold;
 
     public Smoother smoother = null;
@@ -134,17 +119,10 @@ public class Grammar implements Serializable, Cloneable {
     private void init() {
         binaryRuleMap = new Int2ObjectOpenHashMap<BinaryRule>();
         unaryRuleMap = new Int2ObjectOpenHashMap<UnaryRule>();
-        // allRules = new ArrayList<Rule>();
-        bestViterbiRulesUnderMax = new HashMap<UnaryRule, UnaryRule>();
         binaryRulesWithParent = new List[numStates];
-        binaryRulesWithLC = new List[numStates];
-        binaryRulesWithRC = new List[numStates];
         unaryRulesWithParent = new List[numStates];
         unaryRulesWithC = new List[numStates];
-        closedSumRulesWithParent = new List[numStates];
-        closedSumRulesWithChild = new List[numStates];
         closedViterbiRulesWithParent = new List[numStates];
-        closedViterbiRulesWithChild = new List[numStates];
         isGrammarTag = new boolean[numStates];
 
         closedViterbiPaths = new int[numStates][numStates];
@@ -152,14 +130,9 @@ public class Grammar implements Serializable, Cloneable {
 
         for (short s = 0; s < numStates; s++) {
             binaryRulesWithParent[s] = new ArrayList<BinaryRule>();
-            binaryRulesWithLC[s] = new ArrayList<BinaryRule>();
-            binaryRulesWithRC[s] = new ArrayList<BinaryRule>();
             unaryRulesWithParent[s] = new ArrayList<UnaryRule>();
             unaryRulesWithC[s] = new ArrayList<UnaryRule>();
-            closedSumRulesWithParent[s] = new ArrayList<UnaryRule>();
-            closedSumRulesWithChild[s] = new ArrayList<UnaryRule>();
             closedViterbiRulesWithParent[s] = new ArrayList<UnaryRule>();
-            closedViterbiRulesWithChild[s] = new ArrayList<UnaryRule>();
 
             final double[][] scores = new double[numSubStates[s]][numSubStates[s]];
             for (int i = 0; i < scores.length; i++) {
@@ -204,8 +177,6 @@ public class Grammar implements Serializable, Cloneable {
 
     private void addBinary(final BinaryRule br) {
         binaryRulesWithParent[br.parentState].add(br);
-        binaryRulesWithLC[br.leftChildState].add(br);
-        binaryRulesWithRC[br.rightChildState].add(br);
         binaryRuleMap.put(binaryKey(br.parentState, br.leftChildState, br.rightChildState), br);
     }
 
@@ -218,6 +189,7 @@ public class Grammar implements Serializable, Cloneable {
     }
 
     public void writeData(final Writer w) {
+
         final PrintWriter out = new PrintWriter(w);
         for (int state = 0; state < numStates; state++) {
             final BinaryRule[] parentRules = this.splitRulesWithP(state);
@@ -226,11 +198,10 @@ public class Grammar implements Serializable, Cloneable {
                 out.print(r.toString());
             }
         }
+
         for (int state = 0; state < numStates; state++) {
-            final UnaryRule[] unaries = this.getClosedViterbiUnaryRulesByParent(state);
-            for (int r = 0; r < unaries.length; r++) {
-                final UnaryRule ur = unaries[r];
-                out.print(ur.toString());
+            for (final UnaryRule r : closedViterbiRulesWithParent[state]) {
+                out.print(r.toString());
             }
         }
         out.flush();
@@ -355,7 +326,9 @@ public class Grammar implements Serializable, Cloneable {
             unaryRule.setScores2(unaryCounts);
             addUnary(unaryRule);
         }
+
         computePairsOfUnaries();
+
         for (final BinaryRule binaryRule : binaryRuleCounter.keySet()) {
             final double[][][] binaryCounts = binaryRuleCounter.getCount(binaryRule);
             for (int i = 0; i < binaryCounts.length; i++) {
@@ -551,7 +524,8 @@ public class Grammar implements Serializable, Cloneable {
                 ucounts = new double[nChildSubStates][];
                 unaryRuleCounter.setCount(urule, ucounts);
             }
-            double scalingFactor = IEEEDoubleScaling.scalingMultiplier(parent.getOScale() + child.getIScale() - tree_scale);
+            double scalingFactor = IEEEDoubleScaling.scalingMultiplier(parent.getOScale() + child.getIScale()
+                    - tree_scale);
 
             final Grammar.PackedUnaryRule packedUnaryRule = previousGrammar.getPackedUnaryScores(unsplitParent,
                     unsplitChild);
@@ -663,6 +637,8 @@ public class Grammar implements Serializable, Cloneable {
             final int nRightChildSubStates = rightChild.numSubStates();// numSubStates[rChildState];
             final double[][][] bcounts = new double[nLeftChildSubStates][nRightChildSubStates][nParentSubStates];
             final BinaryRule brule = new BinaryRule(parentState, lChildState, rChildState, bcounts);
+            // TODO Use a special-case of PackedBinaryRule here - construct it with one entry (since this will only be
+            // used on unsplit trees)
             binaryRuleCounter.incrementCount(brule, 1.0);
             break;
 
@@ -675,43 +651,8 @@ public class Grammar implements Serializable, Cloneable {
         }
     }
 
-    public void makeCRArrays() {
-        // int numStates = closedRulesWithParent.length;
-        closedSumRulesWithP = new UnaryRule[numStates][];
-        closedViterbiRulesWithP = new UnaryRule[numStates][];
-
-        for (int i = 0; i < numStates; i++) {
-            closedSumRulesWithP[i] = closedSumRulesWithParent[i].toArray(new UnaryRule[0]);
-            closedViterbiRulesWithP[i] = closedViterbiRulesWithParent[i].toArray(new UnaryRule[0]);
-        }
-    }
-
-    // Used by toString()
-    public UnaryRule[] getClosedSumUnaryRulesByParent(final int state) {
-        if (closedSumRulesWithP == null) {
-            makeCRArrays();
-        }
-        if (state >= closedSumRulesWithP.length) {
-            return new UnaryRule[0];
-        }
-        return closedSumRulesWithP[state];
-    }
-
-    // Used by writeData(), and thus by WriteGrammarToTextFile. Is there any practical difference between this and
-    // getClosedSumUnaryRulesByParent?
-    public UnaryRule[] getClosedViterbiUnaryRulesByParent(final int state) {
-        if (closedViterbiRulesWithP == null) {
-            makeCRArrays();
-        }
-        if (state >= closedViterbiRulesWithP.length) {
-            return new UnaryRule[0];
-        }
-        return closedViterbiRulesWithP[state];
-    }
-
     public void computePairsOfUnaries() {
-        // closedSumRulesWithParent = closedViterbiRulesWithParent =
-        // unaryRulesWithParent;
+
         for (short parentState = 0; parentState < numStates; parentState++) {
             for (short childState = 0; childState < numStates; childState++) {
                 if (parentState == childState)
@@ -784,19 +725,12 @@ public class Grammar implements Serializable, Cloneable {
                 if (maxSumScore > -1) {
                     resultRsum.setScores2(scoresSum);
                     addUnary(resultRsum);
-                    closedSumRulesWithParent[parentState].add(resultRsum);
-                    closedSumRulesWithChild[childState].add(resultRsum);
                     closedSumPaths[parentState][childState] = bestSumIntermed;
                 }
                 if (bestMaxIntermed > -2) {
                     resultRmax.setScores2(scoresMax);
-                    // addUnary(resultR);
                     closedViterbiRulesWithParent[parentState].add(resultRmax);
-                    closedViterbiRulesWithChild[childState].add(resultRmax);
                     closedViterbiPaths[parentState][childState] = bestMaxIntermed;
-                    /*
-                     * if (bestMaxIntermed > -1){ System.out.println("NEW RULE CREATED"); }
-                     */
                 }
             }
         }
@@ -809,9 +743,7 @@ public class Grammar implements Serializable, Cloneable {
      * @param rule
      */
     private void relaxViterbiRule(final UnaryRule rule) {
-        bestViterbiRulesUnderMax.put(rule, rule);
         closedViterbiRulesWithParent[rule.parentState].add(rule);
-        closedViterbiRulesWithChild[rule.childState].add(rule);
     }
 
     /**
@@ -828,17 +760,12 @@ public class Grammar implements Serializable, Cloneable {
         }
 
         splitRulesWithP = new BinaryRule[numStates][];
-        splitRulesWithRC = new BinaryRule[numStates][];
 
         for (int state = 0; state < numStates; state++) {
-            splitRulesWithRC[state] = toBRArray(binaryRulesWithRC[state]);
-            splitRulesWithP[state] = toBRArray(binaryRulesWithParent[state]);
+            splitRulesWithP[state] = binaryRulesWithParent[state].toArray(new BinaryRule[0]);
         }
         // we don't need the original lists anymore
         binaryRulesWithParent = null;
-        binaryRulesWithLC = null;
-        binaryRulesWithRC = null;
-        makeCRArrays();
     }
 
     public BinaryRule[] splitRulesWithP(final int state) {
@@ -852,16 +779,6 @@ public class Grammar implements Serializable, Cloneable {
         }
 
         return splitRulesWithP[state];
-    }
-
-    private BinaryRule[] toBRArray(final List<BinaryRule> list) {
-        // Collections.sort(list, Rule.scoreComparator()); // didn't seem to
-        // help
-        final BinaryRule[] array = new BinaryRule[list.size()];
-        for (int i = 0; i < array.length; i++) {
-            array[i] = list.get(i);
-        }
-        return array;
     }
 
     public PackedUnaryRule getPackedUnaryScores(final short unsplitParent, final short unsplitChild) {
@@ -968,20 +885,26 @@ public class Grammar implements Serializable, Cloneable {
      * @param mergeWeights The probability of seeing substate given state.
      */
     public void tallyMergeWeights(final Tree<StateSet> tree, final double mergeWeights[][]) {
-        if (tree.isLeaf())
+
+        if (tree.isLeaf()) {
             return;
+        }
+
         final StateSet label = tree.label();
         final short state = label.getState();
         final double probs[] = new double[label.numSubStates()];
-        double total = 0, tmp;
+        double total = 0;
+
         for (short i = 0; i < label.numSubStates(); i++) {
-            tmp = label.getIScore(i) * label.getOScore(i);
-            // TODO: put in the scale parameters???
-            probs[i] = tmp;
-            total += tmp;
+            final double posteriorScore = label.getIScore(i) * label.getOScore(i);
+            probs[i] = posteriorScore;
+            total += posteriorScore;
         }
-        if (total == 0)
+
+        if (total == 0) {
             total = 1;
+        }
+
         for (short i = 0; i < label.numSubStates(); i++) {
             mergeWeights[state][i] += probs[i] / total;
         }
@@ -1207,20 +1130,14 @@ public class Grammar implements Serializable, Cloneable {
                     }
                 }
             }
-            // if (allZero){
-            // System.out.println("Maybe an underflow? Rule: "+oldRule);
-            // System.out.println(ArrayUtil.toString(newScores));
-            // System.out.println(ArrayUtil.toString(oldScores));
-            // System.out.println(Arrays.toString(mergeWeights[pS]));
-            // }
+
             final UnaryRule newRule = new UnaryRule(oldRule);
             newRule.setScores2(newScores);
             grammar.addUnary(newRule);
         }
+
         grammar.pruneSplitTree(partners, mapping);
         grammar.isGrammarTag = this.isGrammarTag;
-        grammar.closedSumRulesWithParent = grammar.closedViterbiRulesWithParent = grammar.unaryRulesWithParent;
-        grammar.closedSumRulesWithChild = grammar.closedViterbiRulesWithChild = grammar.unaryRulesWithC;
 
         return grammar;
     }
@@ -1235,16 +1152,6 @@ public class Grammar implements Serializable, Cloneable {
 
             final int maxDepth = splitTree.height();
 
-            // // Compare getAtDepth(maxDepth - 2) to preterminals()
-            // final List<Tree<Short>> getAtDepth = splitTree.getAtDepth(maxDepth - 2);
-            // final List<Tree<Short>> preterminals = splitTree.preterminals();
-            //
-            // assertEquals(getAtDepth.size(), splitTree.preterminals().size());
-            // for (Iterator<Tree<Short>> iter1 = getAtDepth.iterator(), iter2 = preterminals.iterator();
-            // iter1.hasNext();) {
-            // assertEquals(iter1.next().label(), iter2.next().label());
-            // }
-            //
             for (final Tree<Short> preTerminal : splitTree.subtrees(maxDepth - 2)) {
                 final List<Tree<Short>> children = preTerminal.children();
                 final ArrayList<Tree<Short>> newChildren = new ArrayList<Tree<Short>>(2);
@@ -1427,7 +1334,7 @@ public class Grammar implements Serializable, Cloneable {
         for (int state = 0; state < numStates; state++) {
             // TODO Fix these counts
             nBinary += splitRulesWithP(state).length;
-            nUnary += getClosedViterbiUnaryRulesByParent(state).length;
+            nUnary += closedViterbiRulesWithParent[state].size();
         }
         sb.append(String
                 .format("lang=%s format=Berkeley unkThresh=%s start=%s hMarkov=%s vMarkov=%s date=%s vocabSize=%d nBinary=%d nUnary=%d nLex=%d\n",
@@ -1445,13 +1352,11 @@ public class Grammar implements Serializable, Cloneable {
         }
 
         for (int state = 0; state < numStates; state++) {
-            final UnaryRule[] unaries = this.getClosedViterbiUnaryRulesByParent(state);
-
-            for (int r = 0; r < unaries.length; r++) {
-                final UnaryRule ur = unaries[r];
-                ruleStrings.add(ur.toString(minimumRuleProbability));
+            for (final UnaryRule r : closedViterbiRulesWithParent[state]) {
+                ruleStrings.add(r.toString(minimumRuleProbability));
             }
         }
+
         Collections.sort(ruleStrings);
         for (final String ruleString : ruleStrings) {
             sb.append(ruleString);
@@ -1466,7 +1371,7 @@ public class Grammar implements Serializable, Cloneable {
      * After learning production probabilities (and pruning low-probability rules), we pack them into this
      * representation for efficient iteration in {@link ArrayParser#doInsideScores(Tree, boolean, double[][][])}.
      * {@link ArrayParser#doInsideOutsideScores(Tree, boolean)}, and
-     * {@link Grammar#tallyStateSetTree(Tree, double, double, Grammar)}.
+     * {@link Grammar#tallyStateSetTree(Tree, double, int, Grammar)}.
      */
     public static class PackedBinaryRule implements Serializable {
 
@@ -1475,6 +1380,7 @@ public class Grammar implements Serializable, Cloneable {
         /** Production probabilities for each split rule, sorted by by parent split, left child split, right child split */
         public final double[] ruleScores;
 
+        // TODO Create a special case with one entry, for counting rule occurrences in unsplit trees
         // /** Fractional observation counts for each rule */
         // public final double[] ruleCounts;
 
@@ -1552,7 +1458,7 @@ public class Grammar implements Serializable, Cloneable {
      * After learning production probabilities (and pruning low-probability rules), we pack them into this
      * representation for efficient iteration in {@link ArrayParser#doInsideScores(Tree, boolean, double[][][])}.
      * {@link ArrayParser#doInsideOutsideScores(Tree, boolean)}, and
-     * {@link Grammar#tallyStateSetTree(Tree, double, double, Grammar)}.
+     * {@link Grammar#tallyStateSetTree(Tree, double, int, Grammar)}.
      */
     public static class PackedUnaryRule implements Serializable {
 

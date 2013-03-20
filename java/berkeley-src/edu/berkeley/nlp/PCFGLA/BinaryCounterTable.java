@@ -57,37 +57,6 @@ public class BinaryCounterTable implements Serializable {
         entries.put(key, counts);
     }
 
-    /**
-     * Increment a key's count by the given amount. Assumes for efficiency that the arrays have the same size.
-     * 
-     * @param key
-     * @param increment
-     */
-    public void incrementCount(final BinaryRule key, final double[][][] increment) {
-        final double[][][] current = getCount(key);
-        if (current == null) {
-            setCount(key, increment);
-            return;
-        }
-        for (int i = 0; i < current.length; i++) {
-            for (int j = 0; j < current[i].length; j++) {
-                // test if increment[i][j] is null or zero, in which case
-                // we needn't add it
-                if (increment[i][j] == null)
-                    continue;
-                // allocate more space as needed
-                if (current[i][j] == null)
-                    current[i][j] = new double[increment[i][j].length];
-                // if we've gotten here, then both current and increment
-                // have correct arrays in index i
-                for (int k = 0; k < current[i][j].length; k++) {
-                    current[i][j][k] += increment[i][j][k];
-                }
-            }
-        }
-        setCount(key, current);
-    }
-
     public void incrementCount(final BinaryRule key, final double increment) {
         double[][][] current = getCount(key);
         if (current == null) {

@@ -7,9 +7,9 @@ import cltool4j.BaseLogger;
 import edu.berkeley.nlp.syntax.StateSet;
 import edu.berkeley.nlp.syntax.Tree;
 import edu.berkeley.nlp.util.ArrayUtil;
+import edu.berkeley.nlp.util.IEEEDoubleScaling;
 import edu.berkeley.nlp.util.Numberer;
 import edu.berkeley.nlp.util.PriorityQueue;
-import edu.berkeley.nlp.util.IEEEDoubleScaling;
 
 public class GrammarMerger {
 
@@ -106,7 +106,6 @@ public class GrammarMerger {
             grammar = newGrammar;
             newNumSubStatesArray = grammar.numSubStates;
         }
-        grammar.makeCRArrays();
 
         return grammar;
     }
