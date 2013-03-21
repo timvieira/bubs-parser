@@ -11,7 +11,6 @@ import edu.berkeley.nlp.PCFGLA.BinaryRule;
 import edu.berkeley.nlp.PCFGLA.UnaryCounterTable;
 import edu.berkeley.nlp.PCFGLA.UnaryRule;
 import edu.berkeley.nlp.syntax.Tree;
-import edu.berkeley.nlp.util.Numberer;
 
 /**
  * @author leon
@@ -19,18 +18,10 @@ import edu.berkeley.nlp.util.Numberer;
  */
 public class SmoothAcrossParentBits implements Smoother, Serializable {
 
-    /**
-	 * 
-	 */
     private static final long serialVersionUID = 1L;
-    double same;
-    double[][][] diffWeights;
-    double weightBasis = 0.5;
-    double totalWeight;
 
-    public SmoothAcrossParentBits copy() {
-        return new SmoothAcrossParentBits(same, diffWeights, weightBasis, totalWeight);
-    }
+    private double same;
+    private double[][][] diffWeights;
 
     public SmoothAcrossParentBits(final double smooth, final Tree<Short>[] splitTrees) {
         // does not smooth across top-level split, otherwise smooths uniformly
@@ -54,30 +45,11 @@ public class SmoothAcrossParentBits implements Smoother, Serializable {
                 diffWeights[state][0][0] = 1.0;
             } else {
                 // smooth only with ones in the same top-level branch
-                // TODO: weighted smoothing
 
                 // descend down to first split first
                 while (splitTree.children().size() == 1) {
                     splitTree = splitTree.children().get(0);
                 }
-                // for (short substate=0; substate<nSubstates; substate++){
-                // for (int branch=0; branch<2; branch++){
-                // List<Short> substatesInBranch =
-                // splitTree.getChildren().get(branch).getYield();
-                // if (substatesInBranch.contains(substate)){
-                // totalWeight = 0;
-                // fillWeightsArray(state,substate,1.0,splitTree.getChildren().get(branch));
-                // // normalize the weights
-                // if (totalWeight==0) continue;
-                // for (short substate2 = 0; substate2<nSubstates; substate2++){
-                // if (substate==substate2) continue;
-                // diffWeights[state][substate][substate2] /= totalWeight;
-                // diffWeights[state][substate][substate2] *= smooth;
-                // }
-                // }
-                // //else - dont smooth across top-level branch
-                // }
-                // }
 
                 for (int branch = 0; branch < 2; branch++) {
                     // compute weights for substates in top-level branch
@@ -98,24 +70,6 @@ public class SmoothAcrossParentBits implements Smoother, Serializable {
 
             }
         }
-        /*
-         * diffWeights = new double[maxNBits+1]; for (int i=0; i<=maxNBits; i++) { diffWeights[i] =
-         * Math.pow(2,-i+1)*smooth/maxNBits; }
-         */
-    }
-
-    /**
-     * @param same2
-     * @param diffWeights2
-     * @param weightBasis2
-     * @param totalWeight2
-     */
-    public SmoothAcrossParentBits(final double same2, final double[][][] diffWeights2, final double weightBasis2,
-            final double totalWeight2) {
-        this.same = same2;
-        this.diffWeights = diffWeights2;
-        this.weightBasis = weightBasis2;
-        this.totalWeight = totalWeight2;
     }
 
     public void smooth(final UnaryCounterTable unaryCounter, final BinaryCounterTable binaryCounter) {
@@ -161,6 +115,7 @@ public class SmoothAcrossParentBits implements Smoother, Serializable {
         }
     }
 
+    // TODO Cleanup and eliminate the copy
     public void smooth(final short tag, final double[] scores) {
         final double[] scopy = new double[scores.length];
         for (int i = 0; i < scores.length; i++) {
@@ -169,55 +124,7 @@ public class SmoothAcrossParentBits implements Smoother, Serializable {
             }
         }
         for (int i = 0; i < scores.length; i++) {
-            // if (scores[i]==0) continue;
             scores[i] = scopy[i];
         }
-    }
-
-    public void updateWeights(final int[][] toSubstateMapping) {
-        final double[][][] newWeights = new double[toSubstateMapping.length][][];
-        for (int state = 0; state < toSubstateMapping.length; state++) {
-            final int nSub = toSubstateMapping[state][0];
-            newWeights[state] = new double[nSub][nSub];
-            if (nSub == 1) {
-                newWeights[state][0][0] = 1.0;
-                continue;
-            }
-            final double[] total = new double[nSub];
-            for (int substate1 = 0; substate1 < diffWeights[state].length; substate1++) {
-                for (int substate2 = 0; substate2 < diffWeights[state].length; substate2++) {
-                    newWeights[state][toSubstateMapping[state][substate1 + 1]][toSubstateMapping[state][substate2 + 1]] += diffWeights[state][substate1][substate2];
-                    total[toSubstateMapping[state][substate1 + 1]] += diffWeights[state][substate1][substate2];
-                }
-            }
-            for (int substate1 = 0; substate1 < nSub; substate1++) {
-                for (int substate2 = 0; substate2 < nSub; substate2++) {
-                    newWeights[state][substate1][substate2] /= total[substate1];
-                }
-            }
-        }
-        diffWeights = newWeights;
-    }
-
-    public Smoother remapStates(final Numberer thisNumberer, final Numberer newNumberer) {
-        final SmoothAcrossParentBits remappedSmoother = copy();
-        remappedSmoother.diffWeights = new double[newNumberer.size()][][];
-        for (int s = 0; s < newNumberer.size(); s++) {
-            final int translatedState = translateState(s, newNumberer, thisNumberer);
-            if (translatedState >= 0) {
-                remappedSmoother.diffWeights[s] = diffWeights[translatedState];
-            } else {
-                remappedSmoother.diffWeights[s] = new double[1][1];
-            }
-        }
-        return remappedSmoother;
-    }
-
-    private short translateState(final int state, final Numberer baseNumberer, final Numberer translationNumberer) {
-        final String symbol = baseNumberer.symbol(state);
-        if (translationNumberer.hasSeen(symbol)) {
-            return (short) translationNumberer.number(symbol);
-        }
-        return (short) -1;
     }
 }
