@@ -1,9 +1,6 @@
 package edu.berkeley.nlp.PCFGLA;
 
-import java.io.PrintWriter;
 import java.io.Serializable;
-import java.io.Writer;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -14,9 +11,8 @@ import edu.berkeley.nlp.PCFGLA.smoothing.Smoother;
 import edu.berkeley.nlp.syntax.StateSet;
 import edu.berkeley.nlp.syntax.Tree;
 import edu.berkeley.nlp.util.Counter;
-import edu.berkeley.nlp.util.Numberer;
-import edu.berkeley.nlp.util.PriorityQueue;
 import edu.berkeley.nlp.util.IEEEDoubleScaling;
+import edu.berkeley.nlp.util.Numberer;
 
 /**
  * Simple default implementation of a lexicon, which scores word, tag pairs with a smoothed estimate of
@@ -98,173 +94,6 @@ public class Lexicon implements java.io.Serializable {
     double smoothInUnknownsThreshold = 100;
     double[] smooth = null; // {1.0, 1.0};
 
-    /** Get the nonterminal tags */
-    public Set<Short> getAllTags() {
-        return allTags;
-    }
-
-    public boolean isKnown(final String word) {
-        return wordCounter.keySet().contains(word);
-    }
-
-    public void writeData(final Writer w) {
-        final PrintWriter out = new PrintWriter(w);
-        final Numberer n = Numberer.getGlobalNumberer("tags");
-
-        // word counter (c_W)
-        out.print("WORD-COUNTER (c_W):\n");
-        final PriorityQueue<String> pq = wordCounter.asPriorityQueue();
-        while (pq.hasNext()) {
-            final int priority = (int) Math.round(pq.getPriority());
-            final String element = pq.next();
-            out.print(element + " " + priority + "\n");
-        }
-
-        out.print("--------------------------------------------------\n");
-        out.print("TAG-COUNTER (c_T):\n");
-        for (int state = 0; state < tagCounter.length; state++) {
-            final String tagState = n.symbol(state);
-            for (int substate = 0; substate < tagCounter[state].length; substate++) {
-                final double prob = tagCounter[state][substate];
-                if (prob == 0)
-                    continue;
-                out.print(tagState + "_" + substate + " " + prob + "\n");
-            }
-        }
-
-        out.print("--------------------------------------------------\n");
-        out.print("UNSEEN-TAG-COUNTER (c_T):\n");
-        for (int state = 0; state < unseenTagCounter.length; state++) {
-            final String tagState = n.symbol(state);
-            for (int substate = 0; substate < unseenTagCounter[state].length; substate++) {
-                final double prob = unseenTagCounter[state][substate];
-                if (prob == 0)
-                    continue;
-                out.print(tagState + "_" + substate + " " + prob + "\n");
-            }
-        }
-
-        out.print("--------------------------------------------------\n");
-        out.print("TAG-AND-WORD-COUNTER (c_TW):\n");
-        for (int tag = 0; tag < wordToTagCounters.length; tag++) {
-            if (wordToTagCounters[tag] == null)
-                continue;
-            final String tagState = n.symbol(tag);
-            for (final String word : wordToTagCounters[tag].keySet()) {
-                out.print(tagState + " " + word + " " + Arrays.toString(wordToTagCounters[tag].get(word)) + "\n");
-            }
-        }
-
-        out.print("--------------------------------------------------\n");
-        out.print("UNSEEN-TAG-AND-SIGNATURE-COUNTER (c_TW):\n");
-        for (int tag = 0; tag < unseenWordToTagCounters.length; tag++) {
-            if (unseenWordToTagCounters[tag] == null)
-                continue;
-            final String tagState = n.symbol(tag);
-            for (final String word : unseenWordToTagCounters[tag].keySet()) {
-                out.print(tagState + " " + word + " " + Arrays.toString(unseenWordToTagCounters[tag].get(word)) + "\n");
-            }
-        }
-
-        out.flush();
-    }
-
-    @Override
-    public String toString() {
-        return toString(0);
-    }
-
-    public String toString(final double minimumRuleProbability) {
-
-        final Numberer n = Numberer.getGlobalNumberer("tags");
-        final StringBuilder sb = new StringBuilder(1024 * 1024);
-
-        for (int tag = 0; tag < wordToTagCounters.length; tag++) {
-            final String tagState = n.symbol(tag);
-
-            if (wordToTagCounters[tag] != null) {
-                for (final String word : wordToTagCounters[tag].keySet()) {
-
-                    final double[] scores = score(word, (short) tag, 0, false, false);
-                    for (int split = 0; split < scores.length; split++) {
-                        if (scores[split] > minimumRuleProbability) {
-                            sb.append(String.format("%s_%d -> %s %.10f\n", tagState, split, word,
-                                    Math.log(scores[split])));
-                        }
-                    }
-                }
-            }
-
-            if (unseenWordToTagCounters[tag] != null) {
-                for (final String word : unseenWordToTagCounters[tag].keySet()) {
-
-                    final double[] scores = score(word, (short) tag, 0, false, true);
-                    for (int split = 0; split < scores.length; split++) {
-                        if (scores[split] > minimumRuleProbability) {
-                            sb.append(String.format("%s_%d -> %s %.10f\n", tagState, split, word,
-                                    Math.log(scores[split])));
-                        }
-                    }
-                }
-            }
-        }
-
-        /*
-         * sb.append("--------------------------------------------------\n");
-         * sb.append("UNSEEN-TAG-AND-SIGNATURE-COUNTER (c_TW):\n"); for (int tag=0; tag<unseenWordToTagCounters.length;
-         * tag++){ if (unseenWordToTagCounters[tag]==null) continue; String tagState = (String)n.object(tag); for
-         * (String word : unseenWordToTagCounters[tag].keySet()){ sb.append(tagState+" "+word+" "
-         * +Arrays.toString(unseenWordToTagCounters[tag].get(word))+"\n"); } }
-         */
-
-        return sb.toString();
-    }
-
-    public double[] score2(final String word, final short tag, final int loc, final boolean noSmoothing) {
-        if (wordToTagCounters[tag] == null) // this is not a lexical category
-            return new double[numSubStates[tag]];
-        double[] resultArray = new double[numSubStates[tag]];
-        final double cW = wordCounter.getCount(word);
-        if (cW > 0) {
-            if (wordToTagCounters[tag] != null) { // this is a lexical category
-                resultArray = wordToTagCounters[tag].get(word);
-                if (resultArray != null) { // we have seen this word with this
-                                           // tag
-                    return resultArray;
-                }
-            }
-            return new double[numSubStates[tag]];
-        }
-        final String sig = getCachedSignature(word, loc);
-        resultArray = wordToTagCounters[tag].get(sig);
-        if (resultArray != null) { // we have seen this signature with this tag
-            return resultArray;
-        }
-        // we have never seen the word or its signature
-        // System.err.println("We have never seen the word "+word+" or its signature "+sig+" with this tag. Returning prob 0.");
-        return new double[numSubStates[tag]];
-
-    }
-
-    /**
-     * <p>
-     * This condenses counting arrays into essential statistics. It is used after all calls to tallyStateSetTree and
-     * before any getScore calls.
-     * <p>
-     * Currently the trees are taken into account immediately, so this does nothing, but in the future this may contain
-     * some precomputation
-     */
-    public void optimize() {
-        // make up the set of which tags are preterminal tags
-        for (short i = 0; i < wordToTagCounters.length; i++) {
-            if (wordToTagCounters[i] != null) {
-                allTags.add(i);
-            }
-        }
-        // remove the unlikely ones
-        removeUnlikelyTags(threshold, -1.0);
-    }
-
     /**
      * Create a blank Lexicon object. Fill it by calling tallyStateSetTree for each training tree, then calling
      * optimize().
@@ -293,18 +122,28 @@ public class Lexicon implements java.io.Serializable {
         this.wordNumberer = Numberer.getGlobalNumberer("words");
     }
 
-    public void printTagCounter(final Numberer tagNumberer) {
-        final PriorityQueue<String> pq = new PriorityQueue<String>(tagCounter.length);
-        for (int i = 0; i < tagCounter.length; i++) {
-            pq.add(tagNumberer.symbol(i), tagCounter[i][0]);
-            // System.out.println(i+". "+(String)tagNumberer.object(i)+"\t "+symbolCounter.getCount(i,0));
+    /** Get the nonterminal tags */
+    private boolean isKnown(final String word) {
+        return wordCounter.keySet().contains(word);
+    }
+
+    /**
+     * <p>
+     * This condenses counting arrays into essential statistics. It is used after all calls to tallyStateSetTree and
+     * before any getScore calls.
+     * <p>
+     * Currently the trees are taken into account immediately, so this does nothing, but in the future this may contain
+     * some precomputation
+     */
+    public void optimize() {
+        // make up the set of which tags are preterminal tags
+        for (short i = 0; i < wordToTagCounters.length; i++) {
+            if (wordToTagCounters[i] != null) {
+                allTags.add(i);
+            }
         }
-        int i = 0;
-        while (pq.hasNext()) {
-            i++;
-            final int p = (int) pq.getPriority();
-            System.out.println(i + ". " + pq.next() + "\t " + p);
-        }
+        // remove the unlikely ones
+        removeUnlikelyTags(threshold, -1.0);
     }
 
     /**
@@ -756,9 +595,6 @@ public class Lexicon implements java.io.Serializable {
         final double c_W = wordCounter.getCount(word);
         final boolean seen = (c_W > 0.0);
 
-        // simulate no smoothing
-        // smooth[0] = 0.0; smooth[1] = 0.0;
-
         final double[] tagStateCounter = tagCounter[tag];
         final double[] unseenTagStateCounter = unseenTagCounter[tag];
         final HashMap<String, double[]> wordTagCounter = wordToTagCounters[tag];
@@ -782,7 +618,7 @@ public class Lexicon implements java.io.Serializable {
         smoother.smooth(tag, pb_W_T);
 
         return pb_W_T;
-    } // end score()
+    }
 
     private double[] scoreObservedWord(final String word, final short tag, final boolean noSmoothing, final double c_W,
             final double[] tagStateCounter, final double[] unseenTagStateCounter,
@@ -1024,7 +860,7 @@ public class Lexicon implements java.io.Serializable {
      * 
      * @return a String representation of unknown-word features
      */
-    protected String getCachedSignature(final String word, final int sentencePosition) {
+    private String getCachedSignature(final String word, final int sentencePosition) {
 
         if (sentencePosition == 0) {
             String signature = cachedSentenceInitialSignatures.get(word);
@@ -1091,56 +927,7 @@ public class Lexicon implements java.io.Serializable {
         numSubStates = newNumSubStates;
     }
 
-    public Map<String, double[][]> getUnseenScores() {
-        final Map<String, double[][]> map = new HashMap<String, double[][]>();
-        for (int tag = 0; tag < unseenWordToTagCounters.length; tag++) {
-            if (unseenWordToTagCounters[tag] != null) {
-                for (final String sig : unseenWordToTagCounters[tag].keySet()) {
-                    double[][] sigScores = map.get(sig);
-                    if (sigScores == null) {
-                        sigScores = new double[numSubStates.length][];
-                        map.put(sig, sigScores);
-                    }
-                    sigScores[tag] = new double[numSubStates[tag]];
-                    for (int substate = 0; substate < numSubStates[tag]; substate++) {
-                        double c_TS = 0;
-                        if (unseenWordToTagCounters[tag].get(sig) != null) {
-                            c_TS = unseenWordToTagCounters[tag].get(sig)[substate];
-                        }
-
-                        // how often did we see this signature
-                        double c_S = wordCounter.getCount(sig);
-                        final double c_U = totalUnseenTokens;
-                        final double total = totalTokens; // seenCounter.getCount(iTW);
-                        final double c_T = unseenTagCounter[tag][substate];// unSeenCounter.getCount(iTW);
-                        final double c_Tseen = tagCounter[tag][substate]; // seenCounter.getCount(iTW);
-                        final double p_T_U = c_T / c_U;
-
-                        if (unknownLevel == 0) {
-                            c_TS = 0;
-                            c_S = 0;
-                        }
-                        final double pb_T_S = (c_TS + smooth[0] * p_T_U) / (c_S + smooth[0]);
-
-                        final double p_T = (c_Tseen / total);
-                        final double p_W = 1.0 / total;
-                        // if we've never before seen this tag, then just say
-                        // the probability is 1
-                        if (p_T == 0) {
-                            sigScores[tag][substate] = 1;
-                            continue;
-                        }
-                        final double pb_W_T = pb_T_S * p_W / p_T;
-                        sigScores[tag][substate] = pb_W_T;
-                    }
-                }
-            }
-        }
-        return map;
-    }
-
     public void removeUnlikelyTags(final double filteringThreshold, final double exponent) {
-        // System.out.print("Removing unlikely tags...");
 
         for (int tag = 0; tag < numSubStates.length; tag++) {
             double[] c_TW;
@@ -1155,18 +942,6 @@ public class Lexicon implements java.io.Serializable {
                 }
             }
         }
-        /*
-         * if (unseenWordToTagCounters[tag]!=null){ for (String word : unseenWordToTagCounters[tag].keySet()){ c_TW =
-         * unseenWordToTagCounters[tag].get(word); for (int substate=0; substate<numSubStates[tag]; substate++) { // if
-         * (c_TW[substate]<threshold) c_TW[substate] = 0; } } }
-         */
-        // double[] c_tag = tagCounter[tag];
-        // double[] c_Tunseen = unseenTagCounter[tag];
-        // for (int substate=0; substate<numSubStates[tag]; substate++) {
-        // if (c_tag[substate]<threshold) c_tag[substate] = 0;
-        // if (c_Tunseen[substate]<threshold) c_Tunseen[substate] = 0;
-        // }
-        // System.out.print(" done.\n Removed "+removed+" word tag combinations out of "+total+".");
     }
 
     public int getNumberOfEntries() {
@@ -1214,6 +989,57 @@ public class Lexicon implements java.io.Serializable {
 
     public double getPruningThreshold() {
         return threshold;
+    }
+
+    @Override
+    public String toString() {
+        return toString(0);
+    }
+
+    public String toString(final double minimumRuleProbability) {
+
+        final Numberer n = Numberer.getGlobalNumberer("tags");
+        final StringBuilder sb = new StringBuilder(1024 * 1024);
+
+        for (int tag = 0; tag < wordToTagCounters.length; tag++) {
+            final String tagState = n.symbol(tag);
+
+            if (wordToTagCounters[tag] != null) {
+                for (final String word : wordToTagCounters[tag].keySet()) {
+
+                    final double[] scores = score(word, (short) tag, 0, false, false);
+                    for (int split = 0; split < scores.length; split++) {
+                        if (scores[split] > minimumRuleProbability) {
+                            sb.append(String.format("%s_%d -> %s %.10f\n", tagState, split, word,
+                                    Math.log(scores[split])));
+                        }
+                    }
+                }
+            }
+
+            if (unseenWordToTagCounters[tag] != null) {
+                for (final String word : unseenWordToTagCounters[tag].keySet()) {
+
+                    final double[] scores = score(word, (short) tag, 0, false, true);
+                    for (int split = 0; split < scores.length; split++) {
+                        if (scores[split] > minimumRuleProbability) {
+                            sb.append(String.format("%s_%d -> %s %.10f\n", tagState, split, word,
+                                    Math.log(scores[split])));
+                        }
+                    }
+                }
+            }
+        }
+
+        /*
+         * sb.append("--------------------------------------------------\n");
+         * sb.append("UNSEEN-TAG-AND-SIGNATURE-COUNTER (c_TW):\n"); for (int tag=0; tag<unseenWordToTagCounters.length;
+         * tag++){ if (unseenWordToTagCounters[tag]==null) continue; String tagState = (String)n.object(tag); for
+         * (String word : unseenWordToTagCounters[tag].keySet()){ sb.append(tagState+" "+word+" "
+         * +Arrays.toString(unseenWordToTagCounters[tag].get(word))+"\n"); } }
+         */
+
+        return sb.toString();
     }
 
     class ChineseLexicon implements Serializable {

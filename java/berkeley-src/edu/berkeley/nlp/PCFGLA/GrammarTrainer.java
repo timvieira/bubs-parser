@@ -18,8 +18,8 @@ import edu.berkeley.nlp.PCFGLA.smoothing.NoSmoothing;
 import edu.berkeley.nlp.PCFGLA.smoothing.SmoothAcrossParentBits;
 import edu.berkeley.nlp.syntax.StateSet;
 import edu.berkeley.nlp.syntax.Tree;
-import edu.berkeley.nlp.util.Numberer;
 import edu.berkeley.nlp.util.IEEEDoubleScaling;
+import edu.berkeley.nlp.util.Numberer;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.lela.FractionalCountGrammar;
 
@@ -30,7 +30,10 @@ import edu.ohsu.cslu.lela.FractionalCountGrammar;
  */
 public class GrammarTrainer extends BaseCommandlineTool {
 
-    public static Random RANDOM = new Random(0);
+    // TODO Make this non-static
+    public static Random RANDOM;
+    // TODO Remove
+    public static Random RANDOM2;
 
     @Option(name = "-out", required = true, usage = "Output File for Grammar (Required)")
     private String outFileName;
@@ -95,10 +98,6 @@ public class GrammarTrainer extends BaseCommandlineTool {
     @Option(name = "-rare", metaVar = "threshold", usage = "Rare word threshold")
     private int rareWordThreshold = 20;
 
-    // Reverse this variable, so we can continue to use a boolean
-    @Option(name = "-spath", usage = "Whether or not to store the best path info (true/false) (Default: true)")
-    private boolean findClosedUnaryPaths = true;
-
     @Option(name = "-skipSection", usage = "Skips a particular section of the WSJ training corpus (Needed for training Mark Johnsons reranker")
     private int skipSection = -1;
 
@@ -111,23 +110,11 @@ public class GrammarTrainer extends BaseCommandlineTool {
     @Override
     public void run() {
 
-        System.out.println("Loading trees from " + path);
-        System.out.println("Will remove sentences with more than " + maxSentenceLength + " words.");
-
-        System.out.println("Using " + binarization.name() + " binarization.");// and
-                                                                              // "+annotateString+".");
-
-        final double randomness = randomization;
-        System.out.println("Using a randomness value of " + randomness);
-
-        if (outFileName == null) {
-            System.out.println("Output File name is required.");
-            System.exit(-1);
-        } else
-            System.out.println("Using grammar output file " + outFileName + ".");
+        BaseLogger.singleton().config(
+                String.format("Using %s binarization, randomness: %.3f  seed: %d", binarization.name(), randomization,
+                        randSeed));
 
         RANDOM = new Random(randSeed);
-        System.out.println("Random number generator seeded at " + randSeed + ".");
 
         int emIterations = emIterationsPerCycle;
 
@@ -189,11 +176,11 @@ public class GrammarTrainer extends BaseCommandlineTool {
             // Induce M0 grammar from training corpus
             BaseLogger.singleton().info("Inducing M0 grammar...");
 
-            grammar = new Grammar(numSubStatesArray, findClosedUnaryPaths, new NoSmoothing(), null, minRuleProbability);
+            grammar = new Grammar(numSubStatesArray, new NoSmoothing(), minRuleProbability);
             final Lexicon tmp_lexicon = new Lexicon(numSubStatesArray, Lexicon.DEFAULT_SMOOTHING_CUTOFF, smoothParams,
                     new NoSmoothing(), minRuleProbability);
             for (final Tree<StateSet> stateSetTree : trainStateSetTrees) {
-                tmp_lexicon.trainTree(stateSetTree, randomness, null, false, rareWordThreshold);
+                tmp_lexicon.trainTree(stateSetTree, randomization, null, false, rareWordThreshold);
             }
             lexicon = new Lexicon(numSubStatesArray, Lexicon.DEFAULT_SMOOTHING_CUTOFF, smoothParams, new NoSmoothing(),
                     minRuleProbability);
@@ -203,12 +190,12 @@ public class GrammarTrainer extends BaseCommandlineTool {
             BaseLogger.singleton().info("Performing one I/O iteration");
 
             for (final Tree<StateSet> stateSetTree : trainStateSetTrees) {
-                lexicon.trainTree(stateSetTree, randomness, tmp_lexicon, false, rareWordThreshold);
-                grammar.tallyUninitializedStateSetTree(stateSetTree);
+                lexicon.trainTree(stateSetTree, randomization, tmp_lexicon, false, rareWordThreshold);
+                grammar.countUnsplitTree(stateSetTree);
             }
             lexicon.tieRareWordStats(rareWordThreshold);
             lexicon.optimize();
-            grammar.optimize(randomness);
+            grammar.optimize(randomization);
 
             maxGrammar = grammar;
             maxLexicon = lexicon;
@@ -249,19 +236,19 @@ public class GrammarTrainer extends BaseCommandlineTool {
 
             } else if (splitIndex % 3 == 0) {
                 // the case where we split
-                System.out.println("Before splitting, we have a total of " + grammar.totalSubStates() + " substates.");
                 final CorpusStatistics corpusStatistics = new CorpusStatistics(tagNumberer, trainStateSetTrees);
                 final int[] counts = corpusStatistics.getSymbolCounts();
 
-                maxGrammar = maxGrammar.splitAllStates(randomness, counts);
+                final int previousSplitCount = maxGrammar.totalSubStates();
+
+                maxGrammar = maxGrammar.splitAllStates(randomization, counts);
                 maxLexicon = maxLexicon.splitAllStates(counts, false);
 
                 maxGrammar.setSmoother(new NoSmoothing());
                 maxLexicon.setSmoother(new NoSmoothing());
 
-                BaseLogger.singleton()
-                        .info(String.format("After splitting, we have a total of " + grammar.totalSubStates()
-                                + " substates."));
+                BaseLogger.singleton().info(
+                        String.format("Split %d substates into %d", previousSplitCount, maxGrammar.totalSubStates()));
                 opString = "splitting";
                 emIterations = emIterationsPerCycle;
 
@@ -385,8 +372,7 @@ public class GrammarTrainer extends BaseCommandlineTool {
         //
         // Compute training likelihood (E-step)
         //
-        final Grammar newGrammar = new Grammar(grammar.numSubStates, grammar.findClosedPaths, grammar.smoother,
-                grammar, grammar.threshold);
+        final Grammar newGrammar = new Grammar(grammar, grammar.numSubStates);
         final Lexicon newLexicon = new Lexicon(grammar.numSubStates, Lexicon.DEFAULT_SMOOTHING_CUTOFF,
                 lexicon.getSmoothingParams(), lexicon.getSmoother(), lexicon.getPruningThreshold());
 
@@ -407,7 +393,7 @@ public class GrammarTrainer extends BaseCommandlineTool {
 
             // Maximize (M-step)
             newLexicon.trainTree(stateSetTree, -1, lexicon, true, rareWordThreshold);
-            newGrammar.tallyStateSetTree(stateSetTree, grammar);
+            newGrammar.countSplitTree(stateSetTree, grammar);
             trainingLikelihood += ll;
         }
         newLexicon.tieRareWordStats(rareWordThreshold);
@@ -481,7 +467,7 @@ public class GrammarTrainer extends BaseCommandlineTool {
 
             lexicon.trainTree(stateSetTree, -1, previousLexicon, true, unkThreshold);
             if (grammar != null) {
-                grammar.tallyStateSetTree(stateSetTree, previousGrammar); // E step
+                grammar.countSplitTree(stateSetTree, previousGrammar); // E step
             }
             trainingLikelihood += ll; // there are for some reason some
                                       // sentences that are unparsable
