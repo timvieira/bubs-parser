@@ -85,6 +85,10 @@ public class IEEEDoubleScaling {
             return previousScaleStep;
         }
 
+        if (max == 0) {
+            return previousScaleStep;
+        }
+
         if (max == Double.POSITIVE_INFINITY) {
             return 0;
         }
