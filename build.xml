@@ -123,26 +123,7 @@
         </antcall>
     </target>
 
-
-    <target name="summarize-grammar" depends="compile">
-        <antcall target="package-tool">
-            <param name="root-class" value="edu.ohsu.cslu.grammar.SummarizeGrammar" />
-            <param name="tool-name" value="summarize-grammar" />
-            <param name="heap-size" value="1024m" />
-        </antcall>
-    </target>
-
-    
-    <target name="serialize-model" depends="compile">
-        <antcall target="package-tool">
-            <param name="root-class" value="edu.ohsu.cslu.grammar.SerializeModel" />
-            <param name="tool-name" value="serialize-model" />
-            <param name="heap-size" value="1200m" />
-            <param name="package-gpl-libs" value="true" />
-        </antcall>
-    </target>
-
-    
+    <!-- Grammar training tools -->
     <target name="train-grammar" depends="compile">
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.lela.TrainGrammar" />
@@ -193,6 +174,9 @@
     </target>
 
 
+    <!-- -->
+    <!-- Tree-processing tools  --> 
+    <!-- -->
     <target name="replace-unks" depends="compile">
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.grammar.ReplaceUnks" />
@@ -220,14 +204,9 @@
     </target>
     
 
-    <target name="countunks" depends="compile">
-        <antcall target="package-tool">
-            <param name="root-class" value="edu.ohsu.cslu.tools.CountUnks" />
-            <param name="tool-name" value="countunks" />
-        </antcall>
-    </target>
-    
-
+    <!-- -->
+    <!-- Pruning and prioritization model training tools --> 
+    <!-- -->
     <target name="train-perceptron" depends="compile">
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.perceptron.TrainPerceptron" />
@@ -259,6 +238,19 @@
     </target>
 
 
+    <target name="serialize-model" depends="compile">
+        <antcall target="package-tool">
+            <param name="root-class" value="edu.ohsu.cslu.grammar.SerializeModel" />
+            <param name="tool-name" value="serialize-model" />
+            <param name="heap-size" value="1200m" />
+            <param name="package-gpl-libs" value="true" />
+        </antcall>
+    </target>
+
+    
+    <!-- -->
+    <!-- Text normalization and lexical clustering tools --> 
+    <!-- -->
     <target name="normalize" depends="compile">
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.tools.Normalize" />
@@ -268,26 +260,27 @@
     </target>
 
 
-    <target name="select-features" depends="compile">
+    <target name="countunks" depends="compile">
         <antcall target="package-tool">
-            <param name="root-class" value="edu.ohsu.cslu.tools.SelectFeatures" />
-            <param name="tool-name" value="select-features" />
+            <param name="root-class" value="edu.ohsu.cslu.tools.CountUnks" />
+            <param name="tool-name" value="countunks" />
         </antcall>
     </target>
+    
 
-
-    <target name="bubs-all" depends="compile">
-        <jar file="${dir.dist}/bubs-all.jar">
-            <fileset dir="${dir.build}" includes="**/*.class" />
-            <metainf file="java/tools/parser-defaults.properties" />
-            <zipgroupfileset dir="${dir.bsd.lib}" includes="*.jar" excludes="*-src.jar" />
-            <zipgroupfileset dir="${dir.lgpl.lib}" includes="*.jar" excludes="*-src.jar" />
-            <zipgroupfileset dir="${dir.gpl.lib}" includes="*.jar" excludes="*-src.jar" />
-        </jar>
+    <target name="extract-weka-features" depends="compile">
+        <antcall target="package-tool">
+            <param name="root-class" value="edu.ohsu.cslu.tools.ExtractWekaWordClusteringFeatures" />
+            <param name="tool-name" value="extract-weka-features" />
+            <param name="heap-size" value="1024m" />
+            <param name="package-gpl-libs" value="true" />
+        </antcall>
     </target>
+    
 
-
+    <!-- -->
     <!-- Dependency parsing tools -->
+    <!-- -->
     <target name="train-dep-parser" depends="compile">
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.dep.TrainDepParser" />
@@ -317,12 +310,44 @@
         </antcall>
     </target>
 
+
+    <!-- -->
+    <!-- Assorted analysis tools -->
+    <!-- -->
+    <target name="summarize-grammar" depends="compile">
+        <antcall target="package-tool">
+            <param name="root-class" value="edu.ohsu.cslu.grammar.SummarizeGrammar" />
+            <param name="tool-name" value="summarize-grammar" />
+            <param name="heap-size" value="1024m" />
+        </antcall>
+    </target>
+
+
+    <target name="select-features" depends="compile">
+        <antcall target="package-tool">
+            <param name="root-class" value="edu.ohsu.cslu.tools.SelectFeatures" />
+            <param name="tool-name" value="select-features" />
+        </antcall>
+    </target>
+
+    
     <!-- 
     ========================================================================
        Package all training tools and utilities
     ========================================================================
     -->
     <target name="tools" depends="summarize-grammar,serialize-model,tree-tools,train-perceptron,train-fom,train-grammar,induce-count-grammar" />
+
+    <target name="bubs-all" depends="compile">
+        <jar file="${dir.dist}/bubs-all.jar">
+            <fileset dir="${dir.build}" includes="**/*.class" />
+            <metainf file="java/tools/parser-defaults.properties" />
+            <zipgroupfileset dir="${dir.bsd.lib}" includes="*.jar" excludes="*-src.jar" />
+            <zipgroupfileset dir="${dir.lgpl.lib}" includes="*.jar" excludes="*-src.jar" />
+            <zipgroupfileset dir="${dir.gpl.lib}" includes="*.jar" excludes="*-src.jar" />
+        </jar>
+    </target>
+
 
     <!-- 
     ========================================================================

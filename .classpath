@@ -11,5 +11,6 @@
 	<classpathentry exported="true" kind="lib" path="java/gpl-lib/junit.jar" sourcepath="java/gpl-lib/junit-src.jar"/>
 	<classpathentry exported="true" kind="lib" path="java/bsd-lib/cltool4j.jar" sourcepath="java/bsd-lib/cltool4j-src.jar"/>
 	<classpathentry kind="lib" path="java/bsd-lib/cjunit.jar" sourcepath="java/bsd-lib/cjunit-src.jar"/>
+	<classpathentry kind="lib" path="java/gpl-lib/weka.jar" sourcepath="java/gpl-lib/weka-src.jar"/>
 	<classpathentry kind="output" path="build"/>
 </classpath>

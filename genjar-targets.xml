@@ -159,7 +159,12 @@
             <class name="${root-class}" />
             <classes names="${additional-root-classes}" />
             <classpath refid="classpath" />
-
+            <classfilter>
+                <!-- These are included in the JDK, but genjar doesn't always resolve them (at least on MacOS) --> 
+                <exclude name="org.w3c.dom" />
+                <exclude name="org.xml.sax" />
+            </classfilter>
+            
             <manifest>
                 <attribute name="Main-Class" value="${root-class}" />
                 <attribute name="Class-Path" value="${path.lgpl.libs}" />
