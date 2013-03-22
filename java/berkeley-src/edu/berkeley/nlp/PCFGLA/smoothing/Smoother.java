@@ -3,7 +3,9 @@
  */
 package edu.berkeley.nlp.PCFGLA.smoothing;
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import edu.berkeley.nlp.PCFGLA.BinaryCounterTable;
+import edu.berkeley.nlp.PCFGLA.Grammar.PackedBinaryRule;
 import edu.berkeley.nlp.PCFGLA.UnaryCounterTable;
 
 /**
@@ -19,8 +21,11 @@ public interface Smoother {
      * 
      * @param unaryCounter
      * @param binaryCounter
+     * @param packedBinaryRuleMap
+     * @param splitCounts The number of splits (substates) of each unsplit non-terminal
      */
-    public void smooth(UnaryCounterTable unaryCounter, BinaryCounterTable binaryCounter);
+    public void smooth(UnaryCounterTable unaryCounter, BinaryCounterTable binaryCounter,
+            Int2ObjectOpenHashMap<PackedBinaryRule> packedBinaryRuleMap, final short[] splitCounts);
 
     /**
      * Smooths a set of scores using the same smoothing parameters computed during the previous invocation of

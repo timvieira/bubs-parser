@@ -3,11 +3,16 @@
  */
 package edu.berkeley.nlp.PCFGLA.smoothing;
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.List;
 
 import edu.berkeley.nlp.PCFGLA.BinaryCounterTable;
 import edu.berkeley.nlp.PCFGLA.BinaryRule;
+import edu.berkeley.nlp.PCFGLA.Grammar;
+import edu.berkeley.nlp.PCFGLA.Grammar.PackedBinaryRule;
 import edu.berkeley.nlp.PCFGLA.UnaryCounterTable;
 import edu.berkeley.nlp.PCFGLA.UnaryRule;
 import edu.berkeley.nlp.syntax.Tree;
@@ -21,28 +26,33 @@ public class SmoothAcrossParentBits implements Smoother, Serializable {
     private static final long serialVersionUID = 1L;
 
     private double same;
+
+    /** Indexed by unsplit parent, parent split, parent split */
     private double[][][] diffWeights;
 
     public SmoothAcrossParentBits(final double smooth, final Tree<Short>[] splitTrees) {
         // does not smooth across top-level split, otherwise smooths uniformly
 
         same = 1 - smooth;
-        // int maxNBits = (int)Math.round(Math.log(maxSubstates)/Math.log(2));
 
         final int nStates = splitTrees.length;
         diffWeights = new double[nStates][][];
+
         for (short state = 0; state < nStates; state++) {
             Tree<Short> splitTree = splitTrees[state];
             final List<Short> allSubstates = splitTree.leafLabels();
             int nSubstates = 1;
+
             for (int i = 0; i < allSubstates.size(); i++) {
                 if (allSubstates.get(i) >= nSubstates)
                     nSubstates = allSubstates.get(i) + 1;
             }
             diffWeights[state] = new double[nSubstates][nSubstates];
+
             if (nSubstates == 1) {
                 // state has only one substate -> no smoothing
                 diffWeights[state][0][0] = 1.0;
+
             } else {
                 // smooth only with ones in the same top-level branch
 
@@ -72,7 +82,8 @@ public class SmoothAcrossParentBits implements Smoother, Serializable {
         }
     }
 
-    public void smooth(final UnaryCounterTable unaryCounter, final BinaryCounterTable binaryCounter) {
+    public void smooth(final UnaryCounterTable unaryCounter, final BinaryCounterTable binaryCounter,
+            final Int2ObjectOpenHashMap<PackedBinaryRule> packedBinaryRuleMap, final short[] splitCounts) {
 
         for (final UnaryRule r : unaryCounter.keySet()) {
             final double[][] scores = unaryCounter.getCount(r);
@@ -112,6 +123,26 @@ public class SmoothAcrossParentBits implements Smoother, Serializable {
                 }
             }
             binaryCounter.setCount(r, scopy);
+        }
+
+        // Smooth the packed representation too
+        if (packedBinaryRuleMap != null) {
+            for (final int binaryKey : packedBinaryRuleMap.keySet()) {
+
+                final short unsplitParent = Grammar.unsplitParent(binaryKey);
+                final PackedBinaryRule packedBinaryRule = packedBinaryRuleMap.get(binaryKey);
+                final double[] unsmoothedCounts = packedBinaryRule.ruleScores.clone();
+                Arrays.fill(packedBinaryRule.ruleScores, 0);
+
+                for (int i = 0, j = 0; i < packedBinaryRule.ruleScores.length; i++, j += 3) {
+                    final short parentSplit = packedBinaryRule.substates[j + 2];
+
+                    for (int altParentSplit = 0; altParentSplit < splitCounts[unsplitParent]; altParentSplit++) {
+                        packedBinaryRule.ruleScores[i] += unsmoothedCounts[i]
+                                * diffWeights[unsplitParent][parentSplit][altParentSplit];
+                    }
+                }
+            }
         }
     }
 
