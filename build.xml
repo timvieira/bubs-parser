@@ -158,15 +158,19 @@
             <param name="root-class" value="edu.berkeley.nlp.PCFGLA.GrammarTrainer" />
             <param name="tool-name" value="train-grammar" />
             <param name="heap-size" value="2g" />
+            <!-- TODO Remove this after we drop assertions from Grammar.java -->
+            <param name="package-gpl-libs" value="true" />
         </antcall>
     </target>
 
-            
+
+    <!-- TODO Remove once we're done with Java-serialized grammars -->
     <target name="write-grammar-to-text" depends="compile">
         <antcall target="package-tool">
             <param name="root-class" value="edu.berkeley.nlp.PCFGLA.WriteGrammarToTextFile" />
             <param name="tool-name" value="write-grammar-to-text" />
             <param name="heap-size" value="1g" />
+            <param name="package-gpl-libs" value="true" />
         </antcall>
     </target>
 

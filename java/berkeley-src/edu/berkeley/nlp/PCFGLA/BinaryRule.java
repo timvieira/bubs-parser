@@ -3,6 +3,7 @@ package edu.berkeley.nlp.PCFGLA;
 import java.io.Serializable;
 import java.util.Random;
 
+import edu.berkeley.nlp.PCFGLA.Grammar.PackedBinaryRule;
 import edu.berkeley.nlp.util.ArrayUtil;
 import edu.berkeley.nlp.util.Numberer;
 
@@ -12,7 +13,9 @@ import edu.berkeley.nlp.util.Numberer;
  * @author Dan Klein
  */
 
-public class BinaryRule extends Rule implements Serializable, java.lang.Comparable<BinaryRule> {
+public class BinaryRule extends Rule implements Serializable {
+
+    private static final long serialVersionUID = 2L;
 
     public short leftChildState = -1;
     public short rightChildState = -1;
@@ -42,8 +45,123 @@ public class BinaryRule extends Rule implements Serializable, java.lang.Comparab
         this(b.parentState, b.leftChildState, b.rightChildState, newScores);
     }
 
+    /**
+     * Copy production probabilities from a packed representation (used during splitting and merging)
+     * 
+     * @param packedBinaryRule
+     */
+    public BinaryRule(final PackedBinaryRule packedBinaryRule, final short[] splitCounts) {
+        this(packedBinaryRule.unsplitParent, packedBinaryRule.unsplitLeftChild, packedBinaryRule.unsplitRightChild);
+
+        scores = new double[splitCounts[packedBinaryRule.unsplitLeftChild]][splitCounts[packedBinaryRule.unsplitRightChild]][];
+
+        for (int i = 0, j = 0; i < packedBinaryRule.ruleScores.length; i++, j += 3) {
+            final short leftChildSplit = packedBinaryRule.substates[j];
+            final short rightChildSplit = packedBinaryRule.substates[j + 1];
+            final short parentSplit = packedBinaryRule.substates[j + 2];
+
+            if (scores[leftChildSplit][rightChildSplit] == null) {
+                scores[leftChildSplit][rightChildSplit] = new double[splitCounts[packedBinaryRule.unsplitParent]];
+            }
+
+            scores[leftChildSplit][rightChildSplit][parentSplit] = packedBinaryRule.ruleScores[i];
+        }
+    }
+
     public int key() {
         return Grammar.binaryKey(parentState, leftChildState, rightChildState);
+    }
+
+    public short getLeftChildState() {
+        return leftChildState;
+    }
+
+    public short getRightChildState() {
+        return rightChildState;
+    }
+
+    public void setScores2(final double[][][] scores) {
+        this.scores = scores;
+    }
+
+    /**
+     * scores[parentSubState][leftSubState][rightSubState] gives score for this rule
+     */
+    public double[][][] getScores2() {
+        return scores;
+    }
+
+    /**
+     * Returns a new {@link BinaryRule}, with each rule production split into 8 (or 4 if the parent is the start
+     * symbol).
+     * 
+     * @param numSubStates
+     * @param newNumSubStates
+     * @param random
+     * @param randomness
+     * @return a new {@link BinaryRule}, with each rule production split into 8
+     */
+    public BinaryRule splitRule(final short[] numSubStates, final short[] newNumSubStates, final Random random,
+            final double randomness) {
+
+        // Never split the start symbol (parent state == 0)
+        final int parentSplitFactor = this.getParentState() == 0 ? 1 : 2;
+
+        final double[][][] oldScores = this.getScores2();
+        final double[][][] newScores = new double[oldScores.length * 2][oldScores[0].length * 2][];
+
+        for (short leftChildSplit = 0; leftChildSplit < oldScores.length; leftChildSplit++) {
+
+            for (short rightChildSplit = 0; rightChildSplit < oldScores[0].length; rightChildSplit++) {
+
+                if (oldScores[leftChildSplit][rightChildSplit] == null) {
+                    continue;
+                }
+
+                // Allocate storage
+                for (short lc = 0; lc < 2; lc++) {
+                    for (short rc = 0; rc < 2; rc++) {
+                        final short newLCS = (short) (2 * leftChildSplit + lc);
+                        final short newRCS = (short) (2 * rightChildSplit + rc);
+                        newScores[newLCS][newRCS] = new double[newNumSubStates[this.parentState]];
+                    }
+                }
+
+                for (short parentSplit = 0; parentSplit < oldScores[leftChildSplit][rightChildSplit].length; parentSplit++) {
+
+                    final double score = oldScores[leftChildSplit][rightChildSplit][parentSplit];
+
+                    // Split on parent
+                    for (short p = 0; p < parentSplitFactor; p++) {
+
+                        final double leftChildRandomness = score / 4 * randomness / 100 * (random.nextDouble() - 0.5);
+
+                        // Split on left child
+                        for (short i = 0; i < 2; i++) {
+
+                            final double randomComponentRC = score / 4 * randomness / 100 * (random.nextDouble() - 0.5);
+
+                            // Split on right child
+                            for (short j = 0; j < 2; j++) {
+
+                                // Reverse randomness for half the rules
+                                final double totalRandomness = leftChildRandomness * (i == 1 ? -1 : 1)
+                                        + randomComponentRC * (j == 1 ? -1 : 1);
+
+                                // Divide the scores by 4, since we're splitting each child production of a parent into
+                                // 4
+                                final int newParentSplit = parentSplitFactor * parentSplit + p;
+                                final int newLeftChildSplit = 2 * leftChildSplit + i;
+                                final int newRightChildSplit = 2 * rightChildSplit + j;
+                                newScores[newLeftChildSplit][newRightChildSplit][newParentSplit] = score / 4
+                                        + totalRandomness;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return new BinaryRule(this, newScores);
     }
 
     @Override
@@ -112,139 +230,4 @@ public class BinaryRule extends Rule implements Serializable, java.lang.Comparab
         }
         return sb.toString();
     }
-
-    public int compareTo(final BinaryRule o) {
-        if (parentState < o.parentState) {
-            return -1;
-        }
-        if (parentState > o.parentState) {
-            return 1;
-        }
-        if (leftChildState < o.leftChildState) {
-            return -1;
-        }
-        if (leftChildState > o.leftChildState) {
-            return 1;
-        }
-        if (rightChildState < o.rightChildState) {
-            return -1;
-        }
-        if (rightChildState > o.rightChildState) {
-            return 1;
-        }
-        return 0;
-    }
-
-    public short getLeftChildState() {
-        return leftChildState;
-    }
-
-    public short getRightChildState() {
-        return rightChildState;
-    }
-
-    public void setScores2(final double[][][] scores) {
-        this.scores = scores;
-    }
-
-    /**
-     * scores[parentSubState][leftSubState][rightSubState] gives score for this rule
-     */
-    public double[][][] getScores2() {
-        return scores;
-    }
-
-    public void setNodes(final short pState, final short lState, final short rState) {
-        this.parentState = pState;
-        this.leftChildState = lState;
-        this.rightChildState = rState;
-    }
-
-    private static final long serialVersionUID = 2L;
-
-    public BinaryRule splitRule(final short[] numSubStates, final short[] newNumSubStates, final Random random,
-            final double randomness) {
-        // when splitting on parent, never split on ROOT
-        int parentSplitFactor = this.getParentState() == 0 ? 1 : 2; // should
-
-        if (newNumSubStates[this.parentState] == numSubStates[this.parentState]) {
-            parentSplitFactor = 1;
-        }
-        int lChildSplitFactor = 2;
-        if (newNumSubStates[this.leftChildState] == numSubStates[this.leftChildState]) {
-            lChildSplitFactor = 1;
-        }
-        int rChildSplitFactor = 2;
-        if (newNumSubStates[this.rightChildState] == numSubStates[this.rightChildState]) {
-            rChildSplitFactor = 1;
-        }
-
-        final double[][][] oldScores = this.getScores2();
-        final double[][][] newScores = new double[oldScores.length * lChildSplitFactor][oldScores[0].length
-                * rChildSplitFactor][];
-        // [oldScores[0][0].length * parentSplitFactor];
-        // Arrays.fill(newScores,Double.NEGATIVE_INFINITY);
-        // for all current substates
-        for (short lcS = 0; lcS < oldScores.length; lcS++) {
-            for (short rcS = 0; rcS < oldScores[0].length; rcS++) {
-                if (oldScores[lcS][rcS] == null)
-                    continue;
-
-                for (short lc = 0; lc < lChildSplitFactor; lc++) {
-                    for (short rc = 0; rc < rChildSplitFactor; rc++) {
-                        final short newLCS = (short) (lChildSplitFactor * lcS + lc);
-                        final short newRCS = (short) (rChildSplitFactor * rcS + rc);
-                        newScores[newLCS][newRCS] = new double[newNumSubStates[this.parentState]];
-                    }
-                }
-
-                for (short pS = 0; pS < oldScores[lcS][rcS].length; pS++) {
-                    final double score = oldScores[lcS][rcS][pS];
-                    // split on parent
-                    for (short p = 0; p < parentSplitFactor; p++) {
-                        final double divFactor = lChildSplitFactor * rChildSplitFactor;
-                        double randomComponentLC = score / divFactor * randomness / 100 * (random.nextDouble() - 0.5);
-                        // split on left child
-                        for (short lc = 0; lc < lChildSplitFactor; lc++) {
-                            // reverse the random component for half of the
-                            // rules
-                            if (lc == 1) {
-                                randomComponentLC *= -1;
-                            }
-                            // don't add randomness if we're not splitting
-                            if (lChildSplitFactor == 1) {
-                                randomComponentLC = 0;
-                            }
-                            double randomComponentRC = score / divFactor * randomness / 100
-                                    * (random.nextDouble() - 0.5);
-                            // split on right child
-                            for (short rc = 0; rc < rChildSplitFactor; rc++) {
-                                // reverse the random component for half of the
-                                // rules
-                                if (rc == 1) {
-                                    randomComponentRC *= -1;
-                                }
-                                // don't add randomness if we're not splitting
-                                if (rChildSplitFactor == 1) {
-                                    randomComponentRC = 0;
-                                }
-                                // set new score; divide score by 4 because
-                                // we're dividing each
-                                // binary rule under a parent into 4
-                                final short newPS = (short) (parentSplitFactor * pS + p);
-                                final short newLCS = (short) (lChildSplitFactor * lcS + lc);
-                                final short newRCS = (short) (rChildSplitFactor * rcS + rc);
-                                final double splitFactor = lChildSplitFactor * rChildSplitFactor;
-                                newScores[newLCS][newRCS][newPS] = (score / (splitFactor) + randomComponentLC + randomComponentRC);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        final BinaryRule newRule = new BinaryRule(this, newScores);
-        return newRule;
-
-    }
-
 }

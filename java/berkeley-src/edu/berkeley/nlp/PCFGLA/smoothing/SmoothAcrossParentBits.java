@@ -126,21 +126,19 @@ public class SmoothAcrossParentBits implements Smoother, Serializable {
         }
 
         // Smooth the packed representation too
-        if (packedBinaryRuleMap != null) {
-            for (final int binaryKey : packedBinaryRuleMap.keySet()) {
+        for (final int binaryKey : packedBinaryRuleMap.keySet()) {
 
-                final short unsplitParent = Grammar.unsplitParent(binaryKey);
-                final PackedBinaryRule packedBinaryRule = packedBinaryRuleMap.get(binaryKey);
-                final double[] unsmoothedCounts = packedBinaryRule.ruleScores.clone();
-                Arrays.fill(packedBinaryRule.ruleScores, 0);
+            final short unsplitParent = Grammar.unsplitParent(binaryKey);
+            final PackedBinaryRule packedBinaryRule = packedBinaryRuleMap.get(binaryKey);
+            final double[] unsmoothedCounts = packedBinaryRule.ruleScores.clone();
+            Arrays.fill(packedBinaryRule.ruleScores, 0);
 
-                for (int i = 0, j = 0; i < packedBinaryRule.ruleScores.length; i++, j += 3) {
-                    final short parentSplit = packedBinaryRule.substates[j + 2];
+            for (int i = 0, j = 0; i < packedBinaryRule.ruleScores.length; i++, j += 3) {
+                final short parentSplit = packedBinaryRule.substates[j + 2];
 
-                    for (int altParentSplit = 0; altParentSplit < splitCounts[unsplitParent]; altParentSplit++) {
-                        packedBinaryRule.ruleScores[i] += unsmoothedCounts[i]
-                                * diffWeights[unsplitParent][parentSplit][altParentSplit];
-                    }
+                for (int altParentSplit = 0; altParentSplit < splitCounts[unsplitParent]; altParentSplit++) {
+                    packedBinaryRule.ruleScores[i] += unsmoothedCounts[i]
+                            * diffWeights[unsplitParent][parentSplit][altParentSplit];
                 }
             }
         }

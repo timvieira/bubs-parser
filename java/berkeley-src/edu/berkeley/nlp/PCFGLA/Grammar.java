@@ -312,10 +312,9 @@ public class Grammar implements Serializable, Cloneable {
         }
 
         populatePackedBinaryCountMap();
-        assertBinaryCountsEqual();
 
         normalize();
-        smooth(); // this also adds the rules to the proper arrays
+        smooth();
 
         populatePackedBinaryRuleMap();
     }
@@ -509,7 +508,7 @@ public class Grammar implements Serializable, Cloneable {
             }
         }
 
-        assertBinaryRulesEqual();
+        // assertBinaryRulesEqual();
     }
 
     /**
@@ -714,7 +713,7 @@ public class Grammar implements Serializable, Cloneable {
                 bcounts[leftChildSplit][rightChildSplit][parentSplit] += scaledRuleCount;
             }
 
-            packedBinaryCount.assertEquals(bcounts);
+            // packedBinaryCount.assertEquals(bcounts);
 
             break;
 
@@ -786,7 +785,7 @@ public class Grammar implements Serializable, Cloneable {
             countUnsplitTree(child);
         }
 
-        assertBinaryCountsEqual();
+        // assertBinaryCountsEqual();
     }
 
     public void computePairsOfUnaries() {
@@ -1024,8 +1023,13 @@ public class Grammar implements Serializable, Cloneable {
         final Grammar newGrammar = new Grammar(this, newNumSubStates);
         final Random random = GrammarTrainer.RANDOM;
 
-        for (final BinaryRule oldRule : binaryRuleMap.values()) {
-            newGrammar.addBinary(oldRule.splitRule(numSubStates, newNumSubStates, random, randomness));
+        for (final int binaryKey : packedBinaryRuleMap.keySet()) {
+            final PackedBinaryRule packedRule = packedBinaryRuleMap.get(binaryKey);
+            final BinaryRule unpackedRule = new BinaryRule(packedRule, numSubStates);
+            final BinaryRule splitRule = unpackedRule.splitRule(numSubStates, newNumSubStates, random, randomness);
+
+            newGrammar.packedBinaryRuleMap.put(binaryKey, new PackedBinaryRule(packedRule.unsplitParent,
+                    packedRule.unsplitLeftChild, packedRule.unsplitRightChild, splitRule.scores));
         }
 
         for (final UnaryRule oldRule : unaryRuleMap.values()) {
@@ -1199,7 +1203,9 @@ public class Grammar implements Serializable, Cloneable {
         // create the new grammar
         final Grammar mergedGrammar = new Grammar(this, newNumSubStates);
 
-        for (final BinaryRule oldRule : binaryRuleMap.values()) {
+        for (final int binaryKey : packedBinaryRuleMap.keySet()) {
+            final PackedBinaryRule packedRule = packedBinaryRuleMap.get(binaryKey);
+            final BinaryRule oldRule = new BinaryRule(packedRule, numSubStates);
 
             final short pS = oldRule.getParentState(), lcS = oldRule.getLeftChildState(), rcS = oldRule
                     .getRightChildState();
@@ -1267,9 +1273,11 @@ public class Grammar implements Serializable, Cloneable {
                     }
                 }
             }
-            final BinaryRule newRule = new BinaryRule(oldRule);
-            newRule.setScores2(newScores);
-            mergedGrammar.addBinary(newRule);
+
+            final BinaryRule mergedRule = new BinaryRule(oldRule);
+            mergedRule.setScores2(newScores);
+            mergedGrammar.packedBinaryRuleMap.put(binaryKey, new PackedBinaryRule(packedRule.unsplitParent,
+                    packedRule.unsplitLeftChild, packedRule.unsplitRightChild, mergedRule.scores));
         }
 
         for (final UnaryRule oldRule : unaryRuleMap.values()) {
@@ -1804,7 +1812,7 @@ public class Grammar implements Serializable, Cloneable {
                     }
                 }
             }
-            assertEquals(oldRuleCounts);
+            // assertEquals(oldRuleCounts);
         }
 
         public void assertEquals(final double[][][] oldRuleCounts) {
