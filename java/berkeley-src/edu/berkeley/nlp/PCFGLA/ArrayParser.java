@@ -1,6 +1,6 @@
 package edu.berkeley.nlp.PCFGLA;
 
-import java.util.List;
+import java.util.ArrayList;
 
 import edu.berkeley.nlp.syntax.StateSet;
 import edu.berkeley.nlp.syntax.Tree;
@@ -42,17 +42,16 @@ public class ArrayParser {
      * 
      * @param tree
      * @param noSmoothing
-     * @param spanScores
      */
-    void doInsideScores(final Tree<StateSet> tree, final boolean noSmoothing, final double[][][] spanScores) {
+    void doInsideScores(final Tree<StateSet> tree, final boolean noSmoothing) {
 
         if (tree.isLeaf()) {
             return;
         }
 
-        final List<Tree<StateSet>> children = tree.children();
+        final ArrayList<Tree<StateSet>> children = tree.children();
         for (final Tree<StateSet> child : children) {
-            doInsideScores(child, noSmoothing, spanScores);
+            doInsideScores(child, noSmoothing);
         }
         final StateSet parent = tree.label();
         final short unsplitParent = parent.getState();
@@ -73,6 +72,7 @@ public class ArrayParser {
             switch (children.size()) {
             case 0:
                 break;
+
             case 1:
                 final StateSet child = children.get(0).label();
                 final short unsplitChild = child.getState();
@@ -96,8 +96,6 @@ public class ArrayParser {
             case 2:
                 final StateSet leftChild = children.get(0).label();
                 final StateSet rightChild = children.get(1).label();
-                // final int nLeftChildStates = leftChild.numSubStates();
-                // final int nRightChildStates = rightChild.numSubStates();
                 final short unsplitLeftChild = leftChild.getState();
                 final short unsplitRightChild = rightChild.getState();
 
@@ -116,12 +114,6 @@ public class ArrayParser {
 
                     iScores2[parentSplit] += packedBinaryRule.ruleScores[i] * leftChildInsideScore
                             * rightChildInsideScore;
-                }
-
-                if (spanScores != null) {
-                    for (int i = 0; i < nParentStates; i++) {
-                        iScores2[i] *= spanScores[parent.from][parent.to][stateClass[unsplitParent]];
-                    }
                 }
 
                 parent.setIScores(iScores2);
@@ -143,25 +135,19 @@ public class ArrayParser {
      * 
      * @param tree
      */
-    void doOutsideScores(final Tree<StateSet> tree, boolean unaryAbove, final double[][][] spanScores) {
+    void doOutsideScores(final Tree<StateSet> tree) {
 
         if (tree.isLeaf() || tree.isPreTerminal()) {
             return;
         }
 
-        final List<Tree<StateSet>> children = tree.children();
+        final ArrayList<Tree<StateSet>> children = tree.children();
         final StateSet parent = tree.label();
         final short unsplitParent = parent.getState();
-        final int nParentStates = parent.numSubStates();
 
         // this sets the outside scores for the children
 
         final double[] parentOutsideScores = parent.getOScores();
-        if (spanScores != null && !unaryAbove) {
-            for (int i = 0; i < nParentStates; i++) {
-                parentOutsideScores[i] *= spanScores[parent.from][parent.to][stateClass[unsplitParent]];
-            }
-        }
 
         switch (children.size()) {
 
@@ -169,7 +155,6 @@ public class ArrayParser {
             final StateSet child = children.get(0).label();
             final short unsplitChild = child.getState();
             final int nChildStates = child.numSubStates();
-            // UnaryRule uR = new UnaryRule(pState,cState);
             final double[] oScores = new double[nChildStates];
 
             final Grammar.PackedUnaryRule packedUnaryRule = grammar.getPackedUnaryScores(unsplitParent, unsplitChild);
@@ -183,7 +168,6 @@ public class ArrayParser {
 
             child.setOScores(oScores);
             child.setOScale(IEEEDoubleScaling.scaleArray(oScores, parent.getOScale()));
-            unaryAbove = true;
             break;
 
         case 2:
@@ -223,7 +207,6 @@ public class ArrayParser {
             rightChild.setOScores(rOScores);
             rightChild.setOScale(IEEEDoubleScaling.scaleArray(rOScores, parent.getOScale() + leftChild.getIScale()));
 
-            unaryAbove = false;
             break;
 
         default:
@@ -231,14 +214,14 @@ public class ArrayParser {
         }
 
         for (final Tree<StateSet> child : children) {
-            doOutsideScores(child, unaryAbove, spanScores);
+            doOutsideScores(child);
         }
     }
 
     public void doInsideOutsideScores(final Tree<StateSet> tree, final boolean noSmoothing) {
-        doInsideScores(tree, noSmoothing, null);
+        doInsideScores(tree, noSmoothing);
         tree.label().setOScore(0, 1);
         tree.label().setOScale(0);
-        doOutsideScores(tree, false, null);
+        doOutsideScores(tree);
     }
 }
