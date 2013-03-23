@@ -237,7 +237,7 @@ public class Grammar implements Serializable, Cloneable {
     }
 
     /**
-     * Returns the unsplit parent encoded into a unary key (as per {@link #unaryKey(short, short, short)}).
+     * Returns the unsplit parent encoded into a unary key (as per {@link #unaryKey(short, short)}).
      * 
      * @param unaryKey
      * @return the unsplit parent encoded into a unary key
@@ -247,7 +247,7 @@ public class Grammar implements Serializable, Cloneable {
     }
 
     /**
-     * Returns the unsplit child encoded into a unary key (as per {@link #unaryKey(short, short, short)}).
+     * Returns the unsplit child encoded into a unary key (as per {@link #unaryKey(short, short)}).
      * 
      * @param unaryKey
      * @return the unsplit child encoded into a unary key
@@ -710,21 +710,13 @@ public class Grammar implements Serializable, Cloneable {
         final List<Tree<StateSet>> children = tree.children();
         final StateSet parent = tree.label();
         final short unsplitParent = parent.getState();
-        final int nParentSubStates = numSubStates[unsplitParent];
 
         switch (children.size()) {
 
         case 1:
             final StateSet child = children.get(0).label();
             final short unsplitChild = child.getState();
-            final int nChildSubStates = numSubStates[unsplitChild];
-            final UnaryRule urule = new UnaryRule(unsplitParent, unsplitChild);
 
-            // double[][] ucounts = unaryRuleCounter.getCount(urule);
-            // if (ucounts == null) {
-            // ucounts = new double[nChildSubStates][];
-            // unaryRuleCounter.setCount(urule, ucounts);
-            // }
             double scalingFactor = IEEEDoubleScaling.scalingMultiplier(parent.getOScale() + child.getIScale()
                     - tree_scale);
 
@@ -746,11 +738,6 @@ public class Grammar implements Serializable, Cloneable {
                         * scalingFactor * parentOutsideScore;
 
                 packedUnaryCount.ruleCounts[i] += scaledRuleCount;
-
-                // if (ucounts[childSplit] == null) {
-                // ucounts[childSplit] = new double[nParentSubStates];
-                // }
-                // ucounts[childSplit][parentSplit] += scaledRuleCount;
             }
 
             break;
@@ -760,18 +747,9 @@ public class Grammar implements Serializable, Cloneable {
             final short unsplitLeftChild = leftChild.getState();
             final StateSet rightChild = children.get(1).label();
             final short unsplitRightChild = rightChild.getState();
-            final int nLeftChildSubStates = numSubStates[unsplitLeftChild];
-            final int nRightChildSubStates = numSubStates[unsplitRightChild];
 
             scalingFactor = IEEEDoubleScaling.scalingMultiplier(parent.getOScale() + leftChild.getIScale()
                     + rightChild.getIScale() - tree_scale);
-
-            final BinaryRule brule = new BinaryRule(unsplitParent, unsplitLeftChild, unsplitRightChild);
-            // double[][][] bcounts = binaryRuleCounter.getCount(brule);
-            // if (bcounts == null) {
-            // bcounts = new double[nLeftChildSubStates][nRightChildSubStates][];
-            // binaryRuleCounter.setCount(brule, bcounts);
-            // }
 
             final Grammar.PackedBinaryRule packedBinaryRule = previousGrammar.getPackedBinaryScores(unsplitParent,
                     unsplitLeftChild, unsplitRightChild);
@@ -794,13 +772,7 @@ public class Grammar implements Serializable, Cloneable {
                         * rightChildInsideScore * scalingFactor * parentOutsideScore;
 
                 packedBinaryCount.ruleCounts[i] += scaledRuleCount;
-                // if (bcounts[leftChildSplit][rightChildSplit] == null) {
-                // bcounts[leftChildSplit][rightChildSplit] = new double[nParentSubStates];
-                // }
-                // bcounts[leftChildSplit][rightChildSplit][parentSplit] += scaledRuleCount;
             }
-
-            // packedBinaryCount.assertEquals(bcounts);
 
             break;
 
@@ -828,17 +800,12 @@ public class Grammar implements Serializable, Cloneable {
         final List<Tree<StateSet>> children = tree.children();
         final StateSet parent = tree.label();
         final short unsplitParent = parent.getState();
-        final int nParentSubStates = parent.numSubStates(); // numSubStates[parentState];
 
         switch (children.size()) {
 
         case 1:
             final StateSet child = children.get(0).label();
             final short unsplitChild = child.getState();
-            // final int nChildSubStates = child.numSubStates(); // numSubStates[childState];
-            // final double[][] counts = new double[nChildSubStates][nParentSubStates];
-            // final UnaryRule urule = new UnaryRule(unsplitParent, unsplitChild, counts);
-            // unaryRuleCounter.incrementCount(urule, 1.0);
 
             final int unaryKey = unaryKey(unsplitParent, unsplitChild);
             PackedUnaryCount packedUnaryCount = packedUnaryCountMap.get(unaryKey);
@@ -856,12 +823,6 @@ public class Grammar implements Serializable, Cloneable {
             final short unsplitLeftChild = leftChild.getState();
             final StateSet rightChild = children.get(1).label();
             final short unsplitRightChild = rightChild.getState();
-            // final int nLeftChildSubStates = leftChild.numSubStates();
-            // final int nRightChildSubStates = rightChild.numSubStates();
-
-            // final double[][][] bcounts = new double[nLeftChildSubStates][nRightChildSubStates][nParentSubStates];
-            // final BinaryRule brule = new BinaryRule(unsplitParent, unsplitLeftChild, unsplitRightChild, bcounts);
-            // binaryRuleCounter.incrementCount(brule, 1.0);
 
             final int binaryKey = binaryKey(unsplitParent, unsplitLeftChild, unsplitRightChild);
             PackedBinaryCount packedCount = packedBinaryCountMap.get(binaryKey);
@@ -881,8 +842,6 @@ public class Grammar implements Serializable, Cloneable {
         for (final Tree<StateSet> child : children) {
             countUnsplitTree(child);
         }
-
-        // assertBinaryCountsEqual();
     }
 
     public void computePairsOfUnaries() {
@@ -1667,7 +1626,7 @@ public class Grammar implements Serializable, Cloneable {
      * Packed into a compact parallel array representation.
      * 
      * After learning production probabilities (and pruning low-probability rules), we pack them into this
-     * representation for efficient iteration in {@link ArrayParser#doInsideScores(Tree, boolean, double[][][])}.
+     * representation for efficient iteration in {@link ArrayParser#doInsideScores(Tree, boolean)}.
      * {@link ArrayParser#doInsideOutsideScores(Tree, boolean)}, and
      * {@link Grammar#countSplitTree(Tree, double, int, Grammar)}.
      */
@@ -1989,7 +1948,7 @@ public class Grammar implements Serializable, Cloneable {
      * compact parallel array representation.
      * 
      * After learning production probabilities (and pruning low-probability rules), we pack them into this
-     * representation for efficient iteration in {@link ArrayParser#doInsideScores(Tree, boolean, double[][][])}.
+     * representation for efficient iteration in {@link ArrayParser#doInsideScores(Tree, boolean)}.
      * {@link ArrayParser#doInsideOutsideScores(Tree, boolean)}, and
      * {@link Grammar#countSplitTree(Tree, double, int, Grammar)}.
      */
@@ -2094,7 +2053,7 @@ public class Grammar implements Serializable, Cloneable {
      * compact parallel array representation.
      * 
      * After learning production probabilities (and pruning low-probability rules), we pack them into this
-     * representation for efficient iteration in {@link ArrayParser#doInsideScores(Tree, boolean, double[][][])}.
+     * representation for efficient iteration in {@link ArrayParser#doInsideScores(Tree, boolean)}.
      * {@link ArrayParser#doInsideOutsideScores(Tree, boolean)}, and
      * {@link Grammar#countSplitTree(Tree, double, int, Grammar)}.
      */

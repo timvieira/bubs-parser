@@ -74,11 +74,23 @@ public class IEEEDoubleScaling {
      * 
      * @param scores
      * @param previousScaleStep
+     * 
      * @return The new scaling step required to properly constrain the array
      */
     public static int scaleArray(final double[] scores, final int previousScaleStep) {
+        return scaleArray(scores, previousScaleStep, ArrayUtil.max(scores));
+    }
 
-        double max = ArrayUtil.max(scores);
+    /**
+     * Rescales the supplied score array in place, constraining the maximum entry to between 1/SCALE1 and SCALE1.
+     * 
+     * @param scores
+     * @param previousScaleStep
+     * @param max Pre-recorded maximum entry of <code>scores</code>
+     * 
+     * @return The new scaling step required to properly constrain the array
+     */
+    public static int scaleArray(final double[] scores, final int previousScaleStep, double max) {
 
         // If max is between 1/SCALE1 and SCALE1, we're fine
         if (max > SCALE_1 && max < SCALE1) {
