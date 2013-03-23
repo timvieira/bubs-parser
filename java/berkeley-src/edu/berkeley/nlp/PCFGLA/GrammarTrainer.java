@@ -115,6 +115,7 @@ public class GrammarTrainer extends BaseCommandlineTool {
                         randSeed));
 
         RANDOM = new Random(randSeed);
+        RANDOM2 = new Random(randSeed);
 
         int emIterations = emIterationsPerCycle;
 

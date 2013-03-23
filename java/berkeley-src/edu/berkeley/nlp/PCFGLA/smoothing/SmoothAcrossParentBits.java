@@ -103,29 +103,32 @@ public class SmoothAcrossParentBits implements Smoother, Serializable {
             unaryCounter.setCount(r, scopy);
         }
 
-        for (final BinaryRule r : binaryCounter.keySet()) {
-            final double[][][] scores = binaryCounter.getCount(r);
-            final double[][][] scopy = new double[scores.length][scores[0].length][];
-            final short pState = r.parentState;
-            for (int j = 0; j < scores.length; j++) { // j = parent split
-                for (int l = 0; l < scores[j].length; l++) { // l = left child split
-                    if (scores[j][l] == null)
-                        continue; // nothing to smooth
+        if (binaryCounter != null) {
+            for (final BinaryRule r : binaryCounter.keySet()) {
+                final double[][][] scores = binaryCounter.getCount(r);
+                final double[][][] scopy = new double[scores.length][scores[0].length][];
+                final short pState = r.parentState;
+                for (int j = 0; j < scores.length; j++) { // j = parent split
+                    for (int l = 0; l < scores[j].length; l++) { // l = left child split
+                        if (scores[j][l] == null)
+                            continue; // nothing to smooth
 
-                    scopy[j][l] = new double[scores[j][l].length];
-                    for (int i = 0; i < scores[j][l].length; i++) { // i = right child split
-                        for (int k = 0; k < scores[j][l].length; k++) { // k = alternate right child
-                            // j (parent), l (left child), i (right child) : add in diff for rule parent, right child,
-                            // alt right child * score for j (parent), l (left child), alt right child
-                            scopy[j][l][i] += diffWeights[pState][i][k] * scores[j][l][k];
+                        scopy[j][l] = new double[scores[j][l].length];
+                        for (int i = 0; i < scores[j][l].length; i++) { // i = right child split
+                            for (int k = 0; k < scores[j][l].length; k++) { // k = alternate right child
+                                // j (parent), l (left child), i (right child) : add in diff for rule parent, right
+                                // child,
+                                // alt right child * score for j (parent), l (left child), alt right child
+                                scopy[j][l][i] += diffWeights[pState][i][k] * scores[j][l][k];
+                            }
                         }
                     }
                 }
+                binaryCounter.setCount(r, scopy);
             }
-            binaryCounter.setCount(r, scopy);
         }
 
-        // Smooth the packed representation too
+        // Smooth the packed representation
         for (final int binaryKey : packedBinaryRuleMap.keySet()) {
 
             final short unsplitParent = Grammar.unsplitParent(binaryKey);
@@ -142,7 +145,29 @@ public class SmoothAcrossParentBits implements Smoother, Serializable {
                 }
             }
         }
+
+        // assertBinaryRulesEqual(binaryCounter, packedBinaryRuleMap);
     }
+
+    // public static void assertBinaryRulesEqual(final BinaryCounterTable binaryCounterTable,
+    // final Int2ObjectOpenHashMap<PackedBinaryRule> packedBinaryRuleMap) {
+    //
+    // for (final int binaryKey : packedBinaryRuleMap.keySet()) {
+    // final double[][][] scores = binaryCounterTable.getCount(new BinaryRule(Grammar.unsplitParent(binaryKey),
+    // Grammar.unsplitLeftChild(binaryKey), Grammar.unsplitRightChild(binaryKey)));
+    //
+    // final PackedBinaryRule packedBinaryRule = packedBinaryRuleMap.get(binaryKey);
+    //
+    // for (int i = 0, j = 0; i < packedBinaryRule.ruleScores.length; i++, j += 3) {
+    // final short leftChildSplit = packedBinaryRule.substates[j];
+    // final short rightChildSplit = packedBinaryRule.substates[j + 1];
+    // final short parentSplit = packedBinaryRule.substates[j + 2];
+    //
+    // assertEquals(scores[leftChildSplit][rightChildSplit][parentSplit], packedBinaryRule.ruleScores[i],
+    // 1e-10);
+    // }
+    // }
+    // }
 
     // TODO Cleanup and eliminate the copy
     public void smooth(final short tag, final double[] scores) {
