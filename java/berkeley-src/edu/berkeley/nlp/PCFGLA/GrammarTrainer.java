@@ -32,8 +32,6 @@ public class GrammarTrainer extends BaseCommandlineTool {
 
     // TODO Make this non-static
     public static Random RANDOM;
-    // TODO Remove
-    public static Random RANDOM2;
 
     @Option(name = "-out", required = true, usage = "Output File for Grammar (Required)")
     private String outFileName;
@@ -115,7 +113,6 @@ public class GrammarTrainer extends BaseCommandlineTool {
                         randSeed));
 
         RANDOM = new Random(randSeed);
-        RANDOM2 = new Random(randSeed);
 
         int emIterations = emIterationsPerCycle;
 
@@ -216,27 +213,15 @@ public class GrammarTrainer extends BaseCommandlineTool {
         // //
         // }
 
+        long cycleStartTime = System.currentTimeMillis();
         for (int splitIndex = startSplit; splitIndex < splitMergeCycles * 3; splitIndex++) {
 
-            // now do either a merge or a split and the end a smooth
-            // on odd iterations merge, on even iterations split
             String opString = "";
-            if (splitIndex % 3 == 2) {// (splitIndex==numSplitTimes*2){
-                if (smooth == SmoothingType.None) {
-                    continue;
-                }
+            if (splitIndex % 3 == 0) {
 
-                maxGrammar.setSmoother(new SmoothAcrossParentBits(0.01, maxGrammar.splitTrees));
-                maxLexicon.setSmoother(new SmoothAcrossParentBits(0.1, maxGrammar.splitTrees));
-                emIterations = emIterationsWithSmoothing;
-                opString = "smoothing";
+                // Split
+                cycleStartTime = System.currentTimeMillis();
 
-                // update the substate dependent objects
-                grammar = maxGrammar;
-                lexicon = maxLexicon;
-
-            } else if (splitIndex % 3 == 0) {
-                // the case where we split
                 final CorpusStatistics corpusStatistics = new CorpusStatistics(tagNumberer, trainStateSetTrees);
                 final int[] counts = corpusStatistics.getSymbolCounts();
 
@@ -257,7 +242,7 @@ public class GrammarTrainer extends BaseCommandlineTool {
                 grammar = maxGrammar;
                 lexicon = maxLexicon;
 
-            } else {
+            } else if (splitIndex % 3 == 1) {
 
                 // Merge
                 if (mergeFraction == 0) {
@@ -286,6 +271,22 @@ public class GrammarTrainer extends BaseCommandlineTool {
                 maxGrammar = grammar;
                 maxLexicon = lexicon;
                 emIterations = emIterationsAfterMerge;
+
+                // update the substate dependent objects
+                grammar = maxGrammar;
+                lexicon = maxLexicon;
+
+            } else {
+
+                // Smooth
+                if (smooth == SmoothingType.None) {
+                    continue;
+                }
+
+                maxGrammar.setSmoother(new SmoothAcrossParentBits(0.01, maxGrammar.splitTrees));
+                maxLexicon.setSmoother(new SmoothAcrossParentBits(0.1, maxGrammar.splitTrees));
+                emIterations = emIterationsWithSmoothing;
+                opString = "smoothing";
 
                 // update the substate dependent objects
                 grammar = maxGrammar;
@@ -322,8 +323,14 @@ public class GrammarTrainer extends BaseCommandlineTool {
             }
             // End method
 
+            if ("smoothing".equals(opString)) {
+                BaseLogger.singleton().info(
+                        String.format("Completed training cycle %d in %.1f s", (splitIndex / 3) + 1,
+                                (System.currentTimeMillis() - cycleStartTime) / 1000.0));
+            }
+
             // Dump a grammar file to disk from time to time
-            if (writeIntermediateGrammars || "smoothing".equals(opString)) {
+            if (writeIntermediateGrammars && "smoothing".equals(opString)) {
                 final String outTmpName = outFileName + "_" + (splitIndex / 3 + 1) + "_" + opString + ".gr";
                 System.out.println("Saving grammar to " + outTmpName + ".");
                 writeGrammar(maxGrammar, maxLexicon, new File(outTmpName));
@@ -399,15 +406,16 @@ public class GrammarTrainer extends BaseCommandlineTool {
         }
         newLexicon.tieRareWordStats(rareWordThreshold);
 
-        BaseLogger.singleton().info(
-                String.format("Iteration: %2d  Training set likelihood: %.4f", iteration, trainingLikelihood));
-
         // Maximize (M-step)
         newLexicon.optimize();
         newGrammar.optimize(0);
 
-        return new EmIterationResult(newGrammar, newLexicon, trainingLikelihood, validationLikelihood,
-                (int) (System.currentTimeMillis() - t0));
+        final long t1 = System.currentTimeMillis();
+        BaseLogger.singleton().info(
+                String.format("Iteration: %2d  Training set likelihood: %.4f  Time %d ms", iteration,
+                        trainingLikelihood, t1 - t0));
+
+        return new EmIterationResult(newGrammar, newLexicon, trainingLikelihood, validationLikelihood, (int) (t1 - t0));
     }
 
     void writeGrammar(final Grammar grammar, final Lexicon lexicon, final File f) {
@@ -491,7 +499,7 @@ public class GrammarTrainer extends BaseCommandlineTool {
 
         for (final Tree<StateSet> stateSetTree : corpus) {
             // Only the inside scores are needed here
-            parser.doInsideScores(stateSetTree, false, null);
+            parser.doInsideScores(stateSetTree, false);
             final double ll = IEEEDoubleScaling.logLikelihood(stateSetTree.label().getIScore(0), stateSetTree.label()
                     .getIScale());
 
