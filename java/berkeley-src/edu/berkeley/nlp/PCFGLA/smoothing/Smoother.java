@@ -6,6 +6,7 @@ package edu.berkeley.nlp.PCFGLA.smoothing;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import edu.berkeley.nlp.PCFGLA.BinaryCounterTable;
 import edu.berkeley.nlp.PCFGLA.Grammar.PackedBinaryRule;
+import edu.berkeley.nlp.PCFGLA.Grammar.PackedUnaryRule;
 import edu.berkeley.nlp.PCFGLA.UnaryCounterTable;
 
 /**
@@ -19,12 +20,11 @@ public interface Smoother {
     /**
      * Smooths observed fractional counts during EM grammar training.
      * 
-     * @param unaryCounter
-     * @param binaryCounter
+     * @param packedUnaryRuleMap
      * @param packedBinaryRuleMap
      * @param splitCounts The number of splits (substates) of each unsplit non-terminal
      */
-    public void smooth(UnaryCounterTable unaryCounter, BinaryCounterTable binaryCounter,
+    public void smooth(Int2ObjectOpenHashMap<PackedUnaryRule> packedUnaryRuleMap,
             Int2ObjectOpenHashMap<PackedBinaryRule> packedBinaryRuleMap, final short[] splitCounts);
 
     /**

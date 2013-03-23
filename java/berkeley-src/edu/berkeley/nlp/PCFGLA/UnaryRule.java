@@ -2,6 +2,7 @@ package edu.berkeley.nlp.PCFGLA;
 
 import java.util.Random;
 
+import edu.berkeley.nlp.PCFGLA.Grammar.PackedUnaryRule;
 import edu.berkeley.nlp.util.ArrayUtil;
 import edu.berkeley.nlp.util.Numberer;
 
@@ -44,6 +45,28 @@ public class UnaryRule extends Rule implements java.io.Serializable, Comparable<
         this.parentState = pState;
         this.childState = cState;
         this.scores = new double[cSubStates][pSubStates];
+    }
+
+    /**
+     * Copy production probabilities from a packed representation (used during splitting and merging)
+     * 
+     * @param packedUnaryRule
+     */
+    public UnaryRule(final PackedUnaryRule packedUnaryRule, final short[] splitCounts) {
+        this(packedUnaryRule.unsplitParent, packedUnaryRule.unsplitChild);
+
+        scores = new double[splitCounts[packedUnaryRule.unsplitChild]][];
+
+        for (int i = 0, j = 0; i < packedUnaryRule.ruleScores.length; i++, j += 2) {
+            final short childSplit = packedUnaryRule.substates[j];
+            final short parentSplit = packedUnaryRule.substates[j + 1];
+
+            if (scores[childSplit] == null) {
+                scores[childSplit] = new double[splitCounts[packedUnaryRule.unsplitParent]];
+            }
+
+            scores[childSplit][parentSplit] = packedUnaryRule.ruleScores[i];
+        }
     }
 
     @Override
@@ -115,6 +138,12 @@ public class UnaryRule extends Rule implements java.io.Serializable, Comparable<
 
             for (int pS = 0; pS < scores[cS].length; pS++) {
                 final double p = scores[cS][pS];
+
+                // // Skip self-loops
+                // if (pS == cS) {
+                // continue;
+                // }
+                //
                 if (p > minimumRuleProbability) {
                     sb.append(String.format("%s_%d -> %s_%d %.10f\n", pState, pS, cState, cS, Math.log(p)));
                 }

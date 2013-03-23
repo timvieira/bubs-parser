@@ -9,12 +9,9 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
 
-import edu.berkeley.nlp.PCFGLA.BinaryCounterTable;
-import edu.berkeley.nlp.PCFGLA.BinaryRule;
 import edu.berkeley.nlp.PCFGLA.Grammar;
 import edu.berkeley.nlp.PCFGLA.Grammar.PackedBinaryRule;
-import edu.berkeley.nlp.PCFGLA.UnaryCounterTable;
-import edu.berkeley.nlp.PCFGLA.UnaryRule;
+import edu.berkeley.nlp.PCFGLA.Grammar.PackedUnaryRule;
 import edu.berkeley.nlp.syntax.Tree;
 
 /**
@@ -82,56 +79,49 @@ public class SmoothAcrossParentBits implements Smoother, Serializable {
         }
     }
 
-    public void smooth(final UnaryCounterTable unaryCounter, final BinaryCounterTable binaryCounter,
+    public void smooth(final Int2ObjectOpenHashMap<PackedUnaryRule> packedUnaryRuleMap,
             final Int2ObjectOpenHashMap<PackedBinaryRule> packedBinaryRuleMap, final short[] splitCounts) {
 
-        for (final UnaryRule r : unaryCounter.keySet()) {
-            final double[][] scores = unaryCounter.getCount(r);
-            final double[][] scopy = new double[scores.length][];
-            final short pState = r.parentState;
-            for (int j = 0; j < scores.length; j++) {
-                if (scores[j] == null)
-                    continue; // nothing to smooth
+        // for (final UnaryRule r : unaryCounter.keySet()) {
+        // final double[][] scores = unaryCounter.getCount(r);
+        // final double[][] scopy = new double[scores.length][];
+        // final short pState = r.parentState;
+        // for (int j = 0; j < scores.length; j++) {
+        // if (scores[j] == null)
+        // continue; // nothing to smooth
+        //
+        // scopy[j] = new double[scores[j].length];
+        // for (int i = 0; i < scores[j].length; i++) {
+        // for (int k = 0; k < scores[j].length; k++) {
+        // scopy[j][i] += diffWeights[pState][i][k] * scores[j][k];
+        // }
+        // }
+        // }
+        // unaryCounter.setCount(r, scopy);
+        // }
 
-                scopy[j] = new double[scores[j].length];
-                for (int i = 0; i < scores[j].length; i++) {
-                    for (int k = 0; k < scores[j].length; k++) {
-                        scopy[j][i] += diffWeights[pState][i][k] * scores[j][k];
-                    }
+        // Smooth binary rules
+        for (final int unaryKey : packedUnaryRuleMap.keySet()) {
+
+            final short unsplitParent = Grammar.unsplitUnaryParent(unaryKey);
+            final PackedUnaryRule packedUnaryRule = packedUnaryRuleMap.get(unaryKey);
+            final double[] unsmoothedCounts = packedUnaryRule.ruleScores.clone();
+            Arrays.fill(packedUnaryRule.ruleScores, 0);
+
+            for (int i = 0, j = 0; i < packedUnaryRule.ruleScores.length; i++, j += 2) {
+                final short parentSplit = packedUnaryRule.substates[j + 1];
+
+                for (int altParentSplit = 0; altParentSplit < splitCounts[unsplitParent]; altParentSplit++) {
+                    packedUnaryRule.ruleScores[i] += unsmoothedCounts[i]
+                            * diffWeights[unsplitParent][parentSplit][altParentSplit];
                 }
-            }
-            unaryCounter.setCount(r, scopy);
-        }
-
-        if (binaryCounter != null) {
-            for (final BinaryRule r : binaryCounter.keySet()) {
-                final double[][][] scores = binaryCounter.getCount(r);
-                final double[][][] scopy = new double[scores.length][scores[0].length][];
-                final short pState = r.parentState;
-                for (int j = 0; j < scores.length; j++) { // j = parent split
-                    for (int l = 0; l < scores[j].length; l++) { // l = left child split
-                        if (scores[j][l] == null)
-                            continue; // nothing to smooth
-
-                        scopy[j][l] = new double[scores[j][l].length];
-                        for (int i = 0; i < scores[j][l].length; i++) { // i = right child split
-                            for (int k = 0; k < scores[j][l].length; k++) { // k = alternate right child
-                                // j (parent), l (left child), i (right child) : add in diff for rule parent, right
-                                // child,
-                                // alt right child * score for j (parent), l (left child), alt right child
-                                scopy[j][l][i] += diffWeights[pState][i][k] * scores[j][l][k];
-                            }
-                        }
-                    }
-                }
-                binaryCounter.setCount(r, scopy);
             }
         }
 
-        // Smooth the packed representation
+        // Smooth binary rules
         for (final int binaryKey : packedBinaryRuleMap.keySet()) {
 
-            final short unsplitParent = Grammar.unsplitParent(binaryKey);
+            final short unsplitParent = Grammar.unsplitBinaryParent(binaryKey);
             final PackedBinaryRule packedBinaryRule = packedBinaryRuleMap.get(binaryKey);
             final double[] unsmoothedCounts = packedBinaryRule.ruleScores.clone();
             Arrays.fill(packedBinaryRule.ruleScores, 0);
@@ -145,8 +135,6 @@ public class SmoothAcrossParentBits implements Smoother, Serializable {
                 }
             }
         }
-
-        // assertBinaryRulesEqual(binaryCounter, packedBinaryRuleMap);
     }
 
     // public static void assertBinaryRulesEqual(final BinaryCounterTable binaryCounterTable,
