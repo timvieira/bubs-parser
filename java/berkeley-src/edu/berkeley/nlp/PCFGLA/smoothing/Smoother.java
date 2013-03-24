@@ -4,10 +4,8 @@
 package edu.berkeley.nlp.PCFGLA.smoothing;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import edu.berkeley.nlp.PCFGLA.BinaryCounterTable;
 import edu.berkeley.nlp.PCFGLA.Grammar.PackedBinaryRule;
 import edu.berkeley.nlp.PCFGLA.Grammar.PackedUnaryRule;
-import edu.berkeley.nlp.PCFGLA.UnaryCounterTable;
 
 /**
  * Smooths observed fractional counts during EM grammar learning or lexicon scoring.
@@ -29,7 +27,7 @@ public interface Smoother {
 
     /**
      * Smooths a set of scores using the same smoothing parameters computed during the previous invocation of
-     * {@link #smooth(UnaryCounterTable, BinaryCounterTable)}.
+     * {@link #smooth(Int2ObjectOpenHashMap, Int2ObjectOpenHashMap, short[])}.
      * 
      * @param tag
      * @param ruleScores

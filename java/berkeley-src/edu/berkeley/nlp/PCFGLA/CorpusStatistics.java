@@ -7,7 +7,6 @@ import java.util.Collection;
 
 import edu.berkeley.nlp.syntax.StateSet;
 import edu.berkeley.nlp.syntax.Tree;
-import edu.berkeley.nlp.util.Counter;
 import edu.berkeley.nlp.util.Numberer;
 
 /**
@@ -21,8 +20,6 @@ public class CorpusStatistics {
 
     int[] counts;
     Collection<Tree<StateSet>> trees;
-    Counter<UnaryRule> unaryRuleCounter;
-    Counter<BinaryRule> binaryRuleCounter;
 
     /**
      * Count statistics for a collection of StateSet trees.
@@ -30,8 +27,6 @@ public class CorpusStatistics {
     public CorpusStatistics(final Numberer tagNumberer, final Collection<Tree<StateSet>> trees) {
         counts = new int[tagNumberer.objects().size()];
         this.trees = trees;
-        unaryRuleCounter = new Counter<UnaryRule>();
-        binaryRuleCounter = new Counter<BinaryRule>();
     }
 
     private void countSymbols() {

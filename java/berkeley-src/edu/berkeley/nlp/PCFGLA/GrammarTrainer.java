@@ -391,8 +391,8 @@ public class GrammarTrainer extends BaseCommandlineTool {
 
             parser.doInsideOutsideScores(stateSetTree, true);
 
-            final double ll = IEEEDoubleScaling.logLikelihood(stateSetTree.label().getIScore(0), stateSetTree.label()
-                    .getIScale());
+            final double ll = IEEEDoubleScaling.logLikelihood(stateSetTree.label().insideScore(0), stateSetTree.label()
+                    .insideScoreScale());
 
             // Skip sentences we couldn't parse
             if (Double.isInfinite(ll) || Double.isNaN(ll)) {
@@ -464,13 +464,13 @@ public class GrammarTrainer extends BaseCommandlineTool {
         for (final Tree<StateSet> stateSetTree : trainStateSetTrees) {
             parser.doInsideOutsideScores(stateSetTree, true); // E step
 
-            final double ll = IEEEDoubleScaling.logLikelihood(stateSetTree.label().getIScore(0), stateSetTree.label()
-                    .getIScale());
+            final double ll = IEEEDoubleScaling.logLikelihood(stateSetTree.label().insideScore(0), stateSetTree.label()
+                    .insideScoreScale());
 
             if ((Double.isInfinite(ll) || Double.isNaN(ll))) {
                 BaseLogger.singleton().finer(
                         String.format("Training sentence %d :%f  Root iScore: %.3f  Scale: %d", n, ll, stateSetTree
-                                .label().getIScore(0), stateSetTree.label().getIScale()));
+                                .label().insideScore(0), stateSetTree.label().insideScoreScale()));
                 continue;
             }
 
@@ -498,18 +498,21 @@ public class GrammarTrainer extends BaseCommandlineTool {
         double totalLogLikelihood = 0;
 
         for (final Tree<StateSet> stateSetTree : corpus) {
+
+            if (stateSetTree.isLeaf()) {
+                continue;
+            }
+
             // Only the inside scores are needed here
             parser.doInsideScores(stateSetTree, false);
-            final double ll = IEEEDoubleScaling.logLikelihood(stateSetTree.label().getIScore(0), stateSetTree.label()
-                    .getIScale());
+            final double ll = IEEEDoubleScaling.logLikelihood(stateSetTree.label().insideScore(0), stateSetTree.label()
+                    .insideScoreScale());
 
             // A few sentences are unparsable
             if (!Double.isInfinite(ll) && !Double.isNaN(ll)) {
                 totalLogLikelihood += ll;
             }
         }
-        // if (unparsable>0)
-        // System.out.print("Number of unparsable trees: "+unparsable+".");
         return totalLogLikelihood;
     }
 
@@ -525,14 +528,14 @@ public class GrammarTrainer extends BaseCommandlineTool {
             final String word = wordIterator.next().getWord();
             boolean lexiconProblemHere = true;
             for (int i = 0; i < stateSet.numSubStates(); i++) {
-                final double score = stateSet.getIScore(i);
+                final double score = stateSet.insideScore(i);
                 if (!(Double.isInfinite(score) || Double.isNaN(score))) {
                     lexiconProblemHere = false;
                 }
             }
             if (lexiconProblemHere) {
                 System.out.println("LEXICON PROBLEM ON STATE " + stateSet.getState() + " word " + word);
-                System.out.println("  word " + lexicon.wordCounter.getCount(stateSet.getWord()));
+                System.out.println("  word " + lexicon.wordCounter.getDouble(stateSet.getWord()));
                 for (int i = 0; i < stateSet.numSubStates(); i++) {
                     System.out.println("  tag " + lexicon.tagCounter[stateSet.getState()][i]);
                     System.out.println("  word/state/sub "
@@ -558,7 +561,7 @@ public class GrammarTrainer extends BaseCommandlineTool {
     public static double logLikelihood(final List<Tree<StateSet>> trees, final boolean verbose) {
         double likelihood = 0, l = 0;
         for (final Tree<StateSet> tree : trees) {
-            l = tree.label().getIScore(0);
+            l = tree.label().insideScore(0);
             if (verbose)
                 System.out.println("LL is " + l + ".");
             if (Double.isInfinite(l) || Double.isNaN(l)) {

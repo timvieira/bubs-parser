@@ -26,11 +26,12 @@ public class GrammarMerger {
         for (short state = 0; state < numSubStatesArray.length; state++) {
             System.out.print("\nState " + tagNumberer.symbol(state) + " had " + numSubStatesArray[state]
                     + " substates and now has " + newNumSubStatesArray[state] + ".");
-            if (!grammar.isGrammarTag(state)) {
-                lexiconStates.add(tagNumberer.symbol(state), newNumSubStatesArray[state]);
-            } else {
-                grammarStates.add(tagNumberer.symbol(state), newNumSubStatesArray[state]);
-            }
+            // This is broken, but we're going to change it anyway...
+            // if (!grammar.isGrammarTag(state)) {
+            lexiconStates.add(tagNumberer.symbol(state), newNumSubStatesArray[state]);
+            // } else {
+            // grammarStates.add(tagNumberer.symbol(state), newNumSubStatesArray[state]);
+            // }
         }
 
         System.out.print("\n");
@@ -126,8 +127,8 @@ public class GrammarMerger {
         for (final Tree<StateSet> stateSetTree : trainStateSetTrees) {
 
             parser.doInsideOutsideScores(stateSetTree, false); // E-step
-            final double ll = IEEEDoubleScaling.logLikelihood(stateSetTree.label().getIScore(0), stateSetTree.label()
-                    .getIScale());
+            final double ll = IEEEDoubleScaling.logLikelihood(stateSetTree.label().insideScore(0), stateSetTree.label()
+                    .insideScoreScale());
 
             if (!Double.isInfinite(ll)) {
                 grammar.tallyMergeScores(stateSetTree, deltas, mergeWeights);
@@ -154,8 +155,8 @@ public class GrammarMerger {
         for (final Tree<StateSet> stateSetTree : trainStateSetTrees) {
             parser.doInsideOutsideScores(stateSetTree, false); // E-step
 
-            final double ll = IEEEDoubleScaling.logLikelihood(stateSetTree.label().getIScore(0), stateSetTree.label()
-                    .getIScale());
+            final double ll = IEEEDoubleScaling.logLikelihood(stateSetTree.label().insideScore(0), stateSetTree.label()
+                    .insideScoreScale());
 
             if (Double.isInfinite(ll)) {
                 System.out.println("Training sentence " + n + " is given -inf log likelihood!");

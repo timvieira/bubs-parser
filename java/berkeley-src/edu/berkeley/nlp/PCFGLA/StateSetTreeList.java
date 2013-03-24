@@ -23,81 +23,9 @@ import edu.berkeley.nlp.util.Numberer;
  * @author Romain Thibaux
  */
 public class StateSetTreeList extends AbstractCollection<Tree<StateSet>> {
+
     List<Tree<StateSet>> trees;
     static short zero = 0, one = 1;
-
-    /*
-     * Allocate the inside and outside score arrays for the whole tree
-     */
-    void allocate(final Tree<StateSet> tree) {
-        tree.label().allocate();
-        for (final Tree<StateSet> child : tree.children()) {
-            allocate(child);
-        }
-    }
-
-    /*
-     * Deallocate the inside and outside score arrays for the whole tree
-     */
-    void deallocate(final Tree<StateSet> tree) {
-        tree.label().deallocate();
-        for (final Tree<StateSet> child : tree.children()) {
-            deallocate(child);
-        }
-    }
-
-    /*
-     * create a deep copy of this object
-     */
-    public StateSetTreeList copy() {
-        final StateSetTreeList copy = new StateSetTreeList();
-        for (final Tree<StateSet> tree : trees) {
-            copy.add(copyTree(tree));
-        }
-        return copy;
-    }
-
-    /**
-     * @param tree
-     * @return
-     */
-    private Tree<StateSet> copyTree(final Tree<StateSet> tree) {
-        final ArrayList<Tree<StateSet>> newChildren = new ArrayList<Tree<StateSet>>(tree.children().size());
-        for (final Tree<StateSet> child : tree.children()) {
-            newChildren.add(copyTree(child));
-        }
-        return new Tree<StateSet>(tree.label().copy(), newChildren);
-    }
-
-    public class StateSetTreeListIterator implements Iterator<Tree<StateSet>> {
-        Iterator<Tree<StateSet>> stringTreeListIterator;
-        Tree<StateSet> currentTree;
-
-        public StateSetTreeListIterator() {
-            stringTreeListIterator = trees.iterator();
-            currentTree = null;
-        }
-
-        public boolean hasNext() {
-            // A somewhat crappy API, the tree is deallocated when hasNext() is
-            // called,
-            // which is PRESUMABLY when the current tree is no longer needed.
-            if (currentTree != null) {
-                deallocate(currentTree);
-            }
-            return stringTreeListIterator.hasNext();
-        }
-
-        public Tree<StateSet> next() {
-            currentTree = stringTreeListIterator.next();
-            // allocate(currentTree);
-            return currentTree;
-        }
-
-        public void remove() {
-            stringTreeListIterator.remove();
-        }
-    }
 
     /**
      * 
@@ -125,6 +53,44 @@ public class StateSetTreeList extends AbstractCollection<Tree<StateSet>> {
 
     public StateSetTreeList() {
         this.trees = new ArrayList<Tree<StateSet>>();
+    }
+
+    /*
+     * Deallocate the inside and outside score arrays for the whole tree
+     */
+    void deallocateScores(final Tree<StateSet> tree) {
+        tree.label().deallocateScores();
+        for (final Tree<StateSet> child : tree.children()) {
+            deallocateScores(child);
+        }
+    }
+
+    public class StateSetTreeListIterator implements Iterator<Tree<StateSet>> {
+        Iterator<Tree<StateSet>> stringTreeListIterator;
+        Tree<StateSet> currentTree;
+
+        public StateSetTreeListIterator() {
+            stringTreeListIterator = trees.iterator();
+            currentTree = null;
+        }
+
+        public boolean hasNext() {
+            // A somewhat crappy API, the tree is deallocated when hasNext() is called,
+            // which is PRESUMABLY when the current tree is no longer needed.
+            if (currentTree != null) {
+                deallocateScores(currentTree);
+            }
+            return stringTreeListIterator.hasNext();
+        }
+
+        public Tree<StateSet> next() {
+            currentTree = stringTreeListIterator.next();
+            return currentTree;
+        }
+
+        public void remove() {
+            stringTreeListIterator.remove();
+        }
     }
 
     @Override

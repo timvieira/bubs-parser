@@ -1,5 +1,7 @@
 package edu.berkeley.nlp.PCFGLA;
 
+import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
+
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -10,7 +12,6 @@ import java.util.Set;
 import edu.berkeley.nlp.PCFGLA.smoothing.Smoother;
 import edu.berkeley.nlp.syntax.StateSet;
 import edu.berkeley.nlp.syntax.Tree;
-import edu.berkeley.nlp.util.Counter;
 import edu.berkeley.nlp.util.IEEEDoubleScaling;
 import edu.berkeley.nlp.util.Numberer;
 
@@ -43,7 +44,7 @@ public class Lexicon implements java.io.Serializable {
     /** The set of preterminal tags */
     Set<Short> allTags = new HashSet<Short>();
     /** The count of how often each word as been seen */
-    Counter<String> wordCounter = new Counter<String>();
+    Object2DoubleOpenHashMap<String> wordCounter = new Object2DoubleOpenHashMap<String>();
     /**
      * A trick to allow loading of saved Lexicons even if the version has changed.
      */
@@ -241,10 +242,10 @@ public class Lexicon implements java.io.Serializable {
         }
 
         lexicon.allTags = new HashSet<Short>(allTags);
-        lexicon.wordCounter = new Counter<String>();
+        lexicon.wordCounter = new Object2DoubleOpenHashMap<String>();
 
         for (final String word : wordCounter.keySet()) {
-            lexicon.wordCounter.setCount(word, wordCounter.getCount(word));
+            lexicon.wordCounter.put(word, wordCounter.getDouble(word));
         }
 
         lexicon.smoothingCutoff = smoothingCutoff;
@@ -592,7 +593,7 @@ public class Lexicon implements java.io.Serializable {
     public double[] score(final String word, final short tag, final int loc, final boolean noSmoothing,
             final boolean isSignature) {
 
-        final double c_W = wordCounter.getCount(word);
+        final double c_W = wordCounter.getDouble(word);
         final boolean seen = (c_W > 0.0);
 
         final double[] tagStateCounter = tagCounter[tag];
@@ -691,7 +692,7 @@ public class Lexicon implements java.io.Serializable {
             // if (c_TS == 0) continue;
 
             // how often did we see this signature
-            double c_S = wordCounter.getCount(sig);
+            double c_S = wordCounter.getDouble(sig);
             final double c_U = totalUnseenTokens;
             final double total = totalTokens; // seenCounter.getCount(iTW);
             final double c_T = unseenTagCounter[tag][substate];// unSeenCounter.getCount(iTW);
@@ -735,7 +736,7 @@ public class Lexicon implements java.io.Serializable {
             for (final Map.Entry<String, double[]> wordToTagEntry : wordToTagCounters[ni].entrySet()) {
                 final String word = wordToTagEntry.getKey();
                 final double[] substateCounter = wordToTagEntry.getValue();
-                if (wordCounter.getCount(word) < threshold + 0.5) {
+                if (wordCounter.getDouble(word) < threshold + 0.5) {
                     // c(w|base tag)
                     double wordTagTokens = 0;
                     for (int si = 0; si < numSubStates[ni]; si++) {
@@ -759,13 +760,13 @@ public class Lexicon implements java.io.Serializable {
         // for all substates that the word's preterminal tag has
         double sentenceScore = 0;
         if (randomness == -1) {
-            sentenceScore = trainTree.label().getIScore(0);
+            sentenceScore = trainTree.label().insideScore(0);
             if (sentenceScore == 0) {
                 System.out.println("Something is wrong with this tree. I will skip it.");
                 return;
             }
         }
-        final int sentenceScale = trainTree.label().getIScale();
+        final int sentenceScale = trainTree.label().insideScoreScale();
 
         final List<StateSet> words = trainTree.leafLabels();
         final List<StateSet> tags = trainTree.preterminalLabels();
@@ -812,14 +813,14 @@ public class Lexicon implements java.io.Serializable {
             }
 
             final StateSet currentState = tags.get(position);
-            final double scale = IEEEDoubleScaling.scalingMultiplier(currentState.getOScale() - sentenceScale)
+            final double scale = IEEEDoubleScaling.scalingMultiplier(currentState.outsideScoreScale() - sentenceScale)
                     / sentenceScore;
 
             for (short substate = 0; substate < nSubStates; substate++) {
                 double weight = 1;
                 if (oldLexiconScores != null) {
                     // weight by the probability of seeing the tag and word together, given the sentence
-                    weight = currentState.getOScore(substate) * oldLexiconScores[substate] * scale;
+                    weight = currentState.outsideScore(substate) * oldLexiconScores[substate] * scale;
 
                 } else if (randomness == 0) {
                     // for the baseline
@@ -837,15 +838,15 @@ public class Lexicon implements java.io.Serializable {
                 substateCounter[substate] += weight;
                 // update the counters
                 tagCounter[tag][substate] += weight;
-                wordCounter.incrementCount(word, weight);
+                wordCounter.add(word, weight);
                 totalTokens += weight;
 
                 if (Double.isNaN(totalTokens)) {
                     throw new IllegalArgumentException("totalTokens is NaN");
                 }
 
-                if (oldLexicon != null && oldLexicon.wordCounter.getCount(word) < threshold + 0.5) {
-                    wordCounter.incrementCount(sig, weight);
+                if (oldLexicon != null && oldLexicon.wordCounter.getDouble(word) < threshold + 0.5) {
+                    wordCounter.add(sig, weight);
                     substateCounter2[substate] += weight;
                     unseenTagCounter[tag][substate] += weight;
                     totalUnseenTokens += weight;
