@@ -331,7 +331,7 @@ public class NaryTree<E> implements Tree<E>, Serializable {
         return postOrderLabelList(new LinkedList<E>());
     }
 
-    private List<NaryTree<E>> leafList(final List<NaryTree<E>> list) {
+    private <L extends List<NaryTree<E>>> L leafList(final L list) {
         for (final NaryTree<E> node : inOrderList()) {
             if (node.isLeaf()) {
                 list.add(node);
@@ -344,6 +344,10 @@ public class NaryTree<E> implements Tree<E>, Serializable {
     @Override
     public Iterable<NaryTree<E>> leafTraversal() {
         // A simple and stupid implementation, but we can tune for performance if needed
+        return leafList(new LinkedList<NaryTree<E>>());
+    }
+
+    public LinkedList<NaryTree<E>> leafList() {
         return leafList(new LinkedList<NaryTree<E>>());
     }
 
