@@ -24,6 +24,8 @@ import edu.berkeley.nlp.util.Numberer;
  */
 public class Lexicon implements java.io.Serializable {
 
+    private static final long serialVersionUID = 2L;
+
     /** A count of strings with tags. Indexed by state, word, and substate. */
     HashMap<String, double[]>[] wordToTagCounters = null;
     HashMap<String, double[]>[] unseenWordToTagCounters = null;
@@ -35,27 +37,28 @@ public class Lexicon implements java.io.Serializable {
      * A count of how many different words each full tag has been seen with. Indexed by state and substate
      */
     double[][] typeTagCounter;
-    /**
-     * A count of tag (state + subState) occurrences. Indexed by state and substate
-     */
+
+    /** Counts of tag (state + subState) occurrences. Indexed by state and substate */
     double[][] tagCounter;
     double[][] unseenTagCounter;
+
     double[] simpleTagCounter;
+
     /** The set of preterminal tags */
     Set<Short> allTags = new HashSet<Short>();
+
     /** The count of how often each word as been seen */
     Object2DoubleOpenHashMap<String> wordCounter = new Object2DoubleOpenHashMap<String>();
-    /**
-     * A trick to allow loading of saved Lexicons even if the version has changed.
-     */
-    private static final long serialVersionUID = 2L;
+
     /** The number of substates for each state */
     short[] numSubStates;
 
     /** Word-tag pairs that occur less are smoothed. */
     int smoothingCutoff;
+
     /** The default smoothing cutoff. */
     public static int DEFAULT_SMOOTHING_CUTOFF = 10;
+
     /** Add X smoothing for P(word) */
     double addXSmoothing = 1.0;
 
@@ -75,25 +78,16 @@ public class Lexicon implements java.io.Serializable {
     protected transient HashMap<String, String> cachedSentenceInitialSignatures = new HashMap<String, String>();
     private int unknownLevel = 5; // different modes for unknown words, 5 is
                                   // english specific
+
     /**
-     * A POS tag has to have been attributed to more than this number of word types before it is regarded as an
-     * open-class tag. Unknown words will only possibly be tagged as open-class tags (unless flexiTag is on).
+     * Unique word count threshold for open-class preterminals. If a preterminal (POS) is observed with more than
+     * {@link #openClassTypesThreshold} unique words, it will be considered open-class. Unknown words will be assgined
+     * to open-class preterminals.
      */
     public static int openClassTypesThreshold = 50;
 
-    /**
-     * Start to aggregate signature-tag pairs only for words unseen in the first this fraction of the data.
-     */
-    public static double fractionBeforeUnseenCounting = 0.5; // -> secondHalf
-    // protected transient Set<IntTaggedWord> sigs=new HashSet<IntTaggedWord>();
-    /**
-     * Has counts for taggings in terms of unseen signatures. The IntTagWords are for (tag,sig), (tag,null), (null,sig),
-     * (null,null). (None for basic UNK if there are signatures.)
-     */
-    protected static final int nullWord = -1;
-    protected static final short nullTag = -1;
     double smoothInUnknownsThreshold = 100;
-    double[] smooth = null; // {1.0, 1.0};
+    double[] smooth = null;
 
     /**
      * Create a blank Lexicon object. Fill it by calling tallyStateSetTree for each training tree, then calling

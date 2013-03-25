@@ -36,6 +36,7 @@ public class Grammar implements Serializable, Cloneable {
     /** Used after splitting */
     private BinaryRule[][] splitRulesWithP;
 
+    // TODO Consolidate into computePairsOfUnaries()?
     private List<UnaryRule>[] unaryRulesWithParent;
     private List<UnaryRule>[] unaryRulesWithC;
     private List<UnaryRule>[] closedViterbiRulesWithParent = null;
@@ -173,7 +174,7 @@ public class Grammar implements Serializable, Cloneable {
                 scores[i][i] = 1;
             }
             final UnaryRule selfR = new UnaryRule(s, s, scores);
-            relaxViterbiRule(selfR);
+            closedViterbiRulesWithParent[selfR.parentState].add(selfR);
         }
     }
 
@@ -266,6 +267,11 @@ public class Grammar implements Serializable, Cloneable {
         }
     }
 
+    /**
+     * TODO Only used in {@link WriteGrammarToTextFile}. Remove when we remove that.
+     * 
+     * @param w
+     */
     public void writeData(final Writer w) {
 
         final PrintWriter out = new PrintWriter(w);
@@ -318,6 +324,12 @@ public class Grammar implements Serializable, Cloneable {
         smooth();
     }
 
+    /**
+     * TODO Only used in {@link WriteGrammarToTextFile}. Remove when we remove that.
+     * 
+     * @param thresh
+     * @param power
+     */
     public void removeUnlikelyRules(final double thresh, final double power) {
         // System.out.print("Removing everything below "+thresh+" and rasiing rules to the "
         // +power+"th power... ");
@@ -384,7 +396,7 @@ public class Grammar implements Serializable, Cloneable {
      * Normalize the unary & binary counts from {@link #packedUnaryCountMap} and {@link #packedBinaryCountMap},
      * populating the resulting probabilities into {@link #packedUnaryRuleMap} and {@link #packedBinaryRuleMap}
      */
-    public void normalizeCounts() {
+    private void normalizeCounts() {
 
         final double[][] parentCounts = observedParentCounts();
 
@@ -709,15 +721,6 @@ public class Grammar implements Serializable, Cloneable {
     }
 
     /**
-     * Initialize the best unary chain probabilities and paths with this rule.
-     * 
-     * @param rule
-     */
-    private void relaxViterbiRule(final UnaryRule rule) {
-        closedViterbiRulesWithParent[rule.parentState].add(rule);
-    }
-
-    /**
      * Populates the "splitRules" accessor lists using the existing rule lists. If the state is synthetic, these lists
      * contain all rules for the state. If the state is NOT synthetic, these lists contain only the rules in which both
      * children are not synthetic.
@@ -869,9 +872,11 @@ public class Grammar implements Serializable, Cloneable {
         }
     }
 
-    /*
+    /**
      * normalize merge weights. assumes that the mergeWeights are given as logs. the normalized weights are returned as
      * probabilities.
+     * 
+     * TODO Only used in {@link GrammarMerger}. Move it there? Or combine into Grammar?
      */
     public void normalizeMergeWeights(final double[][] mergeWeights) {
         for (int state = 0; state < mergeWeights.length; state++) {
@@ -1257,7 +1262,7 @@ public class Grammar implements Serializable, Cloneable {
     }
 
     /**
-     * @param w
+     * @param w TODO Only used in {@link WriteGrammarToTextFile}. Remove when we remove that.
      */
     public void writeSplitTrees(final Writer w) {
         final PrintWriter out = new PrintWriter(w);
@@ -1269,15 +1274,6 @@ public class Grammar implements Serializable, Cloneable {
         }
         out.flush();
         out.close();
-    }
-
-    public int maxSubStates() {
-        int max = 0;
-        for (int i = 0; i < numSubStates.length; i++) {
-            if (numSubStates[i] > max)
-                max = numSubStates[i];
-        }
-        return max;
     }
 
     @Override
