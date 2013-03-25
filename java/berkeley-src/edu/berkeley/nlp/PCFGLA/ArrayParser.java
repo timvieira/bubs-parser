@@ -66,8 +66,12 @@ public class ArrayParser {
                     final short childSplit = packedUnaryRule.substates[j];
                     final short parentSplit = packedUnaryRule.substates[j + 1];
 
-                    final double score = iScores[parentSplit] + packedUnaryRule.ruleScores[i]
-                            * child.insideScore(childSplit);
+                    final double childInside = child.insideScore(childSplit);
+                    if (childInside == 0) {
+                        continue;
+                    }
+
+                    final double score = iScores[parentSplit] + packedUnaryRule.ruleScores[i] * childInside;
 
                     iScores[parentSplit] = score;
                     if (score > max) {
@@ -97,8 +101,19 @@ public class ArrayParser {
                     final short rightChildSplit = packedBinaryRule.substates[j + 1];
                     final short parentSplit = packedBinaryRule.substates[j + 2];
 
-                    final double score = iScores2[parentSplit] + packedBinaryRule.ruleScores[i]
-                            * leftChild.insideScore(leftChildSplit) * rightChild.insideScore(rightChildSplit);
+                    final double leftChildInside = leftChild.insideScore(leftChildSplit);
+                    if (leftChildInside == 0) {
+                        continue;
+                    }
+
+                    final double rightChildInside = rightChild.insideScore(rightChildSplit);
+                    if (rightChildInside == 0) {
+                        continue;
+                    }
+
+                    final double score = iScores2[parentSplit] + packedBinaryRule.ruleScores[i] * leftChildInside
+                            * rightChildInside;
+
                     iScores2[parentSplit] = score;
                     if (score > max) {
                         max = score;
@@ -106,8 +121,8 @@ public class ArrayParser {
                 }
 
                 parent.setInsideScores(iScores2);
-                parent.setInsideScoreScale(IEEEDoubleScaling.scaleArray(iScores2, leftChild.insideScoreScale() + rightChild.insideScoreScale(),
-                        max));
+                parent.setInsideScoreScale(IEEEDoubleScaling.scaleArray(iScores2, leftChild.insideScoreScale()
+                        + rightChild.insideScoreScale(), max));
                 break;
             }
 
@@ -126,7 +141,7 @@ public class ArrayParser {
      * 
      * @param tree
      */
-    void doOutsideScores(final Tree<StateSet> tree) {
+    private void doOutsideScores(final Tree<StateSet> tree) {
 
         final ArrayList<Tree<StateSet>> children = tree.children();
         final StateSet parent = tree.label();
@@ -148,8 +163,12 @@ public class ArrayParser {
                 final short childSplit = packedUnaryRule.substates[j];
                 final short parentSplit = packedUnaryRule.substates[j + 1];
 
-                final double score = oScores[childSplit] + packedUnaryRule.ruleScores[i]
-                        * parentOutsideScores[parentSplit];
+                final double parentOutside = parentOutsideScores[parentSplit];
+                if (parentOutside == 0) {
+                    continue;
+                }
+
+                final double score = oScores[childSplit] + packedUnaryRule.ruleScores[i] * parentOutside;
 
                 oScores[childSplit] = score;
                 if (score > max) {
@@ -188,8 +207,13 @@ public class ArrayParser {
                 final double leftChildInsideScore = leftChild.insideScore(leftChildSplit);
                 final double rightChildInsideScore = rightChild.insideScore(rightChildSplit);
 
+                final double parentOutside = parentOutsideScores[parentSplit];
+                if (parentOutside == 0) {
+                    continue;
+                }
+
                 // Parent outside x rule
-                final double jointRuleScore = parentOutsideScores[parentSplit] * packedBinaryRule.ruleScores[i];
+                final double jointRuleScore = parentOutside * packedBinaryRule.ruleScores[i];
 
                 final double lScore = lOScores[leftChildSplit] + jointRuleScore * rightChildInsideScore;
 
@@ -207,12 +231,12 @@ public class ArrayParser {
             }
 
             leftChild.setOutsideScores(lOScores);
-            leftChild.setOutsideScoreScale(IEEEDoubleScaling.scaleArray(lOScores, parent.outsideScoreScale() + rightChild.insideScoreScale(),
-                    lMax));
+            leftChild.setOutsideScoreScale(IEEEDoubleScaling.scaleArray(lOScores, parent.outsideScoreScale()
+                    + rightChild.insideScoreScale(), lMax));
 
             rightChild.setOutsideScores(rOScores);
-            rightChild.setOutsideScoreScale(IEEEDoubleScaling.scaleArray(rOScores, parent.outsideScoreScale() + leftChild.insideScoreScale(),
-                    rMax));
+            rightChild.setOutsideScoreScale(IEEEDoubleScaling.scaleArray(rOScores, parent.outsideScoreScale()
+                    + leftChild.insideScoreScale(), rMax));
 
             break;
         }
