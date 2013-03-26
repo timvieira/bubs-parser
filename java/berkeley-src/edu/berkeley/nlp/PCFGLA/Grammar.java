@@ -53,7 +53,7 @@ public class Grammar implements Serializable, Cloneable {
     private Int2ObjectOpenHashMap<PackedUnaryRule> packedUnaryRuleMap = new Int2ObjectOpenHashMap<Grammar.PackedUnaryRule>();
     private Int2ObjectOpenHashMap<PackedUnaryCount> packedUnaryCountMap = new Int2ObjectOpenHashMap<Grammar.PackedUnaryCount>();
 
-    protected final Numberer tagNumberer;
+    protected final Numberer tagNumberer = Numberer.getGlobalNumberer("tags");
 
     public double minRuleProbability;
 
@@ -77,7 +77,6 @@ public class Grammar implements Serializable, Cloneable {
      *            state is split recursively.
      */
     public Grammar(final Grammar previousGrammar, final short[] numSubStates) {
-        this.tagNumberer = Numberer.getGlobalNumberer("tags");
         this.smoother = previousGrammar.smoother;
         this.minRuleProbability = previousGrammar.minRuleProbability;
 
@@ -122,7 +121,6 @@ public class Grammar implements Serializable, Cloneable {
     @SuppressWarnings("unchecked")
     public Grammar(final short[] numSubStates, final Smoother smoother, final double minRuleProbability) {
 
-        this.tagNumberer = Numberer.getGlobalNumberer("tags");
         this.smoother = smoother;
         this.minRuleProbability = minRuleProbability;
 
@@ -764,14 +762,21 @@ public class Grammar implements Serializable, Cloneable {
     }
 
     public PackedUnaryRule getPackedUnaryScores(final short unsplitParent, final short unsplitChild) {
-
         return packedUnaryRuleMap.get(unaryKey(unsplitParent, unsplitChild));
+    }
+
+    public PackedUnaryCount getPackedUnaryCount(final short unsplitParent, final short unsplitChild) {
+        return packedUnaryCountMap.get(unaryKey(unsplitParent, unsplitChild));
     }
 
     public PackedBinaryRule getPackedBinaryScores(final short unsplitParent, final short unsplitLeftChild,
             final short unsplitRightChild) {
-
         return packedBinaryRuleMap.get(binaryKey(unsplitParent, unsplitLeftChild, unsplitRightChild));
+    }
+
+    public PackedBinaryCount getPackedBinaryCount(final short unsplitParent, final short unsplitLeftChild,
+            final short unsplitRightChild) {
+        return packedBinaryCountMap.get(binaryKey(unsplitParent, unsplitLeftChild, unsplitRightChild));
     }
 
     /**

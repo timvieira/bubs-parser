@@ -266,7 +266,6 @@ public class GrammarTrainer extends BaseCommandlineTool {
                 doOneEStep(grammar, maxLexicon, null, lexicon, trainStateSetTrees, rareWordThreshold);
                 lexicon.optimize();
 
-                GrammarMerger.printMergingStatistics(maxGrammar, grammar);
                 opString = "merging";
                 maxGrammar = grammar;
                 maxLexicon = lexicon;
@@ -475,9 +474,9 @@ public class GrammarTrainer extends BaseCommandlineTool {
             }
 
             lexicon.trainTree(stateSetTree, -1, previousLexicon, true, unkThreshold);
-            if (grammar != null) {
-                grammar.countSplitTree(stateSetTree, previousGrammar); // E step
-            }
+             if (grammar != null) {
+             grammar.countSplitTree(stateSetTree, previousGrammar); // E step
+             }
             trainingLikelihood += ll; // there are for some reason some
                                       // sentences that are unparsable
         }

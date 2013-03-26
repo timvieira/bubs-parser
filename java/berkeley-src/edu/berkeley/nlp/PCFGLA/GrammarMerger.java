@@ -9,35 +9,10 @@ import edu.berkeley.nlp.syntax.Tree;
 import edu.berkeley.nlp.util.ArrayUtil;
 import edu.berkeley.nlp.util.IEEEDoubleScaling;
 import edu.berkeley.nlp.util.Numberer;
-import edu.berkeley.nlp.util.PriorityQueue;
 
 public class GrammarMerger {
 
-    /**
-     * @param grammar
-     * @param newGrammar
-     */
-    public static void printMergingStatistics(final Grammar grammar, final Grammar newGrammar) {
-        final PriorityQueue<String> lexiconStates = new PriorityQueue<String>();
-        final PriorityQueue<String> grammarStates = new PriorityQueue<String>();
-        final short[] numSubStatesArray = grammar.numSubStates;
-        final short[] newNumSubStatesArray = newGrammar.numSubStates;
-        final Numberer tagNumberer = grammar.tagNumberer;
-        for (short state = 0; state < numSubStatesArray.length; state++) {
-            System.out.print("\nState " + tagNumberer.symbol(state) + " had " + numSubStatesArray[state]
-                    + " substates and now has " + newNumSubStatesArray[state] + ".");
-            // This is broken, but we're going to change it anyway...
-            // if (!grammar.isGrammarTag(state)) {
-            lexiconStates.add(tagNumberer.symbol(state), newNumSubStatesArray[state]);
-            // } else {
-            // grammarStates.add(tagNumberer.symbol(state), newNumSubStatesArray[state]);
-            // }
-        }
-
-        System.out.print("\n");
-        System.out.println("Lexicon: " + lexiconStates.toString());
-        System.out.println("Grammar: " + grammarStates.toString());
-    }
+    protected final static Numberer tagNumberer = Numberer.getGlobalNumberer("tags");
 
     /**
      * This function was written to have the ability to also merge non-sibling pairs, however this functionality is not
@@ -201,11 +176,9 @@ public class GrammarMerger {
         }
         double threshold = -1;
         Collections.sort(deltaSiblings);
-        System.out.println("Going to merge " + (int) (mergingPercentage * 100) + "% of the substates siblings.");
         threshold = deltaSiblings.get((int) (nSiblings * mergingPercentage));
-        System.out.println("Setting the threshold for siblings to " + threshold + ".");
+        BaseLogger.singleton().info("Merge threshold: " + threshold);
 
-        final int mergePair = 0;
         int mergeSiblings = 0;
         for (int state = 0; state < mergeThesePairs.length; state++) {
             mergeThesePairs[state] = new boolean[numSubStatesArray[state]][numSubStatesArray[state]];
@@ -218,32 +191,17 @@ public class GrammarMerger {
                 }
             }
         }
-        // TODO Replace the output with the BUBS version
-        // // Output the costs and potential rule-count savings for each mergeable non-terminal
-        // if (BaseLogger.singleton().isLoggable(Level.FINE)) {
-        // final StringBuilder sb = new StringBuilder();
-        // for (int i = 0; i < mergeCosts.size(); i++) {
-        // sb.append(mergeCosts.get(i).toString());
-        // sb.append('\n');
-        //
-        // // Label the cut-point
-        // if (i == mergeIndices.length) {
-        // sb.append("--------\n");
-        // }
-        // }
-        // BaseLogger.singleton().fine("Merge Costs:");
-        // BaseLogger.singleton().fine(sb.toString());
-        // }
-        System.out.println("Merging " + mergeSiblings + " siblings and " + mergePair + " other pairs.");
+
+        BaseLogger.singleton().info("Merging " + mergeSiblings + " siblings.");
         for (short state = 0; state < deltas.length; state++) {
-            System.out.print("State " + grammar.tagNumberer.symbol(state));
             for (int i = 0; i < numSubStatesArray[state]; i++) {
                 for (int j = i + 1; j < numSubStatesArray[state]; j++) {
                     if (mergeThesePairs[state][i][j])
-                        System.out.print(". Merging pair (" + i + "," + j + ") at cost " + deltas[state][i][j]);
+                        BaseLogger.singleton().info(
+                                String.format("Merging %s_%d and %s_%d Cost : %f", tagNumberer.symbol(state), i,
+                                        tagNumberer.symbol(state), j, deltas[state][i][j]));
                 }
             }
-            System.out.print(".\n");
         }
         return mergeThesePairs;
     }

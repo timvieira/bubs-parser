@@ -119,32 +119,6 @@ public class ArrayParser {
                         max = score;
                     }
                 }
-                
-//                final short leftChildSplits = grammar.numSubStates[unsplitLeftChild];
-//                for (short leftChildSplit = 0; leftChildSplit < leftChildSplits; leftChildSplit++) {
-//                    final double leftChildInside = leftChild.insideScore(leftChildSplit);
-//                    if (leftChildInside == 0) {
-//                        continue;
-//                    }
-//
-//                    for (int i = packedBinaryRule.leftChildOffsets[leftChildSplit], j = i * 3; i < packedBinaryRule.leftChildOffsets[leftChildSplit + 1]; i++, j += 3) {
-//                        final short rightChildSplit = packedBinaryRule.substates[j + 1];
-//                        final short parentSplit = packedBinaryRule.substates[j + 2];
-//
-//                        final double rightChildInside = rightChild.insideScore(rightChildSplit);
-//                        if (rightChildInside == 0) {
-//                            continue;
-//                        }
-//
-//                        final double score = iScores2[parentSplit] + packedBinaryRule.ruleScores[i] * leftChildInside
-//                                * rightChildInside;
-//
-//                        iScores2[parentSplit] = score;
-//                        if (score > max) {
-//                            max = score;
-//                        }
-//                    }
-//                }
 
                 parent.setInsideScores(iScores2);
                 parent.setInsideScoreScale(IEEEDoubleScaling.scaleArray(iScores2, leftChild.insideScoreScale()
@@ -226,7 +200,12 @@ public class ArrayParser {
             // Iterate through all splits of the rule. Most will have non-0 child and parent probability (since the
             // rule currently exists in the grammar), and this iteration order is very efficient
             for (int i = 0, j = 0; i < packedBinaryRule.ruleScores.length; i++, j += 3) {
+                final short leftChildSplit = packedBinaryRule.substates[j];
+                final short rightChildSplit = packedBinaryRule.substates[j + 1];
                 final short parentSplit = packedBinaryRule.substates[j + 2];
+
+                final double leftChildInsideScore = leftChild.insideScore(leftChildSplit);
+                final double rightChildInsideScore = rightChild.insideScore(rightChildSplit);
 
                 final double parentOutside = parentOutsideScores[parentSplit];
                 if (parentOutside == 0) {
@@ -235,12 +214,6 @@ public class ArrayParser {
 
                 // Parent outside x rule
                 final double jointRuleScore = parentOutside * packedBinaryRule.ruleScores[i];
-
-                final short leftChildSplit = packedBinaryRule.substates[j];
-                final short rightChildSplit = packedBinaryRule.substates[j + 1];
-
-                final double leftChildInsideScore = leftChild.insideScore(leftChildSplit);
-                final double rightChildInsideScore = rightChild.insideScore(rightChildSplit);
 
                 final double lScore = lOScores[leftChildSplit] + jointRuleScore * rightChildInsideScore;
 
