@@ -408,7 +408,8 @@ public class Grammar implements Serializable, Cloneable {
 
         for (final int binaryKey : packedBinaryCountMap.keySet()) {
             final PackedBinaryCount packedCount = packedBinaryCountMap.get(binaryKey);
-            final PackedBinaryRule packedRule = new PackedBinaryRule(packedCount, parentCounts, minRuleProbability);
+            final PackedBinaryRule packedRule = new PackedBinaryRule(packedCount, parentCounts, numSubStates,
+                    minRuleProbability);
             packedBinaryRuleMap.put(binaryKey, packedRule);
         }
     }
@@ -550,15 +551,19 @@ public class Grammar implements Serializable, Cloneable {
             // Iterate through all splits of the rule. Most will have non-0 child and parent probability (since the
             // rule currently exists in the grammar), and this iteration order is very efficient
             for (int i = 0, j = 0; i < packedBinaryRule.ruleScores.length; i++, j += 3) {
+                final short parentSplit = packedBinaryRule.substates[j + 2];
+                final double parentOutsideScore = parent.outsideScore(parentSplit);
+                if (parentOutsideScore == 0) {
+                    continue;
+                }
+
                 final short leftChildSplit = packedBinaryRule.substates[j];
                 final short rightChildSplit = packedBinaryRule.substates[j + 1];
-                final short parentSplit = packedBinaryRule.substates[j + 2];
-
                 final double leftChildInsideScore = leftChild.insideScore(leftChildSplit);
                 final double rightChildInsideScore = rightChild.insideScore(rightChildSplit);
 
                 packedBinaryCount.ruleCounts[i] += (packedBinaryRule.ruleScores[i] * leftChildInsideScore)
-                        * rightChildInsideScore * treeScalingFactor * parent.outsideScore(parentSplit);
+                        * rightChildInsideScore * treeScalingFactor * parentOutsideScore;
             }
 
             break;
@@ -792,7 +797,7 @@ public class Grammar implements Serializable, Cloneable {
             final BinaryRule splitRule = unpackedRule.splitRule(numSubStates, newNumSubStates, random, randomness);
 
             newGrammar.packedBinaryRuleMap.put(binaryKey, new PackedBinaryRule(packedRule.unsplitParent,
-                    packedRule.unsplitLeftChild, packedRule.unsplitRightChild, splitRule.scores));
+                    packedRule.unsplitLeftChild, packedRule.unsplitRightChild, splitRule.scores, newNumSubStates));
         }
 
         for (final int unaryKey : packedUnaryRuleMap.keySet()) {
@@ -1045,7 +1050,7 @@ public class Grammar implements Serializable, Cloneable {
             final BinaryRule mergedRule = new BinaryRule(oldRule);
             mergedRule.setScores2(newScores);
             mergedGrammar.packedBinaryRuleMap.put(binaryKey, new PackedBinaryRule(packedRule.unsplitParent,
-                    packedRule.unsplitLeftChild, packedRule.unsplitRightChild, mergedRule.scores));
+                    packedRule.unsplitLeftChild, packedRule.unsplitRightChild, mergedRule.scores, newNumSubStates));
         }
 
         for (final int unaryKey : packedUnaryRuleMap.keySet()) {
@@ -1356,8 +1361,11 @@ public class Grammar implements Serializable, Cloneable {
 
         private static final long serialVersionUID = 1L;
 
-        /** Production probabilities for each split rule, sorted by by parent split, left child split, right child split */
+        /** Production probabilities for each split rule, sorted by by left child split, right child split, parent split */
         public final double[] ruleScores;
+
+        /** Offsets into {@link #ruleScores} for the start of each left child split */
+        public final int[] leftChildOffsets;
 
         /**
          * Copies from a {@link PackedBinaryCount} and normalizes
@@ -1367,7 +1375,7 @@ public class Grammar implements Serializable, Cloneable {
          * @param minRuleProbability
          */
         public PackedBinaryRule(final PackedBinaryCount binaryCount, final double[][] parentCounts,
-                final double minRuleProbability) {
+                final short[] numSubStates, final double minRuleProbability) {
 
             super(binaryCount.unsplitParent, binaryCount.unsplitLeftChild, binaryCount.unsplitRightChild);
 
@@ -1402,6 +1410,8 @@ public class Grammar implements Serializable, Cloneable {
                     }
                 }
             }
+
+            this.leftChildOffsets = leftChildOffsets(numSubStates[binaryCount.unsplitLeftChild]);
         }
 
         /**
@@ -1413,7 +1423,7 @@ public class Grammar implements Serializable, Cloneable {
          * @param ruleScores
          */
         public PackedBinaryRule(final short unsplitParent, final short unsplitLeftChild, final short unsplitRightChild,
-                final double[][][] ruleScores) {
+                final double[][][] ruleScores, final short[] numSubStates) {
 
             super(unsplitParent, unsplitLeftChild, unsplitRightChild);
 
@@ -1470,6 +1480,23 @@ public class Grammar implements Serializable, Cloneable {
                     }
                 }
             }
+            this.leftChildOffsets = leftChildOffsets(numSubStates[unsplitLeftChild]);
+        }
+
+        protected int[] leftChildOffsets(final short splits) {
+
+            final int[] tmpLeftChildOffsets = new int[splits + 1];
+            tmpLeftChildOffsets[splits] = ruleScores.length;
+
+            for (int i = ruleScores.length - 1, j = i * 3, currentLeftChild = splits - 1; i >= 0; i--, j -= 3) {
+
+                while (currentLeftChild > substates[j]) {
+                    tmpLeftChildOffsets[currentLeftChild--] = i + 1;
+                }
+
+                tmpLeftChildOffsets[currentLeftChild] = i;
+            }
+            return tmpLeftChildOffsets;
         }
 
         public String toString(final double minimumRuleProbability) {
