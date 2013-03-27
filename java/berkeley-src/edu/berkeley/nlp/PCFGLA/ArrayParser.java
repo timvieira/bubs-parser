@@ -64,13 +64,13 @@ public class ArrayParser {
                 double max = Double.NEGATIVE_INFINITY;
                 for (int i = 0, j = 0; i < packedUnaryRule.ruleScores.length; i++, j += 2) {
                     final short childSplit = packedUnaryRule.substates[j];
-                    final short parentSplit = packedUnaryRule.substates[j + 1];
 
                     final double childInside = child.insideScore(childSplit);
                     if (childInside == 0) {
                         continue;
                     }
 
+                    final short parentSplit = packedUnaryRule.substates[j + 1];
                     final double score = iScores[parentSplit] + packedUnaryRule.ruleScores[i] * childInside;
 
                     iScores[parentSplit] = score;
@@ -97,20 +97,20 @@ public class ArrayParser {
                 double max = Double.NEGATIVE_INFINITY;
 
                 for (int i = 0, j = 0; i < packedBinaryRule.ruleScores.length; i++, j += 3) {
-                    final short leftChildSplit = packedBinaryRule.substates[j];
-                    final short rightChildSplit = packedBinaryRule.substates[j + 1];
-                    final short parentSplit = packedBinaryRule.substates[j + 2];
 
+                    final short leftChildSplit = packedBinaryRule.substates[j];
                     final double leftChildInside = leftChild.insideScore(leftChildSplit);
                     if (leftChildInside == 0) {
                         continue;
                     }
 
+                    final short rightChildSplit = packedBinaryRule.substates[j + 1];
                     final double rightChildInside = rightChild.insideScore(rightChildSplit);
                     if (rightChildInside == 0) {
                         continue;
                     }
 
+                    final short parentSplit = packedBinaryRule.substates[j + 2];
                     final double score = iScores2[parentSplit] + packedBinaryRule.ruleScores[i] * leftChildInside
                             * rightChildInside;
 
@@ -160,14 +160,14 @@ public class ArrayParser {
 
             final Grammar.PackedUnaryRule packedUnaryRule = grammar.getPackedUnaryScores(unsplitParent, unsplitChild);
             for (int i = 0, j = 0; i < packedUnaryRule.ruleScores.length; i++, j += 2) {
-                final short childSplit = packedUnaryRule.substates[j];
-                final short parentSplit = packedUnaryRule.substates[j + 1];
 
+                final short parentSplit = packedUnaryRule.substates[j + 1];
                 final double parentOutside = parentOutsideScores[parentSplit];
                 if (parentOutside == 0) {
                     continue;
                 }
 
+                final short childSplit = packedUnaryRule.substates[j];
                 final double score = oScores[childSplit] + packedUnaryRule.ruleScores[i] * parentOutside;
 
                 oScores[childSplit] = score;
@@ -197,16 +197,12 @@ public class ArrayParser {
 
             final Grammar.PackedBinaryRule packedBinaryRule = grammar.getPackedBinaryScores(unsplitParent,
                     unsplitLeftChild, unsplitRightChild);
+
             // Iterate through all splits of the rule. Most will have non-0 child and parent probability (since the
             // rule currently exists in the grammar), and this iteration order is very efficient
             for (int i = 0, j = 0; i < packedBinaryRule.ruleScores.length; i++, j += 3) {
-                final short leftChildSplit = packedBinaryRule.substates[j];
-                final short rightChildSplit = packedBinaryRule.substates[j + 1];
+
                 final short parentSplit = packedBinaryRule.substates[j + 2];
-
-                final double leftChildInsideScore = leftChild.insideScore(leftChildSplit);
-                final double rightChildInsideScore = rightChild.insideScore(rightChildSplit);
-
                 final double parentOutside = parentOutsideScores[parentSplit];
                 if (parentOutside == 0) {
                     continue;
@@ -215,8 +211,12 @@ public class ArrayParser {
                 // Parent outside x rule
                 final double jointRuleScore = parentOutside * packedBinaryRule.ruleScores[i];
 
-                final double lScore = lOScores[leftChildSplit] + jointRuleScore * rightChildInsideScore;
+                final short leftChildSplit = packedBinaryRule.substates[j];
+                final short rightChildSplit = packedBinaryRule.substates[j + 1];
+                final double leftChildInsideScore = leftChild.insideScore(leftChildSplit);
+                final double rightChildInsideScore = rightChild.insideScore(rightChildSplit);
 
+                final double lScore = lOScores[leftChildSplit] + jointRuleScore * rightChildInsideScore;
                 lOScores[leftChildSplit] = lScore;
                 if (lScore > lMax) {
                     lMax = lScore;
