@@ -4,10 +4,8 @@ import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 
 import java.io.Serializable;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import edu.berkeley.nlp.PCFGLA.smoothing.Smoother;
 import edu.berkeley.nlp.syntax.StateSet;
@@ -29,23 +27,13 @@ public class Lexicon implements java.io.Serializable {
     /** A count of strings with tags. Indexed by state, word, and substate. */
     HashMap<String, double[]>[] wordToTagCounters = null;
     HashMap<String, double[]>[] unseenWordToTagCounters = null;
-    double totalWordTypes = 0.0;
     double totalTokens = 0.0;
     double totalUnseenTokens = 0.0;
     double totalWords = 0.0;
-    /**
-     * A count of how many different words each full tag has been seen with. Indexed by state and substate
-     */
-    double[][] typeTagCounter;
 
     /** Counts of tag (state + subState) occurrences. Indexed by state and substate */
     double[][] tagCounter;
     double[][] unseenTagCounter;
-
-    double[] simpleTagCounter;
-
-    /** The set of preterminal tags */
-    Set<Short> allTags = new HashSet<Short>();
 
     /** The count of how often each word as been seen */
     Object2DoubleOpenHashMap<String> wordCounter = new Object2DoubleOpenHashMap<String>();
@@ -65,7 +53,6 @@ public class Lexicon implements java.io.Serializable {
     Smoother smoother;
     double threshold;
 
-    double[][][] conditionalWeights; // wordIndex, tag, substate -> weight
     Numberer wordNumberer;
 
     // additions from the stanford parser which are needed for a better
@@ -106,12 +93,10 @@ public class Lexicon implements java.io.Serializable {
         unseenWordToTagCounters = new HashMap[numSubStates.length];
         tagCounter = new double[numSubStates.length][];
         unseenTagCounter = new double[numSubStates.length][];
-        typeTagCounter = new double[numSubStates.length][];
-        simpleTagCounter = new double[numSubStates.length];
+
         for (int i = 0; i < numSubStates.length; i++) {
             tagCounter[i] = new double[numSubStates[i]];
             unseenTagCounter[i] = new double[numSubStates[i]];
-            typeTagCounter[i] = new double[numSubStates[i]];
         }
         this.threshold = threshold;
         this.wordNumberer = Numberer.getGlobalNumberer("words");
@@ -120,25 +105,6 @@ public class Lexicon implements java.io.Serializable {
     /** Get the nonterminal tags */
     private boolean isKnown(final String word) {
         return wordCounter.keySet().contains(word);
-    }
-
-    /**
-     * <p>
-     * This condenses counting arrays into essential statistics. It is used after all calls to tallyStateSetTree and
-     * before any getScore calls.
-     * <p>
-     * Currently the trees are taken into account immediately, so this does nothing, but in the future this may contain
-     * some precomputation
-     */
-    public void optimize() {
-        // make up the set of which tags are preterminal tags
-        for (short i = 0; i < wordToTagCounters.length; i++) {
-            if (wordToTagCounters[i] != null) {
-                allTags.add(i);
-            }
-        }
-        // remove the unlikely ones
-        removeUnlikelyTags(threshold, -1.0);
     }
 
     /**
@@ -202,31 +168,26 @@ public class Lexicon implements java.io.Serializable {
             }
         }
 
-        lexicon.totalWordTypes = totalWordTypes;
         lexicon.totalTokens = totalTokens;
         lexicon.totalUnseenTokens = totalUnseenTokens;
         lexicon.totalWords = totalWords;
         lexicon.smoother = smoother;
-        lexicon.typeTagCounter = new double[typeTagCounter.length][];
         lexicon.tagCounter = new double[tagCounter.length][];
         lexicon.unseenTagCounter = new double[unseenTagCounter.length][];
-        lexicon.simpleTagCounter = new double[tagCounter.length];
 
-        for (int tag = 0; tag < typeTagCounter.length; tag++) {
-            lexicon.typeTagCounter[tag] = new double[newNumSubStates[tag]];
+        for (int tag = 0; tag < tagCounter.length; tag++) {
             lexicon.tagCounter[tag] = new double[newNumSubStates[tag]];
             lexicon.unseenTagCounter[tag] = new double[newNumSubStates[tag]];
-            lexicon.simpleTagCounter[tag] = simpleTagCounter[tag];
 
-            for (int substate = 0; substate < typeTagCounter[tag].length; substate++) {
+            for (int substate = 0; substate < tagCounter[tag].length; substate++) {
                 int splitFactor = 2;
                 if (newNumSubStates[tag] == numSubStates[tag]) {
                     splitFactor = 1;
                 }
 
                 for (int i = 0; i < splitFactor; i++) {
-                    lexicon.typeTagCounter[tag][substate * splitFactor + i] = (1.f / splitFactor)
-                            * typeTagCounter[tag][substate];
+                    // lexicon.typeTagCounter[tag][substate * splitFactor + i] = (1.f / splitFactor)
+                    // * typeTagCounter[tag][substate];
                     lexicon.tagCounter[tag][substate * splitFactor + i] = (1.f / splitFactor)
                             * tagCounter[tag][substate];
                     lexicon.unseenTagCounter[tag][substate * splitFactor + i] = (1.f / splitFactor)
@@ -235,7 +196,6 @@ public class Lexicon implements java.io.Serializable {
             }
         }
 
-        lexicon.allTags = new HashSet<Short>(allTags);
         lexicon.wordCounter = new Object2DoubleOpenHashMap<String>();
 
         for (final String word : wordCounter.keySet()) {
@@ -636,7 +596,6 @@ public class Lexicon implements java.io.Serializable {
             }
 
             final double c_Tunseen = unseenTagStateCounter[substate];
-            final double total = totalTokens;
             final double totalUnseen = totalUnseenTokens;
 
             final double p_T_U = (totalUnseen == 0) ? 1 : c_Tunseen / totalUnseen;
@@ -657,8 +616,8 @@ public class Lexicon implements java.io.Serializable {
             // Sometimes we run up against unknown tags. This should only happen when we're calculating the
             // likelihood for a given tree, not when we're parsing. In that case, return a LL of 0.
 
-            final double p_T = (c_T / total);
-            final double p_W = (c_W / total);
+            final double p_T = (c_T / totalTokens);
+            final double p_W = (c_W / totalTokens);
             pb_W_T[substate] = pb_T_W * p_W / p_T;
 
             // give very low scores when needed, but try to avoid -Infinity
@@ -711,7 +670,7 @@ public class Lexicon implements java.io.Serializable {
         return resultArray;
     }
 
-    public void tieRareWordStats(final int threshold) {
+    public void tieRareWordStats(final int rareWordThreshold) {
         // ni = unsplit non-terminal index
         for (int ni = 0; ni < numSubStates.length; ni++) {
             double unseenTagTokens = 0;
@@ -730,7 +689,7 @@ public class Lexicon implements java.io.Serializable {
             for (final Map.Entry<String, double[]> wordToTagEntry : wordToTagCounters[ni].entrySet()) {
                 final String word = wordToTagEntry.getKey();
                 final double[] substateCounter = wordToTagEntry.getValue();
-                if (wordCounter.getDouble(word) < threshold + 0.5) {
+                if (wordCounter.getDouble(word) < rareWordThreshold + 0.5) {
                     // c(w|base tag)
                     double wordTagTokens = 0;
                     for (int si = 0; si < numSubStates[ni]; si++) {
@@ -749,7 +708,8 @@ public class Lexicon implements java.io.Serializable {
      * Trains this lexicon on the Collection of trees.
      */
     public void trainTree(final Tree<StateSet> trainTree, final double randomness, final Lexicon oldLexicon,
-            final boolean noSmoothing, final int threshold) {
+            final boolean noSmoothing, final int rareWordThreshold) {
+
         // scan data
         // for all substates that the word's preterminal tag has
         double sentenceScore = 0;
@@ -764,87 +724,80 @@ public class Lexicon implements java.io.Serializable {
 
         final List<StateSet> words = trainTree.leafLabels();
         final List<StateSet> tags = trainTree.preterminalLabels();
-        if (words.size() != tags.size()) {
-            System.out.println("Yield an preterminal yield do not match!");
-            System.out.println(words.toString());
-            System.out.println(tags.toString());
-        }
 
         // for all words in sentence
         for (int position = 0; position < words.size(); position++) {
             totalWords++;
             final String word = words.get(position).getWord();
+            final short state = tags.get(position).getState();
             final int nSubStates = tags.get(position).numSubStates();
-            final short tag = tags.get(position).getState();
 
             final String sig = getCachedSignature(word, position);
-            // wordCounter.incrementCount(sig, 0);
 
-            if (unseenWordToTagCounters[tag] == null) {
-                unseenWordToTagCounters[tag] = new HashMap<String, double[]>();
+            if (unseenWordToTagCounters[state] == null) {
+                unseenWordToTagCounters[state] = new HashMap<String, double[]>();
             }
-            double[] substateCounter2 = unseenWordToTagCounters[tag].get(sig);
+            double[] substateCounter2 = unseenWordToTagCounters[state].get(sig);
             if (substateCounter2 == null) {
                 // System.out.print("Sig "+sig+" word "+ word+" pos "+position);
-                substateCounter2 = new double[numSubStates[tag]];
-                unseenWordToTagCounters[tag].put(sig, substateCounter2);
+                substateCounter2 = new double[numSubStates[state]];
+                unseenWordToTagCounters[state].put(sig, substateCounter2);
             }
 
             // guarantee that the wordToTagCounter element exists so we can
             // tally the combination
-            if (wordToTagCounters[tag] == null) {
-                wordToTagCounters[tag] = new HashMap<String, double[]>();
+            if (wordToTagCounters[state] == null) {
+                wordToTagCounters[state] = new HashMap<String, double[]>();
             }
-            double[] substateCounter = wordToTagCounters[tag].get(word);
+            double[] substateCounter = wordToTagCounters[state].get(word);
             if (substateCounter == null) {
-                substateCounter = new double[numSubStates[tag]];
-                wordToTagCounters[tag].put(word, substateCounter);
+                substateCounter = new double[numSubStates[state]];
+                wordToTagCounters[state].put(word, substateCounter);
             }
 
             double[] oldLexiconScores = null;
             if (randomness == -1) {
-                oldLexiconScores = oldLexicon.score(word, tag, position, noSmoothing, false);
+                oldLexiconScores = oldLexicon.score(word, state, position, noSmoothing, false);
             }
 
             final StateSet currentState = tags.get(position);
-            final double scale = IEEEDoubleScaling.scalingMultiplier(currentState.outsideScoreScale() - sentenceScale)
+            final double scalingMultiplier = IEEEDoubleScaling.scalingMultiplier(currentState.outsideScoreScale()
+                    - sentenceScale)
                     / sentenceScore;
 
             for (short substate = 0; substate < nSubStates; substate++) {
-                double weight = 1;
+
+                double weight;
+
                 if (oldLexiconScores != null) {
                     // weight by the probability of seeing the tag and word together, given the sentence
-                    weight = currentState.outsideScore(substate) * oldLexiconScores[substate] * scale;
+                    weight = currentState.outsideScore(substate) * oldLexiconScores[substate] * scalingMultiplier;
+                    if (weight == 0) {
+                        continue;
+                    }
 
-                } else if (randomness == 0) {
-                    // for the baseline
-                    weight = 1;
                 } else {
                     // add a bit of randomness
                     weight = GrammarTrainer.RANDOM.nextDouble() * randomness / 100.0 + 1.0;
                 }
 
-                if (weight == 0) {
-                    continue;
-                }
-
                 // tally in the tag with the given weight
                 substateCounter[substate] += weight;
                 // update the counters
-                tagCounter[tag][substate] += weight;
+                tagCounter[state][substate] += weight;
                 wordCounter.add(word, weight);
                 totalTokens += weight;
 
-                if (Double.isNaN(totalTokens)) {
-                    throw new IllegalArgumentException("totalTokens is NaN");
-                }
-
-                if (oldLexicon != null && oldLexicon.wordCounter.getDouble(word) < threshold + 0.5) {
+                if (oldLexicon != null && oldLexicon.wordCounter.getDouble(word) < rareWordThreshold + 0.5) {
                     wordCounter.add(sig, weight);
                     substateCounter2[substate] += weight;
-                    unseenTagCounter[tag][substate] += weight;
+                    unseenTagCounter[state][substate] += weight;
                     totalUnseenTokens += weight;
                 }
+            }
+
+            if (Double.isNaN(totalTokens)) {
+                throw new IllegalArgumentException("totalTokens is NaN");
             }
         }
     }
@@ -941,31 +894,22 @@ public class Lexicon implements java.io.Serializable {
 
     public int getNumberOfEntries() {
         int nEntries = 0;
-        if (conditionalWeights == null) {
-            // indicates first time use:
-            for (final String word : wordCounter.keySet()) { // has all words AND also
-                // the signatures
-                wordNumberer.number(word);
-            }
+        // indicates first time use:
+        for (final String word : wordCounter.keySet()) { // has all words AND also
+            // the signatures
+            wordNumberer.number(word);
         }
         for (int tag = 0; tag < wordToTagCounters.length; tag++) {
             if (wordToTagCounters[tag] != null) {
                 nEntries += wordToTagCounters[tag].size() * numSubStates[tag];
-                if (conditionalWeights == null) {
-                    for (final String word : wordToTagCounters[tag].keySet())
-                        wordNumberer.number(word);
-                }
+                for (final String word : wordToTagCounters[tag].keySet())
+                    wordNumberer.number(word);
             }
             if (unseenWordToTagCounters[tag] != null) {
                 nEntries += unseenWordToTagCounters[tag].size() * numSubStates[tag];
-                if (conditionalWeights == null) {
-                    for (final String word : unseenWordToTagCounters[tag].keySet())
-                        wordNumberer.number(word);
-                }
+                for (final String word : unseenWordToTagCounters[tag].keySet())
+                    wordNumberer.number(word);
             }
-        }
-        if (conditionalWeights == null) {
-            conditionalWeights = new double[wordNumberer.total()][numSubStates.length][];
         }
         return nEntries;
     }

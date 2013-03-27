@@ -191,7 +191,8 @@ public class GrammarTrainer extends BaseCommandlineTool {
                 grammar.countUnsplitTree(stateSetTree);
             }
             lexicon.tieRareWordStats(rareWordThreshold);
-            lexicon.optimize();
+            // remove the unlikely tags
+            lexicon.removeUnlikelyTags(lexicon.threshold, -1.0);
             grammar.optimize(randomization);
 
             maxGrammar = grammar;
@@ -263,7 +264,8 @@ public class GrammarTrainer extends BaseCommandlineTool {
                         maxLexicon.getSmoothingParams(), maxLexicon.getSmoother(), maxLexicon.getPruningThreshold());
                 final ArrayParser parser = new ArrayParser(grammar, maxLexicon);
                 emIteration(parser, grammar, maxLexicon, null, lexicon, trainStateSetTrees, rareWordThreshold);
-                lexicon.optimize();
+                // remove the unlikely tags
+                lexicon.removeUnlikelyTags(lexicon.threshold, -1.0);
 
                 maxGrammar = grammar;
                 maxLexicon = lexicon;
@@ -387,7 +389,8 @@ public class GrammarTrainer extends BaseCommandlineTool {
         //
         // Maximize (M-step)
         //
-        newLexicon.optimize();
+        // remove the unlikely tags
+        newLexicon.removeUnlikelyTags(newLexicon.threshold, -1.0);
         newGrammar.optimize(0);
 
         return new EmIterationResult(newGrammar, newLexicon, trainingLikelihood, devSetLikelihood,
