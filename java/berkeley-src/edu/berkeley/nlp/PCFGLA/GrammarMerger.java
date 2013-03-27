@@ -101,7 +101,7 @@ public class GrammarMerger {
 
         for (final Tree<StateSet> stateSetTree : trainStateSetTrees) {
 
-            parser.doInsideOutsideScores(stateSetTree, false); // E-step
+            parser.parse(stateSetTree, false); // E-step
             final double ll = IEEEDoubleScaling.logLikelihood(stateSetTree.label().insideScore(0), stateSetTree.label()
                     .insideScoreScale());
 
@@ -128,7 +128,7 @@ public class GrammarMerger {
         int n = 0;
 
         for (final Tree<StateSet> stateSetTree : trainStateSetTrees) {
-            parser.doInsideOutsideScores(stateSetTree, false); // E-step
+            parser.parse(stateSetTree, false); // E-step
 
             final double ll = IEEEDoubleScaling.logLikelihood(stateSetTree.label().insideScore(0), stateSetTree.label()
                     .insideScoreScale());

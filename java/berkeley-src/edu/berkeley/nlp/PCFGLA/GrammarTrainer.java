@@ -405,7 +405,11 @@ public class GrammarTrainer extends BaseCommandlineTool {
 
         for (final Tree<StateSet> stateSetTree : trainStateSetTrees) {
 
-            parser.doInsideOutsideScores(stateSetTree, true);
+            if (newGrammar != null) {
+                parser.parseAndCount(stateSetTree, true, newGrammar);
+            } else {
+                parser.parse(stateSetTree, true);
+            }
 
             final double ll = IEEEDoubleScaling.logLikelihood(stateSetTree.label().insideScore(0), stateSetTree.label()
                     .insideScoreScale());
@@ -416,9 +420,6 @@ public class GrammarTrainer extends BaseCommandlineTool {
             }
 
             newLexicon.trainTree(stateSetTree, -1, currentLexicon, true, threshold);
-            if (newGrammar != null) {
-                newGrammar.countSplitTree(stateSetTree, currentGrammar);
-            }
             trainingLikelihood += ll;
         }
         newLexicon.tieRareWordStats(rareWordThreshold);
@@ -471,7 +472,7 @@ public class GrammarTrainer extends BaseCommandlineTool {
             }
 
             // Only the inside scores are needed here
-            parser.doInsideScores(stateSetTree, false);
+            parser.insidePass(stateSetTree, false);
             final double ll = IEEEDoubleScaling.logLikelihood(stateSetTree.label().insideScore(0), stateSetTree.label()
                     .insideScoreScale());
 

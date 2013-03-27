@@ -452,133 +452,6 @@ public class Grammar implements Serializable, Cloneable {
     }
 
     /**
-     * Accumulates counts for a {@link Tree} containing split states
-     * 
-     * @param tree
-     */
-    public void countSplitTree(final Tree<StateSet> tree, final Grammar previousGrammar) {
-
-        // Skip 1-word trees
-        if (tree.isLeaf() || tree.isPreTerminal()) {
-            return;
-        }
-
-        // Check that the top node is not split (it has only one substate)
-        final StateSet node = tree.label();
-        if (node.numSubStates() != 1) {
-            throw new IllegalArgumentException("The start symbol should never be split");
-        }
-
-        // The inside score of the start symbol is the (log) probability of the tree
-        final double treeProbability = node.insideScore(0);
-        final int tree_scale = node.insideScoreScale();
-
-        if (treeProbability == 0) {
-            BaseLogger.singleton().config("Skipping a 0-probability tree.");
-            return;
-        }
-        if (tree.isLeaf() || tree.isPreTerminal()) {
-            BaseLogger.singleton().finer("Skipping single-word tree");
-            return;
-        }
-        countSplitTree(tree, treeProbability, tree_scale, previousGrammar);
-    }
-
-    /**
-     * Accumulates counts for a subtree containing split states
-     * 
-     * @param tree
-     * @param treeInsideScore
-     * @param tree_scale
-     * @param previousGrammar
-     */
-    private void countSplitTree(final Tree<StateSet> tree, double treeInsideScore, final int tree_scale,
-            final Grammar previousGrammar) {
-
-        if (treeInsideScore == 0) {
-            treeInsideScore = 1;
-        }
-
-        final List<Tree<StateSet>> children = tree.children();
-        final StateSet parent = tree.label();
-        final short unsplitParent = parent.getState();
-
-        switch (children.size()) {
-
-        case 1: {
-            final StateSet child = children.get(0).label();
-            final short unsplitChild = child.getState();
-
-            final double treeScalingFactor = IEEEDoubleScaling.scalingMultiplier(parent.outsideScoreScale()
-                    + child.insideScoreScale() - tree_scale)
-                    / treeInsideScore;
-
-            final Grammar.PackedUnaryRule packedUnaryRule = previousGrammar.getPackedUnaryScores(unsplitParent,
-                    unsplitChild);
-            final Grammar.PackedUnaryCount packedUnaryCount = packedUnaryCountMap.get(unaryKey(unsplitParent,
-                    unsplitChild));
-
-            // Iterate through all splits of the rule. Most will have non-0 child and parent probability (since the
-            // rule currently exists in the grammar), and this iteration order is very efficient
-            for (int i = 0, j = 0; i < packedUnaryRule.ruleScores.length; i++, j += 2) {
-                final short childSplit = packedUnaryRule.substates[j];
-                final short parentSplit = packedUnaryRule.substates[j + 1];
-
-                packedUnaryCount.ruleCounts[i] += (packedUnaryRule.ruleScores[i] * child.insideScore(childSplit))
-                        * treeScalingFactor * parent.outsideScore(parentSplit);
-            }
-
-            break;
-        }
-
-        case 2: {
-            final StateSet leftChild = children.get(0).label();
-            final short unsplitLeftChild = leftChild.getState();
-            final StateSet rightChild = children.get(1).label();
-            final short unsplitRightChild = rightChild.getState();
-
-            final double treeScalingFactor = IEEEDoubleScaling.scalingMultiplier(parent.outsideScoreScale()
-                    + leftChild.insideScoreScale() + rightChild.insideScoreScale() - tree_scale)
-                    / treeInsideScore;
-
-            final Grammar.PackedBinaryRule packedBinaryRule = previousGrammar.getPackedBinaryScores(unsplitParent,
-                    unsplitLeftChild, unsplitRightChild);
-            final Grammar.PackedBinaryCount packedBinaryCount = packedBinaryCountMap.get(binaryKey(unsplitParent,
-                    unsplitLeftChild, unsplitRightChild));
-
-            // Iterate through all splits of the rule. Most will have non-0 child and parent probability (since the
-            // rule currently exists in the grammar), and this iteration order is very efficient
-            for (int i = 0, j = 0; i < packedBinaryRule.ruleScores.length; i++, j += 3) {
-                final short parentSplit = packedBinaryRule.substates[j + 2];
-                final double parentOutsideScore = parent.outsideScore(parentSplit);
-                if (parentOutsideScore == 0) {
-                    continue;
-                }
-
-                final short leftChildSplit = packedBinaryRule.substates[j];
-                final short rightChildSplit = packedBinaryRule.substates[j + 1];
-                final double leftChildInsideScore = leftChild.insideScore(leftChildSplit);
-                final double rightChildInsideScore = rightChild.insideScore(rightChildSplit);
-
-                packedBinaryCount.ruleCounts[i] += (packedBinaryRule.ruleScores[i] * leftChildInsideScore)
-                        * rightChildInsideScore * treeScalingFactor * parentOutsideScore;
-            }
-
-            break;
-        }
-
-        default:
-            throw new IllegalArgumentException("Malformed tree: more than two children");
-        }
-
-        for (final Tree<StateSet> child : children) {
-            if (!child.isLeaf() && !child.isPreTerminal()) {
-                countSplitTree(child, treeInsideScore, tree_scale, previousGrammar);
-            }
-        }
-    }
-
-    /**
      * Accumulates counts for a {@link Tree} containing unsplit states (Markov-0 node labels)
      * 
      * @param tree
@@ -1358,9 +1231,8 @@ public class Grammar implements Serializable, Cloneable {
      * Packed into a compact parallel array representation.
      * 
      * After learning production probabilities (and pruning low-probability rules), we pack them into this
-     * representation for efficient iteration in {@link ArrayParser#doInsideScores(Tree, boolean)}.
-     * {@link ArrayParser#doInsideOutsideScores(Tree, boolean)}, and
-     * {@link Grammar#countSplitTree(Tree, double, int, Grammar)}.
+     * representation for efficient iteration in {@link ArrayParser#insidePass(Tree, boolean)}.
+     * {@link ArrayParser#parse(Tree, boolean)}, and {@link Grammar#countSplitTree(Tree, double, int, Grammar)}.
      */
     public static class PackedBinaryRule extends BasePackedBinaryRule implements Serializable {
 
@@ -1598,9 +1470,8 @@ public class Grammar implements Serializable, Cloneable {
      * compact parallel array representation.
      * 
      * After learning production probabilities (and pruning low-probability rules), we pack them into this
-     * representation for efficient iteration in {@link ArrayParser#doInsideScores(Tree, boolean)}.
-     * {@link ArrayParser#doInsideOutsideScores(Tree, boolean)}, and
-     * {@link Grammar#countSplitTree(Tree, double, int, Grammar)}.
+     * representation for efficient iteration in {@link ArrayParser#insidePass(Tree, boolean)}.
+     * {@link ArrayParser#parse(Tree, boolean)}, and {@link Grammar#countSplitTree(Tree, double, int, Grammar)}.
      */
     public static class PackedUnaryRule extends BasePackedUnaryRule implements Serializable {
 
@@ -1703,9 +1574,8 @@ public class Grammar implements Serializable, Cloneable {
      * compact parallel array representation.
      * 
      * After learning production probabilities (and pruning low-probability rules), we pack them into this
-     * representation for efficient iteration in {@link ArrayParser#doInsideScores(Tree, boolean)}.
-     * {@link ArrayParser#doInsideOutsideScores(Tree, boolean)}, and
-     * {@link Grammar#countSplitTree(Tree, double, int, Grammar)}.
+     * representation for efficient iteration in {@link ArrayParser#insidePass(Tree, boolean)}.
+     * {@link ArrayParser#parse(Tree, boolean)}, and {@link Grammar#countSplitTree(Tree, double, int, Grammar)}.
      */
     public static class PackedUnaryCount extends BasePackedUnaryRule implements Serializable {
 

@@ -2,6 +2,7 @@ package edu.berkeley.nlp.PCFGLA;
 
 import java.util.ArrayList;
 
+import cltool4j.BaseLogger;
 import edu.berkeley.nlp.syntax.StateSet;
 import edu.berkeley.nlp.syntax.Tree;
 import edu.berkeley.nlp.util.IEEEDoubleScaling;
@@ -14,9 +15,9 @@ public class ArrayParser {
     private final Lexicon lexicon;
     private final Grammar grammar;
 
-    public ArrayParser(final Grammar gr, final Lexicon lex) {
-        this.grammar = gr;
-        this.lexicon = lex;
+    public ArrayParser(final Grammar grammar, final Lexicon lexicon) {
+        this.grammar = grammar;
+        this.lexicon = lexicon;
     }
 
     /**
@@ -25,12 +26,12 @@ public class ArrayParser {
      * @param tree
      * @param noSmoothing
      */
-    void doInsideScores(final Tree<StateSet> tree, final boolean noSmoothing) {
+    void insidePass(final Tree<StateSet> tree, final boolean noSmoothing) {
 
         final ArrayList<Tree<StateSet>> children = tree.children();
         for (final Tree<StateSet> child : children) {
             if (!child.isLeaf()) {
-                doInsideScores(child, noSmoothing);
+                insidePass(child, noSmoothing);
             }
         }
         final StateSet parent = tree.label();
@@ -136,12 +137,11 @@ public class ArrayParser {
      * Calculate the outside scores of a tree; that is, P(nonterminal_i,j|words_0,i; words_j,end). It is calculated from
      * the inside scores of the tree.
      * 
-     * <p>
      * Note: when calling this, call setRootOutsideScore() first.
      * 
      * @param tree
      */
-    private void doOutsideScores(final Tree<StateSet> tree) {
+    private void outsidePass(final Tree<StateSet> tree) {
 
         final ArrayList<Tree<StateSet>> children = tree.children();
         final StateSet parent = tree.label();
@@ -159,6 +159,7 @@ public class ArrayParser {
             double max = Double.NEGATIVE_INFINITY;
 
             final Grammar.PackedUnaryRule packedUnaryRule = grammar.getPackedUnaryScores(unsplitParent, unsplitChild);
+
             for (int i = 0, j = 0; i < packedUnaryRule.ruleScores.length; i++, j += 2) {
 
                 final short parentSplit = packedUnaryRule.substates[j + 1];
@@ -168,11 +169,13 @@ public class ArrayParser {
                 }
 
                 final short childSplit = packedUnaryRule.substates[j];
-                final double score = oScores[childSplit] + packedUnaryRule.ruleScores[i] * parentOutside;
+                // Parent outside x rule
+                final double jointScore = packedUnaryRule.ruleScores[i] * parentOutside;
+                final double newScore = oScores[childSplit] + jointScore;
 
-                oScores[childSplit] = score;
-                if (score > max) {
-                    max = score;
+                oScores[childSplit] = newScore;
+                if (newScore > max) {
+                    max = newScore;
                 }
             }
 
@@ -203,20 +206,23 @@ public class ArrayParser {
             for (int i = 0, j = 0; i < packedBinaryRule.ruleScores.length; i++, j += 3) {
 
                 final short parentSplit = packedBinaryRule.substates[j + 2];
-                final double parentOutside = parentOutsideScores[parentSplit];
-                if (parentOutside == 0) {
+                final double parentOutsideScore = parentOutsideScores[parentSplit];
+                if (parentOutsideScore == 0) {
                     continue;
                 }
 
                 // Parent outside x rule
-                final double jointRuleScore = parentOutside * packedBinaryRule.ruleScores[i];
+                final double jointRuleScore = parentOutsideScore * packedBinaryRule.ruleScores[i];
 
                 final short leftChildSplit = packedBinaryRule.substates[j];
                 final short rightChildSplit = packedBinaryRule.substates[j + 1];
                 final double leftChildInsideScore = leftChild.insideScore(leftChildSplit);
                 final double rightChildInsideScore = rightChild.insideScore(rightChildSplit);
 
-                final double lScore = lOScores[leftChildSplit] + jointRuleScore * rightChildInsideScore;
+                // Parent outside x rule x right-child inside
+                final double jointRightScore = jointRuleScore * rightChildInsideScore;
+
+                final double lScore = lOScores[leftChildSplit] + jointRightScore;
                 lOScores[leftChildSplit] = lScore;
                 if (lScore > lMax) {
                     lMax = lScore;
@@ -247,21 +253,193 @@ public class ArrayParser {
 
         for (final Tree<StateSet> child : children) {
             if (!child.isLeaf() && !child.isPreTerminal()) {
-                doOutsideScores(child);
+                outsidePass(child);
             }
         }
     }
 
-    public void doInsideOutsideScores(final Tree<StateSet> tree, final boolean noSmoothing) {
+    public void parse(final Tree<StateSet> tree, final boolean noSmoothing) {
         if (tree.isLeaf()) {
             return;
         }
-        doInsideScores(tree, noSmoothing);
+        insidePass(tree, noSmoothing);
         tree.label().setOutsideScores(new double[] { 1 });
         tree.label().setOutsideScoreScale(0);
         if (tree.isPreTerminal()) {
             return;
         }
-        doOutsideScores(tree);
+        outsidePass(tree);
+    }
+
+    /**
+     * Calculate the outside scores of a tree (as per {@link #outsidePass(Tree)} and counts rule occurrences in the new
+     * grammar.
+     * 
+     * Lots of copy-and-paste code from {@link #outsidePass(Tree)}, but it avoids some additional conditionals inside
+     * the tight inner loop.
+     * 
+     * @param tree
+     * @param newGrammar
+     * @param treeInsideScore
+     * @param treeScale
+     */
+    private void outsidePassAndCount(final Tree<StateSet> tree, final Grammar newGrammar, final double treeInsideScore,
+            final int treeScale) {
+
+        final ArrayList<Tree<StateSet>> children = tree.children();
+        final StateSet parent = tree.label();
+        final short unsplitParent = parent.getState();
+
+        final double[] parentOutsideScores = parent.outsideScores();
+
+        switch (children.size()) {
+
+        case 1: {
+            final StateSet child = children.get(0).label();
+            final short unsplitChild = child.getState();
+            final int nChildStates = child.numSubStates();
+            final double[] oScores = new double[nChildStates];
+            double max = Double.NEGATIVE_INFINITY;
+
+            final Grammar.PackedUnaryRule packedUnaryRule = grammar.getPackedUnaryScores(unsplitParent, unsplitChild);
+            final Grammar.PackedUnaryCount packedUnaryCount = newGrammar.getPackedUnaryCount(unsplitParent,
+                    unsplitChild);
+
+            final double treeScalingFactor = IEEEDoubleScaling.scalingMultiplier(parent.outsideScoreScale()
+                    + child.insideScoreScale() - treeScale)
+                    / treeInsideScore;
+
+            for (int i = 0, j = 0; i < packedUnaryRule.ruleScores.length; i++, j += 2) {
+
+                final short parentSplit = packedUnaryRule.substates[j + 1];
+                final double parentOutside = parentOutsideScores[parentSplit];
+                if (parentOutside == 0) {
+                    continue;
+                }
+
+                final short childSplit = packedUnaryRule.substates[j];
+                // Parent outside x rule
+                final double jointScore = packedUnaryRule.ruleScores[i] * parentOutside;
+                final double newScore = oScores[childSplit] + jointScore;
+
+                oScores[childSplit] = newScore;
+                if (newScore > max) {
+                    max = newScore;
+                }
+
+                packedUnaryCount.ruleCounts[i] += jointScore * child.insideScore(childSplit) * treeScalingFactor;
+            }
+
+            child.setOutsideScores(oScores);
+            child.setOutsideScoreScale(IEEEDoubleScaling.scaleArray(oScores, parent.outsideScoreScale(), max));
+            break;
+        }
+
+        case 2: {
+            final StateSet leftChild = children.get(0).label();
+            final StateSet rightChild = children.get(1).label();
+
+            final int nLeftChildStates = leftChild.numSubStates();
+            final int nRightChildStates = rightChild.numSubStates();
+
+            final short unsplitLeftChild = leftChild.getState();
+            final short unsplitRightChild = rightChild.getState();
+
+            final double[] lOScores = new double[nLeftChildStates];
+            final double[] rOScores = new double[nRightChildStates];
+            double lMax = Double.NEGATIVE_INFINITY, rMax = Double.NEGATIVE_INFINITY;
+
+            final Grammar.PackedBinaryRule packedBinaryRule = grammar.getPackedBinaryScores(unsplitParent,
+                    unsplitLeftChild, unsplitRightChild);
+            final Grammar.PackedBinaryCount packedBinaryCount = newGrammar.getPackedBinaryCount(unsplitParent,
+                    unsplitLeftChild, unsplitRightChild);
+
+            final double treeScalingFactor = IEEEDoubleScaling.scalingMultiplier(parent.outsideScoreScale()
+                    + leftChild.insideScoreScale() + rightChild.insideScoreScale() - treeScale)
+                    / treeInsideScore;
+
+            // Iterate through all splits of the rule. Most will have non-0 child and parent probability (since the
+            // rule currently exists in the grammar), and this iteration order is very efficient
+            for (int i = 0, j = 0; i < packedBinaryRule.ruleScores.length; i++, j += 3) {
+
+                final short parentSplit = packedBinaryRule.substates[j + 2];
+                final double parentOutsideScore = parentOutsideScores[parentSplit];
+                if (parentOutsideScore == 0) {
+                    continue;
+                }
+
+                // Parent outside x rule
+                final double jointRuleScore = parentOutsideScore * packedBinaryRule.ruleScores[i];
+
+                final short leftChildSplit = packedBinaryRule.substates[j];
+                final short rightChildSplit = packedBinaryRule.substates[j + 1];
+                final double leftChildInsideScore = leftChild.insideScore(leftChildSplit);
+                final double rightChildInsideScore = rightChild.insideScore(rightChildSplit);
+
+                // Parent outside x rule x right-child inside
+                final double jointRightScore = jointRuleScore * rightChildInsideScore;
+
+                final double lScore = lOScores[leftChildSplit] + jointRightScore;
+                lOScores[leftChildSplit] = lScore;
+                if (lScore > lMax) {
+                    lMax = lScore;
+                }
+
+                final double rScore = rOScores[rightChildSplit] + jointRuleScore * leftChildInsideScore;
+                rOScores[rightChildSplit] = rScore;
+
+                if (rScore > rMax) {
+                    rMax = rScore;
+                }
+
+                packedBinaryCount.ruleCounts[i] += jointRightScore * leftChildInsideScore * treeScalingFactor;
+            }
+
+            leftChild.setOutsideScores(lOScores);
+            leftChild.setOutsideScoreScale(IEEEDoubleScaling.scaleArray(lOScores, parent.outsideScoreScale()
+                    + rightChild.insideScoreScale(), lMax));
+
+            rightChild.setOutsideScores(rOScores);
+            rightChild.setOutsideScoreScale(IEEEDoubleScaling.scaleArray(rOScores, parent.outsideScoreScale()
+                    + leftChild.insideScoreScale(), rMax));
+
+            break;
+        }
+
+        default:
+            throw new IllegalArgumentException("Malformed tree: more than two children");
+        }
+
+        for (final Tree<StateSet> child : children) {
+            if (!child.isLeaf() && !child.isPreTerminal()) {
+                outsidePassAndCount(child, newGrammar, treeInsideScore, treeScale);
+            }
+        }
+    }
+
+    public void parseAndCount(final Tree<StateSet> tree, final boolean noSmoothing, final Grammar newGrammar) {
+        if (tree.isLeaf()) {
+            return;
+        }
+        insidePass(tree, noSmoothing);
+
+        final double treeInsideScore = tree.label().insideScore(0);
+        final int treeScale = tree.label().insideScoreScale();
+
+        if (treeInsideScore == 0) {
+            BaseLogger.singleton().config("Skipping a 0-probability tree.");
+            return;
+        }
+        if (tree.isLeaf() || tree.isPreTerminal()) {
+            BaseLogger.singleton().finer("Skipping single-word tree");
+            return;
+        }
+
+        tree.label().setOutsideScores(new double[] { 1 });
+        tree.label().setOutsideScoreScale(0);
+        if (tree.isPreTerminal()) {
+            return;
+        }
+        outsidePassAndCount(tree, newGrammar, treeInsideScore, treeScale);
     }
 }
