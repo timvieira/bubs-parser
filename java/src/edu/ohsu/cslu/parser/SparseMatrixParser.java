@@ -48,6 +48,15 @@ import edu.ohsu.cslu.parser.ml.ConstrainedCphSpmlParser;
 public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extends ParallelArrayChart> extends
         ChartParser<G, C> {
 
+    /**
+     * Configures the number of iterations through unary grammar rules during exhaustive parsing. The default is 1, but
+     * (depending on the ordering of unary rules), additional iterations may recover longer unary chains.
+     */
+    public final static String PROPERTY_UNARY_ITERATIONS = "unaryIterations";
+
+    private final static int UNARY_ITERATIONS = GlobalConfigProperties.singleton().getIntProperty(
+            PROPERTY_UNARY_ITERATIONS, 1);
+
     /** The amount to increase {@link #maxLocalDelta} at each reparsing stage */
     public final static float MAX_LOCAL_DELTA_MULTIPLIER = 1.5f;
 
@@ -285,31 +294,33 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
 
         final PackingFunction cpf = grammar.packingFunction();
 
-        // Iterate over populated children (matrix columns)
-        for (short child = 0; child < grammar.numNonTerms(); child++) {
+        for (int iteration = 0; iteration < UNARY_ITERATIONS; iteration++) {
+            // Iterate over populated children (matrix columns)
+            for (short child = 0; child < grammar.numNonTerms(); child++) {
 
-            final int childOffset = offset + child;
-            if (chartCellProbabilities[childOffset] == Float.NEGATIVE_INFINITY) {
-                continue;
-            }
-
-            // Iterate over possible parents of the child (rows with non-zero entries)
-            for (int i = grammar.cscUnaryColumnOffsets[child]; i < grammar.cscUnaryColumnOffsets[child + 1]; i++) {
-
-                final short parent = grammar.cscUnaryRowIndices[i];
-                final int parentOffset = offset + parent;
-                final float grammarProbability = grammar.cscUnaryProbabilities[i];
-
-                final float jointProbability = grammarProbability + chartCellProbabilities[childOffset];
-                if (jointProbability > chartCellProbabilities[parentOffset]) {
-                    chartCellProbabilities[parentOffset] = jointProbability;
-                    chartCellChildren[parentOffset] = cpf.packUnary(child);
-                    chartCellMidpoints[parentOffset] = chartCellEnd;
+                final int childOffset = offset + child;
+                if (chartCellProbabilities[childOffset] == Float.NEGATIVE_INFINITY) {
+                    continue;
                 }
-            }
 
-            if (collectDetailedStatistics) {
-                chart.parseTask.nUnaryConsidered += (grammar.cscUnaryColumnOffsets[child + 1] - grammar.cscUnaryColumnOffsets[child]);
+                // Iterate over possible parents of the child (rows with non-zero entries)
+                for (int i = grammar.cscUnaryColumnOffsets[child]; i < grammar.cscUnaryColumnOffsets[child + 1]; i++) {
+
+                    final short parent = grammar.cscUnaryRowIndices[i];
+                    final int parentOffset = offset + parent;
+                    final float grammarProbability = grammar.cscUnaryProbabilities[i];
+
+                    final float jointProbability = grammarProbability + chartCellProbabilities[childOffset];
+                    if (jointProbability > chartCellProbabilities[parentOffset]) {
+                        chartCellProbabilities[parentOffset] = jointProbability;
+                        chartCellChildren[parentOffset] = cpf.packUnary(child);
+                        chartCellMidpoints[parentOffset] = chartCellEnd;
+                    }
+                }
+
+                if (collectDetailedStatistics) {
+                    chart.parseTask.nUnaryConsidered += (grammar.cscUnaryColumnOffsets[child + 1] - grammar.cscUnaryColumnOffsets[child]);
+                }
             }
         }
     }
