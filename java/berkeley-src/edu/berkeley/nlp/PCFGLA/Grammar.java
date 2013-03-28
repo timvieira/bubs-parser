@@ -13,13 +13,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Random;
 
-import cltool4j.BaseLogger;
 import edu.berkeley.nlp.PCFGLA.smoothing.Smoother;
-import edu.berkeley.nlp.math.SloppyMath;
 import edu.berkeley.nlp.syntax.StateSet;
 import edu.berkeley.nlp.syntax.Tree;
-import edu.berkeley.nlp.util.ArrayUtil;
-import edu.berkeley.nlp.util.IEEEDoubleScaling;
 import edu.berkeley.nlp.util.Numberer;
 
 /**
@@ -821,7 +817,7 @@ public class Grammar implements Serializable, Cloneable {
                 combinedScores[i] = combinedScore;
                 combinedScores[j] = 0;
                 if (combinedScore != 0 && separatedScoreSum != 0)
-                    deltas[state][i][j] += Math.log(separatedScoreSum / ArrayUtil.sum(combinedScores));
+                    deltas[state][i][j] += Math.log(separatedScoreSum / edu.ohsu.cslu.util.Arrays.sum(combinedScores));
                 for (int k = 0; k < 2; k++)
                     combinedScores[map[k]] = separatedScores[map[k]];
                 if (Double.isNaN(deltas[state][i][j])) {
@@ -904,7 +900,7 @@ public class Grammar implements Serializable, Cloneable {
                                             for (int ks = 0; ks < rightSplit; ks++) {
                                                 double mergeWeightSum = mergeWeights[pS][partners[pS][i][0]]
                                                         + mergeWeights[pS][partners[pS][i][1]];
-                                                if (SloppyMath.isDangerous(mergeWeightSum))
+                                                if (isDangerous(mergeWeightSum))
                                                     mergeWeightSum = 1;
                                                 scores[js][ks][0] = scores[js][ks][1] = ((scores[js][ks][0] * mergeWeights[pS][partners[pS][i][0]]) + (scores[js][ks][1] * mergeWeights[pS][partners[pS][i][1]]))
                                                         / mergeWeightSum;
@@ -964,7 +960,7 @@ public class Grammar implements Serializable, Cloneable {
                                 for (int js = 0; js < childSplit; js++) {
                                     double mergeWeightSum = mergeWeights[pS][partners[pS][i][0]]
                                             + mergeWeights[pS][partners[pS][i][1]];
-                                    if (SloppyMath.isDangerous(mergeWeightSum))
+                                    if (isDangerous(mergeWeightSum))
                                         mergeWeightSum = 1;
                                     scores[js][0] = scores[js][1] = ((scores[js][0] * mergeWeights[pS][partners[pS][i][0]]) + (scores[js][1] * mergeWeights[pS][partners[pS][i][1]]))
                                             / mergeWeightSum;
@@ -1159,6 +1155,20 @@ public class Grammar implements Serializable, Cloneable {
         out.close();
     }
 
+    /**
+     * Returns true if the argument is a "dangerous" double to have around, namely one that is infinite, NaN or zero.
+     */
+    private static boolean isDangerous(final double d) {
+        return Double.isInfinite(d) || Double.isNaN(d) || d == 0.0;
+    }
+
+    /**
+     * Returns true if the argument is a "very dangerous" double to have around, namely one that is infinite or NaN.
+     */
+    private static boolean isVeryDangerous(final double d) {
+        return Double.isInfinite(d) || Double.isNaN(d);
+    }
+
     @Override
     public String toString() {
         return toString(-1, 0);
@@ -1262,7 +1272,7 @@ public class Grammar implements Serializable, Cloneable {
                 final short parentSplit = binaryCount.substates[j + 2];
                 final double normalizedProbability = (binaryCount.ruleCounts[i] / parentCounts[unsplitParent][parentSplit]);
 
-                if (normalizedProbability >= minRuleProbability && !SloppyMath.isVeryDangerous(normalizedProbability)) {
+                if (normalizedProbability >= minRuleProbability && !isVeryDangerous(normalizedProbability)) {
                     observedCounts++;
                 }
             }
@@ -1276,8 +1286,7 @@ public class Grammar implements Serializable, Cloneable {
                     final short parentSplit = binaryCount.substates[j + 2];
                     final double normalizedProbability = (binaryCount.ruleCounts[i] / parentCounts[unsplitParent][parentSplit]);
 
-                    if (normalizedProbability >= minRuleProbability
-                            && !SloppyMath.isVeryDangerous(normalizedProbability)) {
+                    if (normalizedProbability >= minRuleProbability && !isVeryDangerous(normalizedProbability)) {
                         this.ruleScores[x] = normalizedProbability;
                         this.substates[y] = binaryCount.substates[j];
                         this.substates[y + 1] = binaryCount.substates[j + 1];
@@ -1542,7 +1551,7 @@ public class Grammar implements Serializable, Cloneable {
                 final short parentSplit = unaryCount.substates[j + 1];
                 final double normalizedProbability = (unaryCount.ruleCounts[i] / parentCounts[unsplitParent][parentSplit]);
 
-                if (normalizedProbability >= minRuleProbability && !SloppyMath.isVeryDangerous(normalizedProbability)) {
+                if (normalizedProbability >= minRuleProbability && !isVeryDangerous(normalizedProbability)) {
                     observedCounts++;
                 }
             }
@@ -1556,8 +1565,7 @@ public class Grammar implements Serializable, Cloneable {
                     final short parentSplit = unaryCount.substates[j + 1];
                     final double normalizedProbability = (unaryCount.ruleCounts[i] / parentCounts[unsplitParent][parentSplit]);
 
-                    if (normalizedProbability >= minRuleProbability
-                            && !SloppyMath.isVeryDangerous(normalizedProbability)) {
+                    if (normalizedProbability >= minRuleProbability && !isVeryDangerous(normalizedProbability)) {
                         this.ruleScores[x] = normalizedProbability;
                         this.substates[y] = unaryCount.substates[j];
                         this.substates[y + 1] = unaryCount.substates[j + 1];

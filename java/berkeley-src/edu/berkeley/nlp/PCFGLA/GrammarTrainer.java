@@ -35,9 +35,6 @@ public class GrammarTrainer extends BaseCommandlineTool {
     @Option(name = "-out", required = true, usage = "Output File for Grammar (Required)")
     private String outFileName;
 
-    @Option(name = "-path", usage = "Path to Corpus")
-    private String path = null;
-
     @Option(name = "-cycles", usage = "The number of split-merge cycles")
     private int splitMergeCycles = 6;
 
@@ -95,12 +92,6 @@ public class GrammarTrainer extends BaseCommandlineTool {
     @Option(name = "-rare", metaVar = "threshold", usage = "Rare word threshold")
     private int rareWordThreshold = 20;
 
-    @Option(name = "-skipSection", usage = "Skips a particular section of the WSJ training corpus (Needed for training Mark Johnsons reranker")
-    private int skipSection = -1;
-
-    @Option(name = "-skipBilingual", usage = "Skips the bilingual portion of the Chinese treebank (Needed for training the bilingual reranker")
-    private boolean skipBilingual = false;
-
     @Option(name = "-writeIntermediateGrammars", usage = "Write intermediate (splitting and merging) grammars to disk.")
     private boolean writeIntermediateGrammars = false;
 
@@ -118,7 +109,7 @@ public class GrammarTrainer extends BaseCommandlineTool {
         final double[] smoothParams = { smoothingParameter1, smoothingParameter2 };
         System.out.println("Using smoothing parameters " + smoothParams[0] + " and " + smoothParams[1]);
 
-        Corpus corpus = new Corpus(path, false, skipSection, skipBilingual);
+        Corpus corpus = new Corpus(System.in);
         List<Tree<String>> trainTrees = Corpus.binarizeAndFilterTrees(corpus.getTrainTrees(), horizontalMarkovization,
                 maxSentenceLength, binarization);
         List<Tree<String>> devSetTrees = Corpus.binarizeAndFilterTrees(corpus.getDevSetTrees(),

@@ -6,9 +6,9 @@ import java.util.Collections;
 import cltool4j.BaseLogger;
 import edu.berkeley.nlp.syntax.StateSet;
 import edu.berkeley.nlp.syntax.Tree;
-import edu.berkeley.nlp.util.ArrayUtil;
 import edu.berkeley.nlp.util.IEEEDoubleScaling;
 import edu.berkeley.nlp.util.Numberer;
+import edu.ohsu.cslu.util.Arrays;
 
 public class GrammarMerger {
 
@@ -121,8 +121,7 @@ public class GrammarMerger {
     public static double[][] computeMergeWeights(final Grammar grammar, final Lexicon lexicon,
             final StateSetTreeList trainStateSetTrees) {
 
-        final double[][] mergeWeights = new double[grammar.numSubStates.length][(int) ArrayUtil
-                .max(grammar.numSubStates)];
+        final double[][] mergeWeights = new double[grammar.numSubStates.length][Arrays.max(grammar.numSubStates)];
         double trainingLikelihood = 0;
         final ArrayParser parser = new ArrayParser(grammar, lexicon);
         int n = 0;

@@ -4,7 +4,6 @@ import java.io.Serializable;
 import java.util.Random;
 
 import edu.berkeley.nlp.PCFGLA.Grammar.PackedBinaryRule;
-import edu.berkeley.nlp.util.ArrayUtil;
 import edu.berkeley.nlp.util.Numberer;
 
 /**
@@ -38,7 +37,7 @@ public class BinaryRule extends Rule implements Serializable {
 
     /** Copy constructor */
     public BinaryRule(final BinaryRule b) {
-        this(b.parentState, b.leftChildState, b.rightChildState, ArrayUtil.copy(b.scores));
+        this(b.parentState, b.leftChildState, b.rightChildState, b.scores.clone());
     }
 
     public BinaryRule(final BinaryRule b, final double[][][] newScores) {

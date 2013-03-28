@@ -1,12 +1,11 @@
 package edu.berkeley.nlp.PCFGLA;
 
-
 /**
  * Parent class for unary and binary rules.
  * 
  * @author Dan Klein
  */
-public class Rule implements java.io.Serializable {
+public abstract class Rule implements java.io.Serializable {
 
     private static final long serialVersionUID = 1L;
 

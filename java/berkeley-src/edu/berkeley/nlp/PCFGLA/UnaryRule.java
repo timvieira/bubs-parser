@@ -3,7 +3,6 @@ package edu.berkeley.nlp.PCFGLA;
 import java.util.Random;
 
 import edu.berkeley.nlp.PCFGLA.Grammar.PackedUnaryRule;
-import edu.berkeley.nlp.util.ArrayUtil;
 import edu.berkeley.nlp.util.Numberer;
 
 /**
@@ -34,7 +33,7 @@ public class UnaryRule extends Rule implements java.io.Serializable, Comparable<
 
     /** Copy constructor */
     public UnaryRule(final UnaryRule u) {
-        this(u.parentState, u.childState, ArrayUtil.copy(u.scores));
+        this(u.parentState, u.childState, u.scores.clone());
     }
 
     public UnaryRule(final UnaryRule u, final double[][] newScores) {

@@ -3,13 +3,12 @@
  */
 package edu.berkeley.nlp.PCFGLA;
 
-import java.io.FileInputStream;
+import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
-import cltool4j.BaseLogger;
 import edu.berkeley.nlp.syntax.Tree;
 import edu.berkeley.nlp.syntax.Trees;
 import edu.berkeley.nlp.syntax.Trees.PennTreeReader;
@@ -28,169 +27,29 @@ public class Corpus {
     ArrayList<Tree<String>> devSetTrees = new ArrayList<Tree<String>>();
 
     /**
-     * Load the WSJ, Brown, and Chinese corpora from the given locations. If any is null, don't load it. If all are
-     * null, use the dummy sentence. Don't load the English corpora if we load the Chinese one.
+     * Load the a parsed corpus from the specified <code>inputStream</code>. Assumes UTF-8 encoding
+     * 
+     * @param inputStream
+     * @throws IllegalArgumentException if the training corpus is empty
      */
-    public Corpus(final String path, final boolean onlyTest, final int skipSection, final boolean skipBilingual) {
+    public Corpus(final InputStream inputStream) {
 
-        if (path == null) {
-            // Construct a dummy corpus
-            System.out.println("Loading one dummy sentence into training set only.");
-            Trees.PennTreeReader reader;
-            Tree<String> tree;
-            final int exampleNumber = 8;
-            final List<String> sentences = new ArrayList<String>();
-            switch (exampleNumber) {
-            case 0:
-                // Joshua Goodman's example
-                sentences.add("((S (A x) (C x)))");
-                // sentences.add("((S (A x) (C x)))");
-                // sentences.add("((S (A y) (C x)))");
-                sentences.add("((S (E x) (B x)))");
-                // sentences.add("((S (F x) (B x)))");
-                // sentences.add("((S (F x) (B x)))");
-                // sentences.add("((T (E x) (C x)))");
-                // sentences.add("((T (E x) (C x)))");
-                break;
-            case 1:
-                // A single sentence
-                // sentences.add("((S (UN1 (UN2 (NP (DT the) (JJ quick) (JJ brown) (NN fox)))) (VP (VBD jumped) (PP (IN over) (NP (DT the) (JJ lazy) (NN dog)))) (. .)))");
-                // sentences.add("((S (NP (DT Some) (NNS traders)) (VP (VBD said) (SBAR (IN that) (S (NP (NP (DT the) (ADJP (RB closely) (VBN watched)) (NNP Majo) (NNP Market) (NNP Index)) (, ,) (SBAR (WHNP (WP$ whose) (NP (CD 20) (NNS stocks))) (S (VP (VBP mimic) (NP (DT the) (NNP Dow) (NNS industrials))))) (, ,)) (VP (VBD did) (RB n't) (VP (VB lead) (NP (NP (NN yesterday) (POS 's)) (JJ big) (NN rally))))))) (. .)))");
-                // sentences.add("((S (NP (NP (JJ Influential) (NNS members)) (PP (IN of) (NP (DT the) (NNP House) (NNP Ways) (CC and) (NNP Means) (NNP Committee)))) (VP (VBD introduced) (NP (NP (NN legislation)) (SBAR (WHNP (WDT that)) (S (VP (MD would) (VP (VB restrict) (SBAR (WHADVP (WRB how)) (S (NP (DT the) (JJ new) (NN savings-and-loan) (NN bailout) (NN agency)) (VP (MD can) (VP (VB raise) (NP (NN capital)))))) (, ,) (S (VP (VBG creating) (NP (NP (DT another) (JJ potential) (NN obstacle)) (PP (TO to) (NP (NP (NP (DT the) (NN government) (POS 's)) (NN sale)) (PP (IN of)(NP (JJ sick) (NNS thrifts)))))))))))))) (. .)))");
-                sentences
-                        .add("((S (NP (NP (DT The) (JJ complicated) (NN language)) (PP (IN in) (NP (DT the) (JJ huge) (JJ new) (NN law)))) (VP (VBZ has) (VP (VBD muddied) (NP (DT the) (NN fight)))) (. .)))");
-                // sentences.add("((S (NP (NP (DT No) (NN fiddling)) (PP (IN with) (NP (NNS systems) (CC and) (NNS procedures)))) (VP (MD will) (ADVP (RB ever)) (VP (VB prevent) (NP (NNS markets)) (PP (IN from) (S (VP (VBG suffering) (NP (NP (DT a) (NN panic) (NN wave)) (PP (IN of) (NP (NN selling))))))))) (. .)))");
-                break;
-            case 2:
-                // On this example, Max-rule should return
-                // (ROOT (S (Z4 (Z5 x) (Z6 x)) (U (A (C x) (D x)) (B (G x) (H
-                // x)))))
-                // While Viterbi should return
-                // (ROOT (S (Z4 (Z5 x) (Z6 x)) (U (B (G x) (H x)) (B (G x) (H
-                // x)))))
-                sentences.add("((S (Z1 (Z2 x) (NNPS x)) (U3 (Uu (A1 (NNP x1) (NNPS x2))))))");// (B
-                                                                                              // (G
-                                                                                              // x)
-                                                                                              // (H
-                                                                                              // x))))");
-                sentences.add("((S (K (U2 (Z1 (Z2 x) (NNP x)))) (U7 (NNS x))))");//
-                sentences.add("((S (Z1 (NNPS x) (NN x)) (F (CC y) (ZZ z))))");//
-                // sentences.add("((S (Z4 (Z5 x) (Z6 x)) (U (B (G x) (H x)) (B (G x) (H x)))))");
-                // sentences.add("((S (Z7 (Z8 x) (Z9 x)) (U (B (G x) (H x)) (B (G x) (H x)))))");
-                // sentences.add("((S (V (Z10 (Z11 x) (Z12 x)) (A (C x) (D x))) (Z13 (Z14 x) (Z15 x))))");
-                // sentences.add("((S (V (Z16 (Z17 x) (Z18 x)) (A (C x) (D x))) (Z19 (Z20 x) (Z21 x))))");
-                break;
-            case 3:
-                // On this example, Max-rule should return
-                // (ROOT (S (A x) (B x))) until the threshold is too large
-                sentences.add("((X (C (B b) (B b)) (F (E (D d)))))");
-                sentences.add("((Y (C (B a) (B a)) (E (D d))))");
-                sentences.add("((X (C (B b) (B b)) (E (D d))))");
-                // sentences.add("((T (X t) (X t)))");
-                // sentences.add("((S (X s) (X s)))");
-                // sentences.add("((S (A x) (B x)))");
-                break;
-            case 4:
-                // sentences.add("((S (NP (DT The) (NN house)) (VP (VBZ is) (ADJP (JJ green))) (. .)))");
-                sentences
-                        .add("( (S (SBAR (IN In) (NN order) (S (VP (TO to) (VP (VB strengthen) (NP (NP (JJ cultural) (NN exchange) (CC and) (NN contact)) (PP (IN between) (NP (NP (NP (DT the) (NNS descendents)) (PP (IN of) (NP (DT the) (NNPS Emperors)))) (UCP (PP (IN at) (NP (NN home))) (CC and) (ADVP (RB abroad)))))))))) (, ,) (NP (NNP China)) (VP (MD will) (VP (VB hold) (NP (DT the) (JJ \") (NNP China) (NNP Art) (NNP Festival) (NN \")) (PP (IN in) (NP (NP (NNP Beijing)) (CC and) (NNP Shenzhen))) (ADVP (RB simultaneously)) (PP (IN from) (NP (DT the) (NN 8th))) (PP (TO to) (NP (NP (DT the) (JJ 18th)) (PP (IN of) (NP (NNP December))))) (NP (DT this) (NN year)))) (. .)) )");
-                sentences
-                        .add("( (S (PP (IN In) (NP (NP (NN order) (S (VP (TO to) (VP (VB strengthen) (NP (NP (JJ cultural) (NN exchange) (CC and) (NN contact)) (PP (IN between) (NP (NP (DT the) (NNS descendents)) (PP (IN of) (NP (DT the) (NNPS Emperors))) (PP (IN at) (NP (NN home)))))))))) (CC and) (ADVP (RB abroad)))) (, ,) (NP (NNP China)) (VP (MD will) (VP (VB hold) (NP (DT the) (JJ \") (NNP China) (NNP Art) (NNP Festival) (NN \")) (PP (IN in) (NP (NP (NNP Beijing)) (CC and) (NNP Shenzhen))) (ADVP (RB simultaneously)) (PP (IN from) (NP (DT the) (NN 8th))) (PP (TO to) (NP (NP (DT the) (JJ 18th)) (PP (IN of) (NP (NNP December))))) (NP (DT this) (NN year)))) (. .)) )");
-                sentences
-                        .add("( (S (PP (IN In) (NP (NN order) (S (VP (TO to) (VP (VB strengthen) (NP (NP (JJ cultural) (NN exchange) (CC and) (NN contact)) (PP (IN between) (NP (NP (DT the) (NNS descendents)) (PP (IN of) (NP (DT the) (NNPS Emperors)))))) (UCP (PP (IN at) (ADVP (RB home))) (CC and) (ADVP (RB abroad)))))))) (, ,) (NP (NNP China)) (VP (MD will) (VP (VB hold) (NP (DT the) (`` \") (NNP China) (NNP Art) (NNP Festival) (NN \")) (PP (IN in) (NP (NNP Beijing) (CC and) (NNP Shenzhen))) (ADVP (RB simultaneously)) (PP (PP (IN from) (NP (DT the) (NN 8th))) (PP (IN to) (NP (DT the) (NN 18th))) (PP (IN of) (NP (NNP December)))) (NP (DT this) (NN year)))) (. .)) )");
+        try {
+            final PennTreeReader treeReader = new PennTreeReader(new InputStreamReader(inputStream, "UTF-8"));
 
-                break;
-            case 5:
-                sentences.add("((X (C (B a) (B a)) (D d)))");
-                sentences.add("((Y (C (B b) (B b)) (E (D d) (D d))))");
-                sentences.add("((Y (C (B b) (B b)) (D d)))");
-                sentences.add("((Y (E (B b) (B b)) (D d)))");
-                sentences.add("((Y (C (B b) (B b)) (D d)))");
-                sentences.add("((Y (C (B b) (B b)) (D d)))");
-                sentences.add("((Y (C (B b) (B b)) (D d)))");
-                sentences.add("((Y (C (B b) (B b)) (D d)))");
-                break;
-            case 6:
-                sentences.add("((Y (C (B @) (B b)) (E (D d) (D e))))");
-                sentences.add("((Y (C (B b) (D b)) (D d)))");
-                // sentences.add("((Y (C (K (B b)) (D b)) (Z (D d))))");
-                // sentences.add("((Y (C (K (N n)) (B b)) (Z (D d))))");
-                // sentences.add("((X (V (C (B a) (B a))) (D d)))");
-                // sentences.add("((X (C (B a) (B a)) (D d)))");
-
-                sentences.add("((Y (C (B b) (B b)) (D d)))");
-                sentences.add("((Y (U (C (B b) (B b))) (D d)))");
-                // sentences.add("((Y (E (B b) (B b)) (D d)))");
-                sentences.add("((Y (C (B b) (B b)) (D d)))");
-                sentences.add("((Y (C (B b) (B b)) (D d)))");
-                sentences.add("((Y (C (B b) (B b)) (D d)))");
-                sentences.add("((Y (C (B b) (B b)) (D d)))");
-                // sentences.add("((Y (C (B b) (B b)) (Z (D d))))");
-                // sentences.add("((Y (C (K (B b)) (B b)) (Z (D d))))");
-
-                break;
-            case 7:
-                sentences.add("((X (S (NP (X (PRP I))) (VP like))))");
-                sentences.add("((X (C (U (V (W (B a) (B a))))) (D d)))");
-                sentences.add("((X (Y (Z (V (C (B a) (B a))) (D d)))))");
-                sentences.add("((X (C (B a) (B a)) (D d)))");
-                sentences.add("((Y (C (B b) (B b)) (E (D d) (D d))))");
-                sentences.add("((Y (C (B b) (B b)) (D d)))");
-                sentences.add("((Y (U (C (B b) (B b))) (D d)))");
-                sentences.add("((Y (E (B b) (B b)) (D d)))");
-                sentences.add("((Y (C (B b) (B b)) (D d)))");
-                sentences.add("((Y (C (B b) (B b)) (D d)))");
-                sentences.add("((Y (C (B b) (B b)) (D d)))");
-                sentences.add("((Y (C (B b) (B b)) (D d)))");
-            case 8:
-                sentences
-                        .add("((S-SBJ (NP (PRP We)) (VP (VBP 're) (RB about) (VP (TO to) (VP (VB see) (SBAR (IN if) (S (NP (NN advertising)) (VP (VBZ works))))))) (. .)))");
-                break;
-            default:
-
+            final Trees.TreeTransformer<String> treeTransformer = new Trees.StandardTreeNormalizer();
+            while (treeReader.hasNext()) {
+                trainTrees.add(treeTransformer.transformTree(treeReader.next()));
             }
-            for (final String sentence : sentences) {
-                reader = new Trees.PennTreeReader(new StringReader(sentence));
-                tree = reader.next();
-                final Trees.TreeTransformer<String> treeTransformer = new Trees.StandardTreeNormalizer();
-                final Tree<String> normalizedTree = treeTransformer.transformTree(tree);
-                tree = normalizedTree;
-                trainTrees.add(tree);
-                devSetTrees.add(tree);
+
+            if (trainTrees.size() == 0) {
+                throw new IllegalArgumentException("Empty training corpus");
             }
-        }
-        // load from at least one corpus
-        else {
-            try {
-                System.out.println("Loading data from single file!");
-                loadSingleFile(path);
-            } catch (final Exception e) {
-                System.out.println("Error loading trees!");
-                System.out.println(e.getStackTrace().toString());
-                throw new Error(e.getMessage(), e);
-            }
-        }
-    }
 
-    private void loadSingleFile(final String path) throws Exception {
-        BaseLogger.singleton().info("Loading trees from single file...");
-        final InputStreamReader inputData = new InputStreamReader(new FileInputStream(path), "UTF-8");
-        final PennTreeReader treeReader = new PennTreeReader(inputData);
-
-        while (treeReader.hasNext()) {
-            trainTrees.add(treeReader.next());
+        } catch (final UnsupportedEncodingException e) {
+            // We always use UTF-8, so this should never happen
+            throw new IllegalArgumentException(e);
         }
-
-        final Trees.TreeTransformer<String> treeTransformer = new Trees.StandardTreeNormalizer();
-        final ArrayList<Tree<String>> normalizedTreeList = new ArrayList<Tree<String>>();
-        for (final Tree<String> tree : trainTrees) {
-            final Tree<String> normalizedTree = treeTransformer.transformTree(tree);
-            normalizedTreeList.add(normalizedTree);
-        }
-        if (normalizedTreeList.size() == 0) {
-            throw new Exception("failed to load any trees at " + path);
-        }
-        trainTrees = normalizedTreeList;
     }
 
     public static List<Tree<String>> binarizeAndFilterTrees(final List<Tree<String>> trees,

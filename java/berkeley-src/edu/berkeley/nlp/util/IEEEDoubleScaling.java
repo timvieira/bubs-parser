@@ -1,5 +1,7 @@
 package edu.berkeley.nlp.util;
 
+import edu.ohsu.cslu.util.Arrays;
+
 /**
  * Provides a scaling system, to avoid numeric overflow and underflow with IEEE 64-bit double precision floating-point
  * numbers. Scales the actual value by a series of (large) constants, effectively expanding the exponent beyond its
@@ -78,7 +80,7 @@ public class IEEEDoubleScaling {
      * @return The new scaling step required to properly constrain the array
      */
     public static int scaleArray(final double[] scores, final int previousScaleStep) {
-        return scaleArray(scores, previousScaleStep, ArrayUtil.max(scores));
+        return scaleArray(scores, previousScaleStep, Arrays.max(scores));
     }
 
     /**
