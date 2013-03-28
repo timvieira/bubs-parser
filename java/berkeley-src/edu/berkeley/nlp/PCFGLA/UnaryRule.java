@@ -113,6 +113,23 @@ public class UnaryRule extends Rule implements java.io.Serializable, Comparable<
         return toString(0);
     }
 
+    public int ruleCount(final double minimumRuleProbability) {
+        int count = 0;
+
+        for (int child = 0; child < scores.length; child++) {
+            if (scores[child] == null) {
+                continue;
+            }
+
+            for (int parent = 0; parent < scores[child].length; parent++) {
+                if (scores[child][parent] > minimumRuleProbability) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
     public String toString(final double minimumRuleProbability) {
         final Numberer n = Numberer.getGlobalNumberer("tags");
         String cState = n.symbol(childState);

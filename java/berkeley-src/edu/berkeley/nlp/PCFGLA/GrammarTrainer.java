@@ -122,11 +122,9 @@ public class GrammarTrainer extends BaseCommandlineTool {
             Corpus.lowercaseWords(devSetTrees);
         }
 
-        System.out.println("There are " + trainTrees.size() + " trees in the training set.");
-
         short[] numSubStatesArray = initializeSubStateArray(trainTrees, devSetTrees, tagNumberer);
-
-        System.out.println("There are " + numSubStatesArray.length + " observed categories.");
+        BaseLogger.singleton().info(
+                "Read " + trainTrees.size() + " training trees with " + numSubStatesArray.length + " non-terminals");
 
         // initialize lexicon and grammar
         Lexicon lexicon = null, maxLexicon = null;
@@ -150,15 +148,14 @@ public class GrammarTrainer extends BaseCommandlineTool {
         }
 
         StateSetTreeList trainStateSetTrees = new StateSetTreeList(trainTrees, numSubStatesArray, false, tagNumberer);
-        StateSetTreeList devSetStateSetTrees = new StateSetTreeList(devSetTrees, numSubStatesArray, false, tagNumberer);// deletePC);
+        StateSetTreeList devSetStateSetTrees = new StateSetTreeList(devSetTrees, numSubStatesArray, false, tagNumberer);
 
         // get rid of the old trees
         trainTrees = null;
         devSetTrees = null;
         corpus = null;
 
-        // If we're training without loading a split grammar, then we run once
-        // without splitting.
+        // If we're training without loading a split grammar, then we run once without splitting.
         if (inFile == null) {
 
             // Induce M0 grammar from training corpus
@@ -182,6 +179,7 @@ public class GrammarTrainer extends BaseCommandlineTool {
                 grammar.countUnsplitTree(stateSetTree);
             }
             lexicon.tieRareWordStats(rareWordThreshold);
+
             // remove the unlikely tags
             lexicon.removeUnlikelyTags(lexicon.threshold, -1.0);
             grammar.optimize(randomization);
@@ -435,7 +433,8 @@ public class GrammarTrainer extends BaseCommandlineTool {
 
             // And a gzipped-text representation
             final Writer w = new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(f)));
-            w.write(grammar.toString(lexicon.getNumberOfEntries(), minRuleProbability));
+            w.write(grammar.toString(lexicon.totalRules(minRuleProbability), minRuleProbability, rareWordThreshold,
+                    horizontalMarkovization));
             w.write("===== LEXICON =====\n");
             w.write(lexicon.toString(minRuleProbability));
             w.close();

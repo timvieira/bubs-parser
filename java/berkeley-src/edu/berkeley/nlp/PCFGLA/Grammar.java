@@ -1171,25 +1171,33 @@ public class Grammar implements Serializable, Cloneable {
 
     @Override
     public String toString() {
-        return toString(-1, 0);
+        return toString(-1, 0, 0, 0);
     }
 
-    public String toString(final int nLex, final double minimumRuleProbability) {
+    public String toString(final int nLex, final double minimumRuleProbability, final int unkThreshold,
+            final int horizontalMarkovization) {
 
         final StringBuilder sb = new StringBuilder();
 
-        // Count the total number of rules
+        // Count non-terminal splits and unary rules
         int nBinary = 0, nUnary = 0;
 
+        int totalSubStates = 0;
         for (int state = 0; state < numStates; state++) {
-            // TODO Fix these counts
-            nBinary += splitRulesWithP(state).length;
-            nUnary += closedViterbiRulesWithParent[state].size();
+            totalSubStates += numSubStates[state];
+            for (final UnaryRule rule : closedViterbiRulesWithParent[state]) {
+                nUnary += rule.ruleCount(minimumRuleProbability);
+            }
         }
+
+        for (final PackedBinaryRule rule : packedBinaryRuleMap.values()) {
+            nBinary += rule.ruleCount(minimumRuleProbability);
+        }
+
         sb.append(String
-                .format("lang=%s format=Berkeley unkThresh=%s start=%s hMarkov=%s vMarkov=%s date=%s vocabSize=%d nBinary=%d nUnary=%d nLex=%d\n",
-                        "UNK", "UNK", "ROOT_0", "UNK", "UNK", new SimpleDateFormat("yyyy/mm/dd").format(new Date()),
-                        numStates, nBinary, nUnary, nLex));
+                .format("lang=%s format=Berkeley unkThresh=%s start=%s hMarkov=%d vMarkov=%s date=%s vocabSize=%d nBinary=%d nUnary=%d nLex=%d\n",
+                        "UNK", unkThreshold, "ROOT_0", horizontalMarkovization, "-",
+                        new SimpleDateFormat("yyyy/MM/dd").format(new Date()), totalSubStates, nBinary, nUnary, nLex));
 
         final List<String> ruleStrings = new ArrayList<String>();
 
@@ -1383,6 +1391,16 @@ public class Grammar implements Serializable, Cloneable {
                 tmpLeftChildOffsets[currentLeftChild] = i;
             }
             return tmpLeftChildOffsets;
+        }
+
+        public int ruleCount(final double minimumRuleProbability) {
+            int count = 0;
+            for (int i = 0; i < ruleScores.length; i++) {
+                if (ruleScores[i] > minimumRuleProbability) {
+                    count++;
+                }
+            }
+            return count;
         }
 
         public String toString(final double minimumRuleProbability) {

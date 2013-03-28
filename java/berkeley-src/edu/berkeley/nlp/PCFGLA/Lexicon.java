@@ -892,26 +892,34 @@ public class Lexicon implements java.io.Serializable {
         }
     }
 
-    public int getNumberOfEntries() {
-        int nEntries = 0;
-        // indicates first time use:
-        for (final String word : wordCounter.keySet()) { // has all words AND also
-            // the signatures
-            wordNumberer.number(word);
-        }
+    public int totalRules(final double minimumRuleProbability) {
+        int count = 0;
+
         for (int tag = 0; tag < wordToTagCounters.length; tag++) {
             if (wordToTagCounters[tag] != null) {
-                nEntries += wordToTagCounters[tag].size() * numSubStates[tag];
-                for (final String word : wordToTagCounters[tag].keySet())
-                    wordNumberer.number(word);
+                for (final String word : wordToTagCounters[tag].keySet()) {
+                    final double[] scores = score(word, (short) tag, 0, false, false);
+                    for (int split = 0; split < scores.length; split++) {
+                        if (scores[split] > minimumRuleProbability) {
+                            count++;
+                        }
+                    }
+                }
             }
+
             if (unseenWordToTagCounters[tag] != null) {
-                nEntries += unseenWordToTagCounters[tag].size() * numSubStates[tag];
-                for (final String word : unseenWordToTagCounters[tag].keySet())
-                    wordNumberer.number(word);
+                for (final String word : unseenWordToTagCounters[tag].keySet()) {
+
+                    final double[] scores = score(word, (short) tag, 0, false, true);
+                    for (int split = 0; split < scores.length; split++) {
+                        if (scores[split] > minimumRuleProbability) {
+                            count++;
+                        }
+                    }
+                }
             }
         }
-        return nEntries;
+        return count;
     }
 
     public void setSmoother(final Smoother smoother) {
