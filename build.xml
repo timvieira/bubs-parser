@@ -44,7 +44,9 @@
     <target name="compile" depends="git-revision" description="Compile Java code and tools">
         <!-- If the build directory doesn't already exist, create it -->
         <mkdir dir="${dir.build}" />
-        <javac srcdir="${dir.src}" includes="**/*.java" destdir="${dir.build}" debug="true" includeantruntime="false">
+        <javac includes="**/*.java" destdir="${dir.build}" debug="true" includeantruntime="false">
+            <src path="${dir.src}"/>
+            <src path="java/berkeley-src"/>
             <classpath refid="classpath.libs" />
         </javac>
     </target>
@@ -56,7 +58,9 @@
     -->
     <target name="javadoc">
         <javadoc destdir="${dir.build.doc}/javadoc">
-            <fileset dir="${dir.src}" includes="**/*.java" excludes="edu/ohsu/cslu/lela/**,**/Test*.java,**/Profile*.java,**/All*Tests.java,**/*TestCase.java" />
+            <fileset includes="**/*.java" excludes="edu/ohsu/cslu/lela/**,**/Test*.java,**/Profile*.java,**/All*Tests.java,**/*TestCase.java" />
+            <src path="${dir.src}"/>
+            <src path="java/berkeley-src"/>
             <classpath refid="classpath.libs" />
         </javadoc>
     </target>
