@@ -113,7 +113,7 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
             this.beamWidth = props.getIntProperty(Parser.PROPERTY_MAX_BEAM_WIDTH);
             this.lexicalRowBeamWidth = props.getIntProperty(PROPERTY_LEXICAL_ROW_BEAM_WIDTH, beamWidth);
             this.lexicalRowUnaries = props.getIntProperty(PROPERTY_LEXICAL_ROW_UNARIES, lexicalRowBeamWidth / 3);
-            this.maxLocalDelta = props.getFloatProperty(PROPERTY_MAX_LOCAL_DELTA, 8f);
+            this.maxLocalDelta = props.getFloatProperty(PROPERTY_MAX_LOCAL_DELTA, 15f);
             this.exhaustiveSearch = false;
         } else {
             this.beamWidth = grammar.numNonTerms();
