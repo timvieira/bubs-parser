@@ -170,11 +170,15 @@ public abstract class Parser<G extends Grammar> {
         if (input.length() == 0) {
             BaseLogger.singleton().info("WARNING: blank line in input.");
             return null;
-        } else if (opts.inputFormat != InputFormat.Tree && input.charAt(0) == '('
-                && (input.startsWith("((") || input.startsWith("(TOP") || input.startsWith("(ROOT"))) {
-            BaseLogger.singleton().fine(
-                    "INFO: Auto-detecting inputFormat as Tree (originally " + opts.inputFormat + ")");
-            opts.inputFormat = InputFormat.Tree;
+        }
+
+        synchronized (opts.inputFormat) {
+            if (opts.inputFormat != InputFormat.Tree && input.charAt(0) == '('
+                    && (input.startsWith("((") || input.startsWith("(TOP") || input.startsWith("(ROOT"))) {
+                BaseLogger.singleton().fine(
+                        "INFO: Auto-detecting inputFormat as Tree (originally " + opts.inputFormat + ")");
+                opts.inputFormat = InputFormat.Tree;
+            }
         }
 
         // TODO: make parseTask local and pass it around to required methods. Will probably need to add

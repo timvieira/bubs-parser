@@ -510,7 +510,11 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
                     .getConstructor(ParserDriver.class, grammar.getClass());
 
             final Parser<?> parser = c.newInstance(this, grammar);
-            parserInstances.add(parser);
+            // Each thread creates its own parser instance. We need to maintain (and protect) a master list that we'll
+            // use to shut them down in cleanup()
+            synchronized (parserInstances) {
+                parserInstances.add(parser);
+            }
             return parser;
 
         } catch (final Exception e) {
@@ -596,10 +600,14 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
 
         BaseLogger.singleton().info(sb.toString());
 
-        for (final Parser<?> p : parserInstances) {
-            try {
-                p.shutdown();
-            } catch (final Exception ignore) {
+        // Synchronize again, just to be sure we don't somehow try to add a new instance during cleanup. It should be
+        // rare, but the (usually) uncontested sync is cheap.
+        synchronized (parserInstances) {
+            for (final Parser<?> p : parserInstances) {
+                try {
+                    p.shutdown();
+                } catch (final Exception ignore) {
+                }
             }
         }
     }

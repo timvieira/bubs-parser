@@ -99,7 +99,7 @@ public class Vocabulary extends SymbolSet<String> {
         return startSymbol;
     }
 
-    public final Vocabulary baseVocabulary() {
+    public final synchronized Vocabulary baseVocabulary() {
         if (baseVocabulary == null) {
             baseVocabulary = new Vocabulary(grammarFormat);
             for (short nt = 0; nt < list.size(); nt++) {
