@@ -66,22 +66,22 @@ public abstract class BinaryClassifier<S extends BinarySequence> extends Classif
     /** Threshold above which we'll represent weight vectors sparsely */
     private static int MAX_DENSE_STORAGE_SIZE = 100 * 1024;
 
-    /** Model parameters (non-volatile) */
+    /** Model parameters */
     protected FloatVector avgWeights = null;
 
     /**
-     * Model bias (non-volatile). Learned in {@link #precisionBiasSearch(ArrayList, FeatureExtractor)} or
+     * Model bias. Learned in {@link #precisionBiasSearch(ArrayList, FeatureExtractor)} or
      * {@link #negativeRecallBiasSearch(ArrayList, FeatureExtractor)}.
      */
     protected float bias = 0;
 
-    // Volatile fields used only during training
-    private volatile FloatVector rawWeights = null;
-    private volatile IntVector lastAveraged = null;
-    private volatile int lastExampleAllUpdated = 0;
+    // Transient fields used only during training
+    private transient FloatVector rawWeights = null;
+    private transient IntVector lastAveraged = null;
+    private transient int lastExampleAllUpdated = 0;
 
-    private volatile int trainExampleNumber = 0;
-    private volatile LossFunction lossFunction;
+    private transient int trainExampleNumber = 0;
+    private transient LossFunction lossFunction;
 
     protected SymbolSet<String> vocabulary;
 
