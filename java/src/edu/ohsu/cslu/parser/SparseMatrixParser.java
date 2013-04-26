@@ -142,7 +142,7 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
                 break;
 
             case FIXED_BEAM:
-                initSentence(parseTask, beamWidth, lexicalRowBeamWidth, lexicalRowUnaries, maxLocalDelta);
+                initSentence(parseTask, beamWidth, lexicalRowBeamWidth, lexicalRowUnaries, maxLocalDelta, 0);
                 cellSelector.reset(false);
                 break;
 
@@ -153,13 +153,13 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
                     continue;
                 }
                 initSentence(parseTask, beamWidth << 1, lexicalRowBeamWidth << 1, lexicalRowUnaries << 1, maxLocalDelta
-                        * MAX_LOCAL_DELTA_MULTIPLIER);
+                        * MAX_LOCAL_DELTA_MULTIPLIER, 0);
                 cellSelector.reset(false);
                 break;
 
             case EXHAUSTIVE:
                 initSentence(parseTask, grammar.nonTermSet.size(), grammar.nonTermSet.size(),
-                        grammar.nonTermSet.size(), Float.MAX_VALUE);
+                        grammar.nonTermSet.size(), Float.MAX_VALUE, 0);
                 cellSelector.reset(false);
                 break;
             }
@@ -186,11 +186,11 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
 
     @Override
     protected void initSentence(final ParseTask parseTask) {
-        initSentence(parseTask, beamWidth, lexicalRowBeamWidth, lexicalRowUnaries, maxLocalDelta);
+        initSentence(parseTask, beamWidth, lexicalRowBeamWidth, lexicalRowUnaries, maxLocalDelta, 0);
     }
 
     protected void initSentence(final ParseTask parseTask, final int newBeamWidth, final int newLexicalRowBeamWidth,
-            final int newLexicalRowUnaries, final float newMaxLocalDelta) {
+            final int newLexicalRowUnaries, final float newMaxLocalDelta, final int leftChildSegments) {
 
         // Set beam width parameters
         if (newBeamWidth >= grammar.nonTermSet.size()) {
@@ -221,15 +221,26 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
                 final Class<C> chartClass = chartClass();
                 chartClass.getConstructors();
                 try {
-                    // First, try for a constructor that takes tokens, grammar, beamWidth, and lexicalRowBeamWidth
-                    chart = chartClass.getConstructor(
-                            new Class[] { ParseTask.class, SparseMatrixGrammar.class, int.class, int.class })
-                            .newInstance(new Object[] { parseTask, grammar, beamWidth, lexicalRowBeamWidth });
+                    // First, try for a constructor that takes tokens, grammar, beamWidth, lexicalRowBeamWidth, and
+                    // leftChildSegments
+                    chart = chartClass
+                            .getConstructor(
+                                    new Class[] { ParseTask.class, SparseMatrixGrammar.class, int.class, int.class,
+                                            int.class }).newInstance(
+                                    new Object[] { parseTask, grammar, beamWidth, lexicalRowBeamWidth,
+                                            leftChildSegments });
 
                 } catch (final NoSuchMethodException e) {
-                    // If not found, use a constructor that takes only tokens and grammar
-                    chart = chartClass.getConstructor(new Class[] { ParseTask.class, SparseMatrixGrammar.class })
-                            .newInstance(new Object[] { parseTask, grammar });
+                    try {
+                        // Next, try for a constructor without leftChildSegments)
+                        chart = chartClass.getConstructor(
+                                new Class[] { ParseTask.class, SparseMatrixGrammar.class, int.class, int.class })
+                                .newInstance(new Object[] { parseTask, grammar, beamWidth, lexicalRowBeamWidth });
+                    } catch (final NoSuchMethodException e2) {
+                        // And finally, a constructor that takes only tokens and grammar
+                        chart = chartClass.getConstructor(new Class[] { ParseTask.class, SparseMatrixGrammar.class })
+                                .newInstance(new Object[] { parseTask, grammar });
+                    }
                 }
             } catch (final Exception e) {
                 throw new RuntimeException(e);

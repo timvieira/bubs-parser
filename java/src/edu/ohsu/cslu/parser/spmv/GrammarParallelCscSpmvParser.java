@@ -30,6 +30,7 @@ import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
+import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
@@ -52,6 +53,7 @@ public final class GrammarParallelCscSpmvParser extends CscSpmvParser {
      */
     private final int cpvSegments;
 
+    // TODO Fix this documentation
     /**
      * Offsets into {@link CsrSparseMatrixGrammar#csrBinaryRowOffsets} splitting the binary rule-set into segments of
      * roughly equal size for distribution between threads. Length is {@link #grammarThreads} + 1 (to avoid falling off
@@ -108,6 +110,11 @@ public final class GrammarParallelCscSpmvParser extends CscSpmvParser {
                 return tcs;
             }
         };
+    }
+
+    @Override
+    protected void initSentence(final ParseTask parseTask) {
+        initSentence(parseTask, beamWidth, lexicalRowBeamWidth, lexicalRowUnaries, maxLocalDelta, cpvSegments);
     }
 
     /**
