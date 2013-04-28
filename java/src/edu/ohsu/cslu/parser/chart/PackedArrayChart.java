@@ -1002,8 +1002,6 @@ public class PackedArrayChart extends ParallelArrayChart {
 
     public class PackedArrayChartCell extends ParallelArrayChartCell {
 
-        public TemporaryChartCell tmpCell;
-
         public PackedArrayChartCell(final int start, final int end) {
             super(start, end);
         }
@@ -1066,14 +1064,7 @@ public class PackedArrayChart extends ParallelArrayChart {
             finalizeSegmentStartIndices();
         }
 
-        /**
-         * Special-case to populate a cell with a single entry without a linear search of the temporary storage
-         * 
-         * @param entryNonTerminal
-         * @param entryInsideProbability
-         * @param entryPackedChildren
-         * @param entryMidpoint
-         */
+        @Override
         public void finalizeCell(final short entryNonTerminal, final float entryInsideProbability,
                 final int entryPackedChildren, final short entryMidpoint) {
 
@@ -1101,9 +1092,7 @@ public class PackedArrayChart extends ParallelArrayChart {
             finalizeSegmentStartIndices();
         }
 
-        /**
-         * Special-case to finalize an empty cell
-         */
+        @Override
         public void finalizeEmptyCell() {
 
             minLeftChildIndex[cellIndex] = offset;

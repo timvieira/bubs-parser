@@ -24,6 +24,7 @@ import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.lela.ConstrainedChart;
 import edu.ohsu.cslu.parser.ParseTask;
+import edu.ohsu.cslu.parser.chart.PackedArrayChart.TemporaryChartCell;
 
 /**
  * Represents a parse chart as a parallel array including:
@@ -242,6 +243,8 @@ public abstract class ParallelArrayChart extends Chart {
 
     public abstract class ParallelArrayChartCell extends ChartCell {
 
+        public TemporaryChartCell tmpCell;
+
         protected final int cellIndex;
         protected final int offset;
 
@@ -261,10 +264,27 @@ public abstract class ParallelArrayChart extends Chart {
             return offset;
         }
 
+        /**
+         * Special-case to populate a cell with a single entry without a linear search of the temporary storage
+         * 
+         * @param entryNonTerminal
+         * @param entryInsideProbability
+         * @param entryPackedChildren
+         * @param entryMidpoint
+         */
+        public abstract void finalizeCell(final short entryNonTerminal, final float entryInsideProbability,
+                final int entryPackedChildren, final short entryMidpoint);
+
+        /**
+         * Special-case to finalize an empty cell
+         */
+        public abstract void finalizeEmptyCell();
+
         public abstract String toString(final boolean formatFractions);
 
         /**
          * Populates lexical production probabilities.
+         * 
          * @param child
          * @param parents
          * @param probabilities

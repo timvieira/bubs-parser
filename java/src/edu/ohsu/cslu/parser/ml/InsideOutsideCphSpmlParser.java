@@ -8,6 +8,7 @@ import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.BoundedPriorityQueue;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
+import edu.ohsu.cslu.parser.chart.ParallelArrayChart.ParallelArrayChartCell;
 import edu.ohsu.cslu.util.Math;
 
 /**
@@ -101,7 +102,7 @@ public class InsideOutsideCphSpmlParser extends BaseIoCphSpmlParser {
     }
 
     @Override
-    protected final void unaryAndPruning(final PackedArrayChartCell spvChartCell, final short start, final short end) {
+    protected final void unaryAndPruning(final ParallelArrayChartCell spvChartCell, final short start, final short end) {
 
         final long t0 = collectDetailedStatistics ? System.nanoTime() : 0;
 

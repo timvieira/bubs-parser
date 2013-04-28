@@ -100,7 +100,14 @@ public class LeftChildLoopSpmlParser extends SparseMatrixLoopParser<LeftCscSpars
         }
 
         // Apply unary rules
-        unarySpmv(targetCell);
+        if (exhaustiveSearch) {
+            unarySpmv(targetCell);
+            targetCell.finalizeCell();
+        } else {
+            // unaryAndPruning finalizes the cell
+            targetCell.allocateTemporaryStorage();
+            unaryAndPruning(targetCell, start, end);
+        }
 
         targetCell.finalizeCell();
     }

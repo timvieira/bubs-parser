@@ -27,6 +27,7 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.grammar.Vocabulary;
 import edu.ohsu.cslu.parser.ParseTask;
+import edu.ohsu.cslu.parser.chart.PackedArrayChart.TemporaryChartCell;
 
 /**
  * Stores a chart in a 3-way parallel array indexed by non-terminal:
@@ -260,8 +261,48 @@ public class DenseVectorChart extends ParallelArrayChart {
             return count;
         }
 
+        public void allocateTemporaryStorage() {
+            // Allocate storage
+            if (tmpCell == null) {
+                // TODO Use the thread-local version. This will require deciding at thread-local init time whether to
+                // allocate outside probability array
+                // this.tmpCell = threadLocalTemporaryCells.get();
+                // this.tmpCell.clear();
+
+                this.tmpCell = new TemporaryChartCell(grammar, false);
+                // Copy from main chart array to temporary parallel array
+                System.arraycopy(insideProbabilities, offset, tmpCell.insideProbabilities, 0,
+                        tmpCell.insideProbabilities.length);
+                System.arraycopy(packedChildren, offset, tmpCell.packedChildren, 0, tmpCell.packedChildren.length);
+                System.arraycopy(midpoints, offset, tmpCell.midpoints, 0, tmpCell.midpoints.length);
+            }
+        }
+
         @Override
         public final void finalizeCell() {
+            if (tmpCell == null) {
+                return;
+            }
+
+            System.arraycopy(tmpCell.insideProbabilities, 0, insideProbabilities, offset,
+                    tmpCell.insideProbabilities.length);
+            System.arraycopy(tmpCell.packedChildren, 0, packedChildren, offset, tmpCell.packedChildren.length);
+            System.arraycopy(tmpCell.midpoints, 0, midpoints, offset, tmpCell.midpoints.length);
+            // Note : outsideProbabilities is not implemented in DenseVectorChart
+        }
+
+        @Override
+        public void finalizeCell(final short entryNonTerminal, final float entryInsideProbability,
+                final int entryPackedChildren, final short entryMidpoint) {
+            Arrays.fill(insideProbabilities, offset, offset + grammar.numNonTerms(), Float.NEGATIVE_INFINITY);
+            insideProbabilities[offset + entryNonTerminal] = entryInsideProbability;
+            packedChildren[offset + entryNonTerminal] = entryPackedChildren;
+            midpoints[offset + entryNonTerminal] = entryMidpoint;
+        }
+
+        @Override
+        public void finalizeEmptyCell() {
+            // NOOP - chart storage should still be empty.
         }
 
         /**
