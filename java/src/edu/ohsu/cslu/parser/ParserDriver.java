@@ -584,7 +584,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
         final StringBuilder sb = new StringBuilder();
         sb.append(String
                 .format("INFO: numSentences=%d numFail=%d reparsedSentences=%d totalReparses=%d totalSeconds=%.3f cpuSeconds=%.3f avgSecondsPerSent=%.3f wordsPerSec=%.3f",
-                        sentencesParsed, failedParses, reparsedSentences, totalReparses, parseTime, cpuTime, cpuTime
+                        sentencesParsed, failedParses, reparsedSentences, totalReparses, parseTime, cpuTime, parseTime
                                 / sentencesParsed, wordsParsed / parseTime));
 
         if (!parserInstances.isEmpty() && parserInstances.getFirst() instanceof SparseMatrixVectorParser) {

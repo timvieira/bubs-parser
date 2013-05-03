@@ -336,7 +336,7 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
         }
     }
 
-    protected void unaryAndPruning(final PackedArrayChartCell spvChartCell, final short start, final short end) {
+    protected void unaryAndPruning(final ParallelArrayChartCell spvChartCell, final short start, final short end) {
 
         final long t0 = collectDetailedStatistics ? System.nanoTime() : 0;
 
@@ -386,7 +386,10 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
 
     protected final void unaryAndPruning(final TemporaryChartCell tmpCell, final int cellBeamWidth, final short start,
             final short end) {
-        // For the moment, at least, we ignore factored-only cell constraints in span-1 cells
+
+        final long t0 = collectDetailedStatistics ? System.nanoTime() : 0;
+
+        // Ignore factored-only cell constraints in span-1 cells
         final boolean allowUnaries = !cellSelector.hasCellConstraints() || cellSelector.isUnaryOpen(start, end)
                 && !(cellSelector.isCellOnlyFactored(start, end) && (end - start > 1));
         final float minInsideProbability = edu.ohsu.cslu.util.Math.floatMax(tmpCell.insideProbabilities)
