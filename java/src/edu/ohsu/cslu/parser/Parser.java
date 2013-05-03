@@ -129,8 +129,6 @@ public abstract class Parser<G extends Grammar> {
 
     public abstract float getInside(int start, int end, int nt);
 
-    public abstract float getOutside(int start, int end, int nt);
-
     public abstract String getStats();
 
     protected abstract BinaryTree<String> findBestParse(ParseTask parseTask);

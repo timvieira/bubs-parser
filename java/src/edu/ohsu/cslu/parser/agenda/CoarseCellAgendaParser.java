@@ -270,9 +270,4 @@ public class CoarseCellAgendaParser extends Parser<LeftHashGrammar> {
     public float getInside(final int start, final int end, final int nt) {
         return chart.getInside(start, end, nt);
     }
-
-    @Override
-    public float getOutside(final int start, final int end, final int nt) {
-        return chart.getInside(start, end, nt);
-    }
 }
