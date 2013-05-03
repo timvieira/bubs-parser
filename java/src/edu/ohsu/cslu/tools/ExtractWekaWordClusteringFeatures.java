@@ -372,6 +372,7 @@ public class ExtractWekaWordClusteringFeatures extends BaseTextNormalizationTool
      * @return True if the supplied character is a punctuation (according to a very loosely-defined set)
      */
     public static boolean isPunctuation(final char c) {
+        // TODO Handle hyphen, comma, and period separately? Hyphen isn't included at all yet
         switch (c) {
         case ',':
         case '.':
