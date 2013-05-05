@@ -350,6 +350,70 @@ public class Arrays {
     }
 
     /**
+     * Sort parallel short[] and double[] arrays (stolen from java.util.Arrays and modified to sort parallel arrays)
+     */
+    public static void sort(final short[] x, final double[] f) {
+        sort1(x, f, 0, x.length);
+    }
+
+    private static void sort1(final short[] x, final double[] f, final int off, final int len) {
+        // Insertion sort on smallest arrays
+        if (len < 7) {
+            for (int i = off; i < len + off; i++)
+                for (int j = i; j > off && x[j - 1] > x[j]; j--)
+                    swap(x, f, j, j - 1);
+            return;
+        }
+
+        // Choose a partition element, v
+        int m = off + (len >> 1); // Small arrays, middle element
+        if (len > 7) {
+            int l = off;
+            int n = off + len - 1;
+            if (len > 40) { // Big arrays, pseudomedian of 9
+                final int s = len / 8;
+                l = med3(x, l, l + s, l + 2 * s);
+                m = med3(x, m - s, m, m + s);
+                n = med3(x, n - 2 * s, n - s, n);
+            }
+            m = med3(x, l, m, n); // Mid-size, med of 3
+        }
+        final int val = x[m];
+
+        // Establish Invariant: v* (<v)* (>v)* v*
+        int a = off, b = a, c = off + len - 1, d = c;
+        while (true) {
+            while (b <= c && x[b] <= val) {
+                if (x[b] == val)
+                    swap(x, f, a++, b);
+                b++;
+            }
+            while (c >= b && x[c] >= val) {
+                if (x[c] == val)
+                    swap(x, f, c, d--);
+                c--;
+            }
+            if (b > c)
+                break;
+            swap(x, f, b++, c--);
+        }
+
+        // Swap partition elements back to middle
+        int s;
+        final int n = off + len;
+        s = java.lang.Math.min(a - off, b - a);
+        vecswap(x, f, off, b - s, s);
+        s = java.lang.Math.min(d - c, n - d - 1);
+        vecswap(x, f, b, n - s, s);
+
+        // Recursively sort non-partition-elements
+        if ((s = b - a) > 1)
+            sort1(x, f, off, s);
+        if ((s = d - c) > 1)
+            sort1(x, f, n - s, s);
+    }
+
+    /**
      * Sort parallel float[] and short[] arrays (stolen from java.util.Arrays and modified to sort parallel arrays)
      */
     public static void sort(final float[] x, final short[] p) {
@@ -432,6 +496,28 @@ public class Arrays {
     private static void vecswap(final short[] x, final float[] f, int a, int b, final int n) {
         for (int i = 0; i < n; i++, a++, b++) {
             swap(x, f, a, b);
+        }
+    }
+
+    /**
+     * Swaps x[a] with x[b] and f[a] with f[b].
+     */
+    private static void swap(final short[] x, final double[] d, final int a, final int b) {
+        final short t = x[a];
+        x[a] = x[b];
+        x[b] = t;
+
+        final double t2 = d[a];
+        d[a] = d[b];
+        d[b] = t2;
+    }
+
+    /**
+     * Swaps x[a .. (a+n-1)] with x[b .. (b+n-1)] and f[a .. (a+n-1)] with f[b .. (b+n-1)].
+     */
+    private static void vecswap(final short[] x, final double[] d, int a, int b, final int n) {
+        for (int i = 0; i < n; i++, a++, b++) {
+            swap(x, d, a, b);
         }
     }
 
