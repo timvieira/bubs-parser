@@ -44,7 +44,9 @@
     <target name="compile" depends="git-revision" description="Compile Java code and tools">
         <!-- If the build directory doesn't already exist, create it -->
         <mkdir dir="${dir.build}" />
-        <javac srcdir="${dir.src}" includes="**/*.java" destdir="${dir.build}" debug="true" includeantruntime="false">
+        <javac includes="**/*.java" destdir="${dir.build}" debug="true" includeantruntime="false">
+            <src path="${dir.src}"/>
+            <src path="java/berkeley-src"/>
             <classpath refid="classpath.libs" />
         </javac>
     </target>
@@ -56,7 +58,9 @@
     -->
     <target name="javadoc">
         <javadoc destdir="${dir.build.doc}/javadoc">
-            <fileset dir="${dir.src}" includes="**/*.java" excludes="edu/ohsu/cslu/lela/**,**/Test*.java,**/Profile*.java,**/All*Tests.java,**/*TestCase.java" />
+            <fileset includes="**/*.java" excludes="edu/ohsu/cslu/lela/**,**/Test*.java,**/Profile*.java,**/All*Tests.java,**/*TestCase.java" />
+            <src path="${dir.src}"/>
+            <src path="java/berkeley-src"/>
             <classpath refid="classpath.libs" />
         </javadoc>
     </target>
@@ -123,8 +127,27 @@
         </antcall>
     </target>
 
-    <!-- Grammar training tools -->
-    <target name="train-grammar" depends="compile">
+
+    <target name="summarize-grammar" depends="compile">
+        <antcall target="package-tool">
+            <param name="root-class" value="edu.ohsu.cslu.grammar.SummarizeGrammar" />
+            <param name="tool-name" value="summarize-grammar" />
+            <param name="heap-size" value="1024m" />
+        </antcall>
+    </target>
+
+    
+    <target name="serialize-model" depends="compile">
+        <antcall target="package-tool">
+            <param name="root-class" value="edu.ohsu.cslu.grammar.SerializeModel" />
+            <param name="tool-name" value="serialize-model" />
+            <param name="heap-size" value="1200m" />
+            <param name="package-gpl-libs" value="true" />
+        </antcall>
+    </target>
+
+    
+    <target name="lela" depends="compile">
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.lela.TrainGrammar" />
             <param name="tool-name" value="train-grammar" />
@@ -134,6 +157,28 @@
     </target>
 
 
+    <target name="train-grammar" depends="compile">
+        <antcall target="package-tool">
+            <param name="root-class" value="edu.berkeley.nlp.PCFGLA.GrammarTrainer" />
+            <param name="tool-name" value="train-grammar" />
+            <param name="heap-size" value="2g" />
+            <!-- TODO Remove this after we drop assertions from Grammar.java -->
+            <param name="package-gpl-libs" value="true" />
+        </antcall>
+    </target>
+
+
+    <!-- TODO Remove once we're done with Java-serialized grammars -->
+    <target name="write-grammar-to-text" depends="compile">
+        <antcall target="package-tool">
+            <param name="root-class" value="edu.berkeley.nlp.PCFGLA.WriteGrammarToTextFile" />
+            <param name="tool-name" value="write-grammar-to-text" />
+            <param name="heap-size" value="1g" />
+            <param name="package-gpl-libs" value="true" />
+        </antcall>
+    </target>
+
+            
     <target name="induce-count-grammar" depends="compile">
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.lela.InduceCountGrammar" />
