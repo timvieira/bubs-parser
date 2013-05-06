@@ -128,15 +128,6 @@
     </target>
 
 
-    <target name="summarize-grammar" depends="compile">
-        <antcall target="package-tool">
-            <param name="root-class" value="edu.ohsu.cslu.grammar.SummarizeGrammar" />
-            <param name="tool-name" value="summarize-grammar" />
-            <param name="heap-size" value="1024m" />
-        </antcall>
-    </target>
-
-    
     <target name="serialize-model" depends="compile">
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.grammar.SerializeModel" />
@@ -283,16 +274,6 @@
     </target>
 
 
-    <target name="serialize-model" depends="compile">
-        <antcall target="package-tool">
-            <param name="root-class" value="edu.ohsu.cslu.grammar.SerializeModel" />
-            <param name="tool-name" value="serialize-model" />
-            <param name="heap-size" value="1200m" />
-            <param name="package-gpl-libs" value="true" />
-        </antcall>
-    </target>
-
-    
     <!-- -->
     <!-- Text normalization and lexical clustering tools --> 
     <!-- -->
