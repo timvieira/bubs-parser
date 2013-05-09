@@ -165,7 +165,7 @@ public class Grammar implements Serializable, Cloneable {
 
             final double[][] scores = new double[numSubStates[s]][numSubStates[s]];
             for (int i = 0; i < scores.length; i++) {
-                scores[i][i] = 1;
+                scores[i][i] = 0;
             }
             final UnaryRule selfR = new UnaryRule(s, s, scores);
             closedViterbiRulesWithParent[selfR.parentState].add(selfR);
@@ -1249,8 +1249,7 @@ public class Grammar implements Serializable, Cloneable {
      * Packed into a compact parallel array representation.
      * 
      * After learning production probabilities (and pruning low-probability rules), we pack them into this
-     * representation for efficient iteration in {@link ArrayParser#insidePass(Tree, boolean)}.
-     * {@link ArrayParser#parse(Tree, boolean)}, and {@link Grammar#countSplitTree(Tree, double, int, Grammar)}.
+     * representation for efficient iteration in {@link ArrayParser#parse(Tree, boolean)}.
      */
     public static class PackedBinaryRule extends BasePackedBinaryRule implements Serializable {
 
@@ -1442,8 +1441,8 @@ public class Grammar implements Serializable, Cloneable {
      * Represents the (fractional) observation counts of each split of a coarse binary rule (e.g. for NP -> DT NN, NP_0
      * -> DT_0 NN_0, NP_1 -> DT_0 NN_1, etc.) Packed into a compact parallel array representation.
      * 
-     * Accumulated during counting in {@link Grammar#countSplitTree(Tree, double, int, Grammar)} and used to construct a
-     * new {@link PackedBinaryRule}.
+     * Accumulated during counting in {@link ArrayParser#parse(Tree, boolean)} and used to construct a new
+     * {@link PackedBinaryRule}.
      */
     public static class PackedBinaryCount extends BasePackedBinaryRule implements Serializable {
 
@@ -1497,8 +1496,7 @@ public class Grammar implements Serializable, Cloneable {
      * compact parallel array representation.
      * 
      * After learning production probabilities (and pruning low-probability rules), we pack them into this
-     * representation for efficient iteration in {@link ArrayParser#insidePass(Tree, boolean)}.
-     * {@link ArrayParser#parse(Tree, boolean)}, and {@link Grammar#countSplitTree(Tree, double, int, Grammar)}.
+     * representation for efficient iteration in {@link ArrayParser#parse(Tree, boolean)}.
      */
     public static class PackedUnaryRule extends BasePackedUnaryRule implements Serializable {
 
@@ -1600,8 +1598,7 @@ public class Grammar implements Serializable, Cloneable {
      * compact parallel array representation.
      * 
      * After learning production probabilities (and pruning low-probability rules), we pack them into this
-     * representation for efficient iteration in {@link ArrayParser#insidePass(Tree, boolean)}.
-     * {@link ArrayParser#parse(Tree, boolean)}, and {@link Grammar#countSplitTree(Tree, double, int, Grammar)}.
+     * representation for efficient iteration in {@link ArrayParser#parse(Tree, boolean)}.
      */
     public static class PackedUnaryCount extends BasePackedUnaryRule implements Serializable {
 
