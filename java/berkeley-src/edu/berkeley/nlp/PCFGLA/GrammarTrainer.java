@@ -32,8 +32,11 @@ public class GrammarTrainer extends BaseCommandlineTool {
     // TODO Make this non-static
     public static Random RANDOM;
 
-    @Option(name = "-out", required = true, usage = "Output File for Grammar (Required)")
-    private String outFileName;
+    @Option(name = "-gd", aliases = { "--grammar-directory" }, required = true, metaVar = "directory", usage = "Output grammar directory. Each merged grammar will be output in .gz format")
+    private File outputGrammarDirectory;
+
+    @Option(name = "-gp", aliases = { "--grammar-prefix" }, metaVar = "prefix", usage = "Output grammar file prefix (e.g. 'eng.' produces 'eng.sm1.gr.gz', 'eng.sm2.gr.gz', etc.")
+    private String outputGrammarPrefix = "";
 
     @Option(name = "-cycles", usage = "The number of split-merge cycles")
     private int splitMergeCycles = 6;
@@ -59,16 +62,16 @@ public class GrammarTrainer extends BaseCommandlineTool {
     @Option(name = "-smooth", usage = "Type of grammar smoothing used.")
     private SmoothingType smooth = SmoothingType.SmoothAcrossParentBits;
 
-    @Option(name = "-maxL", metaVar = "length", usage = "Maximum sentence length (Default <=10000)")
+    @Option(name = "-maxL", metaVar = "words", usage = "Maximum sentence length")
     private int maxSentenceLength = 10000;
 
-    @Option(name = "-b", metaVar = "direction", usage = "LEFT/RIGHT Binarization")
+    @Option(name = "-b", metaVar = "direction", usage = "Binarization direction")
     private Binarization binarization = Binarization.RIGHT;
 
-    @Option(name = "-in", usage = "Input File for Grammar")
+    @Option(name = "-in", usage = "Read in previous binary-serialized grammar")
     private String inFile = null;
 
-    @Option(name = "-randSeed", usage = "Seed for random number generator (Two works well for English)")
+    @Option(name = "-rs", metaVar = "seed", usage = "Seed for random number generator")
     private int randSeed = 2;
 
     @Option(name = "-hor", metaVar = "markovization", usage = "Horizontal Markovization")
@@ -92,8 +95,15 @@ public class GrammarTrainer extends BaseCommandlineTool {
     @Option(name = "-rare", metaVar = "threshold", usage = "Rare word threshold")
     private int rareWordThreshold = 20;
 
-    @Option(name = "-writeIntermediateGrammars", usage = "Write intermediate (splitting and merging) grammars to disk.")
+    @Option(name = "-writeIntermediateGrammars", usage = "Write intermediate grammars to disk after each smoothing cycle")
     private boolean writeIntermediateGrammars = false;
+
+    @Override
+    protected void setup() {
+        if (outputGrammarDirectory != null && !outputGrammarDirectory.exists()) {
+            outputGrammarDirectory.mkdir();
+        }
+    }
 
     @Override
     public void run() {
@@ -317,9 +327,7 @@ public class GrammarTrainer extends BaseCommandlineTool {
 
                 // Dump a grammar file to disk from time to time
                 if (writeIntermediateGrammars) {
-                    final String outTmpName = outFileName + "_" + (splitIndex / 3 + 1) + ".gr";
-                    System.out.println("Saving grammar to " + outTmpName + ".");
-                    writeGrammar(maxGrammar, maxLexicon, new File(outTmpName));
+                    writeGrammar(maxGrammar, maxLexicon, (splitIndex / 3 + 1));
                 }
             }
         }
@@ -333,11 +341,10 @@ public class GrammarTrainer extends BaseCommandlineTool {
             maxLexicon = lexicon;
         }
 
-        BaseLogger.singleton().info("Saving grammar to " + outFileName + ".");
         if (maxDevSetLikelihood != 0) {
             BaseLogger.singleton().info("Dev-set log likelihood: " + maxDevSetLikelihood);
         }
-        writeGrammar(maxGrammar, maxLexicon, new File(outFileName));
+        writeGrammar(maxGrammar, maxLexicon, splitMergeCycles);
     }
 
     /**
@@ -415,12 +422,15 @@ public class GrammarTrainer extends BaseCommandlineTool {
         return trainingLikelihood;
     }
 
-    void writeGrammar(final Grammar grammar, final Lexicon lexicon, final File f) {
+    void writeGrammar(final Grammar grammar, final Lexicon lexicon, final int cycle) {
+
+        final String prefix = outputGrammarDirectory + "/" + outputGrammarPrefix + "_" + cycle + ".gr";
+
         try {
             // TODO Clone and remove unlikely rules
 
             // Write a Java Serialized Object
-            final String serFilename = f.getParent() + "/" + f.getName().replaceAll("\\.gz", "") + ".ser";
+            final String serFilename = prefix + ".ser";
             final ParserData pData = new ParserData(lexicon, grammar, Numberer.getNumberers(), grammar.numSubStates,
                     horizontalMarkovization, binarization);
 
@@ -432,7 +442,9 @@ public class GrammarTrainer extends BaseCommandlineTool {
             }
 
             // And a gzipped-text representation
-            final Writer w = new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(f)));
+            final String gzFilename = prefix + ".gz";
+            System.out.println("Saving grammar to " + gzFilename + ".");
+            final Writer w = new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(gzFilename)));
             w.write(grammar.toString(lexicon.totalRules(minRuleProbability), minRuleProbability, rareWordThreshold,
                     horizontalMarkovization));
             w.write("===== LEXICON =====\n");
