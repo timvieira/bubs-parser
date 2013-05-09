@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import cltool4j.BaseLogger;
 import edu.berkeley.nlp.syntax.StateSet;
 import edu.berkeley.nlp.syntax.Tree;
-import edu.berkeley.nlp.util.IEEEDoubleScaling;
+import edu.ohsu.cslu.util.IEEEDoubleScaling;
 
 /**
  * Simple mixture parser.

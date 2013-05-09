@@ -17,10 +17,10 @@ import edu.berkeley.nlp.PCFGLA.smoothing.NoSmoothing;
 import edu.berkeley.nlp.PCFGLA.smoothing.SmoothAcrossParentBits;
 import edu.berkeley.nlp.syntax.StateSet;
 import edu.berkeley.nlp.syntax.Tree;
-import edu.berkeley.nlp.util.IEEEDoubleScaling;
 import edu.berkeley.nlp.util.Numberer;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.lela.FractionalCountGrammar;
+import edu.ohsu.cslu.util.IEEEDoubleScaling;
 
 /**
  * Reads in the Penn Treebank and generates N_GRAMMARS different grammars.

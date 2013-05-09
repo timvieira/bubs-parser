@@ -6,9 +6,9 @@ import java.util.Collections;
 import cltool4j.BaseLogger;
 import edu.berkeley.nlp.syntax.StateSet;
 import edu.berkeley.nlp.syntax.Tree;
-import edu.berkeley.nlp.util.IEEEDoubleScaling;
 import edu.berkeley.nlp.util.Numberer;
 import edu.ohsu.cslu.util.Arrays;
+import edu.ohsu.cslu.util.IEEEDoubleScaling;
 
 public class GrammarMerger {
 

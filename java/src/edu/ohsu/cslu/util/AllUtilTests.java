@@ -30,6 +30,7 @@ import org.junit.runners.Suite;
  *        $Id$
  */
 @RunWith(Suite.class)
-@Suite.SuiteClasses({ TestMath.class, TestStrings.class, TestEvalb.class, TestPorterStemmer.class })
+@Suite.SuiteClasses({ TestMath.class, TestStrings.class, TestEvalb.class, TestPorterStemmer.class,
+        TestIEEEDoubleScaling.class })
 public class AllUtilTests {
 }

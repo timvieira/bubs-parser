@@ -17,7 +17,7 @@
  * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
  */
 
-package edu.berkeley.nlp.util;
+package edu.ohsu.cslu.util;
 
 import static org.junit.Assert.assertEquals;
 
@@ -36,11 +36,11 @@ public class TestIEEEDoubleScaling {
         final double[] d = new double[] { 1e-150, 1e-149, 1e-125, 1e-110 };
         final double[] d2 = d.clone();
 
-        final int expectedScale = (int) Math.round(-110 / Math.log10(IEEEDoubleScaling.SCALE1)) + 1;
+        final int expectedScale = (int) java.lang.Math.round(-110 / java.lang.Math.log10(IEEEDoubleScaling.SCALE1)) + 1;
         assertEquals(expectedScale, IEEEDoubleScaling.scaleArray(d2, 0));
 
         for (int i = 0; i < d.length; i++) {
-            assertEquals(d[i] * Math.pow(IEEEDoubleScaling.SCALE1, expectedScale), d2[i], .1f);
+            assertEquals(d[i] * java.lang.Math.pow(IEEEDoubleScaling.SCALE1, expectedScale), d2[i], .1f);
         }
     }
 
@@ -48,14 +48,19 @@ public class TestIEEEDoubleScaling {
     public void testLogLikelihood() {
 
         final double score = 1e-10;
-        assertEquals(Math.log(score), IEEEDoubleScaling.logLikelihood(score, 0), .01);
+        assertEquals(java.lang.Math.log(score), IEEEDoubleScaling.logLikelihood(score, 0), .01);
 
-        assertEquals(Math.log(score) - IEEEDoubleScaling.LN_S, IEEEDoubleScaling.logLikelihood(score, -1), .01);
-        assertEquals(Math.log(score) - IEEEDoubleScaling.LN_S * 2, IEEEDoubleScaling.logLikelihood(score, -2), .01);
-        assertEquals(Math.log(score) - IEEEDoubleScaling.LN_S * 5, IEEEDoubleScaling.logLikelihood(score, -5), .01);
+        assertEquals(java.lang.Math.log(score) - IEEEDoubleScaling.LN_S, IEEEDoubleScaling.logLikelihood(score, -1),
+                .01);
+        assertEquals(java.lang.Math.log(score) - IEEEDoubleScaling.LN_S * 2,
+                IEEEDoubleScaling.logLikelihood(score, -2), .01);
+        assertEquals(java.lang.Math.log(score) - IEEEDoubleScaling.LN_S * 5,
+                IEEEDoubleScaling.logLikelihood(score, -5), .01);
 
-        assertEquals(Math.log(score) + IEEEDoubleScaling.LN_S, IEEEDoubleScaling.logLikelihood(score, 1), .01);
-        assertEquals(Math.log(score) + IEEEDoubleScaling.LN_S * 2, IEEEDoubleScaling.logLikelihood(score, 2), .01);
-        assertEquals(Math.log(score) + IEEEDoubleScaling.LN_S * 5, IEEEDoubleScaling.logLikelihood(score, 5), .01);
+        assertEquals(java.lang.Math.log(score) + IEEEDoubleScaling.LN_S, IEEEDoubleScaling.logLikelihood(score, 1), .01);
+        assertEquals(java.lang.Math.log(score) + IEEEDoubleScaling.LN_S * 2, IEEEDoubleScaling.logLikelihood(score, 2),
+                .01);
+        assertEquals(java.lang.Math.log(score) + IEEEDoubleScaling.LN_S * 5, IEEEDoubleScaling.logLikelihood(score, 5),
+                .01);
     }
 }

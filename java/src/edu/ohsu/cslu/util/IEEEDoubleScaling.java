@@ -1,6 +1,4 @@
-package edu.berkeley.nlp.util;
-
-import edu.ohsu.cslu.util.Arrays;
+package edu.ohsu.cslu.util;
 
 /**
  * Provides a scaling system, to avoid numeric overflow and underflow with IEEE 64-bit double precision floating-point
@@ -13,24 +11,27 @@ import edu.ohsu.cslu.util.Arrays;
  * The value of <i>s</i> is relatively unimportant; a larger <i>s</i> will result in fewer scaling steps, but
  * (potentially) lose some precision if the range of a scaled array is very large. However, given the limited precision
  * of IEEE double-precision arithmetic, an array of very wide range will lose some precision regardless of the choice of
- * <i>s</i>, and that loss is rarely important during grammar learning. In practice, any value between about 1e20
- * (~e^22) and 1e100 (~e^230) ought to work.
+ * <i>s</i>, and that loss is rarely important during grammar learning or inference. In practice, any value between
+ * about 1e10 (~e^23) and 1e100 (~e^230) ought to work, although we haven't tested either learning or inference across
+ * that wide range.
  * 
- * @author petrov
+ * Note: this class was adapted (considerably) from a similar implementation in the Berkeley Parser code, which is
+ * licensed under the 'normal' GNU Public License. So if desired, it can be used under the GPL instead of the somewhat
+ * more restrictive AGPL.
  */
 public class IEEEDoubleScaling {
 
     static final int LN_S = 100;
 
     // Precompute constants for the most common scaling factors
-    static final double SCALE1 = Math.exp(LN_S);
+    static final double SCALE1 = java.lang.Math.exp(LN_S);
     private static final double SCALE2 = SCALE1 * SCALE1;
     private static final double SCALE3 = SCALE1 * SCALE1;
     private static final double SCALE_1 = 1 / SCALE1;
     private static final double SCALE_2 = 1 / SCALE1 / SCALE1;
     private static final double SCALE_3 = 1 / SCALE1 / SCALE1 / SCALE1;
 
-    private static final double LOG_SCALE1 = Math.log(SCALE1);
+    private static final double LOG_SCALE1 = java.lang.Math.log(SCALE1);
 
     /**
      * Returns the multiplier required to scale an IEEE floating-point number by the specified number of steps
@@ -56,7 +57,7 @@ public class IEEEDoubleScaling {
         case -3:
             return SCALE_3;
         default:
-            return Math.pow(SCALE1, scaleStep);
+            return java.lang.Math.pow(SCALE1, scaleStep);
         }
     }
 
@@ -68,7 +69,7 @@ public class IEEEDoubleScaling {
      * @return the log probability represented by a scaled score
      */
     public static double logLikelihood(final double scaledScore, final int scaleStep) {
-        return Math.log(scaledScore) + LOG_SCALE1 * scaleStep;
+        return java.lang.Math.log(scaledScore) + LOG_SCALE1 * scaleStep;
     }
 
     /**

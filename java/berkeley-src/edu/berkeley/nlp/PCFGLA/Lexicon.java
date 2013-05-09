@@ -10,8 +10,8 @@ import java.util.Map;
 import edu.berkeley.nlp.PCFGLA.smoothing.Smoother;
 import edu.berkeley.nlp.syntax.StateSet;
 import edu.berkeley.nlp.syntax.Tree;
-import edu.berkeley.nlp.util.IEEEDoubleScaling;
 import edu.berkeley.nlp.util.Numberer;
+import edu.ohsu.cslu.util.IEEEDoubleScaling;
 
 /**
  * Simple default implementation of a lexicon, which scores word, tag pairs with a smoothed estimate of
