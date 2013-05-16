@@ -183,18 +183,30 @@ public class TestBoundedPriorityQueue {
     @Test
     public void testSetMaxSize() {
 
+        assertEquals(5, queue.size());
+        // Test decreasing the queue length
         queue.setMaxSize(3);
+        assertEquals(3, queue.size());
         assertTrue(queue.popHead());
         assertTrue(queue.popHead());
         assertTrue(queue.popHead());
         assertFalse(queue.popHead());
 
+        // And setting max length when unpopulated
         queue.setMaxSize(4);
+        assertEquals(0, queue.size());
         assertTrue(queue.insert((short) 2, -2f));
         assertTrue(queue.insert((short) 3, -2f));
         assertTrue(queue.insert((short) 4, -2f));
         assertTrue(queue.insert((short) 5, -2f));
         assertFalse(queue.insert((short) 2, -2f));
+        assertEquals(4, queue.size());
+
+        // And finally, increasing it
+        queue.setMaxSize(5);
+        assertEquals(4, queue.size());
+        assertTrue(queue.insert((short) 6, -1f));
+        assertEquals(5, queue.size());
     }
 
     @Test

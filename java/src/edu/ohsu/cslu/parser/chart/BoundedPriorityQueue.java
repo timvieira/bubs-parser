@@ -95,8 +95,8 @@ public final class BoundedPriorityQueue {
                     foms[i] = foms[i + head];
                 }
                 head = 0;
-                tail = maxSize - 1;
-                Arrays.fill(foms, tail, foms.length, Float.NEGATIVE_INFINITY);
+                tail = Math.min(size, maxSize) - 1;
+                Arrays.fill(foms, tail + 1, foms.length, Float.NEGATIVE_INFINITY);
             } else {
                 Arrays.fill(foms, 0, foms.length, Float.NEGATIVE_INFINITY);
                 head = -1;

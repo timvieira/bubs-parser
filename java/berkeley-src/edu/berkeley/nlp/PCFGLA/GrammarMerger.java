@@ -7,7 +7,6 @@ import cltool4j.BaseLogger;
 import edu.berkeley.nlp.syntax.StateSet;
 import edu.berkeley.nlp.syntax.Tree;
 import edu.berkeley.nlp.util.Numberer;
-import edu.ohsu.cslu.util.Arrays;
 import edu.ohsu.cslu.util.IEEEDoubleScaling;
 
 public class GrammarMerger {
@@ -121,7 +120,8 @@ public class GrammarMerger {
     public static double[][] computeMergeWeights(final Grammar grammar, final Lexicon lexicon,
             final StateSetTreeList trainStateSetTrees) {
 
-        final double[][] mergeWeights = new double[grammar.numSubStates.length][Arrays.max(grammar.numSubStates)];
+        final double[][] mergeWeights = new double[grammar.numSubStates.length][edu.ohsu.cslu.util.Math
+                .max(grammar.numSubStates)];
         double trainingLikelihood = 0;
         final ArrayParser parser = new ArrayParser(grammar, lexicon);
         int n = 0;

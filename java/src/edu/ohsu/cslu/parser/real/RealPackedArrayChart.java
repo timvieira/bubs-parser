@@ -25,11 +25,8 @@ import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.datastructs.narytree.Tree;
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.InsideOutsideCscSparseMatrixGrammar;
-import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.grammar.Vocabulary;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser;
@@ -38,6 +35,8 @@ import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
+import edu.ohsu.cslu.parser.real.RealInsideOutsideCscSparseMatrixGrammar.PackingFunction;
+import edu.ohsu.cslu.util.IEEEDoubleScaling;
 import edu.ohsu.cslu.util.Strings;
 
 /**
@@ -70,6 +69,22 @@ public class RealPackedArrayChart extends Chart {
      * Start indices for each cell. Computed from cell start and end indices and stored in the chart for convenience
      */
     public final int[] cellOffsets;
+
+    /**
+     * Scaling steps for inside probabilities (@link {@link #insideProbabilities}) in each cell (see
+     * {@link IEEEDoubleScaling}).
+     * 
+     * TODO Change to byte[] instead of int? (And adapt IEEEDoubleScaling and other consumers)
+     */
+    public final int[] insideScalingSteps;
+
+    /**
+     * Scaling steps for outside probabilities (@link {@link #outsideProbabilities}) in each cell (see
+     * {@link IEEEDoubleScaling}).
+     * 
+     * TODO Change to byte[] instead of int? (And adapt IEEEDoubleScaling and other consumers)
+     */
+    public final int[] outsideScalingSteps;
 
     /** The number of cells in this chart */
     public final int cells;
@@ -179,11 +194,13 @@ public class RealPackedArrayChart extends Chart {
         this.midpoints = new short[chartArraySize];
 
         this.cellOffsets = new int[cells];
+        this.insideScalingSteps = new int[cells];
+        this.outsideScalingSteps = new int[cells];
 
         // TODO Do we need to do this?
         // Initialize outside probabilities to 1. If we're doing posterior inference, we'll populate them appropriately;
         // otherwise, posterior decoding methods will reduce to inside probabilities only.
-        Arrays.fill(outsideProbabilities, 1);
+        // Arrays.fill(outsideProbabilities, 1);
 
         // Calculate all cell offsets, etc
         for (int start = 0; start < size; start++) {
@@ -424,32 +441,26 @@ public class RealPackedArrayChart extends Chart {
 
     @Override
     public float getInside(final int start, final int end, final int nonTerminal) {
-        // We could return un-scale the real-valued inside probability and return the natural log, but this shouldn't
-        // ever be used, so it's cleaner just to fail-fast and ensure we don't incur that cost
-        throw new UnsupportedOperationException();
-        // final int cellIndex = cellIndex(start, end);
-        // final int offset = offset(cellIndex);
-        // final int index = Arrays.binarySearch(nonTerminalIndices, offset, offset + numNonTerminals[cellIndex],
-        // (short) nonTerminal);
-        // if (index < 0) {
-        // return Float.NEGATIVE_INFINITY;
-        // }
-        // return insideProbabilities[index];
+        final int cellIndex = cellIndex(start, end);
+        final int offset = offset(cellIndex);
+        final int index = Arrays.binarySearch(nonTerminalIndices, offset, offset + numNonTerminals[cellIndex],
+                (short) nonTerminal);
+        if (index < 0) {
+            return Float.NEGATIVE_INFINITY;
+        }
+        return (float) IEEEDoubleScaling.logLikelihood(insideProbabilities[index], insideScalingSteps[cellIndex]);
     }
 
     @Override
     public float getOutside(final int start, final int end, final int nonTerminal) {
-        // We could return un-scale the real-valued inside probability and return the natural log, but this shouldn't
-        // ever be used, so it's cleaner just to fail-fast and ensure we don't incur that cost
-        throw new UnsupportedOperationException();
-        // final int cellIndex = cellIndex(start, end);
-        // final int offset = offset(cellIndex);
-        // final int index = Arrays.binarySearch(nonTerminalIndices, offset, offset + numNonTerminals[cellIndex],
-        // (short) nonTerminal);
-        // if (index < 0) {
-        // return Float.NEGATIVE_INFINITY;
-        // }
-        // return outsideProbabilities[index];
+        final int cellIndex = cellIndex(start, end);
+        final int offset = offset(cellIndex);
+        final int index = Arrays.binarySearch(nonTerminalIndices, offset, offset + numNonTerminals[cellIndex],
+                (short) nonTerminal);
+        if (index < 0) {
+            return Float.NEGATIVE_INFINITY;
+        }
+        return (float) IEEEDoubleScaling.logLikelihood(outsideProbabilities[index], insideScalingSteps[cellIndex]);
     }
 
     /**
@@ -471,7 +482,7 @@ public class RealPackedArrayChart extends Chart {
             return extractMaxcParse(0, size);
 
         case MaxRuleProd:
-            return decodeMaxRuleProductParse((InsideOutsideCscSparseMatrixGrammar) grammar);
+            return decodeMaxRuleProductParse((RealInsideOutsideCscSparseMatrixGrammar) grammar);
 
         case ViterbiMax:
             // TODO Rename extractBestParse to extractViterbiParse, switch references to use decode() instead.
@@ -499,7 +510,7 @@ public class RealPackedArrayChart extends Chart {
 
         for (short span = 1; span <= size; span++) {
             for (short start = 0; start < size - span + 1; start++) {
-                final int end = start + span;
+                final short end = 0;
                 final int cellIndex = cellIndex(start, end);
                 final int offset = offset(cellIndex);
 
@@ -537,7 +548,23 @@ public class RealPackedArrayChart extends Chart {
                 } else {
                     // Iterate over possible binary child cells, to find the maximum midpoint ('max split')
                     double bestSplit = Double.NEGATIVE_INFINITY;
+
+                    // Search possible midpoints for the largest scaling step (minimum scaling factor). Scaling steps
+                    // are large
+                    // enough that we can reasonably assume that the probability mass of midpoints with smaller scaling
+                    // steps will
+                    // be inconsequential.
+                    final int minScalingStep = minInsideScalingStep(start, end);
+
                     for (short midpoint = (short) (start + 1); midpoint < end; midpoint++) {
+
+                        // Skip midpoints with scaling steps that won't contribute meaningfully to the total probability
+                        // mass
+                        final int scalingStep = insideScalingSteps[cellIndex(start, midpoint)]
+                                + insideScalingSteps[cellIndex(midpoint, end)];
+                        if (scalingStep > minScalingStep) {
+                            continue;
+                        }
 
                         // maxc = max(posterior probability) + max(maxc(children)). Also store midpoints for use when
                         // extracting the parse tree
@@ -599,7 +626,7 @@ public class RealPackedArrayChart extends Chart {
 
         for (short span = 1; span <= size; span++) {
             for (short start = 0; start < size - span + 1; start++) {
-                final int end = start + span;
+                final short end = (short) (start + span);
                 final int cellIndex = cellIndex(start, end);
                 final int offset = offset(cellIndex);
 
@@ -658,7 +685,23 @@ public class RealPackedArrayChart extends Chart {
                     // For span > 1, we must iterate over possible binary child cells, to find the maximum midpoint
                     // ('max split')
                     double bestSplit = Double.NEGATIVE_INFINITY;
+
+                    // Search possible midpoints for the largest scaling step (minimum scaling factor). Scaling steps
+                    // are large
+                    // enough that we can reasonably assume that the probability mass of midpoints with smaller scaling
+                    // steps will
+                    // be inconsequential.
+                    final int minScalingStep = minInsideScalingStep(start, end);
+
                     for (short midpoint = (short) (start + 1); midpoint < end; midpoint++) {
+
+                        // Skip midpoints with scaling steps that won't contribute meaningfully to the total probability
+                        // mass
+                        final int scalingStep = insideScalingSteps[cellIndex(start, midpoint)]
+                                + insideScalingSteps[cellIndex(midpoint, end)];
+                        if (scalingStep > minScalingStep) {
+                            continue;
+                        }
 
                         // maxc = max(posterior probability) + max(maxc(children)). Also store midpoints for use when
                         // extracting the parse tree
@@ -758,7 +801,7 @@ public class RealPackedArrayChart extends Chart {
      * Computes max-rule-product parse, as described in Figure 3 of Petrov and Klein, 1997, 'Improved Inference for
      * Unlexicalized Parsing'.
      */
-    private BinaryTree<String> decodeMaxRuleProductParse(final InsideOutsideCscSparseMatrixGrammar cscGrammar) {
+    private BinaryTree<String> decodeMaxRuleProductParse(final RealInsideOutsideCscSparseMatrixGrammar cscGrammar) {
 
         maxcVocabulary = cscGrammar.nonTermSet.baseVocabulary();
 
@@ -771,7 +814,7 @@ public class RealPackedArrayChart extends Chart {
                 final short end = (short) (start + span);
                 final int cellIndex = cellIndex(start, end);
                 Arrays.fill(maxQMidpoints[cellIndex], (short) -1);
-                Arrays.fill(maxQ[cellIndex], Float.NEGATIVE_INFINITY);
+                Arrays.fill(maxQ[cellIndex], 0);
 
                 // Initialize lexical entries in the score arrays - sum outside probability x production probability
                 // over all nonterminal splits
@@ -801,8 +844,23 @@ public class RealPackedArrayChart extends Chart {
                 final int parentStart = offset(cellIndex);
                 final int parentEnd = parentStart + numNonTerminals[cellIndex];
 
+                // Search possible midpoints for the largest scaling step (minimum scaling factor). Scaling steps are
+                // large
+                // enough that we can reasonably assume that the probability mass of midpoints with smaller scaling
+                // steps will
+                // be inconsequential.
+                final int minScalingStep = minInsideScalingStep(start, end);
+
                 // Iterate over all possible midpoints
                 for (short midpoint = (short) (start + 1); midpoint <= end - 1; midpoint++) {
+
+                    // Skip midpoints with scaling steps that won't contribute meaningfully to the total probability
+                    // mass
+                    final int scalingStep = insideScalingSteps[cellIndex(start, midpoint)]
+                            + insideScalingSteps[cellIndex(midpoint, end)];
+                    if (scalingStep > minScalingStep) {
+                        continue;
+                    }
 
                     // Since Petrov's 'r' is a sum over unsplit categories, we compute a temporary r array for each
                     // midpoint and then maximize over midpoints
@@ -872,6 +930,9 @@ public class RealPackedArrayChart extends Chart {
                                 // would be able to prune the search space if we do 'real' max-rule.
                                 final double q = r[baseParent][baseLeftChild][baseRightChild]
                                         / startSymbolInsideProbability;
+                                // TODO * maxQ[leftChildCellIndex][baseLeftChild] *
+                                // maxQ[rightChildCellIndex][baseRightChild]
+
                                 if (q > maxQ[cellIndex][baseParent]) {
                                     maxQ[cellIndex][baseParent] = q;
                                     maxQLeftChildren[cellIndex][baseParent] = baseLeftChild;
@@ -911,7 +972,7 @@ public class RealPackedArrayChart extends Chart {
         return extractMaxQParse(0, size, maxcVocabulary.startSymbol(), maxcVocabulary);
     }
 
-    private double[][] unaryR(final LeftCscSparseMatrixGrammar cscGrammar, final int cellIndex) {
+    private double[][] unaryR(final RealInsideOutsideCscSparseMatrixGrammar cscGrammar, final int cellIndex) {
 
         final double[][] unaryR = new double[maxcVocabulary.size()][];
 
@@ -937,7 +998,6 @@ public class RealPackedArrayChart extends Chart {
 
                 if (unaryR[baseParent] == null) {
                     unaryR[baseParent] = new double[maxcVocabulary.size()];
-                    Arrays.fill(unaryR[baseParent], Float.NEGATIVE_INFINITY);
                 }
                 unaryR[baseParent][baseChild] = unaryR[baseParent][baseChild] + jointScore;
             }
@@ -954,7 +1014,6 @@ public class RealPackedArrayChart extends Chart {
         }
         if (currentMidpointR[baseParent][baseLeftChild] == null) {
             currentMidpointR[baseParent][baseLeftChild] = new double[maxcVocabulary.size()];
-            Arrays.fill(currentMidpointR[baseParent][baseLeftChild], Float.NEGATIVE_INFINITY);
         }
     }
 
@@ -1039,6 +1098,54 @@ public class RealPackedArrayChart extends Chart {
         return cellNonTermStartIndex(start, end) + numNonTerminals()[cellIndex(start, end)] - 1;
     }
 
+    /**
+     * Returns the minimum scaling step over a set of midpoints
+     * 
+     * @param start
+     * @param end
+     * @return the minimum scaling step over a set of midpoints
+     */
+    protected int minInsideScalingStep(final short start, final short end) {
+        if (end - start == 1) {
+            return 0;
+        }
+        int minScalingStep = Integer.MAX_VALUE;
+        for (short midpoint = (short) (start + 1); midpoint <= end - 1; midpoint++) {
+            final int scalingStep = insideScalingSteps[cellIndex(start, midpoint)]
+                    + insideScalingSteps[cellIndex(midpoint, end)];
+            if (scalingStep < minScalingStep) {
+                minScalingStep = scalingStep;
+            }
+        }
+        return minScalingStep;
+    }
+
+    /**
+     * Returns the minimum scaling step over a set of sibling/parent cell candidates
+     * 
+     * @param start
+     * @param end
+     * @return the minimum scaling step over a set of midpoints
+     */
+    protected int minOutsideScalingStep(final short start, final short end) {
+        int minScalingStep = Integer.MAX_VALUE;
+        for (int parentStart = 0; parentStart < start; parentStart++) {
+            final int scalingStep = outsideScalingSteps[cellIndex(parentStart, start)]
+                    + outsideScalingSteps[cellIndex(parentStart, start)];
+            if (scalingStep < minScalingStep) {
+                minScalingStep = scalingStep;
+            }
+        }
+        for (int parentEnd = end + 1; parentEnd <= size(); parentEnd++) {
+            final int scalingStep = outsideScalingSteps[cellIndex(end, parentEnd)]
+                    + outsideScalingSteps[cellIndex(start, parentEnd)];
+            if (scalingStep < minScalingStep) {
+                minScalingStep = scalingStep;
+            }
+        }
+        return minScalingStep;
+    }
+
     public class RealPackedArrayChartCell extends ChartCell {
 
         public TemporaryChartCell tmpCell;
@@ -1083,8 +1190,7 @@ public class RealPackedArrayChart extends Chart {
 
             for (short nonTerminal = 0; nonTerminal < tmpCell.insideProbabilities.length; nonTerminal++) {
 
-                if (tmpCell.insideProbabilities[nonTerminal] != Float.NEGATIVE_INFINITY
-                        && (tmpCell.outsideProbabilities == null || tmpCell.outsideProbabilities[nonTerminal] != Float.NEGATIVE_INFINITY)) {
+                if (tmpCell.insideProbabilities[nonTerminal] > 0.0 && tmpCell.outsideProbabilities[nonTerminal] >= 0.0) {
 
                     nonTerminalIndices[nonTerminalOffset] = nonTerminal;
                     insideProbabilities[nonTerminalOffset] = tmpCell.insideProbabilities[nonTerminal];
@@ -1116,6 +1222,8 @@ public class RealPackedArrayChart extends Chart {
             }
 
             numNonTerminals[cellIndex] = nonTerminalOffset - offset;
+            insideScalingSteps[cellIndex] = tmpCell.insideScalingStep;
+            outsideScalingSteps[cellIndex] = tmpCell.outsideScalingStep;
             this.tmpCell = null;
         }
 
@@ -1149,6 +1257,7 @@ public class RealPackedArrayChart extends Chart {
             }
 
             numNonTerminals[cellIndex] = 1;
+            insideScalingSteps[cellIndex] = tmpCell.insideScalingStep;
             this.tmpCell = null;
         }
 
@@ -1163,6 +1272,7 @@ public class RealPackedArrayChart extends Chart {
             maxRightChildIndex[cellIndex] = offset - 1;
 
             numNonTerminals[cellIndex] = 0;
+            insideScalingSteps[cellIndex] = 0;
             this.tmpCell = null;
         }
 
@@ -1260,7 +1370,7 @@ public class RealPackedArrayChart extends Chart {
          * @param parents
          * @param probabilities
          */
-        public void storeLexicalProductions(final int child, final short[] parents, final float[] probabilities) {
+        public void storeLexicalProductions(final int child, final short[] parents, final double[] probabilities) {
 
             // Allow update of cells created without temporary storage, even though this will be inefficient;
             // it should be rare, and is at least useful for unit testing.
@@ -1281,7 +1391,7 @@ public class RealPackedArrayChart extends Chart {
             short edgeMidpoint;
 
             if (tmpCell != null) {
-                if (tmpCell.insideProbabilities[nonTerminal] == Float.NEGATIVE_INFINITY) {
+                if (tmpCell.insideProbabilities[nonTerminal] == 0.0) {
                     return null;
                 }
 
@@ -1326,7 +1436,7 @@ public class RealPackedArrayChart extends Chart {
             if (tmpCell != null) {
                 int count = 0;
                 for (short nt = 0; nt < tmpCell.insideProbabilities.length; nt++) {
-                    if (tmpCell.insideProbabilities[nt] != Float.NEGATIVE_INFINITY) {
+                    if (tmpCell.insideProbabilities[nt] > 0.0) {
                         count++;
                     }
                 }
@@ -1341,8 +1451,7 @@ public class RealPackedArrayChart extends Chart {
             if (tmpCell != null) {
                 int count = 0;
                 for (short nt = 0; nt < tmpCell.insideProbabilities.length; nt++) {
-                    if (tmpCell.insideProbabilities[nt] != Float.NEGATIVE_INFINITY
-                            && !grammar.nonTermSet.isFactored(nt)) {
+                    if (tmpCell.insideProbabilities[nt] > 0.0 && !grammar.nonTermSet.isFactored(nt)) {
                         count++;
                     }
                 }
@@ -1362,8 +1471,7 @@ public class RealPackedArrayChart extends Chart {
             if (tmpCell != null) {
                 int count = 0;
                 for (int i = 0; i < tmpCell.insideProbabilities.length; i++) {
-                    if (tmpCell.insideProbabilities[i] != Float.NEGATIVE_INFINITY
-                            && sparseMatrixGrammar.isValidLeftChild(i)) {
+                    if (tmpCell.insideProbabilities[i] > 0.0 && sparseMatrixGrammar.isValidLeftChild(i)) {
                         count++;
                     }
                 }
@@ -1377,8 +1485,7 @@ public class RealPackedArrayChart extends Chart {
             if (tmpCell != null) {
                 int count = 0;
                 for (int i = 0; i < tmpCell.insideProbabilities.length; i++) {
-                    if (tmpCell.insideProbabilities[i] != Float.NEGATIVE_INFINITY
-                            && sparseMatrixGrammar.isValidRightChild(i)) {
+                    if (tmpCell.insideProbabilities[i] > 0.0 && sparseMatrixGrammar.isValidRightChild(i)) {
                         count++;
                     }
                 }
@@ -1477,7 +1584,7 @@ public class RealPackedArrayChart extends Chart {
         public String toString(final boolean formatFractions) {
             final StringBuilder sb = new StringBuilder(256);
 
-            sb.append("PackedArrayChartCell[" + start + "][" + end + "] with " + getNumNTs() + " (of "
+            sb.append("RealPackedArrayChartCell[" + start + "][" + end + "] with " + getNumNTs() + " (of "
                     + sparseMatrixGrammar.numNonTerms() + ") edges\n");
 
             switch (parseTask.decodeMethod) {
@@ -1522,7 +1629,7 @@ public class RealPackedArrayChart extends Chart {
                 // Format entries from temporary cell storage
                 for (int nonTerminal = 0; nonTerminal < sparseMatrixGrammar.numNonTerms(); nonTerminal++) {
 
-                    if (tmpCell.insideProbabilities[nonTerminal] != Float.NEGATIVE_INFINITY) {
+                    if (tmpCell.insideProbabilities[nonTerminal] > 0.0) {
                         sb.append(formatCellEntry(nonTerminal, tmpCell.packedChildren[nonTerminal],
                                 tmpCell.insideProbabilities[nonTerminal], tmpCell.midpoints[nonTerminal],
                                 tmpCell.outsideProbabilities[nonTerminal], formatFractions));
@@ -1535,7 +1642,7 @@ public class RealPackedArrayChart extends Chart {
         private String maxcToString(final boolean formatFractions) {
             final StringBuilder sb = new StringBuilder(256);
 
-            if (maxcScores[cellIndex] > Float.NEGATIVE_INFINITY) {
+            if (maxcScores[cellIndex] > 0.0) {
                 if (maxcUnaryChildren[cellIndex] < 0) {
                     sb.append(String.format("  MaxC = %s (%.5f, %d)", maxcVocabulary.getSymbol(maxcEntries[cellIndex]),
                             maxcScores[cellIndex], maxcMidpoints[cellIndex]));
@@ -1566,7 +1673,7 @@ public class RealPackedArrayChart extends Chart {
                 // Format entries from temporary cell storage
                 for (int nonTerminal = 0; nonTerminal < sparseMatrixGrammar.numNonTerms(); nonTerminal++) {
 
-                    if (tmpCell.insideProbabilities[nonTerminal] != Float.NEGATIVE_INFINITY) {
+                    if (tmpCell.insideProbabilities[nonTerminal] > 0.0) {
                         final int childProductions = tmpCell.packedChildren[nonTerminal];
                         final double insideProbability = tmpCell.insideProbabilities[nonTerminal];
                         final double outsideProbability = tmpCell.outsideProbabilities[nonTerminal];
@@ -1686,6 +1793,9 @@ public class RealPackedArrayChart extends Chart {
         public final double[] insideProbabilities;
         public final double[] outsideProbabilities;
         public final short[] midpoints;
+        public int insideScalingStep = 0;
+        public int outsideScalingStep = 0;
+
         private final SparseMatrixGrammar sparseMatrixGrammar;
 
         public TemporaryChartCell(final Grammar grammar) {
@@ -1700,7 +1810,7 @@ public class RealPackedArrayChart extends Chart {
 
         public void clear() {
             Arrays.fill(insideProbabilities, 0);
-            Arrays.fill(outsideProbabilities, 1);
+            Arrays.fill(outsideProbabilities, 0);
         }
 
         // @Override

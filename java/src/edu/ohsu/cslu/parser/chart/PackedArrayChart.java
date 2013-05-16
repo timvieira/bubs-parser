@@ -752,6 +752,8 @@ public class PackedArrayChart extends ParallelArrayChart {
                     final int leftEnd = maxLeftChildIndex(leftCellIndex);
 
                     final PackedArrayChartCell rightChildCell = getCell(midpoint, end);
+                    //final int rightCellIndex = rightChildCell.cellIndex;
+
                     rightChildCell.allocateTemporaryStorage();
                     final float[] rightChildInsideProbabilities = rightChildCell.tmpCell.insideProbabilities;
 
@@ -815,7 +817,9 @@ public class PackedArrayChart extends ParallelArrayChart {
                                 // haven't been doing that thus far. It seems to be working better this way, but we
                                 // would be able to prune the search space if we do 'real' max-rule.
                                 final float q = r[baseParent][baseLeftChild][baseRightChild]
-                                        - startSymbolInsideProbability;
+                                        - startSymbolInsideProbability; // + maxQ[leftCellIndex][baseLeftChild]
+                                // + maxQ[rightCellIndex][baseRightChild];
+
                                 if (q > maxQ[cellIndex][baseParent]) {
                                     maxQ[cellIndex][baseParent] = q;
                                     maxQLeftChildren[cellIndex][baseParent] = baseLeftChild;

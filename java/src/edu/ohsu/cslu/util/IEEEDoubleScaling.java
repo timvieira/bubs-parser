@@ -26,7 +26,7 @@ public class IEEEDoubleScaling {
     // Precompute constants for the most common scaling factors
     static final double SCALE1 = java.lang.Math.exp(LN_S);
     private static final double SCALE2 = SCALE1 * SCALE1;
-    private static final double SCALE3 = SCALE1 * SCALE1;
+    private static final double SCALE3 = SCALE1 * SCALE1 * SCALE1;
     private static final double SCALE_1 = 1 / SCALE1;
     private static final double SCALE_2 = 1 / SCALE1 / SCALE1;
     private static final double SCALE_3 = 1 / SCALE1 / SCALE1 / SCALE1;
@@ -81,7 +81,7 @@ public class IEEEDoubleScaling {
      * @return The new scaling step required to properly constrain the array
      */
     public static int scaleArray(final double[] scores, final int previousScaleStep) {
-        return scaleArray(scores, previousScaleStep, Arrays.max(scores));
+        return scaleArray(scores, 0, scores.length, previousScaleStep, Math.doubleMax(scores));
     }
 
     /**
@@ -93,7 +93,24 @@ public class IEEEDoubleScaling {
      * 
      * @return The new scaling step required to properly constrain the array
      */
-    public static int scaleArray(final double[] scores, final int previousScaleStep, double max) {
+    public static int scaleArray(final double[] scores, final int previousScaleStep, final double max) {
+        return scaleArray(scores, 0, scores.length, previousScaleStep, max);
+    }
+
+    /**
+     * Rescales a portion of the supplied score array in place, constraining the maximum entry to between 1/SCALE1 and
+     * SCALE1.
+     * 
+     * @param scores
+     * @param position The start position in the array of the sub-array to be scaled
+     * @param length The length of the sub-array to be scaled
+     * @param previousScaleStep
+     * @param max Pre-recorded maximum entry of <code>scores</code>
+     * 
+     * @return The new scaling step required to properly constrain the array
+     */
+    public static int scaleArray(final double[] scores, final int position, final int length,
+            final int previousScaleStep, double max) {
 
         // If max is between 1/SCALE1 and SCALE1, we're fine
         if (max > SCALE_1 && max < SCALE1) {
@@ -125,7 +142,7 @@ public class IEEEDoubleScaling {
             scaleFactor--;
         }
 
-        for (int i = 0; i < scores.length; i++) {
+        for (int i = position; i < position + length; i++) {
             scores[i] *= multiplier;
         }
 

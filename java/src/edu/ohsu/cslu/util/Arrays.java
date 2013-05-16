@@ -64,16 +64,6 @@ public class Arrays {
         }
     }
 
-    public static short max(final short[] a) {
-        short max = Short.MIN_VALUE;
-        for (int i = 0; i < a.length; i++) {
-            if (a[i] > max) {
-                max = a[i];
-            }
-        }
-        return max;
-    }
-
     public static double sum(final double[] a) {
         if (a == null) {
             return 0.0;
@@ -83,16 +73,6 @@ public class Arrays {
             result += a[i];
         }
         return result;
-    }
-
-    public static double max(final double[] a) {
-        double max = Double.NEGATIVE_INFINITY;
-        for (int i = 0; i < a.length; i++) {
-            if (a[i] > max) {
-                max = a[i];
-            }
-        }
-        return max;
     }
 
     /**

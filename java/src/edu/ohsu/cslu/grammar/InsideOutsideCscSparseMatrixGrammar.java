@@ -8,6 +8,9 @@ import java.util.ArrayList;
  * Represents binary grammar rules by left child and right child (in addition to the standard parent-based storage), for
  * efficient access during the outside pass of inside-outside parsing.
  * 
+ * Note: In addition to the standard CSC unary storage, this representation also stores unary rules in a CSR matrix, so
+ * we can iterate efficiency by parent, during outside-probability compuations.
+ * 
  * @author Aaron Dunlop
  * @since Jul 14, 2011
  * 
@@ -42,6 +45,8 @@ public class InsideOutsideCscSparseMatrixGrammar extends LeftCscSparseMatrixGram
     public final float[] rightChildCscBinaryProbabilities;
     public final PerfectIntPairHashPackingFunction rightChildPackingFunction;
 
+    // The primary unary rule storage is CSC, but during unary outside computations, it's more efficient and cleaner to
+    // iterate by parent, so we duplicate unary productions in a CSR representation.
     /**
      * Offsets into {@link #csrUnaryColumnIndices} for the start of each row, indexed by row index (non-terminals)
      */

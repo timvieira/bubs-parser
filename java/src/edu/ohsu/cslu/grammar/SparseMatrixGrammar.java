@@ -1014,12 +1014,12 @@ public abstract class SparseMatrixGrammar extends Grammar {
         return new StringNonTerminal(internLabel, NonTerminalClass.EITHER_CHILD);
     }
 
-    private final class StringNonTerminal {
+    public final static class StringNonTerminal {
 
         public final String label;
         public final NonTerminalClass ntClass;
 
-        protected StringNonTerminal(final String label, final NonTerminalClass ntClass) {
+        public StringNonTerminal(final String label, final NonTerminalClass ntClass) {
             this.label = label;
             this.ntClass = ntClass;
         }
@@ -1030,7 +1030,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
         }
     }
 
-    protected abstract static class StringNonTerminalComparator implements Comparator<StringNonTerminal> {
+    public abstract static class StringNonTerminalComparator implements Comparator<StringNonTerminal> {
 
         HashMap<NonTerminalClass, Integer> map = new HashMap<NonTerminalClass, Integer>();
 
@@ -1049,8 +1049,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
         }
     }
 
-    @SuppressWarnings("unused")
-    private static class PosFirstComparator extends StringNonTerminalComparator {
+    public static class PosFirstComparator extends StringNonTerminalComparator {
 
         public PosFirstComparator() {
             map.put(NonTerminalClass.POS, 0);
@@ -1059,8 +1058,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
         }
     }
 
-    @SuppressWarnings("unused")
-    private static class PosEmbeddedComparator extends StringNonTerminalComparator {
+    public static class PosEmbeddedComparator extends StringNonTerminalComparator {
 
         public PosEmbeddedComparator() {
             map.put(NonTerminalClass.EITHER_CHILD, 0);
@@ -1069,8 +1067,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
         }
     }
 
-    @SuppressWarnings("unused")
-    private static class LexicographicComparator extends StringNonTerminalComparator {
+    public static class LexicographicComparator extends StringNonTerminalComparator {
 
         public LexicographicComparator() {
         }
@@ -1088,7 +1085,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
      * 
      * 3 - All POS (pre-terminals)
      */
-    private enum NonTerminalClass {
+    public enum NonTerminalClass {
         FACTORED_SIDE_CHILDREN_ONLY, EITHER_CHILD, POS;
     }
 

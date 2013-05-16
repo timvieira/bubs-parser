@@ -893,12 +893,12 @@ public class ListGrammar extends Grammar {
         return new StringNonTerminal(internLabel, NonTerminalClass.EITHER_CHILD);
     }
 
-    private final class StringNonTerminal {
+    public final static class StringNonTerminal {
 
         public final String label;
         public final NonTerminalClass ntClass;
 
-        protected StringNonTerminal(final String label, final NonTerminalClass ntClass) {
+        public StringNonTerminal(final String label, final NonTerminalClass ntClass) {
             this.label = label;
             this.ntClass = ntClass;
         }
@@ -909,7 +909,7 @@ public class ListGrammar extends Grammar {
         }
     }
 
-    private abstract static class StringNonTerminalComparator implements Comparator<StringNonTerminal> {
+    public abstract static class StringNonTerminalComparator implements Comparator<StringNonTerminal> {
 
         HashMap<NonTerminalClass, Integer> map = new HashMap<NonTerminalClass, Integer>();
 
@@ -928,7 +928,7 @@ public class ListGrammar extends Grammar {
         }
     }
 
-    private static class PosEmbeddedComparator extends StringNonTerminalComparator {
+    public static class PosEmbeddedComparator extends StringNonTerminalComparator {
 
         public PosEmbeddedComparator() {
             map.put(NonTerminalClass.EITHER_CHILD, 0);
@@ -944,7 +944,7 @@ public class ListGrammar extends Grammar {
      * 
      * 3 - All POS (pre-terminals)
      */
-    private enum NonTerminalClass {
+    public static enum NonTerminalClass {
         FACTORED_SIDE_CHILDREN_ONLY, EITHER_CHILD, POS;
     }
 

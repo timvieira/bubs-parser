@@ -21,7 +21,6 @@
  */
 package edu.ohsu.cslu.util;
 
-
 /**
  * Implements common mathematical functions. Suitable for static import.
  * 
@@ -158,12 +157,23 @@ public class Math {
      * @return maximum of the arguments supplied, or 0 if no arguments are supplied
      */
     public static double doubleMax(final double[] arguments) {
+        return doubleMax(arguments, 0, arguments.length);
+    }
+
+    /**
+     * Returns the maximum of the arguments supplied. Functionally identical to the various <code>max</code> methods,
+     * but named differently to avoid compiler ambiguity due to problems in JLS 15.12.2.5.
+     * 
+     * @param arguments
+     * @return maximum of the arguments supplied, or 0 if no arguments are supplied
+     */
+    public static double doubleMax(final double[] arguments, final int position, final int length) {
         if (arguments.length == 0) {
             return 0;
         }
 
-        double max = arguments[0];
-        for (int i = 1; i < arguments.length; i++) {
+        double max = arguments[position];
+        for (int i = position + 1; i < position + length; i++) {
             final double current = arguments[i];
             if (current > max) {
                 max = current;
