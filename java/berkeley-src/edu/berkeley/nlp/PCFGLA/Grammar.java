@@ -314,8 +314,16 @@ public class Grammar implements Serializable, Cloneable {
             }
         }
 
+        // Smooth un-normalized counts and then store a normalized version in the rule-storage maps
+        smoother.smooth(packedUnaryCountMap, packedBinaryCountMap, numSubStates, observedParentCounts());
         normalizeCounts();
-        smooth();
+
+        // Add unaries to rule-by-parent and rule-by-child arrays for computePairsOfUnaries
+        for (final int unaryKey : packedUnaryRuleMap.keySet()) {
+            final UnaryRule r = new UnaryRule(packedUnaryRuleMap.get(unaryKey), numSubStates);
+            addUnary(r);
+        }
+        computePairsOfUnaries();
     }
 
     /**
@@ -370,20 +378,6 @@ public class Grammar implements Serializable, Cloneable {
                 }
             }
         }
-    }
-
-    /**
-     * Smooth the rule probabilities in {@link #packedBinaryRuleMap}
-     */
-    public void smooth() {
-        smoother.smooth(packedUnaryRuleMap, packedBinaryRuleMap, numSubStates);
-
-        // Add unaries to rule-by-parent and rule-by-child arrays for computePairsOfUnaries
-        for (final int unaryKey : packedUnaryRuleMap.keySet()) {
-            final UnaryRule r = new UnaryRule(packedUnaryRuleMap.get(unaryKey), numSubStates);
-            addUnary(r);
-        }
-        computePairsOfUnaries();
     }
 
     /**
@@ -1180,19 +1174,13 @@ public class Grammar implements Serializable, Cloneable {
         final StringBuilder sb = new StringBuilder();
 
         // Count non-terminal splits and unary rules
-        int nBinary = 0, nUnary = 0;
-
         int totalSubStates = 0;
         for (int state = 0; state < numStates; state++) {
             totalSubStates += numSubStates[state];
-            for (final UnaryRule rule : closedViterbiRulesWithParent[state]) {
-                nUnary += rule.ruleCount(minimumRuleProbability);
-            }
         }
 
-        for (final PackedBinaryRule rule : packedBinaryRuleMap.values()) {
-            nBinary += rule.ruleCount(minimumRuleProbability);
-        }
+        final int nBinary = binaryRuleCount(minimumRuleProbability);
+        final int nUnary = unaryRuleCount(minimumRuleProbability);
 
         sb.append(String
                 .format("lang=%s format=Berkeley unkThresh=%s start=%s hMarkov=%d vMarkov=%s date=%s vocabSize=%d nBinary=%d nUnary=%d nLex=%d\n",
@@ -1218,6 +1206,24 @@ public class Grammar implements Serializable, Cloneable {
         return sb.toString();
     }
 
+    protected int unaryRuleCount(final double minimumRuleProbability) {
+        int nUnary = 0;
+        for (int state = 0; state < numStates; state++) {
+            for (final UnaryRule rule : closedViterbiRulesWithParent[state]) {
+                nUnary += rule.ruleCount(minimumRuleProbability);
+            }
+        }
+        return nUnary;
+    }
+
+    protected int binaryRuleCount(final double minimumRuleProbability) {
+        int nBinary = 0;
+        for (final PackedBinaryRule rule : packedBinaryRuleMap.values()) {
+            nBinary += rule.ruleCount(minimumRuleProbability);
+        }
+        return nBinary;
+    }
+
     private static abstract class BasePackedBinaryRule implements Serializable {
 
         private static final long serialVersionUID = 1L;
@@ -1228,10 +1234,9 @@ public class Grammar implements Serializable, Cloneable {
 
         /**
          * Parent, left child, and right child substates for each rule. Something of a parallel array to the score /
-         * count array, but each score or count corresponds to 2 substates (for unary rules) or 3 (for binary rules), so
-         * {@link #substates} is 2x or 3x as long as the corresponding score/count array. This field is logically final,
-         * but we don't know the size in the base class constructor, so it's initialized in the subclass constructor,
-         * and we can't label it as final.
+         * count array, but each score or count corresponds to 3 substates, so {@link #substates} is 3x as long as the
+         * corresponding score/count array. This field is logically final, but we don't know the size in the base class
+         * constructor, so it's initialized in the subclass constructor, and we can't label it as final.
          */
         public short[] substates;
 
@@ -1619,7 +1624,7 @@ public class Grammar implements Serializable, Cloneable {
          * Special-case for counting unsplit trees (a single 'split' for each state).
          */
         public PackedUnaryCount(final short unsplitParent, final short unsplitChild) {
-            this(unsplitParent, unsplitChild, new short[] { 0, 0, 0 });
+            this(unsplitParent, unsplitChild, new short[] { 0, 0 });
         }
     }
 }

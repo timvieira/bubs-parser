@@ -10,8 +10,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import edu.berkeley.nlp.PCFGLA.Grammar;
-import edu.berkeley.nlp.PCFGLA.Grammar.PackedBinaryRule;
-import edu.berkeley.nlp.PCFGLA.Grammar.PackedUnaryRule;
+import edu.berkeley.nlp.PCFGLA.Grammar.PackedBinaryCount;
+import edu.berkeley.nlp.PCFGLA.Grammar.PackedUnaryCount;
 import edu.berkeley.nlp.syntax.Tree;
 
 /**
@@ -79,58 +79,98 @@ public class SmoothAcrossParentBits implements Smoother, Serializable {
         }
     }
 
-    public void smooth(final Int2ObjectOpenHashMap<PackedUnaryRule> packedUnaryRuleMap,
-            final Int2ObjectOpenHashMap<PackedBinaryRule> packedBinaryRuleMap, final short[] splitCounts) {
+    /**
+     * Note: This implementation will approximately normalize the counts, but the resulting counts will be slightly
+     * un-normalized by the added pseudo-counts, so the consumer should re-normalize after smoothing.
+     */
+    public void smooth(final Int2ObjectOpenHashMap<PackedUnaryCount> packedUnaryCountMap,
+            final Int2ObjectOpenHashMap<PackedBinaryCount> packedBinaryCountMap, final short[] splitCounts,
+            final double[][] parentCounts) {
 
-        // for (final UnaryRule r : unaryCounter.keySet()) {
-        // final double[][] scores = unaryCounter.getCount(r);
-        // final double[][] scopy = new double[scores.length][];
-        // final short pState = r.parentState;
-        // for (int j = 0; j < scores.length; j++) {
-        // if (scores[j] == null)
-        // continue; // nothing to smooth
-        //
-        // scopy[j] = new double[scores[j].length];
-        // for (int i = 0; i < scores[j].length; i++) {
-        // for (int k = 0; k < scores[j].length; k++) {
-        // scopy[j][i] += diffWeights[pState][i][k] * scores[j][k];
-        // }
-        // }
-        // }
-        // unaryCounter.setCount(r, scopy);
-        // }
+        // Smooth unary rules
+        for (final int unaryKey : packedUnaryCountMap.keySet()) {
 
-        // Smooth binary rules
-        for (final int unaryKey : packedUnaryRuleMap.keySet()) {
-
+            // Convert the packed representation into an 'un-packed' 2-d matrix, indexed by child split, parent split
+            final short unsplitChild = Grammar.unsplitUnaryChild(unaryKey);
             final short unsplitParent = Grammar.unsplitUnaryParent(unaryKey);
-            final PackedUnaryRule packedUnaryRule = packedUnaryRuleMap.get(unaryKey);
-            final double[] unsmoothedCounts = packedUnaryRule.ruleScores.clone();
-            Arrays.fill(packedUnaryRule.ruleScores, 0);
+            final PackedUnaryCount packedUnaryCount = packedUnaryCountMap.get(unaryKey);
 
-            for (int i = 0, j = 0; i < packedUnaryRule.ruleScores.length; i++, j += 2) {
-                final short parentSplit = packedUnaryRule.substates[j + 1];
+            final double[][] unsmoothedCounts = new double[splitCounts[unsplitChild]][];
+
+            // Copy the packed representation into an 'un-packed' 2-d array
+            for (int i = 0, j = 0; i < packedUnaryCount.ruleCounts.length; i++, j += 2) {
+                final short childSplit = packedUnaryCount.substates[j];
+                final short parentSplit = packedUnaryCount.substates[j + 1];
+
+                // Allocate storage
+                if (unsmoothedCounts[childSplit] == null) {
+                    unsmoothedCounts[childSplit] = new double[splitCounts[unsplitParent]];
+                }
+                // Copy observed count
+                unsmoothedCounts[childSplit][parentSplit] = packedUnaryCount.ruleCounts[i];
+            }
+
+            // Clear out packed score storage and smooth
+            Arrays.fill(packedUnaryCount.ruleCounts, 0);
+
+            for (int i = 0, j = 0; i < packedUnaryCount.ruleCounts.length; i++, j += 2) {
+                final short childSplit = packedUnaryCount.substates[j];
+                final short parentSplit = packedUnaryCount.substates[j + 1];
 
                 for (int altParentSplit = 0; altParentSplit < splitCounts[unsplitParent]; altParentSplit++) {
-                    packedUnaryRule.ruleScores[i] += unsmoothedCounts[i]
+                    packedUnaryCount.ruleCounts[i] += unsmoothedCounts[childSplit][parentSplit]
                             * diffWeights[unsplitParent][parentSplit][altParentSplit];
                 }
             }
         }
 
         // Smooth binary rules
-        for (final int binaryKey : packedBinaryRuleMap.keySet()) {
+        // Smooth the packed representation
+        for (final int binaryKey : packedBinaryCountMap.keySet()) {
 
+            // Convert the packed representation into an 'un-packed' 3-d matrix, indexed by left-child split,
+            // right-child split, parent split
+            final short unsplitLeftChild = Grammar.unsplitLeftChild(binaryKey);
+            final short unsplitRightChild = Grammar.unsplitRightChild(binaryKey);
             final short unsplitParent = Grammar.unsplitBinaryParent(binaryKey);
-            final PackedBinaryRule packedBinaryRule = packedBinaryRuleMap.get(binaryKey);
-            final double[] unsmoothedCounts = packedBinaryRule.ruleScores.clone();
-            Arrays.fill(packedBinaryRule.ruleScores, 0);
+            final double[][][] unsmoothedCounts = new double[splitCounts[unsplitLeftChild]][][];
 
-            for (int i = 0, j = 0; i < packedBinaryRule.ruleScores.length; i++, j += 3) {
-                final short parentSplit = packedBinaryRule.substates[j + 2];
+            final PackedBinaryCount packedBinaryCount = packedBinaryCountMap.get(binaryKey);
+
+            // Copy the packed representation into an 'un-packed' 3-d array
+            for (int i = 0, j = 0; i < packedBinaryCount.ruleCounts.length; i++, j += 3) {
+                final short leftChildSplit = packedBinaryCount.substates[j];
+                final short rightChildSplit = packedBinaryCount.substates[j + 1];
+                final short parentSplit = packedBinaryCount.substates[j + 2];
+
+                // Allocate storage
+                if (unsmoothedCounts[leftChildSplit] == null) {
+                    unsmoothedCounts[leftChildSplit] = new double[splitCounts[unsplitRightChild]][];
+                }
+                if (unsmoothedCounts[leftChildSplit][rightChildSplit] == null) {
+                    unsmoothedCounts[leftChildSplit][rightChildSplit] = new double[splitCounts[unsplitParent]];
+                }
+                // Copy observed count
+                unsmoothedCounts[leftChildSplit][rightChildSplit][parentSplit] = packedBinaryCount.ruleCounts[i];
+            }
+
+            // Clear out packed score storage and smooth
+            Arrays.fill(packedBinaryCount.ruleCounts, 0);
+
+            for (int i = 0, j = 0; i < packedBinaryCount.ruleCounts.length; i++, j += 3) {
+                final short leftChildSplit = packedBinaryCount.substates[j];
+                final short rightChildSplit = packedBinaryCount.substates[j + 1];
+                final short parentSplit = packedBinaryCount.substates[j + 2];
+
+                if (unsmoothedCounts[leftChildSplit] == null
+                        || unsmoothedCounts[leftChildSplit][rightChildSplit] == null) {
+                    continue;
+                }
 
                 for (int altParentSplit = 0; altParentSplit < splitCounts[unsplitParent]; altParentSplit++) {
-                    packedBinaryRule.ruleScores[i] += unsmoothedCounts[i]
+
+                    // Add in diff for parent split, alt parent split * score for left-child, right child, alt parent
+                    packedBinaryCount.ruleCounts[i] += unsmoothedCounts[leftChildSplit][rightChildSplit][altParentSplit]
                             * diffWeights[unsplitParent][parentSplit][altParentSplit];
                 }
             }
