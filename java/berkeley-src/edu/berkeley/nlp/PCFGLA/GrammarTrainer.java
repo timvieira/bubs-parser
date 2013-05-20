@@ -316,8 +316,11 @@ public class GrammarTrainer extends BaseCommandlineTool {
                 lexicon = result.lexicon;
 
                 BaseLogger.singleton().info(
-                        String.format("Iteration: %2d  Training set likelihood: %.4f  Time %d ms", iteration,
-                                result.trainingSetLikelihood, result.emTime));
+                        String.format(
+                                "Iteration: %2d  Training set likelihood: %.4f  Time %d ms  nBinary=%d  nUnary=%d",
+                                iteration, result.trainingSetLikelihood, result.emTime,
+                                result.grammar.binaryRuleCount(minRuleProbability),
+                                result.grammar.unaryRuleCount(minRuleProbability)));
             }
 
             if (smoothingStep) {
