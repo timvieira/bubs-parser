@@ -16,7 +16,9 @@ import edu.berkeley.nlp.PCFGLA.Grammar.PackedUnaryCount;
 public interface Smoother {
 
     /**
-     * Smooths observed fractional counts during EM grammar training.
+     * Smooths observed (fractional) binary and unary counts during EM grammar training. If the counts passed in are
+     * normalized, the smoothing process will generally denormalize somewhat. The consumer should re-normalize after
+     * smoothing if desired.
      * 
      * @param packedUnaryCountMap
      * @param packedBinaryCountMap
@@ -29,8 +31,7 @@ public interface Smoother {
             final double[][] parentCounts);
 
     /**
-     * Smooths a set of scores using the same smoothing parameters computed during the previous invocation of
-     * {@link #smooth(Int2ObjectOpenHashMap, Int2ObjectOpenHashMap, short[], double[][])}.
+     * Smooths a set of lexicon scores using the same smoothing parameters.
      * 
      * @param tag
      * @param ruleScores

@@ -1471,6 +1471,68 @@ public class Grammar implements Serializable, Cloneable {
         public PackedBinaryCount(final short unsplitParent, final short unsplitLeftChild, final short unsplitRightChild) {
             this(unsplitParent, unsplitLeftChild, unsplitRightChild, new short[] { 0, 0, 0 });
         }
+
+        // // TODO Remove after we get rid of un-packed count representation. This is copy-and-paste from
+        // PackedBinaryRule
+        public PackedBinaryCount(final short unsplitParent, final short unsplitLeftChild,
+                final short unsplitRightChild, final double[][][] unpackedCounts) {
+
+            super(unsplitParent, unsplitLeftChild, unsplitRightChild);
+
+            // Count the total number of non-0 production probabilities (so we can size the parallel arrays properly)
+            int totalRules = 0;
+            for (short splitLeftChild = 0; splitLeftChild < unpackedCounts.length; splitLeftChild++) {
+                final double[][] leftChildSplitRules = unpackedCounts[splitLeftChild];
+                if (leftChildSplitRules == null) {
+                    continue;
+                }
+
+                for (short splitRightChild = 0; splitRightChild < leftChildSplitRules.length; splitRightChild++) {
+                    final double[] rightChildSplitRules = leftChildSplitRules[splitRightChild];
+                    if (rightChildSplitRules == null) {
+                        continue;
+                    }
+
+                    for (short splitParent = 0; splitParent < rightChildSplitRules.length; splitParent++) {
+
+                        if (rightChildSplitRules[splitParent] > 0) {
+                            totalRules++;
+                        }
+                    }
+                }
+            }
+
+            this.ruleCounts = new double[totalRules];
+            this.substates = new short[totalRules * 3];
+
+            // Populate them in order in the new arrays, sorted by left child, right child, parent
+            int offset = 0;
+            for (short splitLeftChild = 0; splitLeftChild < unpackedCounts.length; splitLeftChild++) {
+                final double[][] leftChildSplitRules = unpackedCounts[splitLeftChild];
+                if (leftChildSplitRules == null) {
+                    continue;
+                }
+
+                for (short splitRightChild = 0; splitRightChild < leftChildSplitRules.length; splitRightChild++) {
+                    final double[] rightChildSplitRules = leftChildSplitRules[splitRightChild];
+                    if (rightChildSplitRules == null) {
+                        continue;
+                    }
+
+                    for (short splitParent = 0; splitParent < rightChildSplitRules.length; splitParent++) {
+
+                        if (rightChildSplitRules[splitParent] > 0) {
+                            this.ruleCounts[offset] = unpackedCounts[splitLeftChild][splitRightChild][splitParent];
+                            final int substateOffset = offset * 3;
+                            this.substates[substateOffset] = splitLeftChild;
+                            this.substates[substateOffset + 1] = splitRightChild;
+                            this.substates[substateOffset + 2] = splitParent;
+                            offset++;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private static abstract class BasePackedUnaryRule implements Serializable {
@@ -1510,14 +1572,15 @@ public class Grammar implements Serializable, Cloneable {
         /** Production probabilities for each split rule, sorted by by parent split, left child split, right child split */
         public final double[] ruleScores;
 
-        public PackedUnaryRule(final short unsplitParent, final short unsplitChild, final double[][] ruleScores) {
+        public PackedUnaryRule(final short unsplitParent, final short unsplitChild,
+                final double[][] unpackedProbabilities) {
 
             super(unsplitParent, unsplitChild);
 
             // Count the total number of non-0 production probabilities (so we can size the parallel arrays properly)
             int totalRules = 0;
-            for (short splitChild = 0; splitChild < ruleScores.length; splitChild++) {
-                final double[] childSplitRules = ruleScores[splitChild];
+            for (short splitChild = 0; splitChild < unpackedProbabilities.length; splitChild++) {
+                final double[] childSplitRules = unpackedProbabilities[splitChild];
                 if (childSplitRules == null) {
                     continue;
                 }
@@ -1535,8 +1598,8 @@ public class Grammar implements Serializable, Cloneable {
 
             // Populate them in order in the new arrays, sorted by parent, left child, right child
             int offset = 0;
-            for (short childSplit = 0; childSplit < ruleScores.length; childSplit++) {
-                final double[] childSplitRules = ruleScores[childSplit];
+            for (short childSplit = 0; childSplit < unpackedProbabilities.length; childSplit++) {
+                final double[] childSplitRules = unpackedProbabilities[childSplit];
                 if (childSplitRules == null) {
                     continue;
                 }
@@ -1544,7 +1607,7 @@ public class Grammar implements Serializable, Cloneable {
                 for (short parentSplit = 0; parentSplit < childSplitRules.length; parentSplit++) {
 
                     if (childSplitRules[parentSplit] > 0) {
-                        this.ruleScores[offset] = ruleScores[childSplit][parentSplit];
+                        this.ruleScores[offset] = unpackedProbabilities[childSplit][parentSplit];
                         final int substateOffset = offset * 2;
                         this.substates[substateOffset] = childSplit;
                         this.substates[substateOffset + 1] = parentSplit;
@@ -1555,7 +1618,7 @@ public class Grammar implements Serializable, Cloneable {
         }
 
         /**
-         * Copies from a {@link PackedUnaryCount} and normalizes
+         * Copies from an un-packed count representation and normalizes
          * 
          * @param unaryCount
          * @param parentCounts
@@ -1625,6 +1688,59 @@ public class Grammar implements Serializable, Cloneable {
          */
         public PackedUnaryCount(final short unsplitParent, final short unsplitChild) {
             this(unsplitParent, unsplitChild, new short[] { 0, 0 });
+        }
+
+        /**
+         * Copies from an un-packed representation.
+         * 
+         * TODO Copy-and-paste code from {@link PackedUnaryRule}. Can we merge the two?
+         * 
+         * @param unsplitParent
+         * @param unsplitChild
+         * @param unpackedCounts
+         */
+        public PackedUnaryCount(final short unsplitParent, final short unsplitChild, final double[][] unpackedCounts) {
+
+            super(unsplitParent, unsplitChild);
+
+            // Count the total number of non-0 production probabilities (so we can size the parallel arrays properly)
+            int totalRules = 0;
+            for (short splitChild = 0; splitChild < unpackedCounts.length; splitChild++) {
+                final double[] childSplitRules = unpackedCounts[splitChild];
+                if (childSplitRules == null) {
+                    continue;
+                }
+
+                for (short splitParent = 0; splitParent < childSplitRules.length; splitParent++) {
+
+                    if (childSplitRules[splitParent] > 0) {
+                        totalRules++;
+                    }
+                }
+            }
+
+            this.ruleCounts = new double[totalRules];
+            this.substates = new short[totalRules * 2];
+
+            // Populate them in order in the new arrays, sorted by parent, left child, right child
+            int offset = 0;
+            for (short childSplit = 0; childSplit < unpackedCounts.length; childSplit++) {
+                final double[] childSplitRules = unpackedCounts[childSplit];
+                if (childSplitRules == null) {
+                    continue;
+                }
+
+                for (short parentSplit = 0; parentSplit < childSplitRules.length; parentSplit++) {
+
+                    if (childSplitRules[parentSplit] > 0) {
+                        this.ruleCounts[offset] = unpackedCounts[childSplit][parentSplit];
+                        final int substateOffset = offset * 2;
+                        this.substates[substateOffset] = childSplit;
+                        this.substates[substateOffset + 1] = parentSplit;
+                        offset++;
+                    }
+                }
+            }
         }
     }
 }
