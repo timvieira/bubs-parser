@@ -112,11 +112,14 @@ public class TestBoundedPriorityQueue {
         // And an entry present with a higher FOM
         assertFalse(queue.replace((short) 5, -10f));
 
-        // Replace another entry lower in the queue
+        // Replace two more entries lower in the queue (one at the tail)
+        assertTrue(queue.replace((short) 1, -.75f));
         assertTrue(queue.replace((short) 5, -2f));
+        assertEquals(5, queue.nts[3]);
+        assertEquals(1, queue.nts[1]);
         queue.popHead(); // 3
-        queue.popHead(); // 2
         queue.popHead(); // 1
+        queue.popHead(); // 2
         assertEquals(5, queue.nts[queue.headIndex()]);
         assertEquals(-2f, queue.foms[queue.headIndex()], 0.001f);
 
@@ -125,13 +128,13 @@ public class TestBoundedPriorityQueue {
 
         // Replace the tail entry
         assertTrue(queue.replace((short) 4, -1f));
-        assertEquals(4, queue.nts[queue.headIndex() + 1]);
-        assertEquals(-1f, queue.foms[queue.headIndex() + 1], 0.001f);
+        assertEquals(4, queue.nts[queue.headIndex()]);
+        assertEquals(-1f, queue.foms[queue.headIndex()], 0.001f);
 
         // Replace an entry that is both head and tail
         queue.popHead();
-        assertTrue(queue.replace((short) 4, -0.5f));
-        assertEquals(4, queue.nts[queue.headIndex()]);
+        assertTrue(queue.replace((short) 5, -0.5f));
+        assertEquals(5, queue.nts[queue.headIndex()]);
         assertEquals(-0.5f, queue.foms[queue.headIndex()], 0.001f);
 
         // Now try to replace in an empty queue

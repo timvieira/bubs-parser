@@ -170,11 +170,15 @@ public final class BoundedPriorityQueue {
         nts[tail] = nt;
 
         // Bubble-sort the new entry into the queue
-        for (int i = tail; i > head && foms[i - 1] < foms[i]; i--) {
-            swap(i - 1, i);
-        }
+        sortUp(tail);
 
         return true;
+    }
+
+    protected void sortUp(final int entry) {
+        for (int i = entry; i > head && foms[i - 1] < foms[i]; i--) {
+            swap(i - 1, i);
+        }
     }
 
     /**
@@ -189,7 +193,8 @@ public final class BoundedPriorityQueue {
      * @return True if the non-terminal was found and replaced.
      */
     public boolean replace(final short nt, final float fom) {
-        if (fom <= foms[maxTail]) {
+        // Short circuit if the queue is full and the FOM won't make the cut
+        if (tail == maxTail && fom <= foms[maxTail]) {
             return false;
         }
 
@@ -197,6 +202,7 @@ public final class BoundedPriorityQueue {
             if (nts[i] == nt) {
                 if (fom > foms[i]) {
                     foms[i] = fom;
+                    sortUp(i);
                     return true;
                 }
                 return false;
@@ -223,7 +229,7 @@ public final class BoundedPriorityQueue {
     public String toString() {
         final StringBuilder sb = new StringBuilder(1024);
         if (head >= 0) {
-            for (int i = head; i < tail; i++) {
+            for (int i = head; i <= tail; i++) {
                 if (grammar != null) {
                     sb.append(String.format("%s %.3f\n", grammar.mapNonterminal(nts[i]), foms[i]));
                 } else {

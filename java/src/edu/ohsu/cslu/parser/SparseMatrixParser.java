@@ -512,6 +512,7 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
                             final float parentFom = figureOfMerit.calcFOM(start, end, parent, jointProbability);
 
                             if (parentFom > cellFoms[parent] && q.replace(parent, parentFom)) {
+
                                 // The FOM was high enough that the edge was added to the queue; update temporary
                                 // storage to reflect the new unary child and probability
                                 queueEdges.packedChildren[parent] = grammar.packingFunction().packUnary(child);
