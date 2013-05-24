@@ -96,6 +96,9 @@ public class GrammarTrainer extends BaseCommandlineTool {
     @Option(name = "-writeIntermediateGrammars", usage = "Write intermediate grammars to disk after each smoothing cycle")
     private boolean writeIntermediateGrammars = false;
 
+    @Option(name = "-writeSerializedGrammars", usage = "Write Java-object-serialized grammars as well as BUBS-format")
+    private boolean writeSerializedGrammars = false;
+
     @Override
     protected void setup() {
         if (outputGrammarDirectory != null && !outputGrammarDirectory.exists()) {
@@ -300,6 +303,9 @@ public class GrammarTrainer extends BaseCommandlineTool {
                 final EmIterationResult result = emIteration(iteration, grammar, lexicon, trainStateSetTrees,
                         devSetStateSetTrees, minRuleProbability);
 
+                grammar = result.grammar;
+                lexicon = result.lexicon;
+
                 // Record the best-performing grammar
                 if (result.devSetLikelihood >= maxDevSetLikelihood) {
                     maxDevSetLikelihood = result.devSetLikelihood;
@@ -309,9 +315,6 @@ public class GrammarTrainer extends BaseCommandlineTool {
                 } else {
                     droppingIterations++;
                 }
-
-                grammar = result.grammar;
-                lexicon = result.lexicon;
 
                 BaseLogger.singleton().info(
                         String.format(
@@ -428,21 +431,7 @@ public class GrammarTrainer extends BaseCommandlineTool {
         final String prefix = outputGrammarDirectory + "/" + outputGrammarPrefix + "_" + cycle + ".gr";
 
         try {
-            // TODO Clone and remove unlikely rules
-
-            // Write a Java Serialized Object
-            final String serFilename = prefix + ".ser";
-            final ParserData pData = new ParserData(lexicon, grammar, Numberer.getNumberers(), grammar.numSubStates,
-                    horizontalMarkovization, binarization);
-
-            System.out.println("Saving grammar to " + serFilename + ".");
-            if (pData.Save(serFilename)) {
-                System.out.println("Saving successful.");
-            } else {
-                System.out.println("Saving failed!");
-            }
-
-            // And a gzipped-text representation
+            // BUBS format (gzipped-text)
             final String gzFilename = prefix + ".gz";
             System.out.println("Saving grammar to " + gzFilename + ".");
             final Writer w = new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(gzFilename)));
@@ -451,6 +440,20 @@ public class GrammarTrainer extends BaseCommandlineTool {
             w.write("===== LEXICON =====\n");
             w.write(lexicon.toString(minRuleProbability));
             w.close();
+
+            if (writeSerializedGrammars) {
+                // Write a Java Serialized Object
+                final String serFilename = prefix + ".ser";
+                final ParserData pData = new ParserData(lexicon, grammar, Numberer.getNumberers(),
+                        grammar.numSubStates, horizontalMarkovization, binarization);
+
+                System.out.println("Saving Java obect-serialized grammar to " + serFilename + ".");
+                if (pData.Save(serFilename)) {
+                    System.out.println("Saving successful.");
+                } else {
+                    System.out.println("Saving failed!");
+                }
+            }
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }
