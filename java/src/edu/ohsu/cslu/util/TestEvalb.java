@@ -8,14 +8,19 @@ import java.io.StringReader;
 
 import org.junit.Test;
 
+import edu.ohsu.cslu.datastructs.narytree.NaryTree;
+import edu.ohsu.cslu.util.Evalb.BracketEvaluator;
+import edu.ohsu.cslu.util.Evalb.EvalbConfig;
 import edu.ohsu.cslu.util.Evalb.EvalbResult;
 
 /**
  * Unit tests for {@link Evalb}
  * 
- * Verified vs. Collins evalb 2012-07-30
+ * Verified vs. Collins evalb 2013-05-24. Note: alternate configurations (implementations of {@link EvalbConfig}) are
+ * not well-tested.
  */
 public class TestEvalb {
+
     private String goldString() {
         final StringBuilder sb = new StringBuilder(8096);
         sb.append("(TOP (S (NP (NP (DT The) (NN economy) (POS 's)) (NN temperature)) (VP (MD will) (VP (AUX be) (VP (VBN taken) (PP (IN from) (NP (JJ several) (NN vantage) (NNS points))) (NP (DT this) (NN week)) (, ,) (PP (IN with) (NP (NP (NNS readings)) (PP (IN on) (NP (NP (NN trade)) (, ,) (NP (NN output)) (, ,) (NP (NN housing)) (CC and) (NP (NN inflation))))))))) (. .)))\n");
@@ -72,12 +77,12 @@ public class TestEvalb {
         final BufferedReader parseReader = new BufferedReader(new StringReader(parseString()));
 
         EvalbResult r = Evalb.eval(new StringReader(goldReader.readLine()), new StringReader(parseReader.readLine()));
-        assertEquals(.8125f, r.precision(), .0001f);
-        assertEquals(.7222f, r.recall(), .0001f);
+        assertEquals(.8235f, r.precision(), .0001f);
+        assertEquals(.7368f, r.recall(), .0001f);
 
         r = Evalb.eval(new StringReader(goldReader.readLine()), new StringReader(parseReader.readLine()));
-        assertEquals(.8750f, r.precision(), .0001f);
-        assertEquals(.7000f, r.recall(), .0001f);
+        assertEquals(.8889f, r.precision(), .0001f);
+        assertEquals(.7273f, r.recall(), .0001f);
 
         // Tests ADVP / PRT equivalence
         StringReader goldTreeReader = new StringReader(
@@ -85,24 +90,24 @@ public class TestEvalb {
         StringReader parseTreeReader = new StringReader(
                 "(TOP (S (NP (NP (NNP Today) (POS 's)) (NNP Fidelity) (NN ad)) (VP (VBZ goes) (ADVP (NP (DT a) (NN step)) (RBR further)) (, ,) (S (VP (VBG encouraging) (S (NP (NNS investors)) (VP (TO to) (VP (VB stay) (UCP (PP (IN in) (NP (DT the) (NN market))) (CC or) (ADVP (RB even)) (S (VP (TO to) (VP (VB plunge) (ADVP (RB in)) (PP (IN with) (NP (NNP Fidelity))))))))))))) (. .)))");
         r = Evalb.eval(goldTreeReader, parseTreeReader);
-        assertEquals(.7727f, r.precision(), .0001f);
-        assertEquals(.7727f, r.recall(), .0001f);
+        assertEquals(.7391f, r.precision(), .0001f);
+        assertEquals(.7391f, r.recall(), .0001f);
 
         goldTreeReader = new StringReader(
                 "(TOP (FRAG (NP (NP (NP (NNP Bear) (NNP Stearns) (POS 's)) (JJ chief) (NN economist)) (, ,) (NP (NNP Lawrence) (NNP Kudlow)) (, ,)) (PP (IN in) (NP (NP (DT the) (NNP Sept.) (CD 29) (NN issue)) (PP (IN of) (NP (NP (DT the) (NN firm) (POS 's)) (NNP Global) (NNP Spectator))))) (: :)))");
         parseTreeReader = new StringReader(
                 "(TOP (NP (NP (NP (NP (NNP Bear) (NNP Stearns) (POS 's)) (NN chief) (NN economist)) (, ,) (NP (NNP Lawrence) (NNP Kudlow)) (, ,) (PP (IN in) (NP (NP (DT the) (NAC (NNP Sept.) (CD 29)) (NN issue)) (PP (IN of) (NP (NP (DT the) (NN firm) (POS 's)) (NNP Global) (NNP Spectator)))))) (: :)))");
         r = Evalb.eval(goldTreeReader, parseTreeReader);
-        assertEquals(.7500f, r.precision(), .0001f);
-        assertEquals(.8182f, r.recall(), .0001f);
+        assertEquals(.7692f, r.precision(), .0001f);
+        assertEquals(.8333f, r.recall(), .0001f);
 
         goldTreeReader = new StringReader(
                 "(TOP (SINV (`` ``) (NP (NP (NN Rally) (. !)) (NP (NN Rally) (. !)) (NP (NN Rally) (. !))) ('' '') (VP (VBD shouted)) (NP (NNP Shearson) (NN trader) (NNP Andy) (NNP Rosen)) (, ,) (S (VP (VBG selling) (NP (JJR more) (NNP Jaguar) (NNS shares)))) (. .)))");
         parseTreeReader = new StringReader(
                 "(TOP (SINV (`` ``) (FRAG (NP (NNP Rally)) (. !) (NP (NNP Rally)) (. !) (NP (NNP Rally)) (. !)) ('' '') (VP (VBD shouted)) (NP (NNP Shearson) (NN trader) (NNP Andy) (NNP Rosen)) (, ,) (S (VP (VBG selling) (NP (JJR more) (NNP Jaguar) (NNS shares)))) (. .)))");
         r = Evalb.eval(goldTreeReader, parseTreeReader);
-        assertEquals(.9000f, r.precision(), .0001f);
-        assertEquals(.9000f, r.recall(), .0001f);
+        assertEquals(.6364f, r.precision(), .0001f);
+        assertEquals(.6364f, r.recall(), .0001f);
     }
 
     @Test
@@ -116,15 +121,15 @@ public class TestEvalb {
         StringReader parseTreeReader = new StringReader(
                 "(ROOT (S (NP (NNP DD) (NNP Acquisition) (NNP Corp.)) (VP (VBD said) (SBAR (S (NP (PRP it)) (VP (VBD extended) (NP (NP (PRP$ its) (ADJP ($ $) (JJ 45-a-share)) (NN offer)) (PP (IN for) (NP (NP (NNP Dunkin) (POS ')) (NNP Donuts) (NNP Inc.)))) (PP (TO to) (NP (NNP Nov.) (CD 1))) (PP (IN from) (NP (NN yesterday))))))) (. .)))");
         r = Evalb.eval(new StringReader(sentence1419), parseTreeReader);
-        assertEquals(.9412f, r.precision(), .0001f);
+        assertEquals(.9444f, r.precision(), .0001f);
         assertEquals(1.0f, r.recall(), .0001f);
 
         final String sentence92 = "(ROOT (S (S (SBAR (IN That) (S (NP (PRP he)) (VP (VBD was) (NP (DT the) (NNP A) (NNP 's) (JJS winningest) (NN pitcher)) (PP (IN during) (NP (PRP$ its) (NNP American) (NNP League) (NN campaign))) (PP (IN with) (NP (NP (DT a) (CD 21-9) (NN mark)) (, ,) (IN plus) (NP (NP (CD two) (NNS wins)) (PP (IN over) (NP (NNP Toronto))) (PP (IN in) (NP (DT the) (NNS playoffs)))) (, ,)))))) (VP (VBZ indicates) (SBAR (S (NP (PRP he)) (VP (MD may) (VP (VB have) (NP (NP (DT some) (NN evening) (RP up)) (VP (VBG coming))))))))) (, ,) (CC but) (S (PP (IN with) (NP (NP (DT the) (NN way)) (SBAR (S (NP (PRP$ his) (JJ split-fingered) (NN fastball)) (VP (VBZ is) (VP (VBG behaving))))))) (, ,) (NP (IN that)) (VP (MD might) (RB not) (VP (VB be) (NP (DT this) (NN week))))) (. .)))";
         parseTreeReader = new StringReader(
                 "(ROOT (S (S (SBAR (IN That) (S (NP (PRP he)) (VP (VBD was) (NP (NP (DT the) (NNP A) (POS 's)) (JJS winningest) (NN pitcher)) (PP (IN during) (NP (PRP$ its) (NNP American) (NNP League) (NN campaign))) (PP (IN with) (NP (DT a) (JJ 21-9) (NN mark))) (, ,) (PP (CC plus) (NP (NP (CD two) (NNS wins)) (PP (IN over) (NP (NNP Toronto))) (PP (IN in) (NP (DT the) (NNS playoffs)))))))) (, ,) (VP (VBZ indicates) (SBAR (S (NP (PRP he)) (VP (MD may) (VP (VB have) (NP (DT some) (NN evening)) (PP (IN up) (S (VBG coming))))))))) (, ,) (CC but) (S (PP (IN with) (NP (NP (DT the) (NN way)) (SBAR (S (NP (PRP$ his) (JJ split-fingered) (NN fastball)) (VP (VBZ is) (VP (VBG behaving))))))) (, ,) (NP (DT that)) (VP (MD might) (RB not) (VP (VB be) (NP (DT this) (NN week))))) (. .)))");
         r = Evalb.eval(new StringReader(sentence92), parseTreeReader);
-        assertEquals(.8537f, r.precision(), .0001f);
-        assertEquals(.875f, r.recall(), .0001f);
+        assertEquals(.7857f, r.precision(), .0001f);
+        assertEquals(.8049f, r.recall(), .0001f);
     }
 
     @Test
@@ -161,4 +166,28 @@ public class TestEvalb {
         assertEquals(0.0, result.exactMatch(), 0.001);
     }
 
+    /**
+     * Tests evaluating a null (failed) parse.
+     */
+    @Test
+    public void testFailedParse() {
+
+        final String sentence1 = "(ROOT (S (NP (DT The) (NN cat)) (VP (VBD runs)) (. .)))";
+        final String sentence2 = "(ROOT (S (NP (DT The) (NN dog)) (VP (VBD eats)) (. .)))";
+
+        // For a single failed parse, precision and recall should both be 0
+        BracketEvaluator e = new BracketEvaluator();
+        e.evaluate(NaryTree.read(sentence1, String.class), null);
+        EvalbResult result = e.accumulatedResult();
+        assertEquals(0, result.precision(), .0001f);
+        assertEquals(0, result.recall(), .0001f);
+
+        // If 1 parse of 2 failed, recall should be penalized by the failed parse
+        e = new BracketEvaluator();
+        e.evaluate(NaryTree.read(sentence1, String.class), NaryTree.read(sentence1, String.class));
+        e.evaluate(NaryTree.read(sentence2, String.class), null);
+        result = e.accumulatedResult();
+        assertEquals(1f, result.precision(), .0001f);
+        assertEquals(0.5f, result.recall(), .0001f);
+    }
 }

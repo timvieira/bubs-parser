@@ -240,6 +240,14 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
      */
     public final static String OPT_DISC_FEATURE_TEMPLATES = "featureTemplates";
 
+    /**
+     * Configuration property key enabling bracket evaluation of parse failures (i.e., penalizing recall in the event of
+     * a parse failure). We default to ignoring empty parses (and reporting them separately), to match the behavior of
+     * Collins' standard <code>evalb</code> tool. But in some cases, including those failures directly in the F1 measure
+     * is useful. Note: This option is ignored when parsing from input other than gold trees.
+     */
+    public final static String OPT_EVAL_PARSE_FAILURES = "evalParseFailures";
+
     public static void main(final String[] args) {
         run(args);
     }

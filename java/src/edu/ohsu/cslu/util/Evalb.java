@@ -66,7 +66,8 @@ public class Evalb extends BaseCommandlineTool {
 
             final NaryTree<String> goldTree = NaryTree.read(goldLine, String.class);
 
-            // Skip empty trees
+            // Skip empty trees (Note: BracketEvaluator can accumulate the negative score impact of empty and null
+            // parses, but we skip them in the command-line tool to match the behavior of evalb)
             if (parsedLine.equals("()") || parsedLine.equals("")) {
                 continue;
             }
@@ -95,11 +96,27 @@ public class Evalb extends BaseCommandlineTool {
         return evaluator.accumulatedResult();
     }
 
+    /**
+     * Java implementation of bracket evaluation. Used in the {@link Evalb} command-line tool, and embedded directly
+     * into BUBS for on-the-fly evaluation when testing with gold-standard trees.
+     * 
+     * Configurable using an implementation of {@link EvalbConfig}.
+     * 
+     * @author Aaron Dunlop
+     */
     public static class BracketEvaluator {
 
-        private final EvalbConfig config; // Allows customization if we want to evaluate non-English/WSJ trees.
-        private final int minHeight = 3; // Only consider labels above pre-terminals; ignore nodes of height <= 2
-        EvalbResult accumResult = new EvalbResult(); // Accumulated evalb result of all individual trees
+        /**
+         * Alternate configuration (as implemented in evalb using .prm files). Allows customization when evaluating
+         * non-English / WSJ trees.
+         */
+        private final EvalbConfig config;
+
+        /** Only consider phrase-level labels. Ignore nodes of height <= 2 (terminals and pre-terminals) */
+        private final int minHeight = 3;
+
+        /** Accumulated result over all individual trees */
+        EvalbResult accumResult = new EvalbResult();
 
         public BracketEvaluator(final EvalbConfig config) {
             this.config = config;
@@ -109,6 +126,15 @@ public class Evalb extends BaseCommandlineTool {
             this.config = new DefaultConfig();
         }
 
+        /**
+         * Evaluates the <code>parseTree</code> against the gold standard <code>goldTree</code>. Returns the single-tree
+         * evaluation result, and adds that result to the total accumulated result for this {@link BracketEvaluator}
+         * (that accumulated result is available via {@link #accumulatedResult()}).
+         * 
+         * @param goldTree
+         * @param parseTree
+         * @return The single-tree evaluation result
+         */
         public EvalbResult evaluate(final Tree<String> goldTree, final Tree<String> parseTree) {
 
             final Map<String, Integer> goldBrackets = goldTree.removeAll(config.ignoredLabels(), config.ignoreDepth())
@@ -117,36 +143,45 @@ public class Evalb extends BaseCommandlineTool {
 
             // Evaluate tagging accuracy
             final String[] goldPreterminalLabels = goldTree.preterminalLabels();
-            final String[] parsePreterminalLabels = parseTree.preterminalLabels();
-            int matchedTags = 0;
-            for (int i = 0; i < goldPreterminalLabels.length; i++) {
-                if (goldPreterminalLabels[i].equals(parsePreterminalLabels[i])) {
-                    matchedTags++;
+            EvalbResult treeEvalb;
+
+            if (parseTree != null) {
+                final String[] parsePreterminalLabels = parseTree.preterminalLabels();
+                int matchedTags = 0;
+                for (int i = 0; i < goldPreterminalLabels.length; i++) {
+                    if (goldPreterminalLabels[i].equals(parsePreterminalLabels[i])) {
+                        matchedTags++;
+                    }
                 }
+
+                // Ensure all ignored pre-terminals in the gold tree are also properly labeled in the parse tree (so
+                // that
+                // when we remove them, the node indices will match).
+                final Tree<String> parseTreeClone = parseTree.clone();
+                int i = 0;
+                for (final Tree<String> leaf : parseTreeClone.leafTraversal()) {
+                    if (config.ignoredLabels().contains(goldPreterminalLabels[i])
+                            || config.ignoredLabels().contains(leaf.parent().label())) {
+                        leaf.parent().setLabel(goldPreterminalLabels[i]);
+                    }
+                    i++;
+                }
+
+                final Map<String, Integer> parseBrackets = parseTreeClone.removeAll(config.ignoredLabels(),
+                        config.ignoreDepth())
+                        .labeledSpans(minHeight, config.ignoredLabels(), config.equivalentLabels());
+                final int parseBracketCount = totalCount(parseBrackets);
+
+                final int matchedBrackets = intersectionSize(parseBrackets, goldBrackets);
+
+                treeEvalb = new EvalbResult(matchedBrackets, goldBracketCount, parseBracketCount, matchedTags,
+                        goldPreterminalLabels.length);
+            } else {
+                // Handle failed parses
+                treeEvalb = new EvalbResult(0, goldBracketCount, 0, 0, goldPreterminalLabels.length);
             }
 
-            // Ensure all ignored pre-terminals in the gold tree are also properly labeled in the parse tree (so that
-            // when we remove them, the node indices will match).
-            final Tree<String> parseTreeClone = parseTree.clone();
-            int i = 0;
-            for (final Tree<String> leaf : parseTreeClone.leafTraversal()) {
-                if (config.ignoredLabels().contains(goldPreterminalLabels[i])
-                        || config.ignoredLabels().contains(leaf.parent().label())) {
-                    leaf.parent().setLabel(goldPreterminalLabels[i]);
-                }
-                i++;
-            }
-
-            final Map<String, Integer> parseBrackets = parseTreeClone.removeAll(config.ignoredLabels(),
-                    config.ignoreDepth()).labeledSpans(minHeight, config.ignoredLabels(), config.equivalentLabels());
-            final int parseBracketCount = totalCount(parseBrackets);
-
-            final int matchedBrackets = intersectionSize(parseBrackets, goldBrackets);
-
-            final EvalbResult treeEvalb = new EvalbResult(matchedBrackets, goldBracketCount, parseBracketCount,
-                    matchedTags, goldPreterminalLabels.length);
             accumResult.add(treeEvalb);
-
             return treeEvalb;
         }
 
@@ -168,11 +203,18 @@ public class Evalb extends BaseCommandlineTool {
             return count;
         }
 
+        /**
+         * @return The accumulated result of all evaluations performed with this {@link BracketEvaluator}.
+         */
         public EvalbResult accumulatedResult() {
             return accumResult;
         }
     }
 
+    /**
+     * Represents the result of an evaluation run, including bracket counts and match counts. Computes summary scores,
+     * including precision, recall, and F1 (the harmonic mean of P and R)
+     */
     public static class EvalbResult {
         public int matchedBrackets;
         public int goldBrackets;
@@ -204,28 +246,48 @@ public class Evalb extends BaseCommandlineTool {
             this.numTrees = numTrees;
         }
 
+        /**
+         * @return F1, the harmonic mean of precision and recall
+         */
         public double f1() {
             final double precision = precision();
             final double recall = recall();
             return precision + recall == 0 ? 0 : 2 * precision * recall / (precision + recall);
         }
 
+        /**
+         * @return Precision, the percentage of predicted brackets which were observed in the gold tree(s).
+         */
         public double precision() {
             return parseBrackets == 0 ? 0 : matchedBrackets * 1.0 / parseBrackets;
         }
 
+        /**
+         * @return Precision, the percentage of gold brackets which were observed in the parse tree(s).
+         */
         public double recall() {
             return goldBrackets == 0 ? 0 : matchedBrackets * 1.0 / goldBrackets;
         }
 
+        /**
+         * @return The percentage of parse trees which exactly matched the gold trees
+         */
         public double exactMatch() {
             return numTrees == 0 ? 0 : exactMatches * 1.0 / numTrees;
         }
 
+        /**
+         * @return The percentage of preterminals which were correctly predicted.
+         */
         public double taggingAccuracy() {
             return matchedTags == 0 ? 0 : matchedTags * 1.0 / goldTags;
         }
 
+        /**
+         * Adds another result to this instance
+         * 
+         * @param other
+         */
         public void add(final EvalbResult other) {
             matchedBrackets += other.matchedBrackets;
             goldBrackets += other.goldBrackets;
@@ -236,8 +298,17 @@ public class Evalb extends BaseCommandlineTool {
             numTrees += other.numTrees;
         }
 
+        @Override
+        public String toString() {
+            return String.format("%7.2f%7.2f%7.2f%7d%7d%7d\n", recall() * 100, precision() * 100, f1() * 100,
+                    matchedBrackets, goldBrackets, parseBrackets);
+        }
     }
 
+    /**
+     * Implements an alternate configuration, e.g., ignoring certain phrase-level labels, altering the minimum depth,
+     * etc. (as configured via .prm files for Collins' <code>evalb</code>).
+     */
     public static interface EvalbConfig {
 
         /**
@@ -262,6 +333,9 @@ public class Evalb extends BaseCommandlineTool {
         public Map<String, String> equivalentLabels();
     }
 
+    /**
+     * Default configuration, matching the defaults in Collins <code>evalb</code>.
+     */
     public static class DefaultConfig implements EvalbConfig {
 
         @Override

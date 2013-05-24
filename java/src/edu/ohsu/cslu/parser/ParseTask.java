@@ -21,6 +21,7 @@ package edu.ohsu.cslu.parser;
 import java.util.logging.Level;
 
 import cltool4j.BaseLogger;
+import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.datastructs.narytree.HeadPercolationRuleset;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
@@ -301,9 +302,17 @@ public class ParseTask {
     }
 
     public void evaluate(final BracketEvaluator evaluator) {
-        if (inputTree != null && !parseFailed()) {
+
+        // We can only evaluate if parsing from gold trees
+        if (inputTree == null) {
+            return;
+        }
+
+        final NaryTree<String> naryParse = naryParse();
+        if (naryParse != null
+                || GlobalConfigProperties.singleton().getBooleanProperty(ParserDriver.OPT_EVAL_PARSE_FAILURES, false)) {
             try {
-                evalb = evaluator.evaluate(inputTree, naryParse());
+                evalb = evaluator.evaluate(inputTree, naryParse);
             } catch (final Exception e) {
                 BaseLogger.singleton().info("ERROR: input tree " + inputTree + " is ill-formd.  Skipping evaluation.");
                 evalb = null;
