@@ -53,13 +53,13 @@ public class GrammarTrainer extends BaseCommandlineTool {
     @Option(name = "-si", metaVar = "iterations", usage = "EM iterations during smoothing")
     private int emIterationsWithSmoothing = 10;
 
-    @Option(name = "-di", usage = "The number of allowed iterations in which the dev-set likelihood drops.")
+    @Option(name = "-di", metaVar = "iterations", usage = "The number of allowed iterations in which the dev-set likelihood drops.")
     private int maxDroppingLLIterations = 6;
 
-    @Option(name = "-filter", usage = "Filter rules with prob below this threshold")
+    @Option(name = "-mrp", metaVar = "threshold", usage = "Minimum rule probability (rules below this probability will be pruned)")
     private double minRuleProbability = 1.0e-60;
 
-    @Option(name = "-smooth", usage = "Type of grammar smoothing used.")
+    @Option(name = "-smooth", metaVar = "type", usage = "Type of grammar smoothing used.")
     private SmoothingType smooth = SmoothingType.SmoothAcrossParentBits;
 
     @Option(name = "-maxL", metaVar = "words", usage = "Maximum sentence length")
@@ -77,15 +77,13 @@ public class GrammarTrainer extends BaseCommandlineTool {
     @Option(name = "-hor", metaVar = "markovization", usage = "Horizontal Markovization")
     private int horizontalMarkovization = 0;
 
-    @Option(name = "-sub", metaVar = "states", usage = "Number of substates to split")
-    private short nSubStates = 1;
-
     @Option(name = "-lowercase", usage = "Lowercase all words in the treebank")
     private boolean lowercase = false;
 
     @Option(name = "-r", metaVar = "percentage", usage = "Level of Randomness at init")
     private double randomization = 1.0;
 
+    // TODO Use s_0, s_1, and s_2 from LELA
     @Option(name = "-sm1", metaVar = "param", usage = "Lexicon smoothing parameter 1")
     private double smoothingParameter1 = 0.5;
 
@@ -502,7 +500,7 @@ public class GrammarTrainer extends BaseCommandlineTool {
             final List<Tree<String>> validationTrees, final Numberer tagNumberer) {
 
         // first generate unsplit grammar and lexicon
-        final short[] nSub = new short[] { 1, nSubStates };
+        final short[] nSub = new short[] { 1, 1 };
 
         // do the training and validation sets, so that the numberer sees all tags and we can allocate big enough arrays
         // Note: although these variables are never read, this constructors add the validation trees into the
@@ -516,7 +514,7 @@ public class GrammarTrainer extends BaseCommandlineTool {
         StateSetTreeList.initializeTagNumberer(validationTrees, tagNumberer);
 
         final short[] nSubStateArray = new short[tagNumberer.total()];
-        Arrays.fill(nSubStateArray, nSubStates);
+        Arrays.fill(nSubStateArray, (short) 1);
         nSubStateArray[0] = 1; // Start symbol
 
         return nSubStateArray;
