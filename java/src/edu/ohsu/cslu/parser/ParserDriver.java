@@ -551,6 +551,10 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
 
     @Override
     protected void output(final ParseTask parseTask) {
+        // We'll count the sentence even if it failed with an exception (and record it as failed below). However, we
+        // don't currently include the words of such sentences in wordsParsed. That's a bit of an inconsistency, but
+        // it's OK for now.
+        sentencesParsed++;
         if (parseTask != null) {
             final StringBuilder output = new StringBuilder(512);
             output.append(parseTask.parseBracketString(binaryTreeOutput, printUnkLabels, headPercolationRuleset));
@@ -564,7 +568,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
                 output.append(parseTask.statsString());
             }
             System.out.println(output.toString());
-            sentencesParsed++;
             wordsParsed += parseTask.sentenceLength();
             if (parseTask.parseFailed()) {
                 failedParses++;
@@ -573,6 +576,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
             }
             totalReparses += parseTask.reparseStages;
         } else {
+            failedParses++;
             System.out.println("()");
         }
     }
