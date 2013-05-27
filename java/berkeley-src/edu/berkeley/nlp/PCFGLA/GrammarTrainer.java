@@ -57,7 +57,7 @@ public class GrammarTrainer extends BaseCommandlineTool {
     private int maxDroppingLLIterations = 6;
 
     @Option(name = "-mrp", metaVar = "threshold", usage = "Minimum rule probability (rules below this probability will be pruned)")
-    private double minRuleProbability = 1.0e-60;
+    private double minRuleProbability = 1.0e-20;
 
     @Option(name = "-smooth", metaVar = "type", usage = "Type of grammar smoothing used.")
     private SmoothingType smooth = SmoothingType.SmoothAcrossParentBits;
