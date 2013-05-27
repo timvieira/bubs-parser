@@ -103,31 +103,17 @@ public class CompleteClosureModel implements CellSelectorModel {
                     task.inputTree.binarize(task.grammar.grammarFormat, task.grammar.binarization()), classifier)
                     : new CompleteClosureSequence(task.tokens, task.posTags, classifier);
 
-            boolean sentenceCorrectlyClassified = true;
             for (short span = 2; span <= sentenceLength; span++) {
                 for (short start = 0; start < sentenceLength - span + 1; start++) {
 
                     final boolean closed = classifier.classify(sequence,
                             ConstituentBoundaryFeatureExtractor.cellIndex(start, start + span, sentenceLength, true));
 
-                    // TODO Remove after debugging is complete
-                    if (closed
-                            && BaseLogger.singleton().isLoggable(Level.FINER)
-                            && task.inputTree != null
-                            && !sequence.classification(ConstituentBoundaryFeatureExtractor.cellIndex(start, start
-                                    + span, sentenceLength, true))) {
-                        sentenceCorrectlyClassified = false;
-                    }
-
                     if (!closed) {
                         tmpCellIndices.add(start);
                         tmpCellIndices.add((short) (start + span));
                     }
                 }
-            }
-
-            if (!sentenceCorrectlyClassified) {
-                BaseLogger.singleton().finer(String.format("Misclassified sentence of length %d", sentenceLength));
             }
 
             // Populate cellIndices with open cells
