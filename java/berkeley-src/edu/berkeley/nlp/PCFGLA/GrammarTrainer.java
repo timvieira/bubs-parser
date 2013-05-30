@@ -5,6 +5,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
@@ -431,10 +432,11 @@ public class GrammarTrainer extends BaseCommandlineTool {
         final String prefix = outputGrammarDirectory + "/" + outputGrammarPrefix + "_" + cycle + ".gr";
 
         try {
-            // BUBS format (gzipped-text)
+            // BUBS format (gzipped-text, UTF-8 encoded)
             final String gzFilename = prefix + ".gz";
             System.out.println("Saving grammar to " + gzFilename + ".");
-            final Writer w = new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(gzFilename)));
+            final Writer w = new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(gzFilename)),
+                    Charset.forName("UTF-8"));
             w.write(grammar.toString(lexicon.totalRules(minRuleProbability), minRuleProbability, rareWordThreshold,
                     horizontalMarkovization));
             w.write("===== LEXICON =====\n");
