@@ -27,8 +27,12 @@ import edu.ohsu.cslu.parser.ParserDriver;
 
 /**
  * Performs a standard left-to-right, bottom-up traversal, but limited to a specific height (span). After reaching that
- * maximum span, the traversal only considers cells on the left periphery of the chart up to the top cell. In cells
- * above the maximum span and below the top cell, only factored categories are permitted.
+ * maximum span, the traversal only considers cells on the periphery of the chart up to the top cell (the left periphery
+ * for left binarized grammars, and the right for right-binarized).
+ * 
+ * By default, in cells above the maximum span and below the top cell, only factored categories are permitted, but
+ * populating complete categories can be enabled with the configuration option
+ * {@link ParserDriver#OPT_ALLOW_COMPLETE_ABOVE_SPAN_LIMIT}.
  * 
  * @author Aaron Dunlop
  * @since Nov 19, 2012
@@ -73,6 +77,7 @@ public class LimitedSpanTraversalModel implements CellSelectorModel {
             }
 
             if (sentenceLength <= maxSubtreeSpan) {
+                // Normal left-right bottom-up traversal
                 for (short span = 1, i = 0; span <= sentenceLength; span++) {
                     for (short start = 0; start < sentenceLength - span + 1; start++) { // beginning
                         cellIndices[i++] = start;
