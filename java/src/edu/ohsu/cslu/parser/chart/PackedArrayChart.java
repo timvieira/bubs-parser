@@ -195,9 +195,9 @@ public class PackedArrayChart extends ParallelArrayChart {
             }
         };
 
-        // Initialize outside probabilities to 1. If we're doing posterior inference, we'll populate them appropriately;
-        // otherwise, posterior decoding methods will reduce to inside probabilities only.
+        // Initialize outside probabilities to 0.
         this.outsideProbabilities = new float[chartArraySize];
+        Arrays.fill(outsideProbabilities, Float.NEGATIVE_INFINITY);
 
         switch (parseTask.decodeMethod) {
 
@@ -752,7 +752,7 @@ public class PackedArrayChart extends ParallelArrayChart {
                     final int leftEnd = maxLeftChildIndex(leftCellIndex);
 
                     final PackedArrayChartCell rightChildCell = getCell(midpoint, end);
-                    //final int rightCellIndex = rightChildCell.cellIndex;
+                    // final int rightCellIndex = rightChildCell.cellIndex;
 
                     rightChildCell.allocateTemporaryStorage();
                     final float[] rightChildInsideProbabilities = rightChildCell.tmpCell.insideProbabilities;
@@ -1524,9 +1524,8 @@ public class PackedArrayChart extends ParallelArrayChart {
                             maxcVocabulary.getSymbol(maxcUnaryChildren[cellIndex]), maxcScores[cellIndex],
                             maxcMidpoints[cellIndex]));
                 }
+                sb.append('\n');
             }
-
-            sb.append('\n');
 
             if (tmpCell == null) {
                 // Format entries from the main chart array
@@ -1548,8 +1547,8 @@ public class PackedArrayChart extends ParallelArrayChart {
                     if (tmpCell.insideProbabilities[nonTerminal] != Float.NEGATIVE_INFINITY) {
                         final int childProductions = tmpCell.packedChildren[nonTerminal];
                         final float insideProbability = tmpCell.insideProbabilities[nonTerminal];
-                        final float outsideProbability = tmpCell.outsideProbabilities[nonTerminal];
-                        // final float outsideProbability = tmpCell.outsideProbabilities[nonTerminal];
+                        final float outsideProbability = tmpCell.outsideProbabilities != null ? tmpCell.outsideProbabilities[nonTerminal]
+                                : Float.NEGATIVE_INFINITY;
                         final int midpoint = tmpCell.midpoints[nonTerminal];
 
                         sb.append(formatCellEntry(nonTerminal, childProductions, insideProbability, midpoint,
@@ -1563,6 +1562,14 @@ public class PackedArrayChart extends ParallelArrayChart {
         private String formatCellEntry(final int nonterminal, final int childProductions,
                 final float insideProbability, final int midpoint, final float outsideProbability,
                 final boolean formatFractions) {
+
+            // Goodman, SplitSum, and Max-Rule decoding methods don't record children or midpoints
+            if (childProductions == 0) {
+                return formatFractions ? String.format("%s inside=%s outside=%s\n",
+                        sparseMatrixGrammar.nonTermSet.getSymbol(nonterminal), Strings.fraction(insideProbability),
+                        Strings.fraction(outsideProbability)) : String.format("%s inside=%.5f outside=%.5f\n",
+                        sparseMatrixGrammar.nonTermSet.getSymbol(nonterminal), insideProbability, outsideProbability);
+            }
 
             final int leftChild = sparseMatrixGrammar.packingFunction().unpackLeftChild(childProductions);
             final int rightChild = sparseMatrixGrammar.packingFunction().unpackRightChild(childProductions);

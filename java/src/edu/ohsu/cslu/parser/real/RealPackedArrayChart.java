@@ -26,7 +26,6 @@ import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.datastructs.narytree.Tree;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Production;
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Vocabulary;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser;
@@ -361,10 +360,11 @@ public class RealPackedArrayChart extends Chart {
 
     protected static String formatCellEntry(final RealInsideOutsideCscSparseMatrixGrammar g, final int nonterminal,
             final int childProductions, final double insideProbability, final int midpoint,
-            final boolean formatFractions) {
+            final double outsideProbability, final boolean formatFractions) {
 
         if (childProductions == 0 || childProductions == Integer.MIN_VALUE) {
-            return String.format("%s -> ? (%.5f, %d)\n", g.mapNonterminal(nonterminal), insideProbability, midpoint);
+            return String.format("%s -> ? (%.5f, %d) outside=%.5f\n", g.mapNonterminal(nonterminal),
+                    Math.log(insideProbability), midpoint, Math.log(outsideProbability));
         }
 
         final int leftChild = g.packingFunction().unpackLeftChild(childProductions);
@@ -372,15 +372,16 @@ public class RealPackedArrayChart extends Chart {
 
         if (rightChild == Production.UNARY_PRODUCTION) {
             // Unary Production
-            return String.format("%s -> %s (%.10f, %d)\n", g.mapNonterminal(nonterminal), g.mapNonterminal(leftChild),
-                    insideProbability, midpoint);
+            return String.format("%s -> %s (%.5f, %d) outside=%.5f\n", g.mapNonterminal(nonterminal),
+                    g.mapNonterminal(leftChild), Math.log(insideProbability), midpoint, Math.log(outsideProbability));
         } else if (rightChild == Production.LEXICAL_PRODUCTION) {
             // Lexical Production
-            return String.format("%s -> %s (%.10f, %d)\n", g.mapNonterminal(nonterminal), g.mapLexicalEntry(leftChild),
-                    insideProbability, midpoint);
+            return String.format("%s -> %s (%.5f, %d) outside=%.5f\n", g.mapNonterminal(nonterminal),
+                    g.mapLexicalEntry(leftChild), Math.log(insideProbability), midpoint, Math.log(outsideProbability));
         } else {
-            return String.format("%s -> %s %s (%.10f, %d)\n", g.mapNonterminal(nonterminal),
-                    g.mapNonterminal(leftChild), g.mapNonterminal(rightChild), insideProbability, midpoint);
+            return String.format("%s -> %s %s (%.10f, %d) outside=%.5f\n", g.mapNonterminal(nonterminal),
+                    g.mapNonterminal(leftChild), g.mapNonterminal(rightChild), Math.log(insideProbability), midpoint,
+                    Math.log(outsideProbability));
         }
     }
 
@@ -510,7 +511,7 @@ public class RealPackedArrayChart extends Chart {
 
         for (short span = 1; span <= size; span++) {
             for (short start = 0; start < size - span + 1; start++) {
-                final short end = 0;
+                final short end = (short) (start + span);
                 final int cellIndex = cellIndex(start, end);
                 final int offset = offset(cellIndex);
 
@@ -661,9 +662,8 @@ public class RealPackedArrayChart extends Chart {
                 for (short baseNt = 0; baseNt < baseSumProbabilities.length; baseNt++) {
 
                     // Factored non-terminals do not contribute to the final parse tree, so their maxc score is 0
-                    final double g = maxcVocabulary.isFactored(baseNt) ? 0 : Math.exp(baseSumProbabilities[baseNt]
-                            - startSymbolInsideProbability)
-                            - (span > 1 ? lambda : 0);
+                    final double g = maxcVocabulary.isFactored(baseNt) ? 0
+                            : (baseSumProbabilities[baseNt] / startSymbolInsideProbability) - (span > 1 ? lambda : 0);
 
                     // Bias toward recovering unary parents in the case of a tie (e.g., when ROOT and S are tied in the
                     // top cell)
@@ -687,10 +687,8 @@ public class RealPackedArrayChart extends Chart {
                     double bestSplit = Double.NEGATIVE_INFINITY;
 
                     // Search possible midpoints for the largest scaling step (minimum scaling factor). Scaling steps
-                    // are large
-                    // enough that we can reasonably assume that the probability mass of midpoints with smaller scaling
-                    // steps will
-                    // be inconsequential.
+                    // are large enough that we can reasonably assume that the probability mass of midpoints with
+                    // smaller scaling steps will be inconsequential.
                     final int minScalingStep = minInsideScalingStep(start, end);
 
                     for (short midpoint = (short) (start + 1); midpoint < end; midpoint++) {
@@ -999,7 +997,7 @@ public class RealPackedArrayChart extends Chart {
                 if (unaryR[baseParent] == null) {
                     unaryR[baseParent] = new double[maxcVocabulary.size()];
                 }
-                unaryR[baseParent][baseChild] = unaryR[baseParent][baseChild] + jointScore;
+                unaryR[baseParent][baseChild] += jointScore;
             }
         }
 
@@ -1128,6 +1126,10 @@ public class RealPackedArrayChart extends Chart {
      * @return the minimum scaling step over a set of midpoints
      */
     protected int minOutsideScalingStep(final short start, final short end) {
+        if (start == 0 && end == size) {
+            return 0;
+        }
+
         int minScalingStep = Integer.MAX_VALUE;
         for (int parentStart = 0; parentStart < start; parentStart++) {
             final int scalingStep = outsideScalingSteps[cellIndex(parentStart, start)]
@@ -1190,7 +1192,8 @@ public class RealPackedArrayChart extends Chart {
 
             for (short nonTerminal = 0; nonTerminal < tmpCell.insideProbabilities.length; nonTerminal++) {
 
-                if (tmpCell.insideProbabilities[nonTerminal] > 0.0 && tmpCell.outsideProbabilities[nonTerminal] >= 0.0) {
+                if (tmpCell.insideProbabilities[nonTerminal] > 0.0
+                        && (tmpCell.outsideProbabilities == null || tmpCell.outsideProbabilities[nonTerminal] > 0.0)) {
 
                     nonTerminalIndices[nonTerminalOffset] = nonTerminal;
                     insideProbabilities[nonTerminalOffset] = tmpCell.insideProbabilities[nonTerminal];
@@ -1565,7 +1568,7 @@ public class RealPackedArrayChart extends Chart {
                 // allocate outside probability array
                 // this.tmpCell = threadLocalTemporaryCells.get();
                 // this.tmpCell.clear();
-                this.tmpCell = new TemporaryChartCell(grammar);
+                this.tmpCell = new TemporaryChartCell(grammar, allocateOutsideProbabilities);
 
                 // Copy from main chart array to temporary parallel array
                 for (int i = offset; i < offset + numNonTerminals[cellIndex]; i++) {
@@ -1652,9 +1655,8 @@ public class RealPackedArrayChart extends Chart {
                             maxcVocabulary.getSymbol(maxcUnaryChildren[cellIndex]), maxcScores[cellIndex],
                             maxcMidpoints[cellIndex]));
                 }
+                sb.append('\n');
             }
-
-            sb.append('\n');
 
             if (tmpCell == null) {
                 // Format entries from the main chart array
@@ -1691,6 +1693,12 @@ public class RealPackedArrayChart extends Chart {
                 final double insideProbability, final int midpoint, final double outsideProbability,
                 final boolean formatFractions) {
 
+            // Goodman, SplitSum, and Max-Rule decoding don't record children
+            if (childProductions == 0 || childProductions == Integer.MIN_VALUE) {
+                return String.format("%s -> ? (%.5f) outside=%.5f\n", sparseMatrixGrammar.mapNonterminal(nonterminal),
+                        Math.log(insideProbability), Math.log(outsideProbability));
+            }
+
             final int leftChild = sparseMatrixGrammar.packingFunction().unpackLeftChild(childProductions);
             final int rightChild = sparseMatrixGrammar.packingFunction().unpackRightChild(childProductions);
 
@@ -1699,42 +1707,44 @@ public class RealPackedArrayChart extends Chart {
                     // Unary Production
                     return String.format("%s -> %s (%s, %d) outside=%s\n",
                             sparseMatrixGrammar.nonTermSet.getSymbol(nonterminal),
-                            sparseMatrixGrammar.nonTermSet.getSymbol(leftChild), Strings.fraction(insideProbability),
-                            midpoint, Strings.fraction(outsideProbability));
+                            sparseMatrixGrammar.nonTermSet.getSymbol(leftChild),
+                            Strings.fraction(Math.log(insideProbability)), midpoint,
+                            Strings.fraction(Math.log(outsideProbability)));
                 } else if (rightChild == Production.LEXICAL_PRODUCTION) {
                     // Lexical Production
                     return String.format("%s -> %s (%s, %d) outside=%s\n",
                             sparseMatrixGrammar.nonTermSet.getSymbol(nonterminal),
-                            sparseMatrixGrammar.mapLexicalEntry(leftChild), Strings.fraction(insideProbability),
-                            midpoint, Strings.fraction(outsideProbability));
+                            sparseMatrixGrammar.mapLexicalEntry(leftChild),
+                            Strings.fraction(Math.log(insideProbability)), midpoint,
+                            Strings.fraction(Math.log(outsideProbability)));
                 } else {
                     return String.format("%s -> %s %s (%s, %d) outside=%s\n",
                             sparseMatrixGrammar.nonTermSet.getSymbol(nonterminal),
                             sparseMatrixGrammar.nonTermSet.getSymbol(leftChild),
-                            sparseMatrixGrammar.nonTermSet.getSymbol(rightChild), Strings.fraction(insideProbability),
-                            midpoint, Strings.fraction(outsideProbability));
+                            sparseMatrixGrammar.nonTermSet.getSymbol(rightChild),
+                            Strings.fraction(Math.log(insideProbability)), midpoint,
+                            Strings.fraction(Math.log(outsideProbability)));
                 }
             }
 
             if (rightChild == Production.UNARY_PRODUCTION) {
                 // Unary Production
-                return String.format("%s -> %s (%.10f, %d) outside=%.10f\n",
+                return String.format("%s -> %s (%.5f, %d) outside=%.5f\n",
                         sparseMatrixGrammar.nonTermSet.getSymbol(nonterminal),
-                        sparseMatrixGrammar.nonTermSet.getSymbol(leftChild), insideProbability, midpoint,
-                        outsideProbability);
+                        sparseMatrixGrammar.nonTermSet.getSymbol(leftChild), Math.log(insideProbability), midpoint,
+                        Math.log(outsideProbability));
             } else if (rightChild == Production.LEXICAL_PRODUCTION) {
                 // Lexical Production
-                return String
-                        .format("%s -> %s (%.10f, %d) outside=%.10f\n",
-                                sparseMatrixGrammar.nonTermSet.getSymbol(nonterminal),
-                                sparseMatrixGrammar.mapLexicalEntry(leftChild), insideProbability, midpoint,
-                                outsideProbability);
+                return String.format("%s -> %s (%.5f, %d) outside=%.5f\n",
+                        sparseMatrixGrammar.nonTermSet.getSymbol(nonterminal),
+                        sparseMatrixGrammar.mapLexicalEntry(leftChild), Math.log(insideProbability), midpoint,
+                        Math.log(outsideProbability));
             } else {
-                return String.format("%s -> %s %s (%.10f, %d) outside=%.10f\n",
+                return String.format("%s -> %s %s (%.5f, %d) outside=%.5f\n",
                         sparseMatrixGrammar.nonTermSet.getSymbol(nonterminal),
                         sparseMatrixGrammar.nonTermSet.getSymbol(leftChild),
-                        sparseMatrixGrammar.nonTermSet.getSymbol(rightChild), insideProbability, midpoint,
-                        outsideProbability);
+                        sparseMatrixGrammar.nonTermSet.getSymbol(rightChild), Math.log(insideProbability), midpoint,
+                        Math.log(outsideProbability));
             }
         }
 
@@ -1796,41 +1806,44 @@ public class RealPackedArrayChart extends Chart {
         public int insideScalingStep = 0;
         public int outsideScalingStep = 0;
 
-        private final SparseMatrixGrammar sparseMatrixGrammar;
+        private final RealInsideOutsideCscSparseMatrixGrammar sparseMatrixGrammar;
 
-        public TemporaryChartCell(final Grammar grammar) {
+        public TemporaryChartCell(final Grammar grammar, final boolean includeOutsideProbabilities) {
             this.packedChildren = new int[grammar.numNonTerms()];
             this.insideProbabilities = new double[grammar.numNonTerms()];
             this.midpoints = new short[grammar.numNonTerms()];
-            this.sparseMatrixGrammar = grammar instanceof SparseMatrixGrammar ? (SparseMatrixGrammar) grammar : null;
-            this.outsideProbabilities = new double[grammar.numNonTerms()];
+            this.sparseMatrixGrammar = grammar instanceof RealInsideOutsideCscSparseMatrixGrammar ? (RealInsideOutsideCscSparseMatrixGrammar) grammar
+                    : null;
+            this.outsideProbabilities = includeOutsideProbabilities ? new double[grammar.numNonTerms()] : null;
 
             clear();
         }
 
         public void clear() {
             Arrays.fill(insideProbabilities, 0);
-            Arrays.fill(outsideProbabilities, 0);
+            if (outsideProbabilities != null) {
+                Arrays.fill(outsideProbabilities, 0);
+            }
         }
 
-        // @Override
-        // public String toString() {
-        // return toString(false);
-        // }
-        //
-        // public String toString(final boolean formatFractions) {
-        // final StringBuilder sb = new StringBuilder(128);
-        //
-        // for (int nonTerminal = 0; nonTerminal < sparseMatrixGrammar.numNonTerms(); nonTerminal++) {
-        //
-        // if (insideProbabilities[nonTerminal] != 0) {
-        // sb.append(formatCellEntry(nonTerminal, packedChildren[nonTerminal],
-        // insideProbabilities[nonTerminal], midpoints[nonTerminal],
-        // outsideProbabilities[nonTerminal], formatFractions));
-        // }
-        // }
-        //
-        // return sb.toString();
-        // }
+        @Override
+        public String toString() {
+            return toString(false);
+        }
+
+        public String toString(final boolean formatFractions) {
+            final StringBuilder sb = new StringBuilder(128);
+
+            for (int nonTerminal = 0; nonTerminal < sparseMatrixGrammar.numNonTerms(); nonTerminal++) {
+
+                if (insideProbabilities[nonTerminal] != 0) {
+                    sb.append(formatCellEntry(sparseMatrixGrammar, nonTerminal, packedChildren[nonTerminal],
+                            insideProbabilities[nonTerminal], midpoints[nonTerminal],
+                            outsideProbabilities[nonTerminal], formatFractions));
+                }
+            }
+
+            return sb.toString();
+        }
     }
 }

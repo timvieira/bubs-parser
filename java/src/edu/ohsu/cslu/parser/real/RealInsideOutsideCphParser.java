@@ -107,7 +107,7 @@ public class RealInsideOutsideCphParser extends
             this.threadLocalQueueEdges = new ThreadLocal<TemporaryChartCell>() {
                 @Override
                 protected TemporaryChartCell initialValue() {
-                    return new TemporaryChartCell(grammar);
+                    return new TemporaryChartCell(grammar, false);
                 }
             };
 
@@ -200,7 +200,7 @@ public class RealInsideOutsideCphParser extends
                 BaseLogger.singleton().finer(
                         String.format("INFO: stage=%s time=%d success=true", stage.toString(),
                                 System.currentTimeMillis() - stageStartTime));
-                return chart.extractBestParse(grammar.startSymbol);
+                return chart.decode();
             }
             BaseLogger.singleton().finer(
                     String.format("INFO: stage=%s time=%d success=false", stage.toString(), System.currentTimeMillis()
@@ -322,12 +322,7 @@ public class RealInsideOutsideCphParser extends
 
                         final double jointProbability = binaryProbabilities[k] * childProbability;
                         final short parent = binaryRowIndices[k];
-
-                        if (jointProbability > tmpCell.insideProbabilities[parent]) {
-                            tmpCell.packedChildren[parent] = column;
-                            tmpCell.insideProbabilities[parent] = jointProbability;
-                            tmpCell.midpoints[parent] = midpoint;
-                        }
+                        tmpCell.insideProbabilities[parent] += jointProbability;
                     }
                 }
             }
@@ -344,13 +339,12 @@ public class RealInsideOutsideCphParser extends
         // Apply unary rules
         if (exhaustiveSearch) {
             unarySpmv(targetCell);
-            targetCell.finalizeCell();
         } else {
-            // unaryAndPruning finalizes the cell
             unaryAndPruning(targetCell, start, end);
         }
 
         tmpCell.insideScalingStep = IEEEDoubleScaling.scaleArray(tmpCell.insideProbabilities, minScalingStep);
+        targetCell.finalizeCell();
 
         if (collectDetailedStatistics) {
             chart.parseTask.totalPopulatedEdges += targetCell.getNumNTs();
@@ -474,7 +468,7 @@ public class RealInsideOutsideCphParser extends
                     // Outside probability = sum(production probability x parent outside x sibling inside)
                     final double outsideProbability = grammar.cscBinaryProbabilities[k]
                             * parentOutsideProbabilities[parent] * siblingInsideProbability;
-                    outsideProbabilities[entry] = outsideProbability + outsideProbabilities[entry];
+                    outsideProbabilities[entry] += outsideProbability;
                 }
             }
         }
@@ -509,7 +503,7 @@ public class RealInsideOutsideCphParser extends
                     // Outside probability = sum(production probability x parent outside x sibling inside)
                     final double outsideProbability = grammar.cscBinaryProbabilities[k]
                             * parentOutsideProbabilities[parent] * siblingInsideProbability;
-                    outsideProbabilities[entry] = outsideProbability + outsideProbabilities[entry];
+                    outsideProbabilities[entry] += outsideProbability;
                 }
             }
         }
@@ -636,7 +630,6 @@ public class RealInsideOutsideCphParser extends
         } else {
             // General-case unary processing and pruning
             unaryAndPruning(tmpCell, cellBeamWidth, start, end);
-            spvChartCell.finalizeCell();
         }
 
         if (collectDetailedStatistics) {

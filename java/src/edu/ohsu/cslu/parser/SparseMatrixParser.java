@@ -387,8 +387,6 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
     protected final void unaryAndPruning(final TemporaryChartCell tmpCell, final int cellBeamWidth, final short start,
             final short end) {
 
-        final long t0 = collectDetailedStatistics ? System.nanoTime() : 0;
-
         // Ignore factored-only cell constraints in span-1 cells
         final boolean allowUnaries = !cellSelector.hasCellConstraints() || cellSelector.isUnaryOpen(start, end)
                 && !(cellSelector.isCellOnlyFactored(start, end) && (end - start > 1));
@@ -444,6 +442,9 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
 
         } else { // Span >= 2
             for (short nt = 0; nt < grammar.numNonTerms(); nt++) {
+
+                grammar.nonTermSet.getSymbol(nt);
+
                 // Skip edges that don't meet the maximum delta
                 if (tmpCell.insideProbabilities[nt] > minInsideProbability) {
                     final float fom = figureOfMerit.calcFOM(start, end, nt, tmpCell.insideProbabilities[nt]);

@@ -220,6 +220,7 @@ public abstract class ParallelArrayChart extends Chart {
     protected static String formatCellEntry(final SparseMatrixGrammar g, final int nonterminal,
             final int childProductions, final float insideProbability, final int midpoint, final boolean formatFractions) {
 
+        // Goodman, SplitSum, and Max-Rule decoding don't record children
         if (childProductions == 0 || childProductions == Integer.MIN_VALUE) {
             return String.format("%s -> ? (%.5f, %d)\n", g.mapNonterminal(nonterminal), insideProbability, midpoint);
         }
