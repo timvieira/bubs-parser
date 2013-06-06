@@ -287,35 +287,84 @@ public class ConstrainedCphSpmlParser extends SparseMatrixLoopParser<LeftCscSpar
                 }
             }
 
-            // We need to ensure that one or more splits of the constraining unary parent are populated in the target
-            // cell. If not, we must choose one or more such splits; without a principled way to choose between those
-            // splits, we populate _all_ splits matching the constraining edge, assign probability 1 to the sum of those
-            // splits, and divide the probability mass between them. This operation is in effect hallucinating
-            // additional grammar rules. The proper children for those rules is also unknown, so we simply choose the
-            // first populated child in the child cells.
+            // We want to ensure that one or more splits of the constraining unary parent are populated in the target
+            // cell. If the required productions aren't present in the grammar, we'll hallucinate them. Except for the
+            // self-loop case (below) with only a single split of the non-terminal.
             if (!foundMatchingProd) {
 
-                // Find the first populated entry matching the constraining child
-                short child = -1;
+                final ShortList allSplits = baseToSplitMap.get(constrainingParent);
+                if (allSplits.size() == 1) {
+                    // There isn't much we can do in this case - we only have one split of the non-terminal, and we
+                    // can't populate it twice in the unary chain. We'll have to give up and drop entries from the
+                    // chain.
+                    break;
+                }
+
+                // We need to ensure that one or more splits of the constraining unary parent are populated in the
+                // target cell. If not, we must choose one or more such splits; we do so in one of 2 ways
+                //
+                // 1) If all splits of the constraining parent are observed (lower in the unary chain), we remove the
+                // least-probable of those splits from its position in the chain and place it at the current position.
+                //
+                // 2) If one or more splits of the constraining parent are not already present, (lacking a principled
+                // way to choose between those splits), we populate _all_ of them, assign probability 1 to the sum of
+                // those splits, and divide the probability mass between them. This operation is in effect hallucinating
+                // additional grammar rules. The proper children for those rules is also unknown, so we simply choose
+                // the first populated child in the child cells.
+
+                // Find the most probable populated entry matching the constraining child. We'll use that as the child
+                // of the (hallucinated) rule
+                short maxChild = -1;
+                final float maxChildInsideProbability = Float.NEGATIVE_INFINITY;
+
                 for (short nt = 0; nt < tmpCell.insideProbabilities.length; nt++) {
-                    if (tmpCell.insideProbabilities[nt] > Float.NEGATIVE_INFINITY
+
+                    if (tmpCell.insideProbabilities[nt] > maxChildInsideProbability
                             && grammar.nonTermSet.getBaseIndex(nt) == constrainingChild) {
-                        child = nt;
-                        break;
+                        maxChild = nt;
                     }
                 }
 
-                final ShortList splits = baseToSplitMap.get(constrainingParent);
-                final float probability = (float) Math.log(1.0 / splits.size());
+                final ShortList observedParentSplits = new ShortArrayList();
+                final float minParentInsideProbability = Float.POSITIVE_INFINITY;
+                short minParentSplit = -1;
+                for (short nt = 0; nt < tmpCell.insideProbabilities.length; nt++) {
 
-                for (final short parent : splits) {
-                    // Our chart structure can't handle unary self-loops, so don't reinsert a parent that is already a
-                    // unary for this cell. We'll just end up missing those unary productions.
-                    if (tmpCell.midpoints[parent] != end) {
-                        tmpCell.insideProbabilities[parent] = probability;
-                        tmpCell.packedChildren[parent] = packingFunction.packUnary(child);
-                        tmpCell.midpoints[parent] = end;
+                    if (tmpCell.insideProbabilities[nt] > Float.NEGATIVE_INFINITY
+                            && grammar.nonTermSet.getBaseIndex(nt) == constrainingParent) {
+                        observedParentSplits.add(nt);
+
+                        if (tmpCell.insideProbabilities[nt] < minParentInsideProbability) {
+                            minParentSplit = nt;
+                        }
                     }
+                }
+
+                ShortList chosenParentSplits = null;
+                float parentProbability = Float.NEGATIVE_INFINITY;
+
+                if (observedParentSplits.size() == allSplits.size()) {
+                    // All splits of the constraining parent are already populated. Choose the least-probable, and use
+                    // it as the parent
+                    chosenParentSplits = new ShortArrayList(new short[] { minParentSplit });
+                    parentProbability = maxChildInsideProbability;
+
+                } else {
+                    // Divide up the probability mass between the unobserved parent splits
+                    chosenParentSplits = new ShortArrayList();
+                    for (final short parent : allSplits) {
+                        if (!observedParentSplits.contains(parent)) {
+                            chosenParentSplits.add(parent);
+                        }
+                    }
+                    parentProbability = maxChildInsideProbability
+                            + (float) Math.log(1.0 / (allSplits.size() - observedParentSplits.size()));
+                }
+
+                for (final short parent : chosenParentSplits) {
+                    tmpCell.insideProbabilities[parent] = parentProbability;
+                    tmpCell.packedChildren[parent] = packingFunction.packUnary(maxChild);
+                    tmpCell.midpoints[parent] = end;
                 }
             }
         }
