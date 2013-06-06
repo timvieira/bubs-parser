@@ -72,6 +72,7 @@ import edu.ohsu.cslu.parser.fom.BoundaryPosModel;
 import edu.ohsu.cslu.parser.fom.FigureOfMeritModel;
 import edu.ohsu.cslu.parser.fom.FigureOfMeritModel.FOMType;
 import edu.ohsu.cslu.parser.fom.InsideProb;
+import edu.ohsu.cslu.parser.real.RealInsideOutsideCscSparseMatrixGrammar;
 import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser;
 import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.PackingFunctionType;
 import edu.ohsu.cslu.util.Evalb.BracketEvaluator;
@@ -497,6 +498,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
             // Don't restrict the beam for constrained parsing
             GlobalConfigProperties.singleton().setProperty(Parser.PROPERTY_MAX_BEAM_WIDTH, "0");
             return new LeftCscSparseMatrixGrammar(grammarFile, LeftShiftFunction.class);
+
+        case RealInsideOutsideCartesianProductHash:
+            return new RealInsideOutsideCscSparseMatrixGrammar(grammarFile);
 
         default:
             throw new IllegalArgumentException("Unsupported parser type: " + parserType);

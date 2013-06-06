@@ -1044,7 +1044,7 @@ public class RealInsideOutsideCscSparseMatrixGrammar extends Grammar {
     }
 
     /**
-     * Returns the log probability of a lexical rule.
+     * Returns the probability of a lexical rule.
      * 
      * @param parent
      * @param child
@@ -1053,7 +1053,6 @@ public class RealInsideOutsideCscSparseMatrixGrammar extends Grammar {
     public double lexicalProbability(final short parent, final int child) {
         final int i = Arrays.binarySearch(lexicalParents(child), parent);
         return (i < 0) ? UNSEEN_LEX_PROB : lexicalProbabilities[child][i];
-        // return lexicalLogProbabilityMaps[child].get((short) parent);
     }
 
     /**

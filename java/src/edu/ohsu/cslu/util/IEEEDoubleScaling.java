@@ -1,9 +1,9 @@
 package edu.ohsu.cslu.util;
 
 /**
- * Provides a scaling system, to avoid numeric overflow and underflow with IEEE 64-bit double precision floating-point
- * numbers. Scales the actual value by a series of (large) constants, effectively expanding the exponent beyond its
- * normal minimum of approximately -307 (equivalent to e^-709).
+ * Provides a scaling system, to avoid numeric overflow and underflow with positive IEEE 64-bit double precision
+ * floating-point numbers. Scales the actual value by a series of (large) constants, effectively expanding the exponent
+ * beyond its normal minimum of approximately -307 (equivalent to e^-709).
  * 
  * Scaling is performed in steps of fixed size <i>s</i> (Defined by {@link #SCALE1}), and ensures that the final
  * (scaled) value remains between <i>1/s</i> and <i<s</i>.
@@ -25,11 +25,11 @@ public class IEEEDoubleScaling {
 
     // Precompute constants for the most common scaling factors
     static final double SCALE1 = java.lang.Math.exp(LN_S);
-    private static final double SCALE2 = SCALE1 * SCALE1;
-    private static final double SCALE3 = SCALE1 * SCALE1 * SCALE1;
-    private static final double SCALE_1 = 1 / SCALE1;
-    private static final double SCALE_2 = 1 / SCALE1 / SCALE1;
-    private static final double SCALE_3 = 1 / SCALE1 / SCALE1 / SCALE1;
+    static final double SCALE2 = SCALE1 * SCALE1;
+    static final double SCALE3 = SCALE1 * SCALE1 * SCALE1;
+    static final double SCALE_1 = 1 / SCALE1;
+    static final double SCALE_2 = 1 / SCALE1 / SCALE1;
+    static final double SCALE_3 = 1 / SCALE1 / SCALE1 / SCALE1;
 
     private static final double LOG_SCALE1 = java.lang.Math.log(SCALE1);
 
@@ -59,6 +59,17 @@ public class IEEEDoubleScaling {
         default:
             return java.lang.Math.pow(SCALE1, scaleStep);
         }
+    }
+
+    /**
+     * Returns the real-valued probability represented by a scaled score
+     * 
+     * @param scaledScore
+     * @param scaleStep
+     * @return the log probability represented by a scaled score
+     */
+    public static double unscale(final double scaledScore, final int scaleStep) {
+        return scaleStep == 0 ? scaledScore : scaledScore * scalingMultiplier(scaleStep);
     }
 
     /**
@@ -113,15 +124,11 @@ public class IEEEDoubleScaling {
             final int previousScaleStep, double max) {
 
         // If max is between 1/SCALE1 and SCALE1, we're fine
-        if (max > SCALE_1 && max < SCALE1) {
+        if (max == 0 || (max > SCALE_1 && max < SCALE1)) {
             return previousScaleStep;
         }
 
-        if (max == 0) {
-            return previousScaleStep;
-        }
-
-        if (max == Double.POSITIVE_INFINITY) {
+        if (max == Double.POSITIVE_INFINITY || max == Double.NEGATIVE_INFINITY) {
             return 0;
         }
 

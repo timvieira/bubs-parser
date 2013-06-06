@@ -63,4 +63,21 @@ public class TestIEEEDoubleScaling {
         assertEquals(java.lang.Math.log(score) + IEEEDoubleScaling.LN_S * 5, IEEEDoubleScaling.logLikelihood(score, 5),
                 .01);
     }
+
+    @Test
+    public void testUnscale() {
+
+        final double score = 1e-10;
+        assertEquals(score, IEEEDoubleScaling.unscale(score, 0), .01);
+
+        assertEquals(score / IEEEDoubleScaling.SCALE1, IEEEDoubleScaling.unscale(score, -1), 1e-20);
+        assertEquals(score / IEEEDoubleScaling.SCALE2, IEEEDoubleScaling.unscale(score, -2), 1e-20);
+        assertEquals(score / IEEEDoubleScaling.SCALE3 / IEEEDoubleScaling.SCALE2, IEEEDoubleScaling.unscale(score, -5),
+                1e-20);
+
+        assertEquals(score * IEEEDoubleScaling.SCALE1, IEEEDoubleScaling.unscale(score, 1), 1e20);
+        assertEquals(score * IEEEDoubleScaling.SCALE2, IEEEDoubleScaling.unscale(score, 2), 1e70);
+        assertEquals(score * IEEEDoubleScaling.SCALE3 * IEEEDoubleScaling.SCALE2, IEEEDoubleScaling.unscale(score, 5),
+                1e200);
+    }
 }

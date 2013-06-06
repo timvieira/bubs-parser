@@ -61,6 +61,7 @@ import edu.ohsu.cslu.parser.ml.InsideOutsideCphSpmlParser;
 import edu.ohsu.cslu.parser.ml.LeftChildLoopSpmlParser;
 import edu.ohsu.cslu.parser.ml.RightChildLoopSpmlParser;
 import edu.ohsu.cslu.parser.ml.ViterbiInOutCphSpmlParser;
+import edu.ohsu.cslu.parser.real.RealInsideOutsideCphParser;
 import edu.ohsu.cslu.parser.spmv.CscSpmvParser;
 import edu.ohsu.cslu.parser.spmv.CsrSpmvParser;
 import edu.ohsu.cslu.parser.spmv.GrammarParallelCscSpmvParser;
@@ -271,6 +272,7 @@ public abstract class Parser<G extends Grammar> {
         CartesianProductHashMl(CartesianProductHashSpmlParser.class.getName(), "cph"),
         CartesianProductLeftChildHashMl(CartesianProductLeftChildHashSpmlParser.class.getName(), "cplch"),
         InsideOutsideCartesianProductHash(InsideOutsideCphSpmlParser.class.getName(), "iocph"),
+        RealInsideOutsideCartesianProductHash(RealInsideOutsideCphParser.class.getName(), "realio"),
         ViterbiInOutCph(ViterbiInOutCphSpmlParser.class.getName(), "vitio"),
         ConstrainedCartesianProductHashMl(ConstrainedCphSpmlParser.class.getName(), ConstrainedCellSelector.MODEL,
                 "const");

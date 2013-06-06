@@ -244,6 +244,17 @@ public class TestRealInsideOutsideCphParser {
     }
 
     @Test
+    public void testSentence2Goodman() throws Exception {
+        final ParserDriver opts = new ParserDriver();
+        opts.decodeMethod = DecodeMethod.Goodman;
+        opts.fomModel = new InsideProb();
+        parser = new RealInsideOutsideCphParser(opts, grammar);
+        assertEquals(
+                "(ROOT (S (NP (DT The) (ADJP (RBS most) (JJ troublesome)) (NN report)) (VP (MD may) (VP (VB be) (NP (DT the) (NNP August) (NN merchandise) (NN trade) (NN deficit)) (JJ due) (PP (IN out) (NP (NN tomorrow))))) (. .)))",
+                parser.parseSentence(sentences.get(1)[0]).parseBracketString(false));
+    }
+
+    @Test
     public void testSentence2MaxRuleProd() throws Exception {
         final ParserDriver opts = new ParserDriver();
         opts.decodeMethod = DecodeMethod.MaxRuleProd;

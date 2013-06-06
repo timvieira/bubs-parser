@@ -284,7 +284,7 @@ public class RealInsideOutsideCphParser extends
         // Search possible midpoints for the largest scaling step (minimum scaling factor). Scaling steps are large
         // enough that we can reasonably assume that the probability mass of midpoints with smaller scaling steps will
         // be inconsequential.
-        final int minScalingStep = chart.minInsideScalingStep(start, end);
+        final int maxScalingStep = chart.maxInsideScalingStep(start, end);
 
         // Iterate over all possible midpoints
         for (short midpoint = (short) (start + 1); midpoint <= end - 1; midpoint++) {
@@ -292,11 +292,11 @@ public class RealInsideOutsideCphParser extends
             final int leftCellIndex = chart.cellIndex(start, midpoint);
             final int rightCellIndex = chart.cellIndex(midpoint, end);
 
-            // Skip midpoints with scaling steps that won't contribute meaningfully to the total probability mass
+            // TODO Skip midpoints with scaling steps that won't contribute meaningfully to the total probability mass
             final int scalingStep = chart.insideScalingSteps[leftCellIndex] + chart.insideScalingSteps[rightCellIndex];
-            if (scalingStep > minScalingStep) {
-                continue;
-            }
+            // if (scalingStep < maxScalingStep - 1) {
+            // continue;
+            // }
 
             // Iterate over children in the left child cell
             final int leftStart = chart.minLeftChildIndex(leftCellIndex);
@@ -316,7 +316,8 @@ public class RealInsideOutsideCphParser extends
                         continue;
                     }
 
-                    final double childProbability = leftProbability * chart.insideProbabilities[j];
+                    final double childProbability = IEEEDoubleScaling.scalingMultiplier(scalingStep - maxScalingStep)
+                            * leftProbability * chart.insideProbabilities[j];
 
                     for (int k = binaryColumnOffsets[column]; k < binaryColumnOffsets[column + 1]; k++) {
 
@@ -343,7 +344,8 @@ public class RealInsideOutsideCphParser extends
             unaryAndPruning(targetCell, start, end);
         }
 
-        tmpCell.insideScalingStep = IEEEDoubleScaling.scaleArray(tmpCell.insideProbabilities, minScalingStep);
+        tmpCell.insideScalingStep = IEEEDoubleScaling.scaleArray(tmpCell.insideProbabilities, maxScalingStep);
+        targetCell.toString();
         targetCell.finalizeCell();
 
         if (collectDetailedStatistics) {
@@ -365,10 +367,9 @@ public class RealInsideOutsideCphParser extends
         }
 
         // Search possible sibling/parent-cell combinations for the largest scaling step (minimum scaling factor).
-        // Scaling steps are large
-        // enough that we can reasonably assume that the probability mass of siblings with smaller scaling steps will
-        // be inconsequential.
-        final int minScalingStep = chart.minOutsideScalingStep(start, end);
+        // Scaling steps are large enough that we can reasonably assume that the probability mass of siblings with
+        // smaller scaling steps will be inconsequential.
+        final int maxScalingStep = chart.maxOutsideScalingStep(start, end);
 
         // Left-side siblings first
 
@@ -380,21 +381,21 @@ public class RealInsideOutsideCphParser extends
             // Sibling (left) cell
             final int siblingCellIndex = chart.cellIndex(parentStart, start);
 
-            // Skip midpoints with scaling steps that won't contribute meaningfully to the total probability mass
             final int scalingStep = chart.outsideScalingSteps[parentCell.cellIndex]
-                    + chart.outsideScalingSteps[siblingCellIndex];
-            if (scalingStep > minScalingStep) {
-                continue;
-            }
+                    + chart.insideScalingSteps[siblingCellIndex];
+            // if (scalingStep < maxScalingStep) {
+            // // Skip midpoints with scaling steps that won't contribute meaningfully to the total probability mass
+            // continue;
+            // }
 
             parentCell.allocateTemporaryStorage(true, true);
             final double[] parentOutsideProbabilities = parentCell.tmpCell.outsideProbabilities;
-
             final int siblingStartIndex = chart.minLeftChildIndex(siblingCellIndex);
             final int siblingEndIndex = chart.maxLeftChildIndex(siblingCellIndex);
 
             computeLeftSiblingOutsideProbabilities(cell.tmpCell.outsideProbabilities, cell.minRightChildIndex(),
-                    cell.maxRightChildIndex(), siblingStartIndex, siblingEndIndex, parentOutsideProbabilities);
+                    cell.maxRightChildIndex(), siblingStartIndex, siblingEndIndex, parentOutsideProbabilities,
+                    IEEEDoubleScaling.scalingMultiplier(scalingStep - maxScalingStep));
         }
 
         // Right-side siblings
@@ -409,10 +410,10 @@ public class RealInsideOutsideCphParser extends
 
             // Skip midpoints with scaling steps that won't contribute meaningfully to the total probability mass
             final int scalingStep = chart.outsideScalingSteps[parentCell.cellIndex]
-                    + chart.outsideScalingSteps[siblingCellIndex];
-            if (scalingStep > minScalingStep) {
-                continue;
-            }
+                    + chart.insideScalingSteps[siblingCellIndex];
+            // if (scalingStep < maxScalingStep) {
+            // continue;
+            // }
 
             parentCell.allocateTemporaryStorage(true, true);
             final double[] parentOutsideProbabilities = parentCell.tmpCell.outsideProbabilities;
@@ -421,7 +422,8 @@ public class RealInsideOutsideCphParser extends
             final int siblingEndIndex = chart.maxRightChildIndex(siblingCellIndex);
 
             computeRightSiblingOutsideProbabilities(cell.tmpCell.outsideProbabilities, cell.minLeftChildIndex(),
-                    cell.maxLeftChildIndex(), siblingStartIndex, siblingEndIndex, parentOutsideProbabilities);
+                    cell.maxLeftChildIndex(), siblingStartIndex, siblingEndIndex, parentOutsideProbabilities,
+                    IEEEDoubleScaling.scalingMultiplier(scalingStep - maxScalingStep));
         }
 
         // Unary outside probabilities
@@ -435,19 +437,20 @@ public class RealInsideOutsideCphParser extends
         }
 
         cell.tmpCell.outsideScalingStep = IEEEDoubleScaling.scaleArray(cell.tmpCell.outsideProbabilities,
-                minScalingStep);
+                maxScalingStep);
         cell.finalizeCell();
     }
 
     private void computeLeftSiblingOutsideProbabilities(final double[] outsideProbabilities, final int targetStart,
-            final int targetEnd, final int siblingStart, final int siblingEnd, final double[] parentOutsideProbabilities) {
+            final int targetEnd, final int siblingStart, final int siblingEnd,
+            final double[] parentOutsideProbabilities, final double scalingMultiplier) {
 
         final PackingFunction pf = grammar.packingFunction();
 
         // Iterate over entries in the left sibling cell
         for (int i = siblingStart; i <= siblingEnd; i++) {
             final short leftSibling = chart.nonTerminalIndices[i];
-            final double siblingInsideProbability = chart.insideProbabilities[i];
+            final double scaledSiblingInsideProbability = chart.insideProbabilities[i] * scalingMultiplier;
 
             // And over entries in the target cell
             for (int j = targetStart; j <= targetEnd; j++) {
@@ -467,7 +470,7 @@ public class RealInsideOutsideCphParser extends
 
                     // Outside probability = sum(production probability x parent outside x sibling inside)
                     final double outsideProbability = grammar.cscBinaryProbabilities[k]
-                            * parentOutsideProbabilities[parent] * siblingInsideProbability;
+                            * parentOutsideProbabilities[parent] * scaledSiblingInsideProbability;
                     outsideProbabilities[entry] += outsideProbability;
                 }
             }
@@ -475,14 +478,15 @@ public class RealInsideOutsideCphParser extends
     }
 
     private void computeRightSiblingOutsideProbabilities(final double[] outsideProbabilities, final int targetStart,
-            final int targetEnd, final int siblingStart, final int siblingEnd, final double[] parentOutsideProbabilities) {
+            final int targetEnd, final int siblingStart, final int siblingEnd,
+            final double[] parentOutsideProbabilities, final double scalingMultiplier) {
 
         final PackingFunction pf = grammar.packingFunction();
 
         // Iterate over entries in the left sibling cell
         for (int i = siblingStart; i <= siblingEnd; i++) {
             final short rightSibling = chart.nonTerminalIndices[i];
-            final double siblingInsideProbability = chart.insideProbabilities[i];
+            final double scaledSiblingInsideProbability = chart.insideProbabilities[i] * scalingMultiplier;
 
             // And over entries in the target cell
             for (int j = targetStart; j <= targetEnd; j++) {
@@ -502,7 +506,7 @@ public class RealInsideOutsideCphParser extends
 
                     // Outside probability = sum(production probability x parent outside x sibling inside)
                     final double outsideProbability = grammar.cscBinaryProbabilities[k]
-                            * parentOutsideProbabilities[parent] * siblingInsideProbability;
+                            * parentOutsideProbabilities[parent] * scaledSiblingInsideProbability;
                     outsideProbabilities[entry] += outsideProbability;
                 }
             }
@@ -585,111 +589,79 @@ public class RealInsideOutsideCphParser extends
         }
     }
 
-    protected void unaryAndPruning(final RealPackedArrayChartCell spvChartCell, final short start, final short end) {
+    protected final void unaryAndPruning(final RealPackedArrayChart.RealPackedArrayChartCell spvChartCell,
+            final short start, final short end) {
 
         final long t0 = collectDetailedStatistics ? System.nanoTime() : 0;
 
-        final TemporaryChartCell tmpCell = spvChartCell.tmpCell;
-
-        final int cellBeamWidth = Math.min(cellSelector.getBeamWidth(start, end),
-                (end - start == 1 ? lexicalRowBeamWidth : beamWidth));
-        if (cellBeamWidth == 1) {
-            // Special-case when we are pruning down to only a single entry. We can't add any unary productions, so just
-            // choose the NT with the maximum FOM.
-            float maxFom = Float.NEGATIVE_INFINITY;
-            short maxNt = -1;
-            if (end - start == 1) { // Lexical Row (span = 1)
-                for (short nt = 0; nt < tmpCell.insideProbabilities.length; nt++) {
-                    // TODO It's not really efficient to always have to do this logarithm, but we do all FOM
-                    // calculations in the log domain. We could implement separate real-domain FOM models, but that adds
-                    // a lot of work, and probably won't materially impact the basic trials.
-                    final float fom = figureOfMerit.calcLexicalFOM(start, end, nt, (float) IEEEDoubleScaling
-                            .logLikelihood(tmpCell.insideProbabilities[nt], tmpCell.insideScalingStep));
-                    if (fom > maxFom) {
-                        maxFom = fom;
-                        maxNt = nt;
-                    }
-                }
-            } else {
-                for (short nt = 0; nt < tmpCell.insideProbabilities.length; nt++) {
-                    final float fom = figureOfMerit.calcFOM(start, end, nt,
-                            (float) java.lang.Math.log(tmpCell.insideProbabilities[nt]));
-                    if (fom > maxFom) {
-                        maxFom = fom;
-                        maxNt = nt;
-                    }
-                }
-            }
-            if (maxNt >= 0) {
-                spvChartCell.finalizeCell(maxNt, tmpCell.insideProbabilities[maxNt], tmpCell.packedChildren[maxNt],
-                        tmpCell.midpoints[maxNt]);
-            } else {
-                spvChartCell.finalizeEmptyCell();
-            }
-
-        } else {
-            // General-case unary processing and pruning
-            unaryAndPruning(tmpCell, cellBeamWidth, start, end);
-        }
-
-        if (collectDetailedStatistics) {
-            chart.parseTask.unaryAndPruningNs += System.nanoTime() - t0;
-        }
-    }
-
-    protected final void unaryAndPruning(final TemporaryChartCell tmpCell, final int cellBeamWidth, final short start,
-            final short end) {
-
-        // Ignore factored-only cell constraints in span-1 cells
-        final boolean allowUnaries = !cellSelector.hasCellConstraints() || cellSelector.isUnaryOpen(start, end)
-                && !(cellSelector.isCellOnlyFactored(start, end) && (end - start > 1));
-        final double minInsideProbability = edu.ohsu.cslu.util.Math.doubleMax(tmpCell.insideProbabilities)
+        // For the moment, at least, we ignore factored-only cell constraints in span-1 cells
+        final boolean factoredOnly = cellSelector.hasCellConstraints() && cellSelector.isCellOnlyFactored(start, end)
+                && (end - start > 1);
+        final boolean allowUnaries = !cellSelector.hasCellConstraints() || cellSelector.isUnaryOpen(start, end);
+        final double minInsideProbability = edu.ohsu.cslu.util.Math.doubleMax(spvChartCell.tmpCell.insideProbabilities)
                 * java.lang.Math.exp(-maxLocalDelta);
 
-        /*
-         * Populate the chart cell with the most probable n edges (n = beamWidth).
-         * 
-         * This operation depends on 3 data structures:
-         * 
-         * A) The temporary edge storage already populated with binary inside probabilities and (viterbi) backpointers
-         * 
-         * B) A bounded priority queue of non-terminal indices, prioritized by their figure-of-merit scores (q)
-         * 
-         * C) A parallel array of edges. We will pop a limited number of edges off the priority queue into this array,
-         * so this storage represents the actual cell population. (parallel array in tmpCell)
-         * 
-         * First, we push all binary edges onto the priority queue (if we're pruning significantly, most will not make
-         * the queue). We then begin popping edges off the queue. With each edge popped, we 1) Add the edge to the array
-         * of cell edges (C); and 2) Iterate through unary grammar rules with the edge parent as a child, inserting any
-         * resulting unary edges to the queue. This insertion replaces the existing queue entry for the parent
-         * non-terminal, if greater, and updates the inside probability and backpointer in (A).
-         */
-
-        // Push all binary or lexical edges onto a bounded priority queue
+        // We will push all binary or lexical edges onto a bounded priority queue, and then (if unaries are allowed),
+        // add those edges as well.
+        final int cellBeamWidth = (end - start == 1 ? lexicalRowBeamWidth : java.lang.Math.min(
+                cellSelector.getBeamWidth(start, end), beamWidth));
         final BoundedPriorityQueue q = threadLocalBoundedPriorityQueue.get();
         q.clear(cellBeamWidth);
 
-        // Packed children and probabilities currently on the queue. Initially copied from cell temporary storage, but
-        // updated as unaries are pushed onto the queue
-        final TemporaryChartCell queueEdges = threadLocalQueueEdges.get();
+        final double[] maxInsideProbabilities = new double[grammar.numNonTerms()];
+        System.arraycopy(spvChartCell.tmpCell.insideProbabilities, 0, maxInsideProbabilities, 0,
+                maxInsideProbabilities.length);
 
+        // If unaries are allowed in this cell, compute unary probabilities for all possible parents
+        if (!factoredOnly && allowUnaries) {
+            final double[] unaryInsideProbabilities = new double[grammar.numNonTerms()];
+            Arrays.fill(unaryInsideProbabilities, 0);
+            final double[] viterbiUnaryInsideProbabilities = new double[grammar.numNonTerms()];
+            Arrays.fill(viterbiUnaryInsideProbabilities, 0);
+            final int[] viterbiUnaryPackedChildren = new int[grammar.numNonTerms()];
+
+            for (short child = 0; child < grammar.numNonTerms(); child++) {
+                final double insideProbability = spvChartCell.tmpCell.insideProbabilities[child];
+                if (insideProbability == 0) {
+                    continue;
+                }
+
+                // Iterate over possible parents of the child (rows with non-zero entries)
+                for (int i = grammar.cscUnaryColumnOffsets[child]; i < grammar.cscUnaryColumnOffsets[child + 1]; i++) {
+
+                    final double unaryProbability = grammar.cscUnaryProbabilities[i] * insideProbability;
+                    final short parent = grammar.cscUnaryRowIndices[i];
+
+                    unaryInsideProbabilities[parent] += unaryProbability;
+
+                    if (unaryProbability > viterbiUnaryInsideProbabilities[parent]) {
+                        viterbiUnaryInsideProbabilities[parent] = unaryProbability;
+                        viterbiUnaryPackedChildren[parent] = grammar.packingFunction.packUnary(child);
+                    }
+                }
+            }
+
+            // Retain the greater of the binary and unary inside probabilities and the appropriate backpointer (biasing
+            // toward recovering unaries in the case of a tie)
+            for (short nt = 0; nt < grammar.numNonTerms(); nt++) {
+                if (unaryInsideProbabilities[nt] >= maxInsideProbabilities[nt]) {
+                    maxInsideProbabilities[nt] = unaryInsideProbabilities[nt];
+                    spvChartCell.tmpCell.packedChildren[nt] = viterbiUnaryPackedChildren[nt];
+                }
+            }
+        }
+
+        // Push all observed edges (binary, unary, or lexical) onto a bounded priority queue
         if (end - start == 1) { // Lexical Row (span = 1)
 
             // Limit the queue to the number of non-unary productions allowed
             q.setMaxSize(lexicalRowBeamWidth - lexicalRowUnaries);
 
             for (short nt = 0; nt < grammar.numNonTerms(); nt++) {
-                // Skip edges that don't meet the maximum delta
-                if (tmpCell.insideProbabilities[nt] > minInsideProbability) {
-
-                    final float fom = figureOfMerit.calcLexicalFOM(start, end, nt, (float) IEEEDoubleScaling
-                            .logLikelihood(tmpCell.insideProbabilities[nt], tmpCell.insideScalingStep));
-                    // Skip storing edges that didn't make it into the bounded queue
-                    if (q.insert(nt, fom)) {
-                        queueEdges.packedChildren[nt] = tmpCell.packedChildren[nt];
-                        queueEdges.insideProbabilities[nt] = tmpCell.insideProbabilities[nt];
-                        queueEdges.midpoints[nt] = tmpCell.midpoints[nt];
-                    }
+                if (maxInsideProbabilities[nt] > minInsideProbability) {
+                    final float fom = figureOfMerit.calcLexicalFOM(start, end, nt,
+                            (float) java.lang.Math.log(maxInsideProbabilities[nt]));
+                    q.insert(nt, fom);
                 }
             }
             // Now that all lexical productions are on the queue, expand it a bit to allow space for unary productions
@@ -697,90 +669,27 @@ public class RealInsideOutsideCphParser extends
 
         } else { // Span >= 2
             for (short nt = 0; nt < grammar.numNonTerms(); nt++) {
-                // Skip edges that don't meet the maximum delta
-                if (tmpCell.insideProbabilities[nt] > minInsideProbability) {
+                if (maxInsideProbabilities[nt] > minInsideProbability) {
                     final float fom = figureOfMerit.calcFOM(start, end, nt,
-                            (float) java.lang.Math.log(tmpCell.insideProbabilities[nt]));
-                    // Skip storing edges that didn't make it into the bounded queue
-                    if (q.insert(nt, fom)) {
-                        queueEdges.packedChildren[nt] = tmpCell.packedChildren[nt];
-                        queueEdges.insideProbabilities[nt] = tmpCell.insideProbabilities[nt];
-                        queueEdges.midpoints[nt] = tmpCell.midpoints[nt];
-                    }
+                            (float) java.lang.Math.log(maxInsideProbabilities[nt]));
+                    q.insert(nt, fom);
                 }
             }
         }
 
-        if (q.size() == 0) {
-            return;
-        }
+        Arrays.fill(spvChartCell.tmpCell.insideProbabilities, 0.0);
 
-        // FOM of each non-terminal populated in the cell (i.e., each NT which survived pruning and was popped from the
-        // queue). Parallel array to the temporary storage arrays in the chart cell which only store inside probability.
-        final float[] cellFoms = threadLocalTmpFoms.get();
-        Arrays.fill(cellFoms, Float.NEGATIVE_INFINITY);
-
-        // Clear out the temporary cell. We've stored copies of all edges which made it onto the queue.
-        Arrays.fill(tmpCell.insideProbabilities, 0);
-
-        // Pop edges off the queue until we fill the beam width. With each non-terminal popped off the queue,
-        // push unary edges for each unary grammar rule with the non-terminal as a child
-        for (int edgesPopulated = 0; edgesPopulated < cellBeamWidth && q.size() > 0;) {
+        // Pop n edges off the queue into the temporary cell storage.
+        for (final int edgesPopulated = 0; edgesPopulated < cellBeamWidth && q.size() > 0;) {
 
             final int headIndex = q.headIndex();
             final short nt = q.nts[headIndex];
-            final float fom = q.foms[headIndex];
+            spvChartCell.tmpCell.insideProbabilities[nt] = maxInsideProbabilities[nt];
             q.popHead();
+        }
 
-            if (tmpCell.insideProbabilities[nt] == 0) {
-                // We're adding an edge that wasn't previously populated
-                edgesPopulated++;
-            }
-
-            if (fom > cellFoms[nt]) {
-                // Add or replace the edge in temporary chart storage
-                tmpCell.packedChildren[nt] = queueEdges.packedChildren[nt];
-                tmpCell.insideProbabilities[nt] = queueEdges.insideProbabilities[nt];
-                tmpCell.midpoints[nt] = queueEdges.midpoints[nt];
-                cellFoms[nt] = fom;
-
-                // Process unary edges and add to the queue.
-                if (allowUnaries) {
-                    // Insert all unary edges with the current parent as child into the queue
-                    final short child = nt;
-                    final double childInsideProbability = tmpCell.insideProbabilities[child];
-
-                    // Skip the grammar loop if there are no grammar rules that will meet the inside-probability delta
-                    // cutoff
-                    if (childInsideProbability * grammar.cscMaxUnaryProbabilities[child] < minInsideProbability) {
-                        continue;
-                    }
-
-                    // Iterate over possible parents of the child (rows with non-zero entries)
-                    for (int i = grammar.cscUnaryColumnOffsets[child]; i < grammar.cscUnaryColumnOffsets[child + 1]; i++) {
-
-                        final double jointProbability = grammar.cscUnaryProbabilities[i] * childInsideProbability;
-
-                        if (jointProbability > minInsideProbability) {
-                            final short parent = grammar.cscUnaryRowIndices[i];
-                            final float parentFom = figureOfMerit.calcFOM(start, end, parent,
-                                    (float) java.lang.Math.log(jointProbability));
-
-                            if (parentFom > cellFoms[parent] && q.replace(parent, parentFom)) {
-                                // The FOM was high enough that the edge was added to the queue; update temporary
-                                // storage to reflect the new unary child and probability
-                                queueEdges.packedChildren[parent] = grammar.packingFunction().packUnary(child);
-                                queueEdges.insideProbabilities[parent] = jointProbability;
-                                queueEdges.midpoints[parent] = tmpCell.midpoints[parent] = end;
-                            }
-                        }
-                    }
-
-                    if (collectDetailedStatistics) {
-                        chart.parseTask.nUnaryConsidered += (grammar.cscUnaryColumnOffsets[child + 1] - grammar.cscUnaryColumnOffsets[child]);
-                    }
-                }
-            }
+        if (collectDetailedStatistics) {
+            chart.parseTask.unaryAndPruningNs += System.nanoTime() - t0;
         }
     }
 
