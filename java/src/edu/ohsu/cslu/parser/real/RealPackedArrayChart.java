@@ -1090,13 +1090,25 @@ public class RealPackedArrayChart extends Chart {
      * @return the maximum scaling step over a set of midpoints
      */
     protected int maxInsideScalingStep(final short start, final short end) {
+
         if (end - start == 1) {
             return 0;
         }
-        int maxScalingStep = Integer.MIN_VALUE;
+
+        int maxScalingStep = -1024;
+
         for (short midpoint = (short) (start + 1); midpoint <= end - 1; midpoint++) {
+
             final int leftChildCellIndex = cellIndex(start, midpoint);
+            if (numNonTerminals[leftChildCellIndex] == 0) {
+                continue;
+            }
+
             final int rightChildCellIndex = cellIndex(midpoint, end);
+            if (numNonTerminals[rightChildCellIndex] == 0) {
+                continue;
+            }
+
             final int scalingStep = insideScalingSteps[leftChildCellIndex] + insideScalingSteps[rightChildCellIndex];
             if (scalingStep > maxScalingStep) {
                 maxScalingStep = scalingStep;
@@ -1118,17 +1130,38 @@ public class RealPackedArrayChart extends Chart {
             return 0;
         }
 
-        int maxScalingStep = Integer.MIN_VALUE;
+        int maxScalingStep = -1024;
         for (int parentStart = 0; parentStart < start; parentStart++) {
-            final int scalingStep = outsideScalingSteps[cellIndex(parentStart, end)]
-                    + insideScalingSteps[cellIndex(parentStart, start)];
+
+            final int parentCellIndex = cellIndex(parentStart, end);
+            if (numNonTerminals[parentCellIndex] == 0) {
+                continue;
+            }
+
+            final int siblingCellIndex = cellIndex(parentStart, start);
+            if (numNonTerminals[siblingCellIndex] == 0) {
+                continue;
+            }
+
+            final int scalingStep = outsideScalingSteps[parentCellIndex] + insideScalingSteps[siblingCellIndex];
             if (scalingStep > maxScalingStep) {
                 maxScalingStep = scalingStep;
             }
         }
+
         for (int parentEnd = end + 1; parentEnd <= size(); parentEnd++) {
-            final int scalingStep = outsideScalingSteps[cellIndex(start, parentEnd)]
-                    + insideScalingSteps[cellIndex(end, parentEnd)];
+            final int parentCellIndex = cellIndex(start, parentEnd);
+
+            if (numNonTerminals[parentCellIndex] == 0) {
+                continue;
+            }
+
+            final int siblingCellIndex = cellIndex(end, parentEnd);
+            if (numNonTerminals[siblingCellIndex] == 0) {
+                continue;
+            }
+
+            final int scalingStep = outsideScalingSteps[parentCellIndex] + insideScalingSteps[siblingCellIndex];
             if (scalingStep > maxScalingStep) {
                 maxScalingStep = scalingStep;
             }

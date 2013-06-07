@@ -282,8 +282,8 @@ public class RealInsideOutsideCphParser extends
         final PackingFunction pf = grammar.packingFunction();
 
         // Search possible midpoints for the largest scaling step (minimum scaling factor). Scaling steps are large
-        // enough that we can reasonably assume that the probability mass of midpoints with smaller scaling steps will
-        // be inconsequential.
+        // enough that we can reasonably assume that the probability mass of midpoints scaled much more will be
+        // inconsequential.
         final int maxScalingStep = chart.maxInsideScalingStep(start, end);
 
         // Iterate over all possible midpoints
@@ -291,12 +291,12 @@ public class RealInsideOutsideCphParser extends
 
             final int leftCellIndex = chart.cellIndex(start, midpoint);
             final int rightCellIndex = chart.cellIndex(midpoint, end);
-
-            // TODO Skip midpoints with scaling steps that won't contribute meaningfully to the total probability mass
             final int scalingStep = chart.insideScalingSteps[leftCellIndex] + chart.insideScalingSteps[rightCellIndex];
-            // if (scalingStep < maxScalingStep - 1) {
-            // continue;
-            // }
+
+            // Skip midpoints with scaling steps that won't contribute meaningfully to the total probability mass
+            if (scalingStep < maxScalingStep - 1) {
+                continue;
+            }
 
             // Iterate over children in the left child cell
             final int leftStart = chart.minLeftChildIndex(leftCellIndex);
@@ -345,7 +345,6 @@ public class RealInsideOutsideCphParser extends
         }
 
         tmpCell.insideScalingStep = IEEEDoubleScaling.scaleArray(tmpCell.insideProbabilities, maxScalingStep);
-        targetCell.toString();
         targetCell.finalizeCell();
 
         if (collectDetailedStatistics) {
@@ -380,13 +379,13 @@ public class RealInsideOutsideCphParser extends
 
             // Sibling (left) cell
             final int siblingCellIndex = chart.cellIndex(parentStart, start);
-
             final int scalingStep = chart.outsideScalingSteps[parentCell.cellIndex]
                     + chart.insideScalingSteps[siblingCellIndex];
-            // if (scalingStep < maxScalingStep) {
-            // // Skip midpoints with scaling steps that won't contribute meaningfully to the total probability mass
-            // continue;
-            // }
+
+            // Skip midpoints with scaling steps that won't contribute meaningfully to the total probability mass
+            if (scalingStep < maxScalingStep - 1) {
+                continue;
+            }
 
             parentCell.allocateTemporaryStorage(true, true);
             final double[] parentOutsideProbabilities = parentCell.tmpCell.outsideProbabilities;
@@ -407,13 +406,13 @@ public class RealInsideOutsideCphParser extends
 
             // Sibling (right) cell
             final int siblingCellIndex = chart.cellIndex(end, parentEnd);
-
-            // Skip midpoints with scaling steps that won't contribute meaningfully to the total probability mass
             final int scalingStep = chart.outsideScalingSteps[parentCell.cellIndex]
                     + chart.insideScalingSteps[siblingCellIndex];
-            // if (scalingStep < maxScalingStep) {
-            // continue;
-            // }
+
+            // Skip midpoints with scaling steps that won't contribute meaningfully to the total probability mass
+            if (scalingStep < maxScalingStep - 1) {
+                continue;
+            }
 
             parentCell.allocateTemporaryStorage(true, true);
             final double[] parentOutsideProbabilities = parentCell.tmpCell.outsideProbabilities;
@@ -463,7 +462,7 @@ public class RealInsideOutsideCphParser extends
                 for (int k = grammar.cscBinaryColumnOffsets[column]; k < grammar.cscBinaryColumnOffsets[column + 1]; k++) {
 
                     final int parent = grammar.cscBinaryRowIndices[k];
-                    // Skip log-sum calculations for parents with 0 outside probability
+                    // Skip parents with 0 outside probability
                     if (parentOutsideProbabilities[parent] == 0.0) {
                         continue;
                     }
@@ -499,7 +498,7 @@ public class RealInsideOutsideCphParser extends
                 for (int k = grammar.cscBinaryColumnOffsets[column]; k < grammar.cscBinaryColumnOffsets[column + 1]; k++) {
 
                     final int parent = grammar.cscBinaryRowIndices[k];
-                    // Skip log-sum calculations for parents with 0 outside probability
+                    // Skip parents with 0 outside probability
                     if (parentOutsideProbabilities[parent] == 0.0) {
                         continue;
                     }
