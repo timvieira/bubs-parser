@@ -63,7 +63,7 @@ public class TagSequence extends Sequence {
         if (sentence.charAt(0) == '(') {
             NaryTree<String> tree = null;
             try {
-                tree = NaryTree.read(sentence, String.class);
+                tree = NaryTree.read(sentence.trim(), String.class);
             } catch (final IllegalArgumentException e) {
             }
 

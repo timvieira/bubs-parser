@@ -87,8 +87,8 @@ public class CompleteClosureSequence extends BinarySequence {
             final GrammarFormatType grammarFormatType, final SymbolSet<String> lexicon,
             final SymbolSet<String> unkClassSet, final SymbolSet<String> vocabulary) {
 
-        this(NaryTree.read(parseTree, String.class).binarize(grammarFormatType, binarization), lexicon, unkClassSet,
-                vocabulary);
+        this(NaryTree.read(parseTree.trim(), String.class).binarize(grammarFormatType, binarization), lexicon,
+                unkClassSet, vocabulary);
     }
 
     /**
