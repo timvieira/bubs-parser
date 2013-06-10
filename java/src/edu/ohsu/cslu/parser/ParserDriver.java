@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Reader;
 import java.lang.reflect.Constructor;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.concurrent.Callable;
@@ -393,7 +394,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     public static Grammar readGrammar(final String grammarFile, final ResearchParserType parserType,
             final PackingFunctionType packingFunctionType) throws IOException {
         // Handle gzipped and non-gzipped grammar files
-        return createGrammar(fileAsBufferedReader(grammarFile), parserType, packingFunctionType);
+        return createGrammar(fileAsBufferedReader(grammarFile, Charset.forName("UTF-8")), parserType,
+                packingFunctionType);
     }
 
     /**

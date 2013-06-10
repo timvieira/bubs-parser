@@ -23,6 +23,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Serializable;
+import java.nio.charset.Charset;
 
 import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.grammar.Grammar;
@@ -73,8 +74,8 @@ public abstract class FigureOfMeritModel {
     protected static Grammar readGrammar(final String grammarFile, final ResearchParserType researchParserType,
             final PackingFunctionType packingFunctionType) throws IOException {
         // Handle gzipped and non-gzipped grammar files
-        return ParserDriver.createGrammar(ParserDriver.fileAsBufferedReader(grammarFile), researchParserType,
-                packingFunctionType);
+        return ParserDriver.createGrammar(ParserDriver.fileAsBufferedReader(grammarFile, Charset.forName("UTF-8")),
+                researchParserType, packingFunctionType);
     }
 
     public abstract class FigureOfMerit implements Serializable {
