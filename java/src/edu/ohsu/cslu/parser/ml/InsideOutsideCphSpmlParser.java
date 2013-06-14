@@ -37,7 +37,7 @@ public class InsideOutsideCphSpmlParser extends BaseIoCphSpmlParser {
         final PackedArrayChartCell targetCell = (PackedArrayChartCell) cell;
         final short start = cell.start();
         final short end = cell.end();
-        targetCell.allocateTemporaryStorage();
+        targetCell.allocateTemporaryStorage(HEURISTIC_OUTSIDE, false);
 
         final float[] targetCellProbabilities = targetCell.tmpCell.insideProbabilities;
 
@@ -196,6 +196,10 @@ public class InsideOutsideCphSpmlParser extends BaseIoCphSpmlParser {
             final int headIndex = q.headIndex();
             final short nt = q.nts[headIndex];
             spvChartCell.tmpCell.insideProbabilities[nt] = maxInsideProbabilities[nt];
+            if (HEURISTIC_OUTSIDE) {
+                spvChartCell.tmpCell.outsideProbabilities[nt] = figureOfMerit.calcFOM(start, end, nt,
+                        maxInsideProbabilities[nt]) - maxInsideProbabilities[nt];
+            }
             q.popHead();
         }
 

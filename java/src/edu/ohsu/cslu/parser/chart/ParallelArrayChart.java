@@ -219,10 +219,20 @@ public abstract class ParallelArrayChart extends Chart {
 
     protected static String formatCellEntry(final SparseMatrixGrammar g, final int nonterminal,
             final int childProductions, final float insideProbability, final int midpoint, final boolean formatFractions) {
+        return formatCellEntry(g, nonterminal, childProductions, insideProbability, Float.NEGATIVE_INFINITY, midpoint,
+                formatFractions);
+    }
 
+    protected static String formatCellEntry(final SparseMatrixGrammar g, final int nonterminal,
+            final int childProductions, final float insideProbability, final float outsideProbability,
+            final int midpoint, final boolean formatFractions) {
+
+        final String sOutsideProbability = outsideProbability != Float.NEGATIVE_INFINITY ? String.format("%.5s",
+                outsideProbability) : "-";
         // Goodman, SplitSum, and Max-Rule decoding don't record children
         if (childProductions == 0 || childProductions == Integer.MIN_VALUE) {
-            return String.format("%s -> ? (%.5f, %d)\n", g.mapNonterminal(nonterminal), insideProbability, midpoint);
+            return String.format("%s -> ? (%.5f, %s, %d)\n", g.mapNonterminal(nonterminal), insideProbability,
+                    sOutsideProbability, midpoint);
         }
 
         final int leftChild = g.packingFunction().unpackLeftChild(childProductions);
@@ -230,15 +240,16 @@ public abstract class ParallelArrayChart extends Chart {
 
         if (rightChild == Production.UNARY_PRODUCTION) {
             // Unary Production
-            return String.format("%s -> %s (%.5f, %d)\n", g.mapNonterminal(nonterminal), g.mapNonterminal(leftChild),
-                    insideProbability, midpoint);
+            return String.format("%s -> %s (%.5f, %s, %d)\n", g.mapNonterminal(nonterminal),
+                    g.mapNonterminal(leftChild), insideProbability, sOutsideProbability, midpoint);
         } else if (rightChild == Production.LEXICAL_PRODUCTION) {
             // Lexical Production
-            return String.format("%s -> %s (%.5f, %d)\n", g.mapNonterminal(nonterminal), g.mapLexicalEntry(leftChild),
-                    insideProbability, midpoint);
+            return String.format("%s -> %s (%.5f, %s, %d)\n", g.mapNonterminal(nonterminal),
+                    g.mapLexicalEntry(leftChild), insideProbability, sOutsideProbability, midpoint);
         } else {
-            return String.format("%s -> %s %s (%.5f, %d)\n", g.mapNonterminal(nonterminal),
-                    g.mapNonterminal(leftChild), g.mapNonterminal(rightChild), insideProbability, midpoint);
+            return String.format("%s -> %s %s (%.5f, %s, %d)\n", g.mapNonterminal(nonterminal),
+                    g.mapNonterminal(leftChild), g.mapNonterminal(rightChild), insideProbability, sOutsideProbability,
+                    midpoint);
         }
     }
 

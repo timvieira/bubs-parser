@@ -28,7 +28,6 @@ import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
-import edu.ohsu.cslu.parser.ml.BaseIoCphSpmlParser;
 import edu.ohsu.cslu.parser.ml.ConstrainedChartParser;
 import edu.ohsu.cslu.parser.ml.SparseMatrixLoopParser;
 import edu.ohsu.cslu.util.Math;
@@ -44,9 +43,9 @@ public class ConstrainedInsideOutsideParser extends
         SparseMatrixLoopParser<ConstrainedInsideOutsideGrammar, ConstrainedChart> implements ConstrainedChartParser {
 
     protected final static boolean APPROXIMATE_SUM = GlobalConfigProperties.singleton().getBooleanProperty(
-            BaseIoCphSpmlParser.PROPERTY_APPROXIMATE_LOG_SUM, false);
+            ParserDriver.PROPERTY_APPROXIMATE_LOG_SUM, false);
     protected final static float SUM_DELTA = GlobalConfigProperties.singleton().getFloatProperty(
-            BaseIoCphSpmlParser.PROPERTY_LOG_SUM_DELTA, 16f);
+            ParserDriver.PROPERTY_LOG_SUM_DELTA, 16f);
 
     ConstrainingChart constrainingChart;
 

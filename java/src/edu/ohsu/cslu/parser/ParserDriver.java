@@ -250,6 +250,24 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
      */
     public final static String OPT_EVAL_PARSE_FAILURES = "evalParseFailures";
 
+    /**
+     * Skip log-sum operations if the log probabilities differ by more than x. Default is 16 (approximately the
+     * resolution of a 32-bit IEEE float).
+     */
+    public final static String PROPERTY_LOG_SUM_DELTA = "logSumDelta";
+
+    /** Use a quantized approximation of the exp function when performing log-sum operations. Boolean property. */
+    public final static String PROPERTY_APPROXIMATE_LOG_SUM = "approxLogSum";
+
+    /** Compute the inside score only. Decode assuming all outside probabilities are 1. Boolean property. */
+    public final static String PROPERTY_INSIDE_ONLY = "insideOnly";
+
+    /**
+     * Use the prioritization / FOM model's estimate of outside probabilities (eliminating the outside pass). Boolean
+     * property
+     */
+    public final static String PROPERTY_HEURISTIC_OUTSIDE = "heuristicOutside";
+
     public static void main(final String[] args) {
         run(args);
     }

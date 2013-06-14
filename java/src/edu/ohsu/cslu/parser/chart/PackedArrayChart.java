@@ -34,7 +34,7 @@ import edu.ohsu.cslu.lela.ConstrainingChart;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.Parser.DecodeMethod;
-import edu.ohsu.cslu.parser.ml.BaseIoCphSpmlParser;
+import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.util.Strings;
 
 /**
@@ -71,9 +71,12 @@ import edu.ohsu.cslu.util.Strings;
 public class PackedArrayChart extends ParallelArrayChart {
 
     protected final static boolean APPROXIMATE_SUM = GlobalConfigProperties.singleton().getBooleanProperty(
-            BaseIoCphSpmlParser.PROPERTY_APPROXIMATE_LOG_SUM, false);
+            ParserDriver.PROPERTY_APPROXIMATE_LOG_SUM, false);
     protected final static float SUM_DELTA = GlobalConfigProperties.singleton().getFloatProperty(
-            BaseIoCphSpmlParser.PROPERTY_LOG_SUM_DELTA, 16f);
+            ParserDriver.PROPERTY_LOG_SUM_DELTA, 16f);
+    /** Use the prioritization / FOM model's estimate of outside probabilities (eliminating the outside pass). */
+    protected final static boolean HEURISTIC_OUTSIDE = GlobalConfigProperties.singleton().getBooleanProperty(
+            ParserDriver.PROPERTY_HEURISTIC_OUTSIDE, false);
 
     /**
      * Parallel array storing non-terminals (parallel to {@link ParallelArrayChart#insideProbabilities},
@@ -1029,6 +1032,26 @@ public class PackedArrayChart extends ParallelArrayChart {
             minRightChildIndex[cellIndex] = offset;
             maxRightChildIndex[cellIndex] = offset - 1;
 
+            // When using heuristic outside probabilities, the FOM sometimes rejects observed nonterminals. If the
+            // heuristic estimate for an observed nonterminal is 0, replace it with the minimum heuristic outside
+            // probability.
+            if (HEURISTIC_OUTSIDE) {
+
+                float minOutsideHeuristic = Float.POSITIVE_INFINITY;
+                for (int i = 0; i < tmpCell.outsideProbabilities.length; i++) {
+                    if (tmpCell.outsideProbabilities[i] > Float.NEGATIVE_INFINITY
+                            && tmpCell.outsideProbabilities[i] < minOutsideHeuristic) {
+                        minOutsideHeuristic = tmpCell.outsideProbabilities[i];
+                    }
+                }
+                for (int i = 0; i < tmpCell.insideProbabilities.length; i++) {
+                    if (tmpCell.insideProbabilities[i] > Float.NEGATIVE_INFINITY
+                            && tmpCell.outsideProbabilities[i] == Float.NEGATIVE_INFINITY) {
+                        tmpCell.outsideProbabilities[i] = minOutsideHeuristic;
+                    }
+                }
+            }
+
             for (short nonTerminal = 0; nonTerminal < tmpCell.insideProbabilities.length; nonTerminal++) {
 
                 if (tmpCell.insideProbabilities[nonTerminal] != Float.NEGATIVE_INFINITY
@@ -1445,10 +1468,17 @@ public class PackedArrayChart extends ParallelArrayChart {
                     tmpCell.packedChildren[nonTerminal] = packedChildren[i];
                     tmpCell.insideProbabilities[nonTerminal] = insideProbabilities[i];
                     tmpCell.midpoints[nonTerminal] = midpoints[i];
+                }
 
-                    if (copyOutsideProbabilities) {
-                        tmpCell.outsideProbabilities[nonTerminal] = outsideProbabilities[i];
-                    }
+            } else if (allocateOutsideProbabilities && tmpCell.outsideProbabilities == null) {
+                // Replace the current temp cell with an instance allocating outside probability storage
+                this.tmpCell = new TemporaryChartCell(tmpCell);
+            }
+
+            if (copyOutsideProbabilities) {
+                for (int i = offset; i < offset + numNonTerminals[cellIndex]; i++) {
+                    final int nonTerminal = nonTerminalIndices[i];
+                    tmpCell.outsideProbabilities[nonTerminal] = outsideProbabilities[i];
                 }
             }
         }
@@ -1468,14 +1498,22 @@ public class PackedArrayChart extends ParallelArrayChart {
             case Goodman:
             case SplitSum:
                 sb.append(maxcToString(formatFractions));
-                break;
+                return sb.toString();
+
             case MaxRuleProd:
-                sb.append(maxqToString(formatFractions));
-                break;
+                for (int i = 0; i < maxQ.length; i++) {
+                    for (int j = 0; j < maxQ[cellIndex].length; j++) {
+                        if (maxQ[i][j] != 0) {
+                            sb.append(maxqToString(formatFractions));
+                            return sb.toString();
+                        }
+                    }
+                }
+                return viterbiToString(formatFractions);
+
             default:
                 throw new UnsupportedOperationException("Unsupported decoding method " + parseTask.decodeMethod);
             }
-            return sb.toString();
         }
 
         public String viterbiToString(final boolean formatFractions) {
@@ -1489,12 +1527,14 @@ public class PackedArrayChart extends ParallelArrayChart {
                 for (int index = offset; index < offset + numNonTerminals[cellIndex]; index++) {
                     final int childProductions = packedChildren[index];
                     final float insideProbability = insideProbabilities[index];
+                    final float outsideProbability = outsideProbabilities != null ? outsideProbabilities[index]
+                            : Float.NEGATIVE_INFINITY;
                     final int midpoint = midpoints[index];
 
                     final int nonTerminal = nonTerminalIndices[index];
 
                     sb.append(ParallelArrayChart.formatCellEntry(sparseMatrixGrammar, nonTerminal, childProductions,
-                            insideProbability, midpoint, formatFractions));
+                            insideProbability, outsideProbability, midpoint, formatFractions));
                 }
 
             } else {
@@ -1504,7 +1544,8 @@ public class PackedArrayChart extends ParallelArrayChart {
                     if (tmpCell.insideProbabilities[nonTerminal] != Float.NEGATIVE_INFINITY) {
                         sb.append(ParallelArrayChart.formatCellEntry(sparseMatrixGrammar, nonTerminal,
                                 tmpCell.packedChildren[nonTerminal], tmpCell.insideProbabilities[nonTerminal],
-                                tmpCell.midpoints[nonTerminal], formatFractions));
+                                tmpCell.outsideProbabilities != null ? tmpCell.outsideProbabilities[nonTerminal]
+                                        : Float.NEGATIVE_INFINITY, tmpCell.midpoints[nonTerminal], formatFractions));
                     }
                 }
             }
@@ -1683,6 +1724,21 @@ public class PackedArrayChart extends ParallelArrayChart {
             this.outsideProbabilities = includeOutsideProbabilities ? new float[grammar.numNonTerms()] : null;
 
             clear();
+        }
+
+        /**
+         * Allocates a new {@link TemporaryChartCell}, including {@link #outsideProbabilities}, copying the contents of
+         * another {@link TemporaryChartCell} without {@link #outsideProbabilities}.
+         * 
+         * @param original
+         */
+        public TemporaryChartCell(final TemporaryChartCell original) {
+            this.packedChildren = original.packedChildren;
+            this.insideProbabilities = original.insideProbabilities;
+            this.outsideProbabilities = new float[original.insideProbabilities.length];
+            Arrays.fill(outsideProbabilities, Float.NEGATIVE_INFINITY);
+            this.midpoints = original.midpoints;
+            this.sparseMatrixGrammar = original.sparseMatrixGrammar;
         }
 
         public void clear() {

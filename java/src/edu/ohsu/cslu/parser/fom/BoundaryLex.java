@@ -196,10 +196,12 @@ public final class BoundaryLex extends FigureOfMeritModel {
                     } else { // LB
                         final float score = Float.parseFloat(tokens[3]);
                         if (classToLexMap != null) {
-                            for (final int lexIndex : classToLexMap.get(tokens[2])) {
-                                // map prob to all lex entries that are mapped to this class for faster retrieval
-                                // during parsing
-                                unkLBLogProb[lexIndex] = score;
+                            if (classToLexMap.containsKey(tokens[2])) {
+                                for (final int lexIndex : classToLexMap.get(tokens[2])) {
+                                    // map prob to all lex entries that are mapped to this class for faster retrieval
+                                    // during parsing
+                                    unkLBLogProb[lexIndex] = score;
+                                }
                             }
                         } else {
                             unkLBLogProb[grammar.mapLexicalEntry(tokens[2])] = score;

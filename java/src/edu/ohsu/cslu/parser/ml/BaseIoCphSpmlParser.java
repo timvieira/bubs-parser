@@ -40,20 +40,24 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
 public abstract class BaseIoCphSpmlParser extends
         SparseMatrixLoopParser<InsideOutsideCscSparseMatrixGrammar, PackedArrayChart> {
 
-    // TODO Move these constant to ParserDriver if they prove useful
-    /** Skip log-sum operations if the log probabilities differ by more than x. Default is 20. */
-    public final static String PROPERTY_LOG_SUM_DELTA = "logSumDelta";
-    /** Use a quantized approximation of the exp function when performing log-sum operations. Boolean property. */
-    public final static String PROPERTY_APPROXIMATE_LOG_SUM = "approxLogSum";
-    /** Compute the inside score only. Decode assuming all outside probabilities are 1. Boolean property. */
-    public final static String PROPERTY_INSIDE_ONLY = "insideOnly";
-
-    protected final static boolean INSIDE_ONLY = GlobalConfigProperties.singleton().getBooleanProperty(
-            PROPERTY_INSIDE_ONLY, false);
-    protected final static boolean APPROXIMATE_SUM = GlobalConfigProperties.singleton().getBooleanProperty(
-            PROPERTY_APPROXIMATE_LOG_SUM, false);
+    /**
+     * Skip log-sum operations if the log probabilities differ by more than x. Default is 16 (approximately the
+     * resolution of a 32-bit IEEE float).
+     */
     protected final static float SUM_DELTA = GlobalConfigProperties.singleton().getFloatProperty(
-            PROPERTY_LOG_SUM_DELTA, 16f);
+            ParserDriver.PROPERTY_LOG_SUM_DELTA, 16f);
+
+    /** Use a quantized approximation of the exp function when performing log-sum operations. */
+    protected final static boolean APPROXIMATE_SUM = GlobalConfigProperties.singleton().getBooleanProperty(
+            ParserDriver.PROPERTY_APPROXIMATE_LOG_SUM, false);
+
+    /** Compute the inside score only. Decode assuming all outside probabilities are 1. */
+    protected final static boolean INSIDE_ONLY = GlobalConfigProperties.singleton().getBooleanProperty(
+            ParserDriver.PROPERTY_INSIDE_ONLY, false);
+
+    /** Use the prioritization / FOM model's estimate of outside probabilities (eliminating the outside pass). */
+    protected final static boolean HEURISTIC_OUTSIDE = GlobalConfigProperties.singleton().getBooleanProperty(
+            ParserDriver.PROPERTY_HEURISTIC_OUTSIDE, false);
 
     public BaseIoCphSpmlParser(final ParserDriver opts, final InsideOutsideCscSparseMatrixGrammar grammar) {
         super(opts, grammar);
@@ -64,21 +68,25 @@ public abstract class BaseIoCphSpmlParser extends
         initChart(parseTask);
         insidePass();
 
-        if (INSIDE_ONLY) {
-            // Skip outside pass, and just populate all outside probabilities with 1
-            Arrays.fill(chart.outsideProbabilities, 0, chart.chartArraySize(), 0f);
+        // If we're using the FOM estimate of outside probabilities, we already populated it during the inside pass
+        if (!HEURISTIC_OUTSIDE) {
 
-        } else {
-            // To compute the outside probability of a non-terminal in a cell, we need the outside probability of the
-            // cell's parent, so we process downward from the top of the chart.
+            if (INSIDE_ONLY) {
+                // Skip outside pass, and just populate all outside probabilities with 1
+                Arrays.fill(chart.outsideProbabilities, 0, chart.chartArraySize(), 0f);
 
-            // Outside pass
-            final Iterator<short[]> reverseIterator = cellSelector.reverseIterator();
+            } else {
+                // Outside pass
 
-            while (reverseIterator.hasNext()) {
-                final short[] startAndEnd = reverseIterator.next();
-                final PackedArrayChartCell cell = chart.getCell(startAndEnd[0], startAndEnd[1]);
-                computeOutsideProbabilities(cell);
+                // To compute the outside probability of a non-terminal in a cell, we need the outside probability of
+                // the cell's parent, so we process downward from the top of the chart.
+                final Iterator<short[]> reverseIterator = cellSelector.reverseIterator();
+
+                while (reverseIterator.hasNext()) {
+                    final short[] startAndEnd = reverseIterator.next();
+                    final PackedArrayChartCell cell = chart.getCell(startAndEnd[0], startAndEnd[1]);
+                    computeOutsideProbabilities(cell);
+                }
             }
         }
 
