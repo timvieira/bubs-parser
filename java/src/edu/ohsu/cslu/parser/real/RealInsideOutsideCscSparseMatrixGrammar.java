@@ -101,9 +101,16 @@ public class RealInsideOutsideCscSparseMatrixGrammar extends Grammar {
      */
     protected final double[][] lexicalProbabilities;
 
+    /**
+     * Parallel array of lexical rules (with {@link #lexicalProbabilities}. Real-valued inference uses the real-valued
+     * probabilities, but some pruning models require log probabilities as well.
+     */
+    protected final float[][] lexicalLogProbabilities;
+
     public final static String nullSymbolStr = "<null>";
     public static Production nullProduction;
-    // public static float UNSEEN_LEX_PROB = GlobalConfigProperties.singleton().getFloatProperty("unseenLexProb");
+
+    public static float UNSEEN_LEX_LOG_PROB = -9999;
     public static double UNSEEN_LEX_PROB = 0;
 
     // == Grammar stats ==
@@ -381,6 +388,7 @@ public class RealInsideOutsideCscSparseMatrixGrammar extends Grammar {
 
         this.lexicalParents = new short[lexSet.size()][];
         this.lexicalProbabilities = new double[lexSet.size()][];
+        this.lexicalLogProbabilities = new float[lexSet.size()][];
         initLexicalProbabilitiesFromStringProductions(lexicalRules);
 
         tmpStringPool = null; // We no longer need the String intern map, so let it be GC'd
@@ -698,7 +706,9 @@ public class RealInsideOutsideCscSparseMatrixGrammar extends Grammar {
     }
 
     /**
-     * Populates lexicalLogProbabilities and lexicalParents
+     * Populates {@link RealInsideOutsideCscSparseMatrixGrammar#lexicalProbabilities},
+     * {@link RealInsideOutsideCscSparseMatrixGrammar#lexicalLogProbabilities}, and
+     * {@link RealInsideOutsideCscSparseMatrixGrammar#lexicalParents}.
      */
     private void initLexicalProbabilitiesFromStringProductions(final Collection<StringProduction> lexicalRules) {
         @SuppressWarnings("unchecked")
@@ -715,9 +725,11 @@ public class RealInsideOutsideCscSparseMatrixGrammar extends Grammar {
         for (int child = 0; child < lexicalProdsByChild.length; child++) {
             lexicalParents[child] = new short[lexicalProdsByChild[child].size()];
             lexicalProbabilities[child] = new double[lexicalProdsByChild[child].size()];
+            lexicalLogProbabilities[child] = new float[lexicalProdsByChild[child].size()];
             int j = 0;
             for (final StringProduction p : lexicalProdsByChild[child]) {
                 lexicalParents[child][j] = (short) nonTermSet.getIndex(p.parent);
+                lexicalLogProbabilities[child][j] = p.probability;
                 lexicalProbabilities[child][j++] = java.lang.Math.exp(p.probability);
             }
             edu.ohsu.cslu.util.Arrays.sort(lexicalParents[child], lexicalProbabilities[child]);
@@ -1072,14 +1084,13 @@ public class RealInsideOutsideCscSparseMatrixGrammar extends Grammar {
 
     @Override
     public float lexicalLogProbability(final short parent, final int child) {
-        // TODO Auto-generated method stub
-        return 0;
+        final int i = Arrays.binarySearch(lexicalParents(child), parent);
+        return (i < 0) ? UNSEEN_LEX_LOG_PROB : lexicalLogProbabilities[child][i];
     }
 
     @Override
-    public float[] lexicalLogProbabilities(final int wordIndex) {
-        // TODO Auto-generated method stub
-        return null;
+    public float[] lexicalLogProbabilities(final int child) {
+        return lexicalLogProbabilities[child];
     }
 
     /**
