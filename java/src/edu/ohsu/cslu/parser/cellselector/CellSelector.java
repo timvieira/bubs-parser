@@ -64,7 +64,13 @@ public abstract class CellSelector implements CellClosureClassifier, Iterator<sh
     }
 
     public short[] next() {
-        return new short[] { cellIndices[nextCell << 1], cellIndices[(nextCell++ << 1) + 1] };
+        short[] next = new short[] { cellIndices[nextCell << 1], cellIndices[(nextCell++ << 1) + 1] };
+        if (childCellSelector != null) {
+            while (!childCellSelector.isCellOpen(next[0], next[1])) {
+                next = new short[] { cellIndices[nextCell << 1], cellIndices[(nextCell++ << 1) + 1] };
+            }
+        }
+        return next;
     }
 
     @Override

@@ -152,24 +152,24 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     @Option(name = "-pf", hidden = true, metaVar = "function", usage = "Packing function (only used for SpMV parsers)")
     private PackingFunctionType packingFunctionType = PackingFunctionType.PerfectHash;
 
-    @Option(name = "-beamModel", optionalChoiceGroup = "cellselectors", metaVar = "FILE", usage = "Beam-width prediction model (Bodenstab et al., 2011)")
+    @Option(name = "-beamModel", metaVar = "FILE", usage = "Beam-width prediction model (Bodenstab et al., 2011)")
     private String beamModelFileName = null;
 
-    @Option(name = "-ccModel", hidden = true, optionalChoiceGroup = "cellselectors", metaVar = "FILE", usage = "CSLU Chart Constraints model (Roark and Hollingshead, 2008)")
+    @Option(name = "-ccModel", hidden = true, metaVar = "FILE", usage = "CSLU Chart Constraints model (Roark and Hollingshead, 2008)")
     private String chartConstraintsModel = null;
 
-    @Option(name = "-ccClassifier", hidden = true, optionalChoiceGroup = "cellselectors", metaVar = "FILE", usage = "Complete closure classifier model (Java Serialized)")
+    @Option(name = "-ccClassifier", hidden = true, metaVar = "FILE", usage = "Complete closure classifier model (Java Serialized)")
     private File completeClosureClassifierFile = null;
 
     // Leaving this around for a bit, in case we get back to limited-span parsing, but it doesn't work currently
-    // @Option(name = "-lsccModel", hidden = true, // optionalChoiceGroup = "cellselectors",
+    // @Option(name = "-lsccModel", hidden = true,
     // metaVar = "FILE", usage = "CSLU Chart Constraints model (Roark and Hollingshead, 2008)")
     // private String limitedSpanChartConstraintsModel = null;
 
-    @Option(name = "-pm", aliases = { "-pruningmodel" }, hidden = true, optionalChoiceGroup = "cellselectors", metaVar = "FILE", usage = "Cell selector model file")
+    @Option(name = "-pm", aliases = { "-pruningmodel" }, hidden = true, metaVar = "FILE", usage = "Cell selector model file")
     private File[] pruningModels = null;
 
-    @Option(name = "-maxSubtreeSpan", hidden = true, optionalChoiceGroup = "cellselectors", metaVar = "span", usage = "Maximum subtree span for limited-depth parsing")
+    @Option(name = "-maxSubtreeSpan", hidden = true, metaVar = "span", usage = "Maximum subtree span for limited-depth parsing")
     private int maxSubtreeSpan;
 
     @Option(name = "-head-rules", hidden = true, metaVar = "ruleset or file", usage = "Enables head-finding using a Charniak-style head-finding ruleset. Specify ruleset as 'charniak' or a rule file. Ignored if -binary is specified.")
@@ -378,11 +378,13 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
                         fileAsBufferedReader(beamModelFileName), null) : new PerceptronBeamWidthModel(
                         fileAsBufferedReader(beamModelFileName), cellSelectorModel);
                 cellSelectorModel = beamConstraints;
+                defaultCellSelector = false;
             } else if (pruningModels != null && pruningModels.length > 0) {
                 final ObjectInputStream ois = new ObjectInputStream(fileAsInputStream(pruningModels[0]));
                 cellSelectorModel = (CellSelectorModel) ois.readObject();
                 ois.close();
                 cellSelectorModel = beamConstraints;
+                defaultCellSelector = false;
             }
 
             if (cellConstraints != null && beamConstraints != null) {
@@ -390,9 +392,11 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
                 constraintsCombo.addModel(cellConstraints);
                 constraintsCombo.addModel(beamConstraints);
                 cellSelectorModel = constraintsCombo;
+                defaultCellSelector = false;
             } else if (maxSubtreeSpan != 0) {
                 cellSelectorModel = defaultCellSelector ? new LimitedSpanTraversalModel(maxSubtreeSpan, null)
                         : new LimitedSpanTraversalModel(maxSubtreeSpan, cellSelectorModel);
+                defaultCellSelector = false;
             }
 
             if (completeClosureClassifierFile != null) {
