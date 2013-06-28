@@ -34,7 +34,7 @@ import edu.ohsu.cslu.parser.cellselector.DepGraphCellSelectorModel.DepGraphCellS
  * and predictable iteration order; others implement cell constraints (see Roark and Hollingshead, 2008 and 2009) or
  * constrain iteration via a gold chart.
  */
-public abstract class CellSelector implements Iterator<short[]> {
+public abstract class CellSelector implements CellClosureClassifier, Iterator<short[]> {
 
     /**
      * Enables constraints (if any) implemented by this {@link CellSelector}. If the parse fails, constraints may be
@@ -53,13 +53,21 @@ public abstract class CellSelector implements Iterator<short[]> {
 
     protected DenseIntVector maxSpan = null;
 
-    protected CellSelector() {
+    /**
+     * Another cell selector with which this selector is intersected - i.e., a cell is open if and only if this selector
+     * and the child (and any children of that child, recursively) open the cell
+     */
+    protected final CellSelector childCellSelector;
+
+    protected CellSelector(final CellSelector child) {
+        this.childCellSelector = child;
     }
 
     public short[] next() {
         return new short[] { cellIndices[nextCell << 1], cellIndices[(nextCell++ << 1) + 1] };
     }
 
+    @Override
     public void initSentence(final ChartParser<?, ?> p, final ParseTask task) {
         this.parser = p;
         this.parseTask = task;
@@ -68,6 +76,10 @@ public abstract class CellSelector implements Iterator<short[]> {
         // Enable constraints at sentence initialization - if parsing fails, we may disable them for a later reparsing
         // pass
         this.constraintsEnabled = true;
+
+        if (childCellSelector != null) {
+            childCellSelector.initSentence(p, task);
+        }
     }
 
     /**
@@ -165,36 +177,12 @@ public abstract class CellSelector implements Iterator<short[]> {
         return constraintsEnabled;
     }
 
-    /**
-     * Returns true if the specified cell is 'open'. Overridden in classes with constraints.
-     * 
-     * @param start
-     * @param end
-     * @return true if the specified cell is 'open'
-     */
-    public boolean isCellOpen(final short start, final short end) {
-        return true;
-    }
-
-    /**
-     * Returns true if the specified cell is 'open' only to factored parents (i.e., will never be populated with a
-     * complete constituent). Overridden in classes with constraints.
-     * 
-     * @param start
-     * @param end
-     * @return true if the specified cell is 'open' only to factored parents
-     */
+    @Override
     public boolean isCellOnlyFactored(final short start, final short end) {
         return false;
     }
 
-    /**
-     * Returns true if the specified cell is 'open' to unary productions. Overridden in classes with constraints.
-     * 
-     * @param start
-     * @param end
-     * @return true if the specified cell is 'open' to unary productions.
-     */
+    @Override
     public boolean isUnaryOpen(final short start, final short end) {
         return true;
     }

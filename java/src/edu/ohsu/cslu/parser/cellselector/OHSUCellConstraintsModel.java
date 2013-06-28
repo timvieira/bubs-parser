@@ -72,7 +72,7 @@ import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
 
  */
 
-public class OHSUCellConstraintsModel implements CellSelectorModel {
+public class OHSUCellConstraintsModel extends ChainableCellSelectorModel implements CellSelectorModel {
 
     private static final long serialVersionUID = 1L;
 
@@ -97,7 +97,8 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
     protected LinkedList<ChartCell> cellList;
     protected Iterator<ChartCell> cellListIterator;
 
-    public OHSUCellConstraintsModel(final BufferedReader modelStream) {
+    public OHSUCellConstraintsModel(final BufferedReader modelStream, final CellSelectorModel childModel) {
+        super(childModel);
         try {
             final ConfigProperties props = GlobalConfigProperties.singleton();
             parseConstraintArgs(props.getProperty("chartConstraintsTune"));
@@ -303,13 +304,17 @@ public class OHSUCellConstraintsModel implements CellSelectorModel {
     }
 
     public CellSelector createCellSelector() {
-        return new OHSUCellConstraints();
+        return new OHSUCellConstraints(childModel != null ? childModel.createCellSelector() : null);
     }
 
     public class OHSUCellConstraints extends CellSelector {
 
         float[] beginScores, endScores, unaryScores;
         float beginThresh, endThresh, unaryThresh;
+
+        public OHSUCellConstraints(final CellSelector child) {
+            super(child);
+        }
 
         @Override
         public void initSentence(final ChartParser<?, ?> p, final ParseTask task) {

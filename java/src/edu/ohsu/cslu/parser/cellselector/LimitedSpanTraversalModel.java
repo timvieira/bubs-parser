@@ -37,7 +37,7 @@ import edu.ohsu.cslu.parser.ParserDriver;
  * @author Aaron Dunlop
  * @since Nov 19, 2012
  */
-public class LimitedSpanTraversalModel implements CellSelectorModel {
+public class LimitedSpanTraversalModel extends ChainableCellSelectorModel implements CellSelectorModel {
 
     private final static long serialVersionUID = 1L;
 
@@ -46,23 +46,30 @@ public class LimitedSpanTraversalModel implements CellSelectorModel {
 
     private final int maxSubtreeSpan;
     private short sentenceLength;
+    private Binarization binarization;
 
-    public LimitedSpanTraversalModel(final int maxSubtreeSpan) {
+    public LimitedSpanTraversalModel(final int maxSubtreeSpan, final CellSelectorModel childModel) {
+        super(childModel);
         this.maxSubtreeSpan = maxSubtreeSpan;
     }
 
     @Override
     public CellSelector createCellSelector() {
-        return new LimitedSpanTraversal();
+        return new LimitedSpanTraversal(childModel != null ? childModel.createCellSelector() : null);
     }
 
     public class LimitedSpanTraversal extends CellSelector {
+
+        public LimitedSpanTraversal(final CellSelector child) {
+            super(child);
+        }
 
         @Override
         public void initSentence(final ChartParser<?, ?> p, final ParseTask task) {
             super.initSentence(p, task);
 
             sentenceLength = (short) p.chart.size();
+            binarization = p.grammar.binarization();
 
             if (sentenceLength > maxSubtreeSpan) {
                 final int excludedCells = ((sentenceLength - maxSubtreeSpan) * (sentenceLength - maxSubtreeSpan + 1))
@@ -97,7 +104,7 @@ public class LimitedSpanTraversalModel implements CellSelectorModel {
                 }
 
                 for (short span = (short) (maxSubtreeSpan + 1); span <= sentenceLength; span++) {
-                    if (p.grammar.binarization() == Binarization.LEFT) {
+                    if (binarization == Binarization.LEFT) {
                         // Left periphery only
                         cellIndices[i++] = 0;
                         cellIndices[i++] = span;
@@ -109,6 +116,18 @@ public class LimitedSpanTraversalModel implements CellSelectorModel {
 
                 }
             }
+        }
+
+        @Override
+        public boolean isCellOpen(final short start, final short end) {
+
+            if (childCellSelector != null && !childCellSelector.isCellOpen(start, end)) {
+                return false;
+            }
+
+            return (end - start >= maxSubtreeSpan) // Allowed spans
+                    || (binarization == Binarization.LEFT && start == 0) // Left periphery
+                    || (binarization == Binarization.RIGHT && end == sentenceLength); // Right periphery
         }
 
         @Override

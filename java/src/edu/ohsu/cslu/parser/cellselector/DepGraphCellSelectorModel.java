@@ -63,7 +63,8 @@ public class DepGraphCellSelectorModel implements CellSelectorModel {
     }
 
     public CellSelector createCellSelector() {
-        return new DepGraphCellSelector();
+        // DepGraphCellSelectorModel doesn't currently support child selectors
+        return new DepGraphCellSelector(null);
     }
 
     public class DepGraphCellSelector extends CellSelector {
@@ -80,7 +81,8 @@ public class DepGraphCellSelectorModel implements CellSelectorModel {
          */
         private final float subtreeScoreThreshold;
 
-        public DepGraphCellSelector() {
+        public DepGraphCellSelector(final CellSelector child) {
+            super(child);
             this.subtreeScoreThreshold = (float) Math.log(GlobalConfigProperties.singleton().getFloatProperty(
                     OPT_SUBTREE_PROBABILITY, 0.9f));
         }

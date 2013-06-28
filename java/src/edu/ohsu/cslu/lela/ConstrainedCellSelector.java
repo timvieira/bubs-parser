@@ -35,11 +35,18 @@ public class ConstrainedCellSelector extends CellSelector {
 
     public static CellSelectorModel MODEL = new CellSelectorModel() {
 
+        private static final long serialVersionUID = 1L;
+
         @Override
         public CellSelector createCellSelector() {
-            return new ConstrainedCellSelector();
+            // ConstrainedCellSelector doesn't support child models
+            return new ConstrainedCellSelector(null);
         }
     };
+
+    protected ConstrainedCellSelector(final CellSelector child) {
+        super(child);
+    }
 
     @Override
     public void initSentence(final ChartParser<?, ?> p, final ParseTask task) {
@@ -51,5 +58,16 @@ public class ConstrainedCellSelector extends CellSelector {
             this.cellIndices[i * 2 + 1] = constrainingChartOpenCells[i][1];
         }
         this.openCells = constrainingChartOpenCells.length;
+    }
+
+    @Override
+    public boolean isCellOpen(final short start, final short end) {
+        // This shouldn't frequently (well, ever) be called, so we don't have to worry too much about efficiency
+        for (int i = 0; i < cellIndices.length; i += 2) {
+            if (cellIndices[i] == start && cellIndices[i + 1] == end) {
+                return true;
+            }
+        }
+        return false;
     }
 }

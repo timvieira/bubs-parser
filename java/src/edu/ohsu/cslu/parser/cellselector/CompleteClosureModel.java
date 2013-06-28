@@ -51,36 +51,42 @@ import edu.ohsu.cslu.perceptron.Tagger;
  * @author Aaron Dunlop
  * @since Feb 14, 2013
  */
-public class CompleteClosureModel implements CellSelectorModel {
+public class CompleteClosureModel extends ChainableCellSelectorModel implements CellSelectorModel {
     private static final long serialVersionUID = 1L;
 
     private CompleteClosureClassifier classifier;
     private Tagger posTagger;
 
-    public CompleteClosureModel(final InputStream is) throws IOException, ClassNotFoundException {
+    public CompleteClosureModel(final InputStream is, final CellSelectorModel childModel) throws IOException,
+            ClassNotFoundException {
+        super(childModel);
 
         final ObjectInputStream ois = new ObjectInputStream(is);
         classifier = (CompleteClosureClassifier) ois.readObject();
         posTagger = (Tagger) ois.readObject();
     }
 
-    public CompleteClosureModel(final File classifierModel, final Grammar grammar) throws IOException,
-            ClassNotFoundException {
+    public CompleteClosureModel(final File classifierModel, final Grammar grammar, final CellSelectorModel childModel)
+            throws IOException, ClassNotFoundException {
 
+        super(childModel);
         this.classifier = new CompleteClosureClassifier(grammar);
         classifier.readModel(new FileInputStream(classifierModel));
         this.posTagger = classifier.posTagger;
     }
 
     public CellSelector createCellSelector() {
-        return new CompleteClosureSelector();
+        return new CompleteClosureSelector(childModel != null ? childModel.createCellSelector() : null);
     }
 
     public class CompleteClosureSelector extends CellSelector {
 
+        public CompleteClosureSelector(final CellSelector child) {
+            super(child);
+        }
+
         @Override
         public void initSentence(final ChartParser<?, ?> p, final ParseTask task) {
-
             super.initSentence(p, task);
             final short sentenceLength = (short) p.chart.size();
 
@@ -149,24 +155,20 @@ public class CompleteClosureModel implements CellSelectorModel {
             }
         }
 
-        // @Override
-        // public String toString() {
-        // final int n = beamWidthValues.length;
-        // final StringBuilder cellStats = new StringBuilder(4096);
-        // for (int start = 0; start < n; start++) {
-        // for (int end = n; end > start; end--) {
-        // int x = beamWidthValues[start][end];
-        // if (x > 5)
-        // x = 5;
-        // x = 5 - x;
-        // if (onlyFactored[start][end]) {
-        // cellStats.append(start + "," + end + "=FACT ");
-        // } else if (x > 0) {
-        // cellStats.append(start + "," + end + "=" + x + " ");
-        // }
-        // }
-        // }
-        // return cellStats.toString();
-        // }
+        @Override
+        public boolean isCellOpen(final short start, final short end) {
+            if (childCellSelector != null && !childCellSelector.isCellOpen(start, end)) {
+                return false;
+            }
+
+            // For now, just iterate through cells. We might decide to improve on this later, but it's only used when
+            // combining multiple cell selectors, so it's not a high priority.
+            for (int i = 0; i < cellIndices.length; i += 2) {
+                if (cellIndices[i] == start && cellIndices[i + 1] == end) {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 }

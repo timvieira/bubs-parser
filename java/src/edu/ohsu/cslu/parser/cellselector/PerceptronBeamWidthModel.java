@@ -43,7 +43,7 @@ import edu.ohsu.cslu.perceptron.Classifier;
  * @author Nathan Bodenstab
  * @since 2011
  */
-public class PerceptronBeamWidthModel implements CellSelectorModel {
+public class PerceptronBeamWidthModel extends ChainableCellSelectorModel implements CellSelectorModel {
 
     private static final long serialVersionUID = 1L;
 
@@ -51,33 +51,40 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
     private boolean inferFactoredCells = false, classifyBaseCells = false;
     protected List<Feature> featureList;
 
-    public PerceptronBeamWidthModel(final BufferedReader modelStream) {
+    /**
+     * Constructs a {@link PerceptronBeamWidthModel}
+     * 
+     * @param modelReader Perceptron beam-width model
+     * @param childModel Child model (if 2 or more {@link CellSelectorModel}s are to be chained / intersected together)
+     */
+    public PerceptronBeamWidthModel(final BufferedReader modelReader, final CellSelectorModel childModel) {
+        super(childModel);
 
         if (inferFactoredCells == false && classifyBaseCells == true) {
             throw new IllegalArgumentException("ERROR: got that wrong -- no models -fact +base");
         }
 
         try {
-            modelStream.mark(10000);
-            String line = modelStream.readLine();
+            modelReader.mark(10000);
+            String line = modelReader.readLine();
             while (line != null && !line.trim().contains("# === ")) {
                 // # PerceptronBeamWidthModel inferFactoredCells=0 classifyBaseCells=0
                 if (line.startsWith("# PerceptronBeamWidthModel")) {
                     inferFactoredCells = line.split(" ")[2].split("=")[1].equals("1");
                     classifyBaseCells = line.split(" ")[3].split("=")[1].equals("1");
                 }
-                line = modelStream.readLine();
+                line = modelReader.readLine();
             }
-            modelStream.reset();
+            modelReader.reset();
 
             if ("# === BinaryPerceptronSet Model ===".equals(line)) {
-                beamWidthModel = new BinaryPerceptronSet(modelStream);
+                beamWidthModel = new BinaryPerceptronSet(modelReader);
             } else if ("# === Perceptron Model ===".equals(line)) {
-                beamWidthModel = new AveragedPerceptron(modelStream);
+                beamWidthModel = new AveragedPerceptron(modelReader);
             } else {
                 throw new IllegalArgumentException("ERROR: Unknown beamconf model type on line: " + line);
             }
-            modelStream.close();
+            modelReader.close();
         } catch (final IOException e) {
             e.printStackTrace();
         }
@@ -94,13 +101,17 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
     }
 
     public CellSelector createCellSelector() {
-        return new PerceptronBeamWidth();
+        return new PerceptronBeamWidth(childModel != null ? childModel.createCellSelector() : null);
     }
 
     public class PerceptronBeamWidth extends CellSelector {
 
         private int beamWidthValues[][];
         private boolean onlyFactored[][];
+
+        public PerceptronBeamWidth(final CellSelector child) {
+            super(child);
+        }
 
         @Override
         public void initSentence(final ChartParser<?, ?> p, final ParseTask task) {
@@ -213,6 +224,10 @@ public class PerceptronBeamWidthModel implements CellSelectorModel {
 
         @Override
         public boolean isCellOpen(final short start, final short end) {
+            if (childCellSelector != null && !childCellSelector.isCellOpen(start, end)) {
+                return false;
+            }
+
             return !constraintsEnabled || (beamWidthValues[start][end] > 0 && onlyFactored[start][end] == false);
         }
 

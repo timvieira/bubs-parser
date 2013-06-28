@@ -36,11 +36,14 @@ public class LeftRightBottomTopTraversal extends CellSelector {
 
         @Override
         public CellSelector createCellSelector() {
-            return new LeftRightBottomTopTraversal();
+            // LeftRightBottomTopTraversal doesn't support child selectors (if you need another selector, it's better to
+            // use its own iteration)
+            return new LeftRightBottomTopTraversal(null);
         }
     };
 
-    public LeftRightBottomTopTraversal() {
+    public LeftRightBottomTopTraversal(final CellSelector child) {
+        super(child);
     }
 
     // TODO: shouldn't all of this move into the constructor since we create a new one for each sentence?
@@ -61,5 +64,10 @@ public class LeftRightBottomTopTraversal extends CellSelector {
                 cellIndices[i++] = (short) (start + span);
             }
         }
+    }
+
+    @Override
+    public boolean isCellOpen(final short start, final short end) {
+        return true;
     }
 }

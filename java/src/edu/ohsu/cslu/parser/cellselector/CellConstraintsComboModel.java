@@ -37,14 +37,16 @@ public class CellConstraintsComboModel implements CellSelectorModel {
 
     @Override
     public CellSelector createCellSelector() {
-        return new CellConstraintsCombo();
+        // CellConstraintsCombo is already a combination model, so it doesn't support child selectors
+        return new CellConstraintsCombo(null);
     }
 
     public class CellConstraintsCombo extends CellSelector {
 
         private CellSelector constraints[];
 
-        public CellConstraintsCombo() {
+        public CellConstraintsCombo(final CellSelector child) {
+            super(child);
             constraints = new CellSelector[numModels];
             for (int i = 0; i < numModels; i++) {
                 constraints[i] = models[i].createCellSelector();

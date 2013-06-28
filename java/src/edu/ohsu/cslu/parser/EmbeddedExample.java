@@ -38,7 +38,7 @@ public class EmbeddedExample {
 
         // Create FOMModel and CellSelectorModel instances and load models from disk
         opts.fomModel = new BoundaryPosModel(FOMType.BoundaryPOS, grammar, uncompressFile(args[1]));
-        opts.cellSelectorModel = new PerceptronBeamWidthModel(uncompressFile(args[2]));
+        opts.cellSelectorModel = new PerceptronBeamWidthModel(uncompressFile(args[2]), null);
 
         // Create a Parser instance
         final CscSpmvParser parser = new CscSpmvParser(opts, grammar);

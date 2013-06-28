@@ -44,7 +44,7 @@ public class LimitedSpanOHSUCellConstraintsModel extends OHSUCellConstraintsMode
      * @param modelStream
      */
     public LimitedSpanOHSUCellConstraintsModel(final BufferedReader modelStream, final int maxSubtreeSpan) {
-        super(modelStream);
+        super(modelStream, null);
         this.maxSubtreeSpan = maxSubtreeSpan;
     }
 
@@ -54,6 +54,10 @@ public class LimitedSpanOHSUCellConstraintsModel extends OHSUCellConstraintsMode
     }
 
     public class LimitedSpanOHSUCellConstraints extends OHSUCellConstraintsModel.OHSUCellConstraints {
+
+        public LimitedSpanOHSUCellConstraints() {
+            super(null);
+        }
 
         private short sentenceLength;
         private Binarization binarization;

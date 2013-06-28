@@ -364,15 +364,19 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
                 throw new IllegalArgumentException("-fom value '" + fomTypeOrModel + "' not valid.");
             }
 
+            boolean defaultCellSelector = true;
             OHSUCellConstraintsModel cellConstraints = null;
             if (chartConstraintsModel != null) {
-                cellConstraints = new OHSUCellConstraintsModel(fileAsBufferedReader(chartConstraintsModel));
+                cellConstraints = new OHSUCellConstraintsModel(fileAsBufferedReader(chartConstraintsModel), null);
                 cellSelectorModel = cellConstraints;
+                defaultCellSelector = false;
             }
 
             PerceptronBeamWidthModel beamConstraints = null;
             if (beamModelFileName != null) {
-                beamConstraints = new PerceptronBeamWidthModel(fileAsBufferedReader(beamModelFileName));
+                beamConstraints = defaultCellSelector ? new PerceptronBeamWidthModel(
+                        fileAsBufferedReader(beamModelFileName), null) : new PerceptronBeamWidthModel(
+                        fileAsBufferedReader(beamModelFileName), cellSelectorModel);
                 cellSelectorModel = beamConstraints;
             } else if (pruningModels != null && pruningModels.length > 0) {
                 final ObjectInputStream ois = new ObjectInputStream(fileAsInputStream(pruningModels[0]));
@@ -387,11 +391,14 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
                 constraintsCombo.addModel(beamConstraints);
                 cellSelectorModel = constraintsCombo;
             } else if (maxSubtreeSpan != 0) {
-                cellSelectorModel = new LimitedSpanTraversalModel(maxSubtreeSpan);
+                cellSelectorModel = defaultCellSelector ? new LimitedSpanTraversalModel(maxSubtreeSpan, null)
+                        : new LimitedSpanTraversalModel(maxSubtreeSpan, cellSelectorModel);
             }
 
             if (completeClosureClassifierFile != null) {
-                cellSelectorModel = new CompleteClosureModel(completeClosureClassifierFile, grammar);
+                cellSelectorModel = defaultCellSelector ? new CompleteClosureModel(completeClosureClassifierFile,
+                        grammar, null) : new CompleteClosureModel(completeClosureClassifierFile, grammar,
+                        cellSelectorModel);
             }
         }
 
