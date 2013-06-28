@@ -191,6 +191,7 @@ public class ExtractWekaWordClusteringFeatures extends BaseTextNormalizationTool
                 final NaryTree<String> leaf = iter.next();
 
                 final String token = leaf.label();
+                // Include only tokens observed in the training corpus <= threshold times with the current POS
                 if (!thresholdMap.containsKey(leaf.parentLabel())
                         || tokenCounts.getInt(key(leaf)) > thresholdMap.getInt(leaf.parentLabel())) {
                     continue;
