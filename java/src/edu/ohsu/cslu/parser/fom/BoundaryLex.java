@@ -265,12 +265,11 @@ public final class BoundaryLex extends FigureOfMeritModel {
         return i;
     }
 
-    private void readClusterFile(final File file, final Tokenizer tokenizer, final String defaultClass)
-            throws IOException {
+    private void readClusterFile(final File file, final String defaultClass) throws IOException {
 
         wordClasses = new SymbolSet<String>();
         final int defaultClassIndex = wordClasses.addSymbol(defaultClass);
-        lexToClassMap = new int[tokenizer.lexSize()];
+        lexToClassMap = new int[grammar.lexSet.size()];
         Arrays.fill(lexToClassMap, defaultClassIndex);
         lexToClassMap[grammar.nullToken()] = wordClasses.addSymbol(Grammar.nullSymbolStr);
 
@@ -279,7 +278,7 @@ public final class BoundaryLex extends FigureOfMeritModel {
             // Expecting format: <word> <class> - split on whitespace
             final String[] split = line.split("[ \t]+");
             if (split.length >= 2) {
-                final int word = tokenizer.wordToLexSetIndex(split[0], false);
+                final int word = grammar.tokenizer.wordToLexSetIndex(split[0], false);
                 final int wordClass = wordClasses.addSymbol(split[1]);
                 lexToClassMap[word] = wordClass;
                 // NB: Multiple words may be mapped to the same UNK class with different clusters.
@@ -333,7 +332,7 @@ public final class BoundaryLex extends FigureOfMeritModel {
             trainingCorpusReader.reset();
 
         } else {
-            readClusterFile(clusterFile, grammar.tokenizer, "0");
+            readClusterFile(clusterFile, "0");
         }
 
         for (String line = trainingCorpusReader.readLine(); line != null; line = trainingCorpusReader.readLine()) {
@@ -367,15 +366,15 @@ public final class BoundaryLex extends FigureOfMeritModel {
                         if (lbNode != null) {
                             final String word = lbNode.contents;
                             if (!lexCounts.containsKey(word) || lexCounts.get(word) <= unkThresh) {
-                                final String unkWord = grammar.tokenizer.wordToUnkString(word,
-                                        lbNode.leftNeighbor == null);
+                                final String unkWord = Tokenizer.berkeleyGetSignature(word,
+                                        lbNode.leftNeighbor == null, grammar.lexSet);
                                 leftBoundaryCount.increment(node.contents, unkWord);
                             }
                         }
                         if (rbNode != null) {
                             final String word = rbNode.contents;
                             if (!lexCounts.containsKey(word) || lexCounts.get(word) <= unkThresh) {
-                                final String unkWord = grammar.tokenizer.wordToUnkString(word, false);
+                                final String unkWord = Tokenizer.berkeleyGetSignature(word, false, grammar.lexSet);
                                 rightBoundaryCount.increment(unkWord, node.contents);
                             }
                         }
@@ -442,7 +441,7 @@ public final class BoundaryLex extends FigureOfMeritModel {
             if (unkProb == Float.NEGATIVE_INFINITY) {
                 // word never observed at boundary
                 unkProb = (float) Math.log(leftBoundaryCount.getProb("DOES-NOT-EXIST",
-                        grammar.tokenizer.wordToUnkString(classStr, false)));
+                        Tokenizer.berkeleyGetSignature(classStr, false, grammar.lexSet)));
             }
             outStream.write("UNK LB " + classStr + " " + unkProb + "\n");
         }

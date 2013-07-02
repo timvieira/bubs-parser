@@ -117,6 +117,16 @@ public class ParseTask {
 
     long startTime;
 
+    /**
+     * Default constructor, used during regular inference by most {@link Parser} implementations.
+     * 
+     * @param input
+     * @param inputFormat
+     * @param grammar
+     * @param figureOfMerit
+     * @param recoveryStrategy
+     * @param decodeMethod
+     */
     public ParseTask(final String input, final InputFormat inputFormat, final Grammar grammar,
             final FigureOfMerit figureOfMerit, final RecoveryStrategy recoveryStrategy, final DecodeMethod decodeMethod) {
 
@@ -186,11 +196,25 @@ public class ParseTask {
         this.recoveryStrategy = recoveryStrategy;
     }
 
+    /**
+     * Constructor used for test cases
+     * 
+     * @param input
+     * @param inputFormat
+     * @param grammar
+     * @param decodeMethod
+     */
     public ParseTask(final String input, final InputFormat inputFormat, final Grammar grammar,
             final DecodeMethod decodeMethod) {
         this(input, inputFormat, grammar, InsideProb.INSTANCE, null, decodeMethod);
     }
 
+    /**
+     * Constructor used for constrained parsing
+     * 
+     * @param tokens
+     * @param grammar
+     */
     public ParseTask(final int[] tokens, final Grammar grammar) {
         this.tokens = tokens;
         this.grammar = grammar;

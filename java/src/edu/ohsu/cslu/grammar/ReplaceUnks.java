@@ -21,7 +21,12 @@ public class ReplaceUnks extends BaseCommandlineTool {
         final Grammar g = new ListGrammar(fileAsBufferedReader(grammarFile));
 
         for (final String s : inputLines()) {
-            System.out.println(Strings.join(g.tokenizer.tokenize(s), " "));
+            final String treebankTokens[] = Tokenizer.treebankTokenize(s).split(" ");
+            for (int i = 0; i < treebankTokens.length; i++) {
+                treebankTokens[i] = g.tokenizer.wordToLexSetEntry(treebankTokens[i], i == 0);
+            }
+
+            System.out.println(Strings.join(treebankTokens, " "));
         }
     }
 

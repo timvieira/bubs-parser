@@ -59,12 +59,12 @@ public class Tokenizer implements Serializable {
         }
 
         for (final String word : unkWords) {
-            lexSet.addSymbol(wordToUnkString(word, false));
-            lexSet.addSymbol(wordToUnkString(word, true));
+            lexSet.addSymbol(berkeleyGetSignature(word, false, lexSet));
+            lexSet.addSymbol(berkeleyGetSignature(word, true, lexSet));
         }
     }
 
-    public static HashMap<String, Integer> readLexCountFile(final String fileName) throws NumberFormatException,
+    private static HashMap<String, Integer> readLexCountFile(final String fileName) throws NumberFormatException,
             IOException {
         final HashMap<String, Integer> lexCounts = new HashMap<String, Integer>();
         String line;
@@ -79,15 +79,6 @@ public class Tokenizer implements Serializable {
             }
         }
         return lexCounts;
-    }
-
-    public boolean hasWord(final String word) {
-        return lexSet.containsKey(word);
-    }
-
-    public int lexSize() {
-        lexSet.finalize(); // After getting the size, make sure it doesn't change.
-        return lexSet.size();
     }
 
     public static String treebankTokenize(final String sentence) {
@@ -154,14 +145,6 @@ public class Tokenizer implements Serializable {
         return s.replaceAll("\\s+", " ").trim();
     }
 
-    public String[] tokenize(final String sentence) {
-        final String treebankTokens[] = treebankTokenize(sentence).split(" ");
-        for (int i = 0; i < treebankTokens.length; i++) {
-            treebankTokens[i] = wordToLexSetEntry(treebankTokens[i], i == 0);
-        }
-        return treebankTokens;
-    }
-
     public int[] tokenizeToIndex(final String sentence) {
         // TODO This could probably be done faster with something other than a regex
         final String tokens[] = sentence.split("\\s+");
@@ -189,15 +172,8 @@ public class Tokenizer implements Serializable {
         if (lexSet.containsKey(word)) {
             return word;
         }
+        String unkStr = berkeleyGetSignature(word, sentenceInitial, lexSet);
 
-        return unkToUnkEntry(wordToUnkString(word, sentenceInitial));
-    }
-
-    public String wordToUnkEntry(final String word, final boolean sentenceInitial) {
-        return unkToUnkEntry(wordToUnkString(word, sentenceInitial));
-    }
-
-    public String unkToUnkEntry(String unkStr) {
         // remove last feature from unk string until we find a matching entry in the lexicon
         while (!lexSet.containsKey(unkStr) && unkStr.contains("-")) {
             unkStr = unkStr.substring(0, unkStr.lastIndexOf('-'));
@@ -208,10 +184,6 @@ public class Tokenizer implements Serializable {
         }
 
         return unkStr;
-    }
-
-    public String wordToUnkString(final String word, final boolean sentenceInitial) {
-        return berkeleyGetSignature(word, sentenceInitial, lexSet);
     }
 
     // taken from Berkeley Parser SimpleLexicon.getNewSignature
