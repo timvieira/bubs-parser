@@ -125,7 +125,7 @@ public class LimitedSpanTraversalModel extends ChainableCellSelectorModel implem
                 return false;
             }
 
-            return (end - start >= maxSubtreeSpan) // Allowed spans
+            return (end - start <= maxSubtreeSpan) // Allowed spans
                     || (binarization == Binarization.LEFT && start == 0) // Left periphery
                     || (binarization == Binarization.RIGHT && end == sentenceLength); // Right periphery
         }

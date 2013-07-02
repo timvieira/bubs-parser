@@ -163,9 +163,15 @@ public class CompleteClosureModel extends ChainableCellSelectorModel implements 
 
             // For now, just iterate through cells. We might decide to improve on this later, but it's only used when
             // combining multiple cell selectors, so it's not a high priority.
+            final int span = end - start;
             for (int i = 0; i < cellIndices.length; i += 2) {
-                if (cellIndices[i] == start && cellIndices[i + 1] == end) {
+                final short start2 = cellIndices[i];
+                final short end2 = cellIndices[i + 1];
+
+                if (start2 == start && end2 == end) {
                     return true;
+                } else if (end2 - end2 > span) {
+                    return false;
                 }
             }
             return false;
