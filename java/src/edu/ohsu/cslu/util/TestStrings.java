@@ -187,6 +187,19 @@ public class TestStrings {
     }
 
     @Test
+    public void testSplitOn() throws Exception {
+        assertArrayEquals(new String[] { "a", "b" }, Strings.splitOn("a,b", ',', '\''));
+        assertArrayEquals(new String[] { "a", "b", "c" }, Strings.splitOn("a,b,c", ',', '\''));
+        assertArrayEquals(new String[] { "aa", "bbbb", "cccc" }, Strings.splitOn("aa,bbbb,cccc", ',', '\''));
+        assertArrayEquals(new String[] { "a", "b,", "c" }, Strings.splitOn("a,'b,',c", ',', '\''));
+        assertArrayEquals(new String[] { "a", ",", "b" }, Strings.splitOn("a,',',b", ',', '\''));
+        assertArrayEquals(new String[] { "a", "''", "b" }, Strings.splitOn("a,\'\\''\\',b", ',', '\''));
+
+        // The empty string
+        assertArrayEquals("".split(" "), Strings.splitOn("", ',', '\''));
+    }
+
+    @Test
     @PerformanceTest({ "mbp", "1000", "mbp2012", "1300" })
     public void profilePermuteFeatures() throws Exception {
         Strings.permuteFeatures("(%) (rate) (capped) (one-year) (adjustable) (rate) (mortgages)");

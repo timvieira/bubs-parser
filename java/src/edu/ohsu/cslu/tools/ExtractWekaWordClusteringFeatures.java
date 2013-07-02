@@ -32,6 +32,7 @@ import weka.core.FastVector;
 import weka.core.Instance;
 import weka.core.Instances;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
+import edu.ohsu.cslu.util.Strings;
 
 /**
  * Extracts rare-word attributes (including syntactic features) from a training corpus. Outputs in Weka ARFF file
@@ -54,6 +55,15 @@ public class ExtractWekaWordClusteringFeatures extends BaseTextNormalizationTool
 
         // The token itself
         attributes.addElement(new Attribute("Token", (FastVector) null));
+
+        // Sentence index (1-based)
+        attributes.addElement(new Attribute("SentenceIndex"));
+
+        // Word index (1-based)
+        attributes.addElement(new Attribute("WordIndex"));
+
+        // Occurrence count (the number of times the token/POS-tag combination was observed in the training corpus
+        attributes.addElement(new Attribute("OccurrenceCount"));
 
         // Previous, current, and next POS tags
         attributes.addElement(new Attribute("Pos-1", (FastVector) null));
@@ -178,22 +188,29 @@ public class ExtractWekaWordClusteringFeatures extends BaseTextNormalizationTool
         // Allow re-reading up to 50 MB
         br.mark(50 * 1024 * 1024);
 
-        final Object2IntOpenHashMap<String> tokenCounts = countTokenOccurrences(br);
+        // Maps a string key (POS|token) to the number of times that combination was observed in the training corpus
+        final Object2IntOpenHashMap<String> observationCounts = countTokenOccurrences(br);
 
         // Reset the reader and reread the corpus, this time applying appropriate normalizations and outputting each
         // tree
         br.reset();
 
+        int sentenceIndex = 0;
         for (final String line : inputLines(br)) {
             final NaryTree<String> tree = NaryTree.read(line, String.class);
+            sentenceIndex++;
 
+            int wordIndex = 0;
             for (final ListIterator<NaryTree<String>> iter = tree.leafList().listIterator(); iter.hasNext();) {
-                final NaryTree<String> leaf = iter.next();
 
+                final NaryTree<String> leaf = iter.next();
                 final String token = leaf.label();
+                wordIndex++;
+
                 // Include only tokens observed in the training corpus <= threshold times with the current POS
+                final int observationCount = observationCounts.getInt(key(leaf));
                 if (!thresholdMap.containsKey(leaf.parentLabel())
-                        || tokenCounts.getInt(key(leaf)) > thresholdMap.getInt(leaf.parentLabel())) {
+                        || observationCount > thresholdMap.getInt(leaf.parentLabel())) {
                     continue;
                 }
 
@@ -201,6 +218,13 @@ public class ExtractWekaWordClusteringFeatures extends BaseTextNormalizationTool
 
                 // Token
                 values.add(instances.attribute(values.size()).addStringValue(token));
+
+                // Sentence and word index
+                values.add(values.size(), sentenceIndex);
+                values.add(values.size(), wordIndex);
+
+                // Occurrence count
+                values.add(values.size(), observationCount);
 
                 // Previous POS label
                 try {
@@ -301,7 +325,7 @@ public class ExtractWekaWordClusteringFeatures extends BaseTextNormalizationTool
                 }
 
                 // Contains-numeral and numeral percentage
-                final float np = numeralPercentage(token);
+                final float np = Strings.numeralPercentage(token);
                 if (np > 0) {
                     values.add(containsNumeralPositive);
                     if (np == 1f) {
@@ -323,7 +347,7 @@ public class ExtractWekaWordClusteringFeatures extends BaseTextNormalizationTool
                 }
 
                 // Contains-numeral and numeral percentage
-                final float pp = punctuationPercentage(token);
+                final float pp = Strings.punctuationPercentage(token);
                 if (pp > 0) {
                     values.add(containsPunctuationPositive);
                     if (pp == 1f) {
@@ -354,52 +378,6 @@ public class ExtractWekaWordClusteringFeatures extends BaseTextNormalizationTool
 
         // Write the features out in ARFF format
         System.out.println(instances);
-    }
-
-    private float numeralPercentage(final String token) {
-        float numerals = 0;
-        for (int i = 0; i < token.length(); i++) {
-            if (Character.isDigit(token.charAt(i))) {
-                numerals++;
-            }
-        }
-        return numerals / token.length();
-    }
-
-    /**
-     * A simple set of punctuation characters. This might need expansion for alternate languages or domains.
-     * 
-     * @param c
-     * @return True if the supplied character is a punctuation (according to a very loosely-defined set)
-     */
-    public static boolean isPunctuation(final char c) {
-        // TODO Handle hyphen, comma, and period separately? Hyphen isn't included at all yet
-        switch (c) {
-        case ',':
-        case '.':
-        case '!':
-        case '?':
-        case ':':
-        case ';':
-        case '/':
-        case '\\':
-        case '#':
-        case '$':
-        case '%':
-            return true;
-        default:
-            return false;
-        }
-    }
-
-    private float punctuationPercentage(final String token) {
-        float numerals = 0;
-        for (int i = 0; i < token.length(); i++) {
-            if (isPunctuation(token.charAt(i))) {
-                numerals++;
-            }
-        }
-        return numerals / token.length();
     }
 
     public static void main(final String[] args) {

@@ -212,7 +212,55 @@ public class Strings {
         if (i < s.length()) {
             split.add(s.substring(i));
         }
-        return split.toArray(new String[0]);
+        return split.toArray(new String[split.size()]);
+    }
+
+    /**
+     * Returns the array of strings computed by splitting this string around the specified delimiter. Strings containing
+     * the delimiter can be escaped with the specified escape character, and the escape character can itself be escaped
+     * with '\'
+     * 
+     * @param s String to split
+     * @param delimiter Field delimiter
+     * @return the array of strings computed by splitting this string around the specified delimiter
+     */
+    public static String[] splitOn(final String s, final char delimiter, final char escapeChar) {
+        if (s == null || s.length() == 0) {
+            return new String[] { "" };
+        }
+
+        final ArrayList<String> split = new ArrayList<String>();
+        StringBuilder sb = new StringBuilder();
+        boolean escaped = false;
+        for (int i = 0; i < s.length(); i++) {
+            final char c = s.charAt(i);
+
+            // Escaped escape char
+            if (c == '\\' && i < s.length() - 1 && s.charAt(i + 1) == escapeChar) {
+                i++;
+                sb.append('\'');
+                continue;
+            }
+
+            // Regular escape char
+            if (c == '\'') {
+                escaped = !escaped;
+                continue;
+            }
+
+            // Delimiter
+            if (c == delimiter && !escaped) {
+                split.add(sb.toString());
+                sb = new StringBuilder();
+                continue;
+            }
+
+            // Normal case
+            sb.append(c);
+        }
+
+        split.add(sb.toString());
+        return split.toArray(new String[split.size()]);
     }
 
     /**
@@ -594,5 +642,52 @@ public class Strings {
         }
 
         return String.format("1/%d", java.lang.Math.round(exp));
+    }
+
+    public static float numeralPercentage(final String token) {
+        float numerals = 0;
+        for (int i = 0; i < token.length(); i++) {
+            if (Character.isDigit(token.charAt(i))) {
+                numerals++;
+            }
+        }
+        return numerals / token.length();
+    }
+
+    /**
+     * A simple set of punctuation characters. This might need expansion for alternate languages or domains.
+     * 
+     * @param c
+     * @return True if the supplied character is a punctuation (according to a very loosely-defined set)
+     */
+    public static boolean isPunctuation(final char c) {
+        // TODO Handle hyphen, comma, and period separately?
+        switch (c) {
+        case ',':
+        case '.':
+        case '!':
+        case '?':
+        case ':':
+        case ';':
+        case '/':
+        case '\\':
+        case '#':
+        case '$':
+        case '%':
+        case '-':
+            return true;
+        default:
+            return false;
+        }
+    }
+
+    public static float punctuationPercentage(final String token) {
+        float numerals = 0;
+        for (int i = 0; i < token.length(); i++) {
+            if (isPunctuation(token.charAt(i))) {
+                numerals++;
+            }
+        }
+        return numerals / token.length();
     }
 }
