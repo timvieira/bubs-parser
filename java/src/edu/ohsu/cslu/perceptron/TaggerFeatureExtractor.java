@@ -24,9 +24,10 @@ import edu.ohsu.cslu.datastructs.vectors.LargeSparseBitVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.util.Strings;
 
 /**
- * Extracts features for POS tagging
+ * Extracts features for multiclass tagging (POS tagging in particular, but other classifications are supported as well)
  * 
  * We support:
  * 
@@ -34,6 +35,14 @@ import edu.ohsu.cslu.grammar.SymbolSet;
  * tm3    Tag i-3
  * tm2    Tag i-2
  * tm1    Previous tag
+ * 
+ * posm3  POS i-3
+ * posm2  POS i-2
+ * posm1  Previous POS
+ * pos    Current POS
+ * posp1  Next POS
+ * posp2  POS i+2
+ * posp3  POS i+3
  * 
  * wm2    Word i-2
  * wm1    Previous word (i-1)
@@ -46,9 +55,34 @@ import edu.ohsu.cslu.grammar.SymbolSet;
  * u      Unknown word token
  * up1    Unknown word token (i+1)
  * up2    Unknown word token i+2
- * </pre>
  * 
- * Unknown word features use the standard Berkeley UNK classes
+ * (Unknown word features use the standard Berkeley UNK classes)
+ * 
+ * numm1  Previous token contains a numeral
+ * num    Token contains a numeral
+ * nump1  Next token contains a numeral
+ * 
+ * num0   0% numerals
+ * num20  20+% numerals
+ * num40  40+% numerals
+ * num60  60+% numerals
+ * num80  80+% numerals
+ * num100 100% numerals
+ * 
+ * punctm1  Previous token contains punctuation
+ * punct    Token contains punctuation
+ * punctp1  Next token contains punctuation
+ * 
+ * punct0   0% punctuation
+ * punct20  20+% punctuation
+ * punct40  40+% punctuation
+ * punct60  60+% punctuation
+ * punct80  80+% punctuation
+ * punct100 100% punctuation
+ * 
+ * us       Unigram suffix
+ * bs       Bigram suffix
+ * </pre>
  */
 public class TaggerFeatureExtractor extends FeatureExtractor<TagSequence> {
 
@@ -60,8 +94,11 @@ public class TaggerFeatureExtractor extends FeatureExtractor<TagSequence> {
     final SymbolSet<String> lexicon;
     final SymbolSet<String> tags;
 
+    final SymbolSet<String> posSet;
+    final SymbolSet<String> unigramSuffixSet, bigramSuffixSet;
+
     final int nullToken, nullTag;
-    final int lexiconSize, tagSetSize, unkClassSetSize;
+    final int lexiconSize, tagSetSize, unkClassSetSize, posSetSize, unigramSuffixSetSize, bigramSuffixSetSize;
     final long featureVectorLength;
 
     /**
@@ -74,10 +111,42 @@ public class TaggerFeatureExtractor extends FeatureExtractor<TagSequence> {
      */
     public TaggerFeatureExtractor(final String featureTemplates, final SymbolSet<String> lexicon,
             final SymbolSet<String> unkClassSet, final SymbolSet<String> tagSet) {
+        this(featureTemplates, lexicon, unkClassSet, tagSet, null);
+    }
+
+    /**
+     * Constructs a {@link FeatureExtractor} using the specified feature templates and a POS tagset
+     * 
+     * @param featureTemplates
+     * @param lexicon
+     * @param unkClassSet
+     * @param tagSet
+     * @param posSet
+     */
+    public TaggerFeatureExtractor(final String featureTemplates, final SymbolSet<String> lexicon,
+            final SymbolSet<String> unkClassSet, final SymbolSet<String> tagSet, final SymbolSet<String> posSet) {
 
         this.lexicon = lexicon;
         this.lexiconSize = lexicon.size();
         this.nullToken = lexicon.getIndex(Grammar.nullSymbolStr);
+
+        this.posSet = posSet;
+        this.posSetSize = posSet != null ? posSet.size() : 0;
+
+        this.unigramSuffixSet = new SymbolSet<String>();
+        unigramSuffixSet.defaultReturnValue(nullToken);
+        this.bigramSuffixSet = new SymbolSet<String>();
+        bigramSuffixSet.defaultReturnValue(nullToken);
+
+        for (int i = 0; i < lexicon.size(); i++) {
+            final String token = lexicon.getSymbol(i);
+            unigramSuffixSet.addSymbol(token.substring(token.length() - 1));
+            if (token.length() > 1) {
+                bigramSuffixSet.addSymbol(token.substring(token.length() - 2));
+            }
+        }
+        this.unigramSuffixSetSize = unigramSuffixSet.size();
+        this.bigramSuffixSetSize = bigramSuffixSet.size();
 
         this.tags = tagSet;
         this.tagSetSize = tags.size();
@@ -147,6 +216,47 @@ public class TaggerFeatureExtractor extends FeatureExtractor<TagSequence> {
             case wp2:
                 size *= lexiconSize;
                 break;
+
+            // Lots of binary features
+            case numm1:
+            case num:
+            case nump1:
+
+            case num20:
+            case num40:
+            case num60:
+            case num80:
+            case num100:
+
+            case punctm1:
+            case punct:
+            case punctp1:
+
+            case punct20:
+            case punct40:
+            case punct60:
+            case punct80:
+            case punct100:
+                size *= 2;
+                break;
+
+            case posm3:
+            case posm2:
+            case posm1:
+            case pos:
+            case posp1:
+            case posp2:
+            case posp3:
+                size *= posSetSize;
+                break;
+
+            case us:
+                size *= unigramSuffixSetSize;
+                break;
+
+            case bs:
+                size *= bigramSuffixSetSize;
+                break;
             }
 
             if (size < 0) {
@@ -202,6 +312,67 @@ public class TaggerFeatureExtractor extends FeatureExtractor<TagSequence> {
                     feature += ((index < 0 || index >= sequence.mappedTokens.length) ? nullToken
                             : sequence.mappedTokens[index]);
                     break;
+
+                // Lots of binary features
+                case numm1:
+                case num:
+                case nump1:
+                    feature *= 2;
+                    feature += (index < 0 || index >= sequence.mappedTokens.length) ? 0 : Strings
+                            .numeralPercentage(lexicon.getSymbol(sequence.mappedTokens[index])) > 0 ? 1 : 0;
+                    break;
+
+                case num20:
+                case num40:
+                case num60:
+                case num80:
+                case num100:
+                    feature *= 2;
+                    feature += (index < 0 || index >= sequence.mappedTokens.length) ? 0 : Strings
+                            .numeralPercentage(lexicon.getSymbol(sequence.mappedTokens[index])) >= t.value ? 1 : 0;
+                    break;
+
+                case punctm1:
+                case punct:
+                case punctp1:
+                    feature *= 2;
+                    feature += (index < 0 || index >= sequence.mappedTokens.length) ? 0 : Strings
+                            .punctuationPercentage(lexicon.getSymbol(sequence.mappedTokens[index])) > 0 ? 1 : 0;
+                    break;
+
+                case punct20:
+                case punct40:
+                case punct60:
+                case punct80:
+                case punct100:
+                    feature *= 2;
+                    feature += (index < 0 || index >= sequence.mappedTokens.length) ? 0 : Strings
+                            .punctuationPercentage(lexicon.getSymbol(sequence.mappedTokens[index])) >= t.value ? 1 : 0;
+                    break;
+
+                case posm3:
+                case posm2:
+                case posm1:
+                case pos:
+                case posp1:
+                case posp2:
+                case posp3:
+                    feature *= posSetSize;
+                    feature += ((index < 0 || index >= sequence.mappedPosSymbols.length) ? nullToken
+                            : sequence.mappedPosSymbols[index]);
+                    break;
+
+                case us:
+                    feature *= unigramSuffixSetSize;
+                    feature += ((index < 0 || index >= sequence.mappedUnigramSuffix.length) ? nullToken
+                            : sequence.mappedUnigramSuffix[index]);
+                    break;
+
+                case bs:
+                    feature *= posSetSize;
+                    feature += ((index < 0 || index >= sequence.mappedBigramSuffix.length) ? nullToken
+                            : sequence.mappedBigramSuffix[index]);
+                    break;
                 }
             }
             final long featureIndex = featureOffsets[i] + feature;
@@ -218,6 +389,14 @@ public class TaggerFeatureExtractor extends FeatureExtractor<TagSequence> {
         tm2(-2), // Tag i-2
         tm1(-1), // Previous tag
 
+        posm3(-3), // POS i-3
+        posm2(-2), // POS i-2
+        posm1(-1), // Previous POS
+        pos(0), // Current POS
+        posp1(1), // Next POS
+        posp2(1), // POS i+2
+        posp3(1), // POS i+3
+
         wm2(-2), // Word i-2
         wm1(-1), // Previous word (i-1)
         w(0), // Word
@@ -228,12 +407,41 @@ public class TaggerFeatureExtractor extends FeatureExtractor<TagSequence> {
         um1(-1), // Unknown word token (i-1)
         u(0), // Unknown word token
         up1(1), // Unknown word token (i+1)
-        up2(2); // Unknown word token i+2
+        up2(2), // Unknown word token i+2
+
+        numm1(-1), // Previous token contains a numeral
+        num(0), // Token contains a numeral
+        nump1(1), // Next token contains a numeral
+
+        num20(0, .2f), // 20+% numerals
+        num40(0, .4f), // 40+% numerals
+        num60(0, .6f), // 60+% numerals
+        num80(0, .8f), // 80+% numerals
+        num100(0, 1.0f), // 100% numerals
+
+        punctm1(-1), // Previous token contains punctuation
+        punct(0), // Token contains punctuation
+        punctp1(1), // Next token contains punctuation
+
+        punct20(0, .2f), // 20+% punctuation
+        punct40(0, .4f), // 40+% punctuation
+        punct60(0, .6f), // 60+% punctuation
+        punct80(0, .8f), // 80+% punctuation
+        punct100(0, 1.0f), // 100% punctuation
+
+        us(0), // Unigram suffix
+        bs(0); // Bigram suffix
 
         final int offset;
+        final float value;
 
         private TemplateElement(final int offset) {
+            this(offset, 0);
+        }
+
+        private TemplateElement(final int offset, final float value) {
             this.offset = offset;
+            this.value = value;
         }
     }
 }

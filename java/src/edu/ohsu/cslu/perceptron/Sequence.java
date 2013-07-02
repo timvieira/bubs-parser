@@ -34,14 +34,31 @@ public class Sequence {
     // Note: these fields should be initialized in the constructor and are semantically final, but we can't mark them as
     // such, since they're initialized in subclass constructors
     //
-    /** Integer representation of each token in the sequence (as mapped by {@link #lexicon}. */
+    /** Integer representation of each token in the sequence (as mapped by {@link #lexicon}). */
     int[] mappedTokens;
 
     /**
      * Integer representation of the unknown-word class for each token in the sequence (as mapped by
-     * {@link #unkClassSet}.
+     * {@link #unkClassSet}).
      */
     int[] mappedUnkSymbols;
+
+    /**
+     * Integer representation of the part-of-speech for each token in the sequence (as mapped by {@link #posSet}).
+     */
+    int[] mappedPosSymbols;
+
+    /**
+     * Integer representation of the unigram suffix for each token in the sequence (as mapped by
+     * {@link #unigramSuffixSet}).
+     */
+    int[] mappedUnigramSuffix;
+
+    /**
+     * Integer representation of the bigram suffix for each token in the sequence (as mapped by {@link #bigramSuffixSet}
+     * ).
+     */
+    int[] mappedBigramSuffix;
 
     /**
      * The number of individual classifications possible for this sequence. Note that this may be larger than the number
@@ -60,12 +77,46 @@ public class Sequence {
     protected final SymbolSet<String> unkClassSet;
 
     /**
+     * {@link SymbolSet} containing part-of-speech classes.
+     */
+    protected final SymbolSet<String> posSet;
+
+    /**
+     * {@link SymbolSet} containing unigram suffixes.
+     */
+    protected final SymbolSet<String> unigramSuffixSet;
+
+    /**
+     * {@link SymbolSet} containing bigram suffixes.
+     */
+    protected final SymbolSet<String> bigramSuffixSet;
+
+    /**
      * Constructor for a training or test sequence. Used by subclass constructors.
      * 
      * @param lexicon
+     * @param unkClassSet
+     * @param posSet
+     * @param unigramSuffixSet
+     * @param bigramSuffixSet
      */
-    protected Sequence(final SymbolSet<String> lexicon, final SymbolSet<String> unkClassSet) {
+    protected Sequence(final SymbolSet<String> lexicon, final SymbolSet<String> unkClassSet,
+            final SymbolSet<String> posSet, final SymbolSet<String> unigramSuffixSet,
+            final SymbolSet<String> bigramSuffixSet) {
         this.lexicon = lexicon;
         this.unkClassSet = unkClassSet;
+        this.posSet = posSet;
+        this.unigramSuffixSet = unigramSuffixSet;
+        this.bigramSuffixSet = bigramSuffixSet;
+    }
+
+    /**
+     * Constructor for a training or test sequence. Used by subclass constructors.
+     * 
+     * @param lexicon
+     * @param unkClassSet
+     */
+    protected Sequence(final SymbolSet<String> lexicon, final SymbolSet<String> unkClassSet) {
+        this(lexicon, unkClassSet, null, null, null);
     }
 }

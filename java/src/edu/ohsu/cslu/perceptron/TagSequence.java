@@ -35,13 +35,14 @@ public class TagSequence extends Sequence {
     final short[] predictedTags;
 
     /**
-     * Constructs from a bracketed string (e.g. (DT The) (NN fish) ... or from a space-delimited (untagged) string.
+     * Constructs from a bracketed string (e.g. (DT The) (NN fish) ... or from a space-delimited (untagged) string. Used
+     * by {@link CompleteClosureClassifier} when an existing {@link Tagger} is already initialized.
      * 
      * @param sentence
      * @param tagger
      */
     public TagSequence(final String sentence, final Tagger tagger) {
-        this(sentence, tagger.lexicon, tagger.unkClassSet, tagger.tagSet);
+        this(sentence, tagger.lexicon, tagger.unkClassSet, tagger.tagSet, null, null);
     }
 
     /**
@@ -53,9 +54,10 @@ public class TagSequence extends Sequence {
      * @param tagSet
      */
     public TagSequence(final String sentence, final SymbolSet<String> lexicon, final SymbolSet<String> unkClassSet,
-            final SymbolSet<String> tagSet) {
+            final SymbolSet<String> tagSet, final SymbolSet<String> unigramSuffixSet,
+            final SymbolSet<String> bigramSuffixSet) {
 
-        super(lexicon, unkClassSet);
+        super(lexicon, unkClassSet, null, unigramSuffixSet, bigramSuffixSet);
 
         this.tagSet = tagSet;
 
@@ -74,6 +76,10 @@ public class TagSequence extends Sequence {
                 this.mappedUnkSymbols = new int[length];
                 this.tags = new short[length];
                 this.predictedTags = new short[length];
+                if (unigramSuffixSet != null) {
+                    this.mappedUnigramSuffix = new int[length];
+                    this.mappedBigramSuffix = new int[length];
+                }
 
                 int position = 0;
                 for (final NaryTree<String> leaf : tree.leafTraversal()) {
@@ -89,6 +95,10 @@ public class TagSequence extends Sequence {
                 this.mappedUnkSymbols = new int[length];
                 this.tags = new short[length];
                 this.predictedTags = new short[length];
+                if (unigramSuffixSet != null) {
+                    this.mappedUnigramSuffix = new int[length];
+                    this.mappedBigramSuffix = new int[length];
+                }
 
                 for (int i = 0; i < split.length; i++) {
                     final String[] tokenAndPos = split[i].split(" ");
@@ -99,13 +109,17 @@ public class TagSequence extends Sequence {
         } else {
             // It didn't start with '('; assume it is untagged
             final String[] split = sentence.split(" ");
-            final String[] tokens = new String[split.length];
-            this.mappedTokens = new int[split.length];
-            this.mappedUnkSymbols = new int[split.length];
-            this.tags = new short[split.length];
-            this.predictedTags = new short[split.length];
-            Arrays.fill(tags, (short) -1);
             this.length = split.length;
+            final String[] tokens = new String[length];
+            this.mappedTokens = new int[length];
+            this.mappedUnkSymbols = new int[length];
+            this.tags = new short[length];
+            this.predictedTags = new short[length];
+            if (unigramSuffixSet != null) {
+                this.mappedUnigramSuffix = new int[length];
+                this.mappedBigramSuffix = new int[length];
+            }
+            Arrays.fill(tags, (short) -1);
 
             for (int i = 0; i < split.length; i++) {
                 tokens[i] = split[i];
@@ -118,6 +132,7 @@ public class TagSequence extends Sequence {
                     mappedUnkSymbols[i] = unkClassSet.addSymbol(Tokenizer.berkeleyGetSignature(tokens[i], i == 0,
                             lexicon));
                 }
+                mapSuffixes(i, split[i]);
             }
         }
     }
@@ -138,6 +153,24 @@ public class TagSequence extends Sequence {
             mappedTokens[position] = lexicon.addSymbol(token);
             mappedUnkSymbols[position] = unkClassSet.addSymbol(Tokenizer.berkeleyGetSignature(token, position == 0,
                     lexicon));
+        }
+
+        mapSuffixes(position, token);
+    }
+
+    private void mapSuffixes(final int position, final String token) {
+        if (unigramSuffixSet != null && token.length() > 0) {
+            if (unigramSuffixSet.isFinalized()) {
+                mappedUnigramSuffix[position] = unigramSuffixSet.getIndex(token.substring(token.length() - 1));
+                if (token.length() > 1) {
+                    mappedBigramSuffix[position] = bigramSuffixSet.getIndex(token.substring(token.length() - 2));
+                }
+            } else {
+                mappedUnigramSuffix[position] = unigramSuffixSet.addSymbol(token.substring(token.length() - 1));
+                if (token.length() > 1) {
+                    mappedBigramSuffix[position] = bigramSuffixSet.addSymbol(token.substring(token.length() - 2));
+                }
+            }
         }
     }
 

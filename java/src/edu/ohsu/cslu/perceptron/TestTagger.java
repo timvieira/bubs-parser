@@ -35,7 +35,7 @@ import edu.ohsu.cslu.grammar.Tokenizer;
 import edu.ohsu.cslu.tests.JUnit;
 
 /**
- * Unit tests for {@link Tagger}
+ * Unit tests for {@link Tagger} and {@link TaggerFeatureExtractor}.
  */
 public class TestTagger {
 
@@ -44,6 +44,8 @@ public class TestTagger {
     private SymbolSet<String> lexicon = new SymbolSet<String>();
     private SymbolSet<String> unkClassSet = new SymbolSet<String>();
     private SymbolSet<String> tagSet = new SymbolSet<String>();
+    private SymbolSet<String> unigramSuffixSet = new SymbolSet<String>();
+    private SymbolSet<String> bigramSuffixSet = new SymbolSet<String>();
 
     private ArrayList<TagSequence> trainingCorpusSequences = null;
 
@@ -56,14 +58,18 @@ public class TestTagger {
         this.lexicon.defaultReturnValue(Grammar.nullSymbolStr);
         this.unkClassSet.defaultReturnValue(Grammar.nullSymbolStr);
         this.tagSet.defaultReturnValue(Grammar.nullSymbolStr);
+        this.unigramSuffixSet.defaultReturnValue(Grammar.nullSymbolStr);
+        this.bigramSuffixSet.defaultReturnValue(Grammar.nullSymbolStr);
 
         final StringBuilder sb = new StringBuilder();
-        sb.append("(DT This) (NN time) (RP around) (, ,) (PRP they) (VBP 're) (VBG moving) (RB even) (RBR faster) (. .)");
+        sb.append("(DT This) (NN time) (RP around) (, ,) (PRP they) (VBP 're) (VBG moving) (RB even) (RBR faster) (. .)\n");
+        sb.append("(U1 90) (U2 F-15s) (U3 will) (U3 be) (U3 retired) (U3 in) (U3 the) (U2 2020's) (U4 .)\n");
         trainingCorpus = sb.toString();
 
         trainingCorpusSequences = new ArrayList<TagSequence>();
         for (final String line : trainingCorpus.split("\n")) {
-            trainingCorpusSequences.add(new TagSequence(line, lexicon, unkClassSet, tagSet));
+            trainingCorpusSequences.add(new TagSequence(line, lexicon, unkClassSet, tagSet, unigramSuffixSet,
+                    bigramSuffixSet));
         }
 
         nullTag = tagSet.getIndex(Grammar.nullSymbolStr);
@@ -85,9 +91,9 @@ public class TestTagger {
     @Test
     public void testSymbolSets() {
         // tagSet includes <null>; lexicon includes <null> and UNK classes
-        assertEquals(11, tagSet.size());
-        assertEquals(11, lexicon.size());
-        assertEquals(6, unkClassSet.size());
+        assertEquals(15, tagSet.size());
+        assertEquals(19, lexicon.size());
+        assertEquals(10, unkClassSet.size());
     }
 
     @Test
@@ -139,7 +145,7 @@ public class TestTagger {
     }
 
     @Test
-    public void testUnkClasses() {
+    public void testBerkeleyUnkClasses() {
         final TaggerFeatureExtractor fe = new TaggerFeatureExtractor("tm1_u,um2_um1", lexicon, unkClassSet, tagSet);
         final int offset1 = tagSet.size() * unkClassSet.size();
 
@@ -154,6 +160,29 @@ public class TestTagger {
         assertEquals(new SparseBitVector(fe.featureVectorLength, new int[] { nnTag * unkClassSet.size() + aroundUnk,
                 offset1 + thisUnk * unkClassSet.size() + timeUnk }),
                 fe.featureVector(trainingCorpusSequences.get(0), 2));
+    }
+
+    @Test
+    public void testUnkClusters() {
+        final TaggerFeatureExtractor fe = new TaggerFeatureExtractor("numm1,num20,punctp1,punct20,us,bs", lexicon,
+                unkClassSet, tagSet);
+        final int offset1 = 2;
+        final int offset2 = 4;
+        final int offset3 = 6;
+        final int offset4 = 8;
+        final int offset5 = offset4 + unigramSuffixSet.size();
+
+        assertEquals(new SparseBitVector(fe.featureVectorLength, new int[] { 0, offset1 + 1, offset2 + 1, offset3,
+                offset4 + unigramSuffixSet.getIndex("0"), offset5 + bigramSuffixSet.getIndex("90") }),
+                fe.featureVector(trainingCorpusSequences.get(1), 0));
+
+        assertEquals(new SparseBitVector(fe.featureVectorLength, new int[] { 1, offset1 + 1, offset2 + 0, offset3 + 1,
+                offset4 + unigramSuffixSet.getIndex("s"), offset5 + bigramSuffixSet.getIndex("5s") }),
+                fe.featureVector(trainingCorpusSequences.get(1), 1));
+
+        assertEquals(new SparseBitVector(fe.featureVectorLength, new int[] { 1, offset1 + 0, offset2 + 0, offset3 + 0,
+                offset4 + unigramSuffixSet.getIndex("l"), offset5 + bigramSuffixSet.getIndex("ll") }),
+                fe.featureVector(trainingCorpusSequences.get(1), 2));
     }
 
     @Test

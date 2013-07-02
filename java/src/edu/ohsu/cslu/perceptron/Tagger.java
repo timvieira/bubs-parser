@@ -189,7 +189,7 @@ public class Tagger extends ClassifierTool<TagSequence> {
 
         for (final String line : inputLines(input)) {
             sentences++;
-            final TagSequence tagSequence = new TagSequence(line, lexicon, unkClassSet, tagSet);
+            final TagSequence tagSequence = new TagSequence(line, this);
             for (int i = 0; i < tagSequence.length; i++) {
                 tagSequence.predictedTags[i] = classify(fe.featureVector(tagSequence, i));
             }
@@ -333,7 +333,7 @@ public class Tagger extends ClassifierTool<TagSequence> {
         // Read in the training corpus and map each token
         //
         for (final String line : inputLines(input)) {
-            trainingCorpusSequences.add(new TagSequence(line, lexicon, unkClassSet, tagSet));
+            trainingCorpusSequences.add(new TagSequence(line, this));
         }
         finalizeMaps();
 
@@ -375,7 +375,7 @@ public class Tagger extends ClassifierTool<TagSequence> {
         // Read in the dev set and map features
         if (devSet != null) {
             for (final String line : fileLines(devSet)) {
-                final TagSequence tagSequence = new TagSequence(line, lexicon, unkClassSet, tagSet);
+                final TagSequence tagSequence = new TagSequence(line, this);
                 devCorpusSequences.add(tagSequence);
 
                 final BitVector[] featureVectors = new BitVector[tagSequence.tags.length];
