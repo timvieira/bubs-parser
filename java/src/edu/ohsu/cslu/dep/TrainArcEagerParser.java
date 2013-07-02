@@ -32,8 +32,8 @@ import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.vectors.BitVector;
 import edu.ohsu.cslu.dep.DependencyGraph.Arc;
 import edu.ohsu.cslu.dep.DependencyGraph.ArcEagerAction;
+import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.SymbolSet;
-import edu.ohsu.cslu.grammar.Tokenizer;
 import edu.ohsu.cslu.perceptron.AveragedPerceptron;
 
 /**
@@ -110,7 +110,7 @@ public class TrainArcEagerParser extends BaseCommandlineTool {
                 tokens.addSymbol(arc.token);
 
                 // Add an entry for the UNK label as well
-                tokens.addSymbol(Tokenizer.berkeleyGetSignature(arc.token, i == 0, tokens));
+                tokens.addSymbol(DecisionTreeTokenClassifier.berkeleyGetSignature(arc.token, i == 0, tokens));
                 pos.addSymbol(arc.pos);
                 labels.addSymbol(arc.label);
             }

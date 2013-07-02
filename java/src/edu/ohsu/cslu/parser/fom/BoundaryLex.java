@@ -33,9 +33,9 @@ import java.util.Map;
 import edu.ohsu.cslu.counters.SimpleCounterSet;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
+import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.SymbolSet;
-import edu.ohsu.cslu.grammar.Tokenizer;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.Parser.ResearchParserType;
@@ -246,7 +246,7 @@ public final class BoundaryLex extends FigureOfMeritModel {
             // NB: When using the SM5 grammar, all lexical items in the training set
             // were not included in the grammar. This caused the above line to return
             // -1 and failed.
-            tmpList.add(grammar.tokenizer.wordToLexSetIndex(classStr, false));
+            tmpList.add(((DecisionTreeTokenClassifier) grammar.tokenClassifier).lexiconIndex(classStr, false));
             return tmpList;
         }
         return classToLexMap.get(classStr);
@@ -278,7 +278,7 @@ public final class BoundaryLex extends FigureOfMeritModel {
             // Expecting format: <word> <class> - split on whitespace
             final String[] split = line.split("[ \t]+");
             if (split.length >= 2) {
-                final int word = grammar.tokenizer.wordToLexSetIndex(split[0], false);
+                final int word = ((DecisionTreeTokenClassifier) grammar.tokenClassifier).lexiconIndex(split[0], false);
                 final int wordClass = wordClasses.addSymbol(split[1]);
                 lexToClassMap[word] = wordClass;
                 // NB: Multiple words may be mapped to the same UNK class with different clusters.
@@ -366,7 +366,7 @@ public final class BoundaryLex extends FigureOfMeritModel {
                         if (lbNode != null) {
                             final String word = lbNode.contents;
                             if (!lexCounts.containsKey(word) || lexCounts.get(word) <= unkThresh) {
-                                final String unkWord = Tokenizer.berkeleyGetSignature(word,
+                                final String unkWord = DecisionTreeTokenClassifier.berkeleyGetSignature(word,
                                         lbNode.leftNeighbor == null, grammar.lexSet);
                                 leftBoundaryCount.increment(node.contents, unkWord);
                             }
@@ -374,7 +374,8 @@ public final class BoundaryLex extends FigureOfMeritModel {
                         if (rbNode != null) {
                             final String word = rbNode.contents;
                             if (!lexCounts.containsKey(word) || lexCounts.get(word) <= unkThresh) {
-                                final String unkWord = Tokenizer.berkeleyGetSignature(word, false, grammar.lexSet);
+                                final String unkWord = DecisionTreeTokenClassifier.berkeleyGetSignature(word, false,
+                                        grammar.lexSet);
                                 rightBoundaryCount.increment(unkWord, node.contents);
                             }
                         }
@@ -441,7 +442,7 @@ public final class BoundaryLex extends FigureOfMeritModel {
             if (unkProb == Float.NEGATIVE_INFINITY) {
                 // word never observed at boundary
                 unkProb = (float) Math.log(leftBoundaryCount.getProb("DOES-NOT-EXIST",
-                        Tokenizer.berkeleyGetSignature(classStr, false, grammar.lexSet)));
+                        DecisionTreeTokenClassifier.berkeleyGetSignature(classStr, false, grammar.lexSet)));
             }
             outStream.write("UNK LB " + classStr + " " + unkProb + "\n");
         }
@@ -461,7 +462,7 @@ public final class BoundaryLex extends FigureOfMeritModel {
         final String word = leaf.contents;
 
         if (lexToClassMap != null) {
-            final int wordIndex = grammar.tokenizer.wordToLexSetIndex(word, false);
+            final int wordIndex = ((DecisionTreeTokenClassifier) grammar.tokenClassifier).lexiconIndex(word, false);
             final int clusterIndex = lexToClassMap[wordIndex];
             return wordClasses.getSymbol(clusterIndex);
         }

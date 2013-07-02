@@ -192,7 +192,7 @@ public class ParseTask {
             throw new UnsupportedOperationException("Unsupported inputFormat: " + inputFormat);
         }
 
-        this.tokens = grammar.tokenizer.tokenizeToIndex(sentence);
+        this.tokens = grammar.tokenClassifier.lexiconIndices(sentence);
         this.recoveryStrategy = recoveryStrategy;
     }
 

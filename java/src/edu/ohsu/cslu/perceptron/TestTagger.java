@@ -29,9 +29,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
+import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.SymbolSet;
-import edu.ohsu.cslu.grammar.Tokenizer;
 import edu.ohsu.cslu.tests.JUnit;
 
 /**
@@ -83,9 +83,9 @@ public class TestTagger {
         aroundToken = lexicon.getIndex("around");
 
         nullUnk = unkClassSet.getIndex(Grammar.nullSymbolStr);
-        thisUnk = unkClassSet.getIndex(Tokenizer.berkeleyGetSignature("This", true, lexicon));
-        timeUnk = unkClassSet.getIndex(Tokenizer.berkeleyGetSignature("time", false, lexicon));
-        aroundUnk = unkClassSet.getIndex(Tokenizer.berkeleyGetSignature("around", false, lexicon));
+        thisUnk = unkClassSet.getIndex(DecisionTreeTokenClassifier.berkeleyGetSignature("This", true, lexicon));
+        timeUnk = unkClassSet.getIndex(DecisionTreeTokenClassifier.berkeleyGetSignature("time", false, lexicon));
+        aroundUnk = unkClassSet.getIndex(DecisionTreeTokenClassifier.berkeleyGetSignature("around", false, lexicon));
     }
 
     @Test

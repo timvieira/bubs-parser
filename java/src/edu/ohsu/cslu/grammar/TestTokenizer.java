@@ -5,7 +5,7 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
 /**
- * Unit tests for {@link Tokenizer}
+ * Unit tests for {@link TokenClassifier}
  * 
  * @author Aaron Dunlop
  */

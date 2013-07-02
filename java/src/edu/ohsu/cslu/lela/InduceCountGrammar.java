@@ -31,11 +31,11 @@ import java.util.HashMap;
 import cltool4j.BaseCommandlineTool;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
+import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.Language;
 import edu.ohsu.cslu.grammar.SymbolSet;
-import edu.ohsu.cslu.grammar.Tokenizer;
 import edu.ohsu.cslu.parser.Util;
 
 /**
@@ -160,7 +160,7 @@ public class InduceCountGrammar extends BaseCommandlineTool {
     private Int2IntOpenHashMap unkClassMap(final SymbolSet<String> lexicon) {
         final Int2IntOpenHashMap unkClassMap = new Int2IntOpenHashMap();
         for (int i = 0; i < lexicon.size(); i++) {
-            unkClassMap.put(i, lexicon.addSymbol(Tokenizer.berkeleyGetSignature(lexicon.getSymbol(i), false, lexicon)));
+            unkClassMap.put(i, lexicon.addSymbol(DecisionTreeTokenClassifier.berkeleyGetSignature(lexicon.getSymbol(i), false, lexicon)));
         }
         return unkClassMap;
     }

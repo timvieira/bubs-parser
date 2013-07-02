@@ -28,9 +28,9 @@ import java.util.LinkedList;
 import cltool4j.BaseCommandlineTool;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
+import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.SymbolSet;
-import edu.ohsu.cslu.grammar.Tokenizer;
 
 public class TreeTools extends BaseCommandlineTool {
 
@@ -160,7 +160,7 @@ public class TreeTools extends BaseCommandlineTool {
         int wordIndex = 0;
         for (final ParseTree node : tree.getLeafNodes()) {
             if (!knownWords.containsKey(node.contents)) {
-                node.contents = Tokenizer.berkeleyGetSignature(node.contents, wordIndex == 0, knownWords);
+                node.contents = DecisionTreeTokenClassifier.berkeleyGetSignature(node.contents, wordIndex == 0, knownWords);
             }
             wordIndex += 1;
         }

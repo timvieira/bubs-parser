@@ -27,8 +27,8 @@ import java.util.TreeSet;
 import cltool4j.BaseCommandlineTool;
 import cltool4j.args4j.Argument;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
+import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.SymbolSet;
-import edu.ohsu.cslu.grammar.Tokenizer;
 
 /**
  * Counts unknown word occurrences in a development / test corpus.
@@ -65,7 +65,7 @@ public class CountUnks extends BaseCommandlineTool {
             for (final String token : tokens(line)) {
                 totalWords++;
                 if (!lexicon.containsKey(token)) {
-                    final String unkClass = Tokenizer.berkeleyGetSignature(token, sentenceInitial, lexicon);
+                    final String unkClass = DecisionTreeTokenClassifier.berkeleyGetSignature(token, sentenceInitial, lexicon);
                     unkCounts.put(unkClass, unkCounts.getInt(unkClass) + 1);
                     totalUnks++;
                     sentenceContainsUnk = true;

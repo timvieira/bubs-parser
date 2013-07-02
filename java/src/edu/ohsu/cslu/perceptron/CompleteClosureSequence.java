@@ -24,9 +24,9 @@ import java.util.Arrays;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
+import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.SymbolSet;
-import edu.ohsu.cslu.grammar.Tokenizer;
 
 /**
  * Represents a sequence of tokens and POS tags, intended for making open/closed decisions on chart cells.
@@ -67,7 +67,7 @@ public class CompleteClosureSequence extends BinarySequence {
         for (int i = 0; i < sentenceLength; i++) {
             // TODO It's odd and inefficient to take mapped tokens and un-map them to their String representation, just
             // so we can re-map their UNK-classes.
-            mappedUnkSymbols[i] = unkClassSet.getIndex(Tokenizer.berkeleyGetSignature(
+            mappedUnkSymbols[i] = unkClassSet.getIndex(DecisionTreeTokenClassifier.berkeleyGetSignature(
                     lexicon.getSymbol(mappedTokens[i]), i == 0, lexicon));
         }
     }
@@ -129,10 +129,10 @@ public class CompleteClosureSequence extends BinarySequence {
         for (int i = 0; i < sentenceLength; i++) {
             if (lexicon.isFinalized()) {
                 mappedTokens[i] = lexicon.getIndex(tokens[i]);
-                mappedUnkSymbols[i] = unkClassSet.getIndex(Tokenizer.berkeleyGetSignature(tokens[i], i == 0, lexicon));
+                mappedUnkSymbols[i] = unkClassSet.getIndex(DecisionTreeTokenClassifier.berkeleyGetSignature(tokens[i], i == 0, lexicon));
             } else {
                 mappedTokens[i] = lexicon.addSymbol(tokens[i]);
-                mappedUnkSymbols[i] = unkClassSet.addSymbol(Tokenizer.berkeleyGetSignature(tokens[i], i == 0, lexicon));
+                mappedUnkSymbols[i] = unkClassSet.addSymbol(DecisionTreeTokenClassifier.berkeleyGetSignature(tokens[i], i == 0, lexicon));
             }
         }
 

@@ -23,7 +23,7 @@ public class ReplaceUnks extends BaseCommandlineTool {
         for (final String s : inputLines()) {
             final String treebankTokens[] = Tokenizer.treebankTokenize(s).split(" ");
             for (int i = 0; i < treebankTokens.length; i++) {
-                treebankTokens[i] = g.tokenizer.wordToLexSetEntry(treebankTokens[i], i == 0);
+                treebankTokens[i] = ((DecisionTreeTokenClassifier) g.tokenClassifier).lexiconEntry(treebankTokens[i], i == 0);
             }
 
             System.out.println(Strings.join(treebankTokens, " "));

@@ -333,7 +333,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
         this.startSymbolStr = vocabulary.getSymbol(startSymbol);
 
         this.lexSet = lexicon;
-        this.tokenizer = new Tokenizer(lexicon);
+        this.tokenClassifier = new DecisionTreeTokenClassifier(lexicon);
 
         this.posSet = null;
         this.phraseSet = null;

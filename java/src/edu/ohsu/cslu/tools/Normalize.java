@@ -5,7 +5,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.io.BufferedReader;
 
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
-import edu.ohsu.cslu.grammar.Tokenizer;
+import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 
 /**
  * Applies text normalizations to a treebank
@@ -36,7 +36,7 @@ public class Normalize extends BaseTextNormalizationTool {
 
                 if (node.isLeaf() && thresholdMap.containsKey(node.parentLabel())
                         && lexicon.getInt(key(node)) <= thresholdMap.getInt(node.parentLabel())) {
-                    node.setLabel(Tokenizer.berkeleyGetSignature(node.label(), false, null));
+                    node.setLabel(DecisionTreeTokenClassifier.berkeleyGetSignature(node.label(), false, null));
                 }
             }
 

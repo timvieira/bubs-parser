@@ -15,8 +15,8 @@ import edu.ohsu.cslu.dep.DependencyGraph.Arc;
 import edu.ohsu.cslu.dep.DependencyGraph.StackProjectiveAction;
 import edu.ohsu.cslu.dep.TransitionDepParser.ParserAction;
 import edu.ohsu.cslu.dep.TransitionDepParser.ReduceDirection;
+import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.SymbolSet;
-import edu.ohsu.cslu.grammar.Tokenizer;
 import edu.ohsu.cslu.perceptron.AveragedPerceptron;
 import edu.ohsu.cslu.perceptron.AveragedPerceptron.ScoredClassification;
 import edu.ohsu.cslu.perceptron.Perceptron;
@@ -95,7 +95,7 @@ public class EvalDepClassifiers extends BaseCommandlineTool {
                 tokens.addSymbol(arc.token);
 
                 // Add an entry for the UNK label as well
-                tokens.addSymbol(Tokenizer.berkeleyGetSignature(arc.token, i == 0, tokens));
+                tokens.addSymbol(DecisionTreeTokenClassifier.berkeleyGetSignature(arc.token, i == 0, tokens));
                 pos.addSymbol(arc.pos);
                 labels.addSymbol(arc.label);
             }

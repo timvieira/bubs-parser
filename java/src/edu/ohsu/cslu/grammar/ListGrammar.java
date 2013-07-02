@@ -249,7 +249,7 @@ public class ListGrammar extends Grammar {
         this.nonTermInfo = null;
 
         this.lexSet = lexicon;
-        this.tokenizer = new Tokenizer(lexicon);
+        this.tokenClassifier = new DecisionTreeTokenClassifier(lexicon);
 
         this.posSet = null;
         this.phraseSet = null;

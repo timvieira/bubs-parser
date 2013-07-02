@@ -100,7 +100,7 @@ public abstract class Grammar implements Serializable {
      */
     private SymbolSet<String> coarsePosSymbolSet;
 
-    public Tokenizer tokenizer = new Tokenizer(lexSet);
+    public TokenClassifier tokenClassifier = new DecisionTreeTokenClassifier(lexSet);
     // TODO This field should really be final, but it's initialized in subclass constructors
     public Vocabulary nonTermSet;
 
@@ -361,8 +361,8 @@ public abstract class Grammar implements Serializable {
             unkClassSet.defaultReturnValue(nullSymbolStr);
 
             for (final String token : lexSet) {
-                unkClassSet.addSymbol(Tokenizer.berkeleyGetSignature(token, false, lexSet));
-                unkClassSet.addSymbol(Tokenizer.berkeleyGetSignature(token, true, lexSet));
+                unkClassSet.addSymbol(DecisionTreeTokenClassifier.berkeleyGetSignature(token, false, lexSet));
+                unkClassSet.addSymbol(DecisionTreeTokenClassifier.berkeleyGetSignature(token, true, lexSet));
             }
         }
         return unkClassSet;

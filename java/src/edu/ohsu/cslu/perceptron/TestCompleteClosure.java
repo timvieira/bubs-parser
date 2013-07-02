@@ -32,10 +32,10 @@ import org.junit.Test;
 
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
+import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.SymbolSet;
-import edu.ohsu.cslu.grammar.Tokenizer;
 import edu.ohsu.cslu.perceptron.BinaryClassifier.BinaryClassifierResult;
 import edu.ohsu.cslu.tests.JUnit;
 
@@ -95,14 +95,14 @@ public class TestCompleteClosure {
         periodToken = lexicon.getIndex(".");
 
         nullUnk = unkClassSet.getIndex(Grammar.nullSymbolStr);
-        thisUnk = unkClassSet.getIndex(Tokenizer.berkeleyGetSignature("This", true, lexicon));
-        timeUnk = unkClassSet.getIndex(Tokenizer.berkeleyGetSignature("time", false, lexicon));
-        aroundUnk = unkClassSet.getIndex(Tokenizer.berkeleyGetSignature("around", false, lexicon));
-        commaUnk = unkClassSet.getIndex(Tokenizer.berkeleyGetSignature(",", false, lexicon));
-        theyUnk = unkClassSet.getIndex(Tokenizer.berkeleyGetSignature("they", false, lexicon));
-        reUnk = unkClassSet.getIndex(Tokenizer.berkeleyGetSignature("re", false, lexicon));
-        fasterUnk = unkClassSet.getIndex(Tokenizer.berkeleyGetSignature("faster", false, lexicon));
-        periodUnk = unkClassSet.getIndex(Tokenizer.berkeleyGetSignature(".", false, lexicon));
+        thisUnk = unkClassSet.getIndex(DecisionTreeTokenClassifier.berkeleyGetSignature("This", true, lexicon));
+        timeUnk = unkClassSet.getIndex(DecisionTreeTokenClassifier.berkeleyGetSignature("time", false, lexicon));
+        aroundUnk = unkClassSet.getIndex(DecisionTreeTokenClassifier.berkeleyGetSignature("around", false, lexicon));
+        commaUnk = unkClassSet.getIndex(DecisionTreeTokenClassifier.berkeleyGetSignature(",", false, lexicon));
+        theyUnk = unkClassSet.getIndex(DecisionTreeTokenClassifier.berkeleyGetSignature("they", false, lexicon));
+        reUnk = unkClassSet.getIndex(DecisionTreeTokenClassifier.berkeleyGetSignature("re", false, lexicon));
+        fasterUnk = unkClassSet.getIndex(DecisionTreeTokenClassifier.berkeleyGetSignature("faster", false, lexicon));
+        periodUnk = unkClassSet.getIndex(DecisionTreeTokenClassifier.berkeleyGetSignature(".", false, lexicon));
     }
 
     /**

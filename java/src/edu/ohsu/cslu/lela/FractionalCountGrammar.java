@@ -36,13 +36,13 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.Random;
 
+import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.Language;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.grammar.SymbolSet;
-import edu.ohsu.cslu.grammar.Tokenizer;
 import edu.ohsu.cslu.grammar.Vocabulary;
 import edu.ohsu.cslu.util.Strings;
 
@@ -407,13 +407,13 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
                 if (cw < rareWordThreshold) {
                     // Sentence-initial counts
                     final int sentenceInitialCounts = sentenceInitialCorpusWordCounts.get(word);
-                    final String sentenceInitialUnkClass = Tokenizer.berkeleyGetSignature(lexicon.getSymbol(word),
+                    final String sentenceInitialUnkClass = DecisionTreeTokenClassifier.berkeleyGetSignature(lexicon.getSymbol(word),
                             true, lexicon);
                     grammarWithUnks.incrementLexicalCount(parent, lexicon.getIndex(sentenceInitialUnkClass), s_2 * pRTx
                             * sentenceInitialCounts / cw);
 
                     // Other counts
-                    final String unkClass = Tokenizer.berkeleyGetSignature(lexicon.getSymbol(word), false, lexicon);
+                    final String unkClass = DecisionTreeTokenClassifier.berkeleyGetSignature(lexicon.getSymbol(word), false, lexicon);
                     grammarWithUnks.incrementLexicalCount(parent, lexicon.getIndex(unkClass), s_2 * pRTx
                             * (1 - sentenceInitialCounts / cw));
                 }

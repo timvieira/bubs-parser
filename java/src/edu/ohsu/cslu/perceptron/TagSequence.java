@@ -22,8 +22,8 @@ package edu.ohsu.cslu.perceptron;
 import java.util.Arrays;
 
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
+import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.SymbolSet;
-import edu.ohsu.cslu.grammar.Tokenizer;
 
 /**
  * Represents a sequence of (possibly-tagged) tokens.
@@ -125,11 +125,11 @@ public class TagSequence extends Sequence {
                 tokens[i] = split[i];
                 if (lexicon.isFinalized()) {
                     mappedTokens[i] = lexicon.getIndex(split[i]);
-                    mappedUnkSymbols[i] = unkClassSet.getIndex(Tokenizer.berkeleyGetSignature(tokens[i], i == 0,
+                    mappedUnkSymbols[i] = unkClassSet.getIndex(DecisionTreeTokenClassifier.berkeleyGetSignature(tokens[i], i == 0,
                             lexicon));
                 } else {
                     mappedTokens[i] = lexicon.addSymbol(split[i]);
-                    mappedUnkSymbols[i] = unkClassSet.addSymbol(Tokenizer.berkeleyGetSignature(tokens[i], i == 0,
+                    mappedUnkSymbols[i] = unkClassSet.addSymbol(DecisionTreeTokenClassifier.berkeleyGetSignature(tokens[i], i == 0,
                             lexicon));
                 }
                 mapSuffixes(i, split[i]);
@@ -147,11 +147,11 @@ public class TagSequence extends Sequence {
 
         if (lexicon.isFinalized()) {
             mappedTokens[position] = lexicon.getIndex(token);
-            mappedUnkSymbols[position] = unkClassSet.getIndex(Tokenizer.berkeleyGetSignature(token, position == 0,
+            mappedUnkSymbols[position] = unkClassSet.getIndex(DecisionTreeTokenClassifier.berkeleyGetSignature(token, position == 0,
                     lexicon));
         } else {
             mappedTokens[position] = lexicon.addSymbol(token);
-            mappedUnkSymbols[position] = unkClassSet.addSymbol(Tokenizer.berkeleyGetSignature(token, position == 0,
+            mappedUnkSymbols[position] = unkClassSet.addSymbol(DecisionTreeTokenClassifier.berkeleyGetSignature(token, position == 0,
                     lexicon));
         }
 

@@ -27,8 +27,8 @@ import edu.ohsu.cslu.datastructs.vectors.BitVector;
 import edu.ohsu.cslu.datastructs.vectors.LargeSparseBitVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.dep.DependencyGraph.Arc;
+import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.SymbolSet;
-import edu.ohsu.cslu.grammar.Tokenizer;
 import edu.ohsu.cslu.perceptron.FeatureExtractor;
 
 /**
@@ -532,7 +532,7 @@ public class TransitionParserFeatureExtractor extends FeatureExtractor<NivrePars
         if (i < 0 || i >= arcs.length) {
             return nullToken;
         }
-        return tokens.getIndex(Tokenizer.berkeleyGetSignature(arcs[i].token, i == 0, tokens));
+        return tokens.getIndex(DecisionTreeTokenClassifier.berkeleyGetSignature(arcs[i].token, i == 0, tokens));
     }
 
     private enum TemplateElement {
