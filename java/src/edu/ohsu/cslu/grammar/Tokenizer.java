@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
-import edu.ohsu.cslu.parser.ParserDriver;
 
 public class Tokenizer implements Serializable {
 
@@ -191,7 +190,7 @@ public class Tokenizer implements Serializable {
             return word;
         }
 
-        return wordToUnkEntry(word, sentenceInitial);
+        return unkToUnkEntry(wordToUnkString(word, sentenceInitial));
     }
 
     public String wordToUnkEntry(final String word, final boolean sentenceInitial) {
@@ -212,95 +211,16 @@ public class Tokenizer implements Serializable {
     }
 
     public String wordToUnkString(final String word, final boolean sentenceInitial) {
-        // TODO Remove this reference so Tokenizer won't depend on ParserDriver (and thus on pretty much
-        // everything else in the codebase). When doing reference-tracing at build time, this reference means
-        // we suck in all classes into all tools (and breaks the build for most tools, since we don't package
-        // OpenCL libraries by default).
-        if (ParserDriver.oldUNK == true) {
-            return wordToUnkStringVer1(word, lexSet);
-        }
-        return berkeleyGetSignature(word, sentenceInitial);
-    }
-
-    // private String wordToUnkStringVer1(String word) {
-    // return wordToUnkStringVer1(word, lexSet);
-    // }
-
-    /**
-     * Translates an unknown word into a unknown-word string, using a decision-tree approach adopted from the Berkeley
-     * parser. The resulting UNK- string will encode as much information as possible about the unknown word. For
-     * example, the word 12-ary would be encoded as UNK-LC-NUM-DASH-y (lower-case, includes a number, includes a dash,
-     * and ends in 'y'). If the detailed UNK- string is also unknown, suffixes can be iteratively removed until an
-     * observed UNK- is found.
-     * 
-     * e.g.: UNK-LC-NUM-DASH-y -> UNK-LC-NUM -> UNK-LC
-     * 
-     * @param word
-     * @param lexSet
-     * @return A string token representing the unknown word
-     */
-    public static String wordToUnkStringVer1(final String word, final SymbolSet<String> lexSet) {
-        String unkStr = "UNK";
-
-        // word case
-        if (isLowerCase(word)) {
-            unkStr += "-LC";
-        } else if (isUpperCase(word)) {
-            unkStr += "-CAPS";
-        } else if (isUpperCase(word.substring(0, 1)) && isLowerCase(word.substring(1))) {
-            unkStr += "-INITC";
-        }
-
-        if (lexSet.containsKey(word.toLowerCase())) {
-            unkStr += "-KNOWNLC";
-        }
-
-        if (containsDigit(word)) {
-            unkStr += "-NUM";
-        }
-
-        if (word.substring(1).contains("-")) { // don't want negative symbol
-            unkStr += "-DASH";
-        }
-
-        final String lcWord = word.toLowerCase();
-
-        if (lcWord.endsWith("s") && !lcWord.endsWith("ss") && !lcWord.endsWith("us") && !lcWord.endsWith("is")) {
-            unkStr += "-s";
-        } else if (lcWord.endsWith("ed")) {
-            unkStr += "-ed";
-        } else if (lcWord.endsWith("ing")) {
-            unkStr += "-ing";
-        } else if (lcWord.endsWith("ion")) {
-            unkStr += "-ion";
-        } else if (lcWord.endsWith("er")) {
-            unkStr += "-er";
-        } else if (lcWord.endsWith("est")) {
-            unkStr += "-est";
-        } else if (lcWord.endsWith("al")) {
-            unkStr += "-al";
-        } else if (lcWord.endsWith("ity")) {
-            unkStr += "-ity";
-        } else if (lcWord.endsWith("ly")) {
-            unkStr += "-ly";
-        } else if (lcWord.endsWith("y")) {
-            unkStr += "-y";
-        }
-
-        return unkStr;
-    }
-
-    private String berkeleyGetSignature(final String word, final boolean sentenceInitial) {
         return berkeleyGetSignature(word, sentenceInitial, lexSet);
     }
 
     // taken from Berkeley Parser SimpleLexicon.getNewSignature
 
     /**
-     * This routine returns a String that is the "signature" of the class of a word. For, example, it might represent
-     * whether it is a number of ends in -s. The strings returned by convention match the pattern UNK-.* , which is just
-     * assumed to not match any real word. The decision-tree (and particularly the suffix-handling) is fairly
-     * English-specific.
+     * Returns a String that is the "signature" of the class of a word. Adapted from the Berkeley Parser version in
+     * SimpleLexicon.getNewSignature(). Features represent whether the token contains a numeral, whether it in -s, etc..
+     * The strings returned by convention match the pattern UNK-.* , which is assumed to not match any real word. The
+     * decision-tree (and particularly the suffix-handling) is fairly English-specific.
      * 
      * @param word The word to make a signature for
      * @param sentenceInitial True if the word occurs as the first in the sentence (so sentence-initial capitalized
@@ -402,21 +322,5 @@ public class Tokenizer implements Serializable {
         }
 
         return sb.toString();
-    }
-
-    private static boolean isUpperCase(final String s) {
-        return s == s.toUpperCase();
-    }
-
-    private static boolean isLowerCase(final String s) {
-        return s == s.toLowerCase();
-    }
-
-    private static boolean containsDigit(final String s) {
-        for (int i = 0; i < s.length(); i++) {
-            if (Character.isDigit(s.charAt(i)))
-                return true;
-        }
-        return false;
     }
 }

@@ -124,9 +124,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     @Option(name = "-printUNK", usage = "Print unknown words as their UNK replacement class")
     boolean printUnkLabels = false;
 
-    @Option(name = "-oldUNK", hidden = true, usage = "Use old UNK function")
-    public static boolean oldUNK = false;
-
     @Option(name = "-binary", usage = "Leave parse tree output in binary-branching form")
     public boolean binaryTreeOutput = false;
 
