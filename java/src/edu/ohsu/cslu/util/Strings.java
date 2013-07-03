@@ -222,6 +222,7 @@ public class Strings {
      * 
      * @param s String to split
      * @param delimiter Field delimiter
+     * @param escapeChar Character used to escape any strings containing the delimiter
      * @return the array of strings computed by splitting this string around the specified delimiter
      */
     public static String[] splitOn(final String s, final char delimiter, final char escapeChar) {
@@ -261,6 +262,38 @@ public class Strings {
 
         split.add(sb.toString());
         return split.toArray(new String[split.size()]);
+    }
+
+    /**
+     * Returns a copy of the string. If the string contains the <code>delimiter</code>, it will be escaped with the
+     * specified <code>escapeChar</code>, and if it contains <code>escapeChar</code>, it will in turn be escaped with
+     * '\'
+     * 
+     * @param s String to escape
+     * @param delimiter Field delimiter
+     * @param escapeChar Character used to escape any strings containing the delimiter
+     * @return the array of strings computed by splitting this string around the specified delimiter
+     */
+    public static String escape(final String s, final char delimiter, final char escapeChar) {
+        final StringBuilder sb = new StringBuilder(s.length() + 10);
+        final boolean containsSpecialChar = s.indexOf(delimiter) >= 0 || s.indexOf(escapeChar) >= 0;
+
+        if (containsSpecialChar) {
+            sb.append('\'');
+        }
+
+        for (int i = 0; i < s.length(); i++) {
+            final char c = s.charAt(i);
+            if (c == escapeChar) {
+                sb.append('\\');
+            }
+            sb.append(c);
+        }
+
+        if (containsSpecialChar) {
+            sb.append('\'');
+        }
+        return sb.toString();
     }
 
     /**

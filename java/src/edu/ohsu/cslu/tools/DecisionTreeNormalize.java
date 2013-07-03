@@ -8,12 +8,11 @@ import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 
 /**
- * Applies text normalizations to a treebank
+ * Applies decision-tree text normalizations to a treebank (using {@link DecisionTreeTokenClassifier}).
  * 
  * @author Aaron Dunlop
- * @since Dec 4, 2012
  */
-public class Normalize extends BaseTextNormalizationTool {
+public class DecisionTreeNormalize extends BaseTextNormalizationTool {
 
     @Override
     protected void run() throws Exception {

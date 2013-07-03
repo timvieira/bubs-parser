@@ -277,15 +277,24 @@
     <!-- -->
     <!-- Text normalization and lexical clustering tools --> 
     <!-- -->
-    <target name="normalize" depends="compile">
+    <target name="decision-tree-normalize" depends="compile">
         <antcall target="package-tool">
-            <param name="root-class" value="edu.ohsu.cslu.tools.Normalize" />
-            <param name="tool-name" value="normalize" />
+            <param name="root-class" value="edu.ohsu.cslu.tools.DecisionTreeNormalize" />
+            <param name="tool-name" value="decision-tree-normalize" />
             <param name="heap-size" value="1024m" />
         </antcall>
     </target>
 
 
+    <target name="cluster-normalize" depends="compile">
+        <antcall target="package-tool">
+            <param name="root-class" value="edu.ohsu.cslu.tools.ClusterNormalize" />
+            <param name="tool-name" value="cluster-normalize" />
+            <param name="heap-size" value="1024m" />
+        </antcall>
+    </target>
+    
+    
     <target name="countunks" depends="compile">
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.tools.CountUnks" />

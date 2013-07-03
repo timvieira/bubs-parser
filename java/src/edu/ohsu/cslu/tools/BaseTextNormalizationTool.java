@@ -29,6 +29,10 @@ import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 
 /**
+ * Base class for corpus normalization tasks. Counts POS tag/token occurrences of open-class preterminals. Most
+ * subclasses will replace rare words with normalized forms, although some (e.g.
+ * {@link ExtractWekaWordClusteringFeatures}) will extract other information.
+ * 
  * @author Aaron Dunlop
  * @since Mar 21, 2013
  */

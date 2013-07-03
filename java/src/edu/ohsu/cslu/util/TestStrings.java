@@ -194,9 +194,22 @@ public class TestStrings {
         assertArrayEquals(new String[] { "a", "b,", "c" }, Strings.splitOn("a,'b,',c", ',', '\''));
         assertArrayEquals(new String[] { "a", ",", "b" }, Strings.splitOn("a,',',b", ',', '\''));
         assertArrayEquals(new String[] { "a", "''", "b" }, Strings.splitOn("a,\'\\''\\',b", ',', '\''));
+        assertArrayEquals(new String[] { "M'Bow", "98", "8" }, Strings.splitOn("'M\\'Bow',98,8", ',', '\''));
 
         // The empty string
         assertArrayEquals("".split(" "), Strings.splitOn("", ',', '\''));
+    }
+
+    @Test
+    public void testEscape() throws Exception {
+        assertEquals("foo", Strings.escape("foo", ',', '\''));
+        assertEquals("'foo,bar'", Strings.escape("foo,bar", ',', '\''));
+        assertEquals("'\\'foo\\',bar'", Strings.escape("'foo',bar", ',', '\''));
+        assertEquals("'foo,\\'bar\\''", Strings.escape("foo,'bar'", ',', '\''));
+
+        // Ensure strings containing the escape char are themselves escaped
+        assertEquals("'\\'bar\\''", Strings.escape("'bar'", ',', '\''));
+        assertEquals("'\\'\\''", Strings.escape("''", ',', '\''));
     }
 
     @Test
