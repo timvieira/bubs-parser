@@ -20,6 +20,7 @@ package edu.ohsu.cslu.lela;
 
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.InsideOutsideCscSparseMatrixGrammar;
+import edu.ohsu.cslu.grammar.TokenClassifier.TokenClassifierType;
 
 /**
  * Grammar class for split-merge grammar learning. References a parent grammar, based on the parent (pre-split)
@@ -36,7 +37,8 @@ public class ConstrainedInsideOutsideGrammar extends InsideOutsideCscSparseMatri
 
         super(countGrammar.binaryProductions(Float.NEGATIVE_INFINITY), countGrammar
                 .unaryProductions(Float.NEGATIVE_INFINITY), countGrammar.lexicalProductions(Float.NEGATIVE_INFINITY),
-                countGrammar.vocabulary, countGrammar.lexicon, grammarFormat, functionClass, true);
+                countGrammar.vocabulary, countGrammar.lexicon, grammarFormat, TokenClassifierType.DecisionTree,
+                functionClass, true);
     }
 
     public SplitVocabulary vocabulary() {

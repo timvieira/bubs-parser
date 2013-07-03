@@ -61,6 +61,7 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar.StringNonTerminal;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.StringNonTerminalComparator;
 import edu.ohsu.cslu.grammar.StringProduction;
 import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.grammar.TokenClassifier.TokenClassifierType;
 import edu.ohsu.cslu.grammar.Vocabulary;
 import edu.ohsu.cslu.lela.FractionalCountGrammar;
 import edu.ohsu.cslu.parser.ParserDriver;
@@ -818,7 +819,7 @@ public class RealInsideOutsideCscSparseMatrixGrammar extends Grammar {
 
     public static Grammar read(final String grammarFile) throws IOException, ClassNotFoundException {
         final InputStream is = Util.file2inputStream(grammarFile);
-        final Grammar grammar = SparseMatrixGrammar.read(is);
+        final Grammar grammar = SparseMatrixGrammar.read(is, TokenClassifierType.DecisionTree);
         is.close();
         return grammar;
     }
@@ -838,7 +839,7 @@ public class RealInsideOutsideCscSparseMatrixGrammar extends Grammar {
             return (Grammar) ois.readObject();
         }
 
-        return new ListGrammar(new InputStreamReader(bis));
+        return new ListGrammar(new InputStreamReader(bis), TokenClassifierType.DecisionTree);
     }
 
     /**

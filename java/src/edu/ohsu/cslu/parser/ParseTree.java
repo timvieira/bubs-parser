@@ -22,7 +22,6 @@ import java.util.LinkedList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 
 public class ParseTree {
@@ -459,15 +458,5 @@ public class ParseTree {
             str += node.contents + " ";
         }
         return str.trim();
-    }
-
-    // TODO Remove (unused)
-    public void tokenizeLeaves(final Grammar grammar) {
-        for (final ParseTree leaf : getLeafNodes()) {
-            if (grammar.hasWord(leaf.contents) == false) {
-                leaf.contents = grammar.mapLexicalEntry(grammar.tokenClassifier.lexiconIndices(leaf.contents)[0]);
-            }
-        }
-
     }
 }

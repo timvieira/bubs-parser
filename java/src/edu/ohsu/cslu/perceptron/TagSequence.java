@@ -42,7 +42,7 @@ public class TagSequence extends Sequence {
      * @param tagger
      */
     public TagSequence(final String sentence, final Tagger tagger) {
-        this(sentence, tagger.lexicon, tagger.unkClassSet, tagger.tagSet, null, null);
+        this(sentence, tagger.lexicon, tagger.decisionTreeUnkClassSet, null, null, null, tagger.tagSet);
     }
 
     /**
@@ -54,10 +54,10 @@ public class TagSequence extends Sequence {
      * @param tagSet
      */
     public TagSequence(final String sentence, final SymbolSet<String> lexicon, final SymbolSet<String> unkClassSet,
-            final SymbolSet<String> tagSet, final SymbolSet<String> unigramSuffixSet,
-            final SymbolSet<String> bigramSuffixSet) {
+            final SymbolSet<String> posSet, final SymbolSet<String> unigramSuffixSet,
+            final SymbolSet<String> bigramSuffixSet, final SymbolSet<String> tagSet) {
 
-        super(lexicon, unkClassSet, null, unigramSuffixSet, bigramSuffixSet);
+        super(lexicon, unkClassSet, posSet, unigramSuffixSet, bigramSuffixSet);
 
         this.tagSet = tagSet;
 
@@ -80,15 +80,18 @@ public class TagSequence extends Sequence {
                     this.mappedUnigramSuffix = new int[length];
                     this.mappedBigramSuffix = new int[length];
                 }
+                if (posSet != null) {
+                    this.mappedPosSymbols = new int[length];
+                }
 
                 int position = 0;
                 for (final NaryTree<String> leaf : tree.leafTraversal()) {
-                    mapTagAndToken(position, leaf.parentLabel(), leaf.label());
+                    map(position, leaf.parentLabel(), leaf.label());
                     position++;
                 }
 
             } else {
-                // Tree parsing failed; treat it as a seies of bracketed tag/word pairs. E.g. (DT The) (NN fish)...
+                // Tree parsing failed; treat it as a series of bracketed tag/word pairs. E.g. (DT The) (NN fish)...
                 final String[] split = sentence.replaceAll(" ?\\(", "").split("\\)");
                 this.length = split.length;
                 this.mappedTokens = new int[length];
@@ -99,10 +102,13 @@ public class TagSequence extends Sequence {
                     this.mappedUnigramSuffix = new int[length];
                     this.mappedBigramSuffix = new int[length];
                 }
+                if (posSet != null) {
+                    this.mappedPosSymbols = new int[length];
+                }
 
-                for (int i = 0; i < split.length; i++) {
-                    final String[] tokenAndPos = split[i].split(" ");
-                    mapTagAndToken(i, tokenAndPos[0], tokenAndPos[1]);
+                for (int position = 0; position < split.length; position++) {
+                    final String[] tokenAndPos = split[position].split(" ");
+                    map(position, tokenAndPos[0], tokenAndPos[1]);
                 }
             }
 
@@ -119,46 +125,55 @@ public class TagSequence extends Sequence {
                 this.mappedUnigramSuffix = new int[length];
                 this.mappedBigramSuffix = new int[length];
             }
+            if (posSet != null) {
+                this.mappedPosSymbols = new int[length];
+            }
             Arrays.fill(tags, (short) -1);
 
             for (int i = 0; i < split.length; i++) {
                 tokens[i] = split[i];
                 if (lexicon.isFinalized()) {
                     mappedTokens[i] = lexicon.getIndex(split[i]);
-                    mappedUnkSymbols[i] = unkClassSet.getIndex(DecisionTreeTokenClassifier.berkeleyGetSignature(tokens[i], i == 0,
-                            lexicon));
+                    mappedUnkSymbols[i] = unkClassSet.getIndex(DecisionTreeTokenClassifier.berkeleyGetSignature(
+                            tokens[i], i == 0, lexicon));
                 } else {
                     mappedTokens[i] = lexicon.addSymbol(split[i]);
-                    mappedUnkSymbols[i] = unkClassSet.addSymbol(DecisionTreeTokenClassifier.berkeleyGetSignature(tokens[i], i == 0,
-                            lexicon));
+                    mappedUnkSymbols[i] = unkClassSet.addSymbol(DecisionTreeTokenClassifier.berkeleyGetSignature(
+                            tokens[i], i == 0, lexicon));
                 }
-                mapSuffixes(i, split[i]);
             }
         }
     }
 
-    void mapTagAndToken(final int position, final String tag, final String token) {
+    /**
+     * Maps the specified POS-tag and token into the sequence data structures.
+     * 
+     * @param position
+     * @param pos
+     * @param token
+     */
+    void map(final int position, final String pos, final String token) {
+
+        // POS
         if (tagSet.isFinalized()) {
-            tags[position] = (short) tagSet.getIndex(tag);
+            tags[position] = (short) tagSet.getIndex(pos);
         } else {
-            tags[position] = (short) tagSet.addSymbol(tag);
+            tags[position] = (short) tagSet.addSymbol(pos);
         }
         predictedTags[position] = tags[position];
 
+        // Token
         if (lexicon.isFinalized()) {
             mappedTokens[position] = lexicon.getIndex(token);
-            mappedUnkSymbols[position] = unkClassSet.getIndex(DecisionTreeTokenClassifier.berkeleyGetSignature(token, position == 0,
-                    lexicon));
+            mappedUnkSymbols[position] = unkClassSet.getIndex(DecisionTreeTokenClassifier.berkeleyGetSignature(token,
+                    position == 0, lexicon));
         } else {
             mappedTokens[position] = lexicon.addSymbol(token);
-            mappedUnkSymbols[position] = unkClassSet.addSymbol(DecisionTreeTokenClassifier.berkeleyGetSignature(token, position == 0,
-                    lexicon));
+            mappedUnkSymbols[position] = unkClassSet.addSymbol(DecisionTreeTokenClassifier.berkeleyGetSignature(token,
+                    position == 0, lexicon));
         }
 
-        mapSuffixes(position, token);
-    }
-
-    private void mapSuffixes(final int position, final String token) {
+        // Suffixes
         if (unigramSuffixSet != null && token.length() > 0) {
             if (unigramSuffixSet.isFinalized()) {
                 mappedUnigramSuffix[position] = unigramSuffixSet.getIndex(token.substring(token.length() - 1));
@@ -179,7 +194,7 @@ public class TagSequence extends Sequence {
         final StringBuilder sb = new StringBuilder(256);
         for (int i = 0; i < length; i++) {
             sb.append('(');
-            sb.append(tagSet.getSymbol(tags[i]));
+            sb.append(tags[i] < 0 ? "---" : tagSet.getSymbol(tags[i]));
             sb.append(' ');
             sb.append(lexicon.getSymbol(mappedTokens[i]));
             sb.append(')');

@@ -48,6 +48,8 @@ public abstract class TokenClassifier implements Serializable {
      */
     public abstract int[] lexiconIndices(final NaryTree<String> goldTree);
 
+    public abstract TokenClassifierType type();
+
     // public int lexiconIndex(final String word, final boolean sentenceInitial) {
     // return lexicon.getIndex(lexiconEntry(word, sentenceInitial));
     // }
@@ -70,4 +72,21 @@ public abstract class TokenClassifier implements Serializable {
     // return unkStr;
     // }
 
+    public static enum TokenClassifierType {
+        DecisionTree(DecisionTreeTokenClassifier.class), ClusterTagger(ClusterTaggerTokenClassifier.class);
+
+        private Class<? extends TokenClassifier> implementationClass;
+
+        private TokenClassifierType(final Class<? extends TokenClassifier> c) {
+            this.implementationClass = c;
+        }
+
+        public TokenClassifier create(final SymbolSet<String> lexicon) {
+            try {
+                return implementationClass.getConstructor(SymbolSet.class).newInstance(lexicon);
+            } catch (final Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
 }

@@ -18,10 +18,11 @@
  */
 package edu.ohsu.cslu.grammar;
 
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.LinkedList;
+
+import edu.ohsu.cslu.grammar.TokenClassifier.TokenClassifierType;
 
 public class ChildMatrixGrammar extends ListGrammar {
 
@@ -29,13 +30,10 @@ public class ChildMatrixGrammar extends ListGrammar {
 
     public LinkedList<Production>[][] binaryProdMatrix;
 
-    public ChildMatrixGrammar(final Reader grammarFile) throws IOException {
-        super(grammarFile);
+    public ChildMatrixGrammar(final Reader grammarFile, final TokenClassifierType tokenClassifierType)
+            throws IOException {
+        super(grammarFile, tokenClassifierType);
         init();
-    }
-
-    public ChildMatrixGrammar(final String grammarFile) throws IOException {
-        this(new FileReader(grammarFile));
     }
 
     public ChildMatrixGrammar(final Grammar g) {

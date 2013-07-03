@@ -33,6 +33,7 @@ import edu.ohsu.cslu.grammar.GrammarTestCase;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
+import edu.ohsu.cslu.grammar.TokenClassifier.TokenClassifierType;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.Parser.DecodeMethod;
@@ -60,8 +61,8 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
 
     protected Grammar createGrammar(final Reader grammarReader, final Class<? extends PackingFunction> cpfClass)
             throws Exception {
-        return grammarClass().getConstructor(new Class[] { Reader.class, Class.class }).newInstance(
-                new Object[] { grammarReader, cpfClass });
+        return grammarClass().getConstructor(new Class[] { Reader.class, TokenClassifierType.class, Class.class })
+                .newInstance(new Object[] { grammarReader, TokenClassifierType.DecisionTree, cpfClass });
     }
 
     @SuppressWarnings("unchecked")
@@ -135,8 +136,8 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
         // NP -> DT NP (9/200)
         // S -> NP VP (9/200)
 
-        final short nn = (short) g.mapNonterminal("NN");
-        final short np = (short) g.mapNonterminal("NP");
+        final short nn = g.mapNonterminal("NN");
+        final short np = g.mapNonterminal("NP");
 
         final float[] probabilities = new float[g.packingFunction().packedArraySize()];
         Arrays.fill(probabilities, Float.NEGATIVE_INFINITY);

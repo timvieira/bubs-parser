@@ -27,7 +27,6 @@ import it.unimi.dsi.fastutil.shorts.Short2ObjectOpenHashMap;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -49,6 +48,7 @@ import java.util.TreeSet;
 import cltool4j.BaseLogger;
 import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
+import edu.ohsu.cslu.grammar.TokenClassifier.TokenClassifierType;
 import edu.ohsu.cslu.lela.FractionalCountGrammar;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.Util;
@@ -172,8 +172,8 @@ public abstract class SparseMatrixGrammar extends Grammar {
      * allow more efficient iteration in grammar intersection (e.g., skipping NTs only valid as left children in the
      * right cell) and more efficient chart storage (e.g., omitting storage for POS NTs in chart rows >= 2).
      */
-    public SparseMatrixGrammar(final Reader grammarFile, final Class<? extends PackingFunction> functionClass)
-            throws IOException {
+    public SparseMatrixGrammar(final Reader grammarFile, final TokenClassifierType tokenClassifierType,
+            final Class<? extends PackingFunction> functionClass) throws IOException {
 
         final List<StringProduction> pcfgRules = new LinkedList<StringProduction>();
         final List<StringProduction> lexicalRules = new LinkedList<StringProduction>();
@@ -181,6 +181,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
         BaseLogger.singleton().finer("INFO: Reading grammar ... ");
         this.tmpStringPool = new StringPool();
         this.grammarFormat = readPcfgAndLexicon(grammarFile, pcfgRules, lexicalRules);
+        this.tokenClassifier = tokenClassifierType.create(lexSet);
 
         this.nullWord = lexSet.addSymbol(nullSymbolStr);
 
@@ -315,25 +316,17 @@ public abstract class SparseMatrixGrammar extends Grammar {
                 cscMaxUnaryProbabilities);
     }
 
-    public SparseMatrixGrammar(final Reader grammarFile) throws IOException {
-        this(grammarFile, PerfectIntPairHashPackingFunction.class);
-    }
-
-    public SparseMatrixGrammar(final String grammarFile) throws IOException {
-        this(new FileReader(grammarFile));
-    }
-
     protected SparseMatrixGrammar(final ArrayList<Production> binaryProductions,
             final ArrayList<Production> unaryProductions, final ArrayList<Production> lexicalProductions,
             final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat,
-            final Class<? extends PackingFunction> functionClass) {
+            final TokenClassifierType tokenClassifierType, final Class<? extends PackingFunction> functionClass) {
         this.nonTermSet = (Vocabulary) vocabulary;
         this.startSymbol = nonTermSet.startSymbol();
         this.nullSymbol = -1;
         this.startSymbolStr = vocabulary.getSymbol(startSymbol);
 
         this.lexSet = lexicon;
-        this.tokenClassifier = new DecisionTreeTokenClassifier(lexicon);
+        this.tokenClassifier = tokenClassifierType.create(lexicon);
 
         this.posSet = null;
         this.phraseSet = null;
@@ -381,10 +374,12 @@ public abstract class SparseMatrixGrammar extends Grammar {
      * @param g
      * @param functionClass
      */
-    protected SparseMatrixGrammar(final Grammar g, final Class<? extends PackingFunction> functionClass) {
+    protected SparseMatrixGrammar(final Grammar g, final TokenClassifierType tokenClassifierType,
+            final Class<? extends PackingFunction> functionClass) {
         this(((SparseMatrixGrammar) g).getBinaryProductions(), ((SparseMatrixGrammar) g).getUnaryProductions(),
                 ((SparseMatrixGrammar) g).getLexicalProductions(), ((SparseMatrixGrammar) g).nonTermSet,
-                ((SparseMatrixGrammar) g).lexSet, ((SparseMatrixGrammar) g).grammarFormat, functionClass);
+                ((SparseMatrixGrammar) g).lexSet, ((SparseMatrixGrammar) g).grammarFormat, tokenClassifierType,
+                functionClass);
         final SparseMatrixGrammar smg = ((SparseMatrixGrammar) g);
 
         this.startSymbolStr = smg.startSymbolStr;
@@ -595,14 +590,16 @@ public abstract class SparseMatrixGrammar extends Grammar {
                 tmpPosStart, tmpPosEnd };
     }
 
-    public static Grammar read(final String grammarFile) throws IOException, ClassNotFoundException {
+    public static Grammar read(final String grammarFile, final TokenClassifierType tokenClassifierType)
+            throws IOException, ClassNotFoundException {
         final InputStream is = Util.file2inputStream(grammarFile);
-        final Grammar grammar = SparseMatrixGrammar.read(is);
+        final Grammar grammar = SparseMatrixGrammar.read(is, tokenClassifierType);
         is.close();
         return grammar;
     }
 
-    public static Grammar read(final InputStream inputStream) throws IOException, ClassNotFoundException {
+    public static Grammar read(final InputStream inputStream, final TokenClassifierType tokenClassifierType)
+            throws IOException, ClassNotFoundException {
         // Read the grammar in either text or binary-serialized format.
         final BufferedInputStream bis = new BufferedInputStream(inputStream);
         bis.mark(2);
@@ -617,7 +614,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
             return (Grammar) ois.readObject();
         }
 
-        return new ListGrammar(new InputStreamReader(bis));
+        return new ListGrammar(new InputStreamReader(bis), tokenClassifierType);
     }
 
     /**
@@ -909,22 +906,25 @@ public abstract class SparseMatrixGrammar extends Grammar {
         }
 
         try {
-            return getClass().getConstructor(
-                    new Class[] { ArrayList.class, ArrayList.class, ArrayList.class, SymbolSet.class, SymbolSet.class,
-                            GrammarFormatType.class, Class.class, boolean.class }).newInstance(
-                    new Object[] { unsplitGrammar.binaryProductions(Float.NEGATIVE_INFINITY),
-                            unsplitGrammar.unaryProductions(Float.NEGATIVE_INFINITY),
-                            unsplitGrammar.lexicalProductions(Float.NEGATIVE_INFINITY), baseVocabulary, lexSet,
-                            grammarFormat, this.packingFunction.getClass(), true });
+            return getClass()
+                    .getConstructor(
+                            new Class[] { ArrayList.class, ArrayList.class, ArrayList.class, SymbolSet.class,
+                                    SymbolSet.class, GrammarFormatType.class, TokenClassifierType.class, Class.class,
+                                    boolean.class })
+                    .newInstance(
+                            new Object[] { unsplitGrammar.binaryProductions(Float.NEGATIVE_INFINITY),
+                                    unsplitGrammar.unaryProductions(Float.NEGATIVE_INFINITY),
+                                    unsplitGrammar.lexicalProductions(Float.NEGATIVE_INFINITY), baseVocabulary, lexSet,
+                                    grammarFormat, this.tokenClassifier.type(), this.packingFunction.getClass(), true });
         } catch (final Exception e) {
             try {
                 return getClass().getConstructor(
                         new Class[] { ArrayList.class, ArrayList.class, ArrayList.class, SymbolSet.class,
-                                SymbolSet.class, GrammarFormatType.class }).newInstance(
+                                SymbolSet.class, GrammarFormatType.class, TokenClassifierType.class }).newInstance(
                         new Object[] { unsplitGrammar.binaryProductions(Float.NEGATIVE_INFINITY),
                                 unsplitGrammar.unaryProductions(Float.NEGATIVE_INFINITY),
                                 unsplitGrammar.lexicalProductions(Float.NEGATIVE_INFINITY), baseVocabulary, lexSet,
-                                grammarFormat });
+                                grammarFormat, this.tokenClassifier.type() });
 
             } catch (final Exception e2) {
                 throw new UnsupportedOperationException(getClass() + " does not support this operation");

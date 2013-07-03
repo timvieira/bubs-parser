@@ -20,11 +20,12 @@ package edu.ohsu.cslu.grammar;
 
 import it.unimi.dsi.fastutil.ints.Int2FloatOpenHashMap;
 
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Arrays;
+
+import edu.ohsu.cslu.grammar.TokenClassifier.TokenClassifierType;
 
 /**
  * Stores a sparse-matrix grammar in standard compressed-sparse-row (CSR) format
@@ -77,9 +78,9 @@ public class CsrSparseMatrixGrammar extends SparseMatrixGrammar {
     /** Unary rule probabilities */
     public final float[] csrUnaryProbabilities;
 
-    public CsrSparseMatrixGrammar(final Reader grammarFile, final Class<? extends PackingFunction> packingFunctionClass)
-            throws IOException {
-        super(grammarFile, packingFunctionClass);
+    public CsrSparseMatrixGrammar(final Reader grammarFile, final TokenClassifierType tokenClassifierType,
+            final Class<? extends PackingFunction> packingFunctionClass) throws IOException {
+        super(grammarFile, tokenClassifierType, packingFunctionClass);
 
         // Bin all binary rules by parent, mapping packed children -> probability
         this.csrBinaryRowOffsets = new int[numNonTerms() + 1];
@@ -100,16 +101,13 @@ public class CsrSparseMatrixGrammar extends SparseMatrixGrammar {
         tmpBinaryProductions = null;
     }
 
-    public CsrSparseMatrixGrammar(final Reader grammarFile) throws IOException {
-        this(grammarFile, null);
+    public CsrSparseMatrixGrammar(final Reader grammarFile, TokenClassifierType tokenClassifierType) throws IOException {
+        this(grammarFile, tokenClassifierType, null);
     }
 
-    public CsrSparseMatrixGrammar(final String grammarFile) throws IOException {
-        this(new FileReader(grammarFile));
-    }
-
-    public CsrSparseMatrixGrammar(final Grammar g, final Class<? extends PackingFunction> functionClass) {
-        super(g, functionClass);
+    public CsrSparseMatrixGrammar(final Grammar g, final TokenClassifierType tokenClassifierType,
+            final Class<? extends PackingFunction> functionClass) {
+        super(g, tokenClassifierType, functionClass);
 
         // Initialization code duplicated from constructor above to allow these fields to be final
         this.csrBinaryRowOffsets = new int[numNonTerms() + 1];
@@ -130,9 +128,10 @@ public class CsrSparseMatrixGrammar extends SparseMatrixGrammar {
     protected CsrSparseMatrixGrammar(final ArrayList<Production> binaryProductions,
             final ArrayList<Production> unaryProductions, final ArrayList<Production> lexicalProductions,
             final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat,
-            final Class<? extends PackingFunction> functionClass, final boolean initCsrMatrices) {
+            final TokenClassifierType tokenClassifierType, final Class<? extends PackingFunction> functionClass,
+            final boolean initCsrMatrices) {
         super(binaryProductions, unaryProductions, lexicalProductions, vocabulary, lexicon, grammarFormat,
-                functionClass);
+                tokenClassifierType, functionClass);
 
         // Initialization code duplicated from constructor above to allow these fields to be final
         this.csrBinaryRowOffsets = new int[numNonTerms() + 1];
@@ -154,9 +153,9 @@ public class CsrSparseMatrixGrammar extends SparseMatrixGrammar {
     public CsrSparseMatrixGrammar(final ArrayList<Production> binaryProductions,
             final ArrayList<Production> unaryProductions, final ArrayList<Production> lexicalProductions,
             final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat,
-            final Class<? extends PackingFunction> functionClass) {
+            final TokenClassifierType tokenClassifierType, final Class<? extends PackingFunction> functionClass) {
         this(binaryProductions, unaryProductions, lexicalProductions, vocabulary, lexicon, grammarFormat,
-                functionClass, true);
+                tokenClassifierType, functionClass, true);
     }
 
     protected void storeBinaryRulesAsCsrMatrix(final Int2FloatOpenHashMap[] maps, final int[] csrRowIndices,

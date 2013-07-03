@@ -97,9 +97,11 @@ public class Tagger extends ClassifierTool<TagSequence> {
      * </pre>
      */
     @Override
-    protected final String DEFAULT_FEATURE_TEMPLATES() {
+    protected String DEFAULT_FEATURE_TEMPLATES() {
         return "wm2,wm1,w,wp1,wp2,um2,um1,u,up1,up2,tm3,tm2,tm1,wm2_wm1,wm1_w,w_wp1,wp1_wp2,wm2_um1,wm1_u,u_wp1,up1_wp2,wm2_wm1_w,wm1_w_wp1,w_wp1_wp2,tm3_tm2,tm2_tm1,tm1_wm1,tm1_w,wm2_tm1";
     }
+
+    SymbolSet<String> posSet;
 
     SymbolSet<String> tagSet;
 
@@ -110,7 +112,7 @@ public class Tagger extends ClassifierTool<TagSequence> {
     private transient AveragedPerceptron perceptronModel;
 
     // Maps feature index (long) -> offset in weight arrays (int)
-    private Long2IntOpenHashMap parallelArrayOffsetMap;
+    protected Long2IntOpenHashMap parallelArrayOffsetMap;
 
     /**
      * Parallel arrays of populated tag index and feature weights. Note that many features will only be observed in
@@ -125,8 +127,8 @@ public class Tagger extends ClassifierTool<TagSequence> {
      * an essentially random memory-access pattern. Aligning all weights for a specific feature together allows a single
      * hashtable lookup (in {@link #parallelArrayOffsetMap}), followed by a linear scan of these parallel arrays.
      */
-    private short[] parallelWeightArrayTags;
-    private float[] parallelWeightArray;
+    protected short[] parallelWeightArrayTags;
+    protected float[] parallelWeightArray;
 
     /**
      * Default constructor
@@ -142,7 +144,7 @@ public class Tagger extends ClassifierTool<TagSequence> {
             final SymbolSet<String> tagSet) {
         this.featureTemplates = featureTemplates;
         this.lexicon = lexicon;
-        this.unkClassSet = unkClassSet;
+        this.decisionTreeUnkClassSet = unkClassSet;
         this.tagSet = tagSet;
     }
 
@@ -164,9 +166,10 @@ public class Tagger extends ClassifierTool<TagSequence> {
         ois.close();
         this.featureTemplates = tmp.featureTemplates;
         this.lexicon = tmp.lexicon;
-        this.unkClassSet = tmp.unkClassSet;
+        this.decisionTreeUnkClassSet = tmp.unkClassSet;
         this.tagSet = tmp.tagSet;
-        this.featureExtractor = new TaggerFeatureExtractor(featureTemplates, lexicon, unkClassSet, tagSet);
+        this.featureExtractor = new TaggerFeatureExtractor(featureTemplates, lexicon, decisionTreeUnkClassSet, posSet,
+                tagSet);
         this.parallelArrayOffsetMap = tmp.parallelArrayOffsetMap;
         this.parallelWeightArrayTags = tmp.parallelWeightArrayTags;
         this.parallelWeightArray = tmp.parallelWeightArray;
@@ -183,13 +186,14 @@ public class Tagger extends ClassifierTool<TagSequence> {
      */
     protected int[] classify(final BufferedReader input) throws IOException {
 
-        final TaggerFeatureExtractor fe = new TaggerFeatureExtractor(featureTemplates, lexicon, unkClassSet, tagSet);
+        final TaggerFeatureExtractor fe = new TaggerFeatureExtractor(featureTemplates, lexicon,
+                decisionTreeUnkClassSet, posSet, tagSet);
         int sentences = 0, words = 0, correct = 0;
         final long t0 = System.currentTimeMillis();
 
         for (final String line : inputLines(input)) {
             sentences++;
-            final TagSequence tagSequence = new TagSequence(line, this);
+            final TagSequence tagSequence = createSequence(line);
             for (int i = 0; i < tagSequence.length; i++) {
                 tagSequence.predictedTags[i] = classify(fe.featureVector(tagSequence, i));
             }
@@ -211,7 +215,11 @@ public class Tagger extends ClassifierTool<TagSequence> {
         return new int[] { sentences, words, correct, (int) (System.currentTimeMillis() - t0) };
     }
 
-    private int[] classify(final ArrayList<TagSequence> devCorpusSequences,
+    protected TagSequence createSequence(final String line) {
+        return new TagSequence(line, this);
+    }
+
+    private int[] classify(final ArrayList<? extends TagSequence> devCorpusSequences,
             final ArrayList<BitVector[]> devCorpusFeatures) {
 
         // Test the development set
@@ -224,11 +232,13 @@ public class Tagger extends ClassifierTool<TagSequence> {
             final BitVector[] featureVectors = devCorpusFeatures.get(j);
 
             for (int k = 0; k < featureVectors.length; k++) {
-                tagSequence.predictedTags[k] = classify(featureVectors[k]);
-                if (tagSequence.predictedTags[k] == tagSequence.tags[k]) {
-                    correct++;
+                if (featureVectors[k] != null) {
+                    tagSequence.predictedTags[k] = classify(featureVectors[k]);
+                    if (tagSequence.predictedTags[k] == tagSequence.tags[k]) {
+                        correct++;
+                    }
+                    words++;
                 }
-                words++;
             }
             Arrays.fill(tagSequence.predictedTags, (short) 0);
         }
@@ -323,8 +333,8 @@ public class Tagger extends ClassifierTool<TagSequence> {
         this.lexicon = new SymbolSet<String>();
         this.lexicon.defaultReturnValue(Grammar.nullSymbolStr);
 
-        this.unkClassSet = new SymbolSet<String>();
-        this.unkClassSet.defaultReturnValue(Grammar.nullSymbolStr);
+        this.decisionTreeUnkClassSet = new SymbolSet<String>();
+        this.decisionTreeUnkClassSet.defaultReturnValue(Grammar.nullSymbolStr);
 
         this.tagSet = new SymbolSet<String>();
         this.tagSet.defaultReturnValue(Grammar.nullSymbolStr);
@@ -333,9 +343,19 @@ public class Tagger extends ClassifierTool<TagSequence> {
         // Read in the training corpus and map each token
         //
         for (final String line : inputLines(input)) {
-            trainingCorpusSequences.add(new TagSequence(line, this));
+            trainingCorpusSequences.add(createSequence(line));
         }
         finalizeMaps();
+
+        //
+        // Read in the dev set
+        //
+        if (devSet != null) {
+            for (final String line : fileLines(devSet)) {
+                final TagSequence tagSequence = createSequence(line);
+                devCorpusSequences.add(tagSequence);
+            }
+        }
 
         //
         // Train and (optionally) test on dev-set
@@ -345,8 +365,8 @@ public class Tagger extends ClassifierTool<TagSequence> {
         // Write out the model file to disk, using Java object serialization
         if (modelFile != null) {
             final FileOutputStream fos = new FileOutputStream(modelFile);
-            new ObjectOutputStream(fos).writeObject(new Model(featureTemplates, lexicon, unkClassSet, tagSet,
-                    parallelArrayOffsetMap, parallelWeightArrayTags, parallelWeightArray));
+            new ObjectOutputStream(fos).writeObject(new Model(featureTemplates, lexicon, decisionTreeUnkClassSet,
+                    posSet, tagSet, parallelArrayOffsetMap, parallelWeightArrayTags, parallelWeightArray));
             fos.close();
         }
 
@@ -354,39 +374,18 @@ public class Tagger extends ClassifierTool<TagSequence> {
                 String.format("Time: %d seconds\n", (System.currentTimeMillis() - startTime) / 1000));
     }
 
-    void train(final ArrayList<TagSequence> trainingCorpusSequences, final ArrayList<TagSequence> devCorpusSequences,
-            final int iterations) throws IOException {
+    void train(final ArrayList<? extends TagSequence> trainingCorpusSequences,
+            final ArrayList<? extends TagSequence> devCorpusSequences, final int iterations) {
+
+        featureExtractor = new TaggerFeatureExtractor(featureTemplates, lexicon, decisionTreeUnkClassSet, posSet,
+                tagSet);
+        perceptronModel = new AveragedPerceptron(tagSet.size(), featureExtractor.vectorLength());
+
         //
         // Pre-compute all features
         //
-        final ArrayList<BitVector[]> trainingCorpusFeatures = new ArrayList<BitVector[]>();
-        final ArrayList<BitVector[]> devCorpusFeatures = new ArrayList<BitVector[]>();
-
-        featureExtractor = new TaggerFeatureExtractor(featureTemplates, lexicon, unkClassSet, tagSet);
-        for (final TagSequence tagSequence : trainingCorpusSequences) {
-
-            final BitVector[] featureVectors = new BitVector[tagSequence.tags.length];
-            for (int i = 0; i < featureVectors.length; i++) {
-                featureVectors[i] = featureExtractor.featureVector(tagSequence, i);
-            }
-            trainingCorpusFeatures.add(featureVectors);
-        }
-
-        // Read in the dev set and map features
-        if (devSet != null) {
-            for (final String line : fileLines(devSet)) {
-                final TagSequence tagSequence = new TagSequence(line, this);
-                devCorpusSequences.add(tagSequence);
-
-                final BitVector[] featureVectors = new BitVector[tagSequence.tags.length];
-                for (int j = 0; j < featureVectors.length; j++) {
-                    featureVectors[j] = featureExtractor.featureVector(tagSequence, j);
-                }
-                devCorpusFeatures.add(featureVectors);
-            }
-        }
-
-        perceptronModel = new AveragedPerceptron(tagSet.size(), featureExtractor.vectorLength());
+        final ArrayList<BitVector[]> trainingCorpusFeatures = extractFeatures(trainingCorpusSequences);
+        final ArrayList<BitVector[]> devCorpusFeatures = extractFeatures(devCorpusSequences);
 
         //
         // Iterate over training corpus, training the model
@@ -397,7 +396,9 @@ public class Tagger extends ClassifierTool<TagSequence> {
 
                 final BitVector[] featureVectors = trainingCorpusFeatures.get(j);
                 for (int k = 0; k < featureVectors.length; k++) {
-                    perceptronModel.train(tagSequence.tags[k], featureVectors[k]);
+                    if (featureVectors[k] != null) {
+                        perceptronModel.train(tagSequence.tags[k], featureVectors[k]);
+                    }
                 }
 
                 progressBar(100, 5000, j);
@@ -427,9 +428,38 @@ public class Tagger extends ClassifierTool<TagSequence> {
         }
     }
 
+    /**
+     * Extracts features from a set of sequences. Feature-vectors are only extracted for sequences with populated tags.
+     * For full-sequence taggers // (like POS taggers) this is irrelevant, but for taggers which only tag certain tokens
+     * (like {@link UnkClassTagger}), we generally won't tag every token. In those cases, some entries in the
+     * {@link BitVector}[] arrays will be null.
+     * 
+     * @param sequences
+     * @return Features extracted from the supplied sequences.
+     */
+    protected ArrayList<BitVector[]> extractFeatures(final ArrayList<? extends TagSequence> sequences) {
+
+        final ArrayList<BitVector[]> features = new ArrayList<BitVector[]>();
+
+        for (final TagSequence tagSequence : sequences) {
+
+            final BitVector[] featureVectors = new BitVector[tagSequence.length];
+            for (int i = 0; i < tagSequence.length; i++) {
+                if (tagSequence.tags[i] >= 0) {
+                    featureVectors[i] = featureExtractor.featureVector(tagSequence, i);
+                }
+            }
+            features.add(featureVectors);
+        }
+        return features;
+    }
+
     @Override
     protected void finalizeMaps() {
         super.finalizeMaps();
+        if (posSet != null) {
+            posSet.finalize();
+        }
         tagSet.finalize();
     }
 
@@ -524,7 +554,7 @@ public class Tagger extends ClassifierTool<TagSequence> {
         }
     }
 
-    private static class Model extends ClassifierTool.Model {
+    protected static class Model extends ClassifierTool.Model {
 
         private static final long serialVersionUID = 1L;
 
@@ -535,16 +565,15 @@ public class Tagger extends ClassifierTool<TagSequence> {
         private final float[] parallelWeightArray;
 
         protected Model(final String featureTemplates, final SymbolSet<String> lexicon,
-                final SymbolSet<String> unkClassSet, final SymbolSet<String> tagSet,
+                final SymbolSet<String> unkClassSet, final SymbolSet<String> posSet, final SymbolSet<String> tagSet,
                 final Long2IntOpenHashMap parallelArrayOffsetMap, final short[] parallelWeightArrayTags,
                 final float[] parallelWeightArray) {
 
-            super(featureTemplates, lexicon, unkClassSet);
+            super(featureTemplates, lexicon, unkClassSet, posSet);
             this.tagSet = tagSet;
             this.parallelArrayOffsetMap = parallelArrayOffsetMap;
             this.parallelWeightArrayTags = parallelWeightArrayTags;
             this.parallelWeightArray = parallelWeightArray;
         }
-
     }
 }

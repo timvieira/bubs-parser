@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 
+import edu.ohsu.cslu.grammar.TokenClassifier.TokenClassifierType;
+
 /**
  * Represents binary grammar rules by left child and right child (in addition to the standard parent-based storage), for
  * efficient access during the outside pass of inside-outside parsing.
@@ -61,9 +63,9 @@ public class InsideOutsideCscSparseMatrixGrammar extends LeftCscSparseMatrixGram
     /** Unary rule probabilities */
     public final float[] csrUnaryProbabilities;
 
-    public InsideOutsideCscSparseMatrixGrammar(final Reader grammarFile,
+    public InsideOutsideCscSparseMatrixGrammar(final Reader grammarFile, final TokenClassifierType tokenClassifierType,
             final Class<? extends PackingFunction> cartesianProductFunctionClass) throws IOException {
-        super(grammarFile, cartesianProductFunctionClass);
+        super(grammarFile, tokenClassifierType, cartesianProductFunctionClass);
 
         // Left child grammar
         final ArrayList<Production> binaryProductions = getBinaryProductions();
@@ -112,10 +114,11 @@ public class InsideOutsideCscSparseMatrixGrammar extends LeftCscSparseMatrixGram
     public InsideOutsideCscSparseMatrixGrammar(final ArrayList<Production> binaryProductions,
             final ArrayList<Production> unaryProductions, final ArrayList<Production> lexicalProductions,
             final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat,
-            final Class<? extends PackingFunction> functionClass, final boolean initCscMatrices) {
+            final TokenClassifierType tokenClassifierType, final Class<? extends PackingFunction> functionClass,
+            final boolean initCscMatrices) {
 
         super(binaryProductions, unaryProductions, lexicalProductions, vocabulary, lexicon, grammarFormat,
-                functionClass, initCscMatrices);
+                tokenClassifierType, functionClass, initCscMatrices);
 
         // Initialization code duplicated from constructor above to allow these fields to be final
 

@@ -103,6 +103,7 @@ public class Sequence {
     protected Sequence(final SymbolSet<String> lexicon, final SymbolSet<String> unkClassSet,
             final SymbolSet<String> posSet, final SymbolSet<String> unigramSuffixSet,
             final SymbolSet<String> bigramSuffixSet) {
+
         this.lexicon = lexicon;
         this.unkClassSet = unkClassSet;
         this.posSet = posSet;

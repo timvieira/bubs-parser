@@ -68,8 +68,8 @@ public class TestTagger {
 
         trainingCorpusSequences = new ArrayList<TagSequence>();
         for (final String line : trainingCorpus.split("\n")) {
-            trainingCorpusSequences.add(new TagSequence(line, lexicon, unkClassSet, tagSet, unigramSuffixSet,
-                    bigramSuffixSet));
+            trainingCorpusSequences.add(new TagSequence(line, lexicon, unkClassSet, null, unigramSuffixSet,
+                    bigramSuffixSet, tagSet));
         }
 
         nullTag = tagSet.getIndex(Grammar.nullSymbolStr);
@@ -100,7 +100,7 @@ public class TestTagger {
     public void testUnigramFeatureExtractor() {
 
         // A trivially simple feature extractor
-        final TaggerFeatureExtractor fe = new TaggerFeatureExtractor("tm1,w", lexicon, unkClassSet, tagSet);
+        final TaggerFeatureExtractor fe = new TaggerFeatureExtractor("tm1,w", lexicon, unkClassSet, null, tagSet);
         final int offset1 = tagSet.size();
 
         assertEquals(new SparseBitVector(fe.featureVectorLength, new int[] { nullTag, offset1 + thisToken }),
@@ -112,7 +112,8 @@ public class TestTagger {
     @Test
     public void testBigramFeatureExtractor() {
 
-        final TaggerFeatureExtractor fe = new TaggerFeatureExtractor("tm1_w,tm2_tm1", lexicon, unkClassSet, tagSet);
+        final TaggerFeatureExtractor fe = new TaggerFeatureExtractor("tm1_w,tm2_tm1", lexicon, unkClassSet, null,
+                tagSet);
         final int offset1 = tagSet.size() * lexicon.size();
 
         assertEquals(new SparseBitVector(fe.featureVectorLength, new int[] { nullTag * lexicon.size() + thisToken,
@@ -128,7 +129,8 @@ public class TestTagger {
     @Test
     public void testTrigramFeatureExtractor() {
 
-        final TaggerFeatureExtractor fe = new TaggerFeatureExtractor("tm2_tm1,tm2_tm1_w", lexicon, unkClassSet, tagSet);
+        final TaggerFeatureExtractor fe = new TaggerFeatureExtractor("tm2_tm1,tm2_tm1_w", lexicon, unkClassSet, null,
+                tagSet);
 
         final int offset1 = tagSet.size() * tagSet.size();
         assertEquals(new SparseBitVector(fe.featureVectorLength, new int[] { nullTag * tagSet.size() + nullTag,
@@ -146,7 +148,8 @@ public class TestTagger {
 
     @Test
     public void testBerkeleyUnkClasses() {
-        final TaggerFeatureExtractor fe = new TaggerFeatureExtractor("tm1_u,um2_um1", lexicon, unkClassSet, tagSet);
+        final TaggerFeatureExtractor fe = new TaggerFeatureExtractor("tm1_u,um2_um1", lexicon, unkClassSet, null,
+                tagSet);
         final int offset1 = tagSet.size() * unkClassSet.size();
 
         assertEquals(new SparseBitVector(fe.featureVectorLength, new int[] { nullTag * unkClassSet.size() + thisUnk,
@@ -165,7 +168,7 @@ public class TestTagger {
     @Test
     public void testUnkClusters() {
         final TaggerFeatureExtractor fe = new TaggerFeatureExtractor("numm1,num20,punctp1,punct20,us,bs", lexicon,
-                unkClassSet, tagSet);
+                unkClassSet, null, tagSet);
         final int offset1 = 2;
         final int offset2 = 4;
         final int offset3 = 6;

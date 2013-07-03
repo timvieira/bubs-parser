@@ -31,6 +31,7 @@ import cltool4j.ConfigProperties;
 import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarTestCase;
+import edu.ohsu.cslu.grammar.TokenClassifier.TokenClassifierType;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.ParserDriver;
@@ -219,7 +220,8 @@ public abstract class ChartParserTestCase<P extends ChartParser<? extends Gramma
     }
 
     public Grammar createGrammar(final Reader grammarReader) throws Exception {
-        return grammarClass().getConstructor(new Class[] { Reader.class }).newInstance(new Object[] { grammarReader });
+        return grammarClass().getConstructor(new Class[] { Reader.class, TokenClassifierType.class }).newInstance(
+                new Object[] { grammarReader, TokenClassifierType.DecisionTree });
     }
 
 }

@@ -4,6 +4,7 @@ import java.io.File;
 
 import cltool4j.BaseCommandlineTool;
 import cltool4j.args4j.Option;
+import edu.ohsu.cslu.grammar.TokenClassifier.TokenClassifierType;
 import edu.ohsu.cslu.util.Strings;
 
 /**
@@ -18,12 +19,13 @@ public class ReplaceUnks extends BaseCommandlineTool {
 
     @Override
     protected void run() throws Exception {
-        final Grammar g = new ListGrammar(fileAsBufferedReader(grammarFile));
+        final Grammar g = new ListGrammar(fileAsBufferedReader(grammarFile), TokenClassifierType.DecisionTree);
 
         for (final String s : inputLines()) {
             final String treebankTokens[] = Tokenizer.treebankTokenize(s).split(" ");
             for (int i = 0; i < treebankTokens.length; i++) {
-                treebankTokens[i] = ((DecisionTreeTokenClassifier) g.tokenClassifier).lexiconEntry(treebankTokens[i], i == 0);
+                treebankTokens[i] = ((DecisionTreeTokenClassifier) g.tokenClassifier).lexiconEntry(treebankTokens[i],
+                        i == 0);
             }
 
             System.out.println(Strings.join(treebankTokens, " "));

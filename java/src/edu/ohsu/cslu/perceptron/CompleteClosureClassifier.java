@@ -37,7 +37,9 @@ import edu.ohsu.cslu.datastructs.vectors.FloatVector;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
 import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.grammar.TokenClassifier.TokenClassifierType;
 
 /**
  * Complete-closure classifier, as described in Bodenstab et al., 2011,
@@ -116,7 +118,7 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
      */
     public CompleteClosureClassifier(final Grammar grammar) {
         init(grammar);
-        this.featureExtractor = new ConstituentBoundaryFeatureExtractor(featureTemplates, lexicon, unkClassSet,
+        this.featureExtractor = new ConstituentBoundaryFeatureExtractor(featureTemplates, lexicon, decisionTreeUnkClassSet,
                 vocabulary);
     }
 
@@ -128,7 +130,7 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
     }
 
     /**
-     * Initializes {@link CompleteClosureClassifier#lexicon}, {@link CompleteClosureClassifier#unkClassSet}, and
+     * Initializes {@link CompleteClosureClassifier#lexicon}, {@link CompleteClosureClassifier#decisionTreeUnkClassSet}, and
      * {@link CompleteClosureClassifier#vocabulary} from the specified {@link Grammar}.
      * 
      * @param g
@@ -136,8 +138,8 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
     void init(final Grammar g) {
         this.lexicon = g.lexSet;
         this.lexicon.finalize();
-        this.unkClassSet = g.unkClassSet();
-        this.unkClassSet.finalize();
+        this.decisionTreeUnkClassSet = g.unkClassSet();
+        this.decisionTreeUnkClassSet.finalize();
         this.vocabulary = fullPosSet ? g.posSymbolSet() : g.coarsePosSymbolSet();
         this.vocabulary.finalize();
         this.binarization = g.binarization();
@@ -164,19 +166,20 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
 
             if (grammarFile != null) {
                 BaseLogger.singleton().info("Reading grammar file...");
-                final Grammar g = new LeftCscSparseMatrixGrammar(fileAsBufferedReader(grammarFile));
+                final Grammar g = new LeftCscSparseMatrixGrammar(fileAsBufferedReader(grammarFile),
+                        TokenClassifierType.DecisionTree, PerfectIntPairHashPackingFunction.class);
                 init(g);
 
             } else {
                 this.lexicon = new SymbolSet<String>();
-                this.unkClassSet = new SymbolSet<String>();
+                this.decisionTreeUnkClassSet = new SymbolSet<String>();
                 this.vocabulary = new SymbolSet<String>();
             }
 
             train(inputAsBufferedReader());
         } else {
             readModel(new FileInputStream(modelFile));
-            this.featureExtractor = new ConstituentBoundaryFeatureExtractor(featureTemplates, lexicon, unkClassSet,
+            this.featureExtractor = new ConstituentBoundaryFeatureExtractor(featureTemplates, lexicon, decisionTreeUnkClassSet,
                     vocabulary);
             classify(inputAsBufferedReader());
         }
@@ -197,7 +200,7 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
 
         for (final String line : inputLines(input)) {
             final CompleteClosureSequence sequence = new CompleteClosureSequence(line, binarization, grammarFormat,
-                    lexicon, unkClassSet, vocabulary);
+                    lexicon, decisionTreeUnkClassSet, vocabulary);
             result.totalSequences++;
 
             for (int i = 0; i < sequence.classes.length; i++) {
@@ -213,7 +216,7 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
     protected void train(final BufferedReader input) throws IOException {
 
         this.lexicon.defaultReturnValue(Grammar.nullSymbolStr);
-        this.unkClassSet.defaultReturnValue(Grammar.nullSymbolStr);
+        this.decisionTreeUnkClassSet.defaultReturnValue(Grammar.nullSymbolStr);
         this.vocabulary.defaultReturnValue(Grammar.nullSymbolStr);
 
         final long startTime = System.currentTimeMillis();
@@ -221,7 +224,7 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
         final ArrayList<CompleteClosureSequence> devCorpusSequences = new ArrayList<CompleteClosureSequence>();
 
         if (posTaggerTrainingIterations != 0) {
-            this.posTagger = new Tagger(posTaggerFeatureTemplates, lexicon, unkClassSet, vocabulary);
+            this.posTagger = new Tagger(posTaggerFeatureTemplates, lexicon, decisionTreeUnkClassSet, vocabulary);
         }
 
         final ArrayList<TagSequence> taggerTrainingCorpusSequences = posTagger != null ? new ArrayList<TagSequence>()
@@ -238,7 +241,7 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
         for (final String line : inputLines(input)) {
             try {
                 trainingCorpusSequences.add(new CompleteClosureSequence(line, binarization, grammarFormat, lexicon,
-                        unkClassSet, vocabulary));
+                        decisionTreeUnkClassSet, vocabulary));
                 if (posTagger != null) {
                     taggerTrainingCorpusSequences.add(new TagSequence(line, posTagger));
                 }
@@ -257,7 +260,7 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
             posTagger.train(taggerTrainingCorpusSequences, taggerDevCorpusSequences, posTaggerTrainingIterations);
         }
 
-        featureExtractor = new ConstituentBoundaryFeatureExtractor(featureTemplates, lexicon, unkClassSet, vocabulary);
+        featureExtractor = new ConstituentBoundaryFeatureExtractor(featureTemplates, lexicon, decisionTreeUnkClassSet, vocabulary);
 
         //
         // Tag the training sequences with the trained POS tagger
@@ -275,7 +278,7 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
             for (final String line : fileLines(devSet)) {
 
                 final CompleteClosureSequence ccs = new CompleteClosureSequence(line, binarization, grammarFormat,
-                        lexicon, unkClassSet, vocabulary);
+                        lexicon, decisionTreeUnkClassSet, vocabulary);
                 devCorpusSequences.add(ccs);
 
                 if (posTagger != null) {

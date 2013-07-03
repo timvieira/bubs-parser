@@ -19,46 +19,83 @@
 
 package edu.ohsu.cslu.perceptron;
 
-import edu.ohsu.cslu.util.Strings;
+import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.SymbolSet;
 
 /**
- * Classifies unknown-words into clusters, using lexical features and the surrounding syntax.
+ * Classifies unknown-words into clusters, using lexical features and the surrounding syntax. Trains on transformed
+ * corpus including POS tags, tokens, and unknown-word classes for all rare words. Class/token format is
+ * UNK-&lt;clusterID&gt;|&lt;token&gt;. Supports bracketed input (POS token) (POS UNK*) (POS token)... or trees.
  * 
  * @author Aaron Dunlop
- * @since Jul 1, 2013
  */
 public class UnkClassTagger extends Tagger {
 
-    @Override
-    protected void run() throws Exception {
-        boolean foundInput = false;
-        int expectedFields = 0;
-        for (final String line : inputLines()) {
-            // Skip everything up to and including '@data'
-            if (!foundInput) {
-                if (line.equals("@data")) {
-                    foundInput = true;
-                }
-                continue;
-            }
+    private static final long serialVersionUID = 1L;
 
-            final String[] split = Strings.splitOn(line, ',', '\'');
-            if (expectedFields == 0) {
-                expectedFields = split.length;
-                System.out.format("%d fields\n", expectedFields);
-            }
-
-            if (split.length != expectedFields) {
-                System.err.println(line);
-            }
-        }
-    }
+    SymbolSet<String> unigramSuffixSet;
+    SymbolSet<String> bigramSuffixSet;
 
     /**
-     * @param args
+     * Default Feature Templates:
+     * 
+     * <pre>
+     * # Contains-numeral and numeral percentage
+     * num
+     * num20
+     * num40
+     * num60
+     * num80
+     * num100
+     * 
+     * # Contains-punctuation and punctuation percentage
+     * punct
+     * punct20
+     * punct40
+     * punct60
+     * punct80
+     * punct100
+     * 
+     * # POS features
+     * posm1
+     * pos
+     * posp1
+     * 
+     * # Unigram and bigram suffixes
+     * us
+     * bs
+     * </pre>
      */
+    @Override
+    protected final String DEFAULT_FEATURE_TEMPLATES() {
+        return "num,num20,num40,num60,num80,num100,punct,punct20,punct40,punct60,punct80,punct100,posm1,pos,posp1,us,bs";
+    }
+
+    public UnkClassTagger() {
+        this.posSet = new SymbolSet<String>();
+        this.posSet.defaultReturnValue(Grammar.nullSymbolStr);
+
+        this.unigramSuffixSet = new SymbolSet<String>();
+        this.unigramSuffixSet.defaultReturnValue(Grammar.nullSymbolStr);
+
+        this.bigramSuffixSet = new SymbolSet<String>();
+        this.bigramSuffixSet.defaultReturnValue(Grammar.nullSymbolStr);
+    }
+
+    @Override
+    protected TagSequence createSequence(final String line) {
+        return new UnkClassSequence(line, this);
+    }
+
+    @Override
+    protected void finalizeMaps() {
+        super.finalizeMaps();
+
+        unigramSuffixSet.finalize();
+        bigramSuffixSet.finalize();
+    }
+
     public static void main(final String[] args) {
         run(args);
     }
-
 }

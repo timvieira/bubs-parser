@@ -71,7 +71,7 @@ public abstract class ClassifierTool<S extends Sequence> extends BaseCommandline
     protected abstract String DEFAULT_FEATURE_TEMPLATES();
 
     protected SymbolSet<String> lexicon;
-    protected SymbolSet<String> unkClassSet;
+    protected SymbolSet<String> decisionTreeUnkClassSet;
 
     protected FeatureExtractor<S> featureExtractor;
 
@@ -106,7 +106,7 @@ public abstract class ClassifierTool<S extends Sequence> extends BaseCommandline
 
     protected void finalizeMaps() {
         lexicon.finalize();
-        unkClassSet.finalize();
+        decisionTreeUnkClassSet.finalize();
     }
 
     /**
@@ -158,13 +158,15 @@ public abstract class ClassifierTool<S extends Sequence> extends BaseCommandline
         final String featureTemplates;
         final SymbolSet<String> lexicon;
         final SymbolSet<String> unkClassSet;
+        final SymbolSet<String> posSet;
 
         protected Model(final String featureTemplates, final SymbolSet<String> lexicon,
-                final SymbolSet<String> unkClassSet) {
+                final SymbolSet<String> unkClassSet, final SymbolSet<String> posSet) {
 
             this.featureTemplates = featureTemplates;
             this.lexicon = lexicon;
             this.unkClassSet = unkClassSet;
+            this.posSet = posSet;
         }
     }
 }

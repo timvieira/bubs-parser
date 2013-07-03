@@ -9,6 +9,8 @@ import java.util.zip.GZIPInputStream;
 
 import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
+import edu.ohsu.cslu.grammar.TokenClassifier.TokenClassifierType;
 import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthModel;
 import edu.ohsu.cslu.parser.fom.BoundaryPosModel;
 import edu.ohsu.cslu.parser.fom.FigureOfMeritModel.FOMType;
@@ -30,7 +32,8 @@ public class EmbeddedExample {
         final ParserDriver opts = new ParserDriver();
 
         // Instantiate a Grammar class and load in the grammar from disk
-        final LeftCscSparseMatrixGrammar grammar = new LeftCscSparseMatrixGrammar(uncompressFile(args[0]));
+        final LeftCscSparseMatrixGrammar grammar = new LeftCscSparseMatrixGrammar(uncompressFile(args[0]),
+                TokenClassifierType.DecisionTree, PerfectIntPairHashPackingFunction.class);
         opts.setGrammar(grammar);
 
         // Configure the beam model before we load it from disk

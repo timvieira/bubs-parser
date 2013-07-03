@@ -33,6 +33,7 @@ import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.ListGrammar;
+import edu.ohsu.cslu.grammar.TokenClassifier.TokenClassifierType;
 import edu.ohsu.cslu.parser.Util;
 
 /**
@@ -82,7 +83,7 @@ public class TrainPerceptron extends BaseCommandlineTool {
     @Override
     public void setup() throws Exception {
         // grammar = ParserDriver.readGrammar(grammarFile.toString(), Parser.ResearchParserType.ECPCellCrossList, null);
-        grammar = ListGrammar.read(grammarFile.getName());
+        grammar = ListGrammar.read(grammarFile.getName(), TokenClassifierType.DecisionTree);
     }
 
     @Override

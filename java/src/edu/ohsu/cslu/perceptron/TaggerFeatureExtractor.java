@@ -108,23 +108,10 @@ public class TaggerFeatureExtractor extends FeatureExtractor<TagSequence> {
      * @param lexicon
      * @param unkClassSet
      * @param tagSet
-     */
-    public TaggerFeatureExtractor(final String featureTemplates, final SymbolSet<String> lexicon,
-            final SymbolSet<String> unkClassSet, final SymbolSet<String> tagSet) {
-        this(featureTemplates, lexicon, unkClassSet, tagSet, null);
-    }
-
-    /**
-     * Constructs a {@link FeatureExtractor} using the specified feature templates and a POS tagset
-     * 
-     * @param featureTemplates
-     * @param lexicon
-     * @param unkClassSet
-     * @param tagSet
      * @param posSet
      */
     public TaggerFeatureExtractor(final String featureTemplates, final SymbolSet<String> lexicon,
-            final SymbolSet<String> unkClassSet, final SymbolSet<String> tagSet, final SymbolSet<String> posSet) {
+            final SymbolSet<String> unkClassSet, final SymbolSet<String> posSet, final SymbolSet<String> tagSet) {
 
         this.lexicon = lexicon;
         this.lexiconSize = lexicon.size();
@@ -250,11 +237,15 @@ public class TaggerFeatureExtractor extends FeatureExtractor<TagSequence> {
                 size *= posSetSize;
                 break;
 
+            case usm1:
             case us:
+            case usp1:
                 size *= unigramSuffixSetSize;
                 break;
 
+            case bsm1:
             case bs:
+            case bsp1:
                 size *= bigramSuffixSetSize;
                 break;
             }
@@ -362,14 +353,18 @@ public class TaggerFeatureExtractor extends FeatureExtractor<TagSequence> {
                             : sequence.mappedPosSymbols[index]);
                     break;
 
+                case usm1:
                 case us:
+                case usp1:
                     feature *= unigramSuffixSetSize;
                     feature += ((index < 0 || index >= sequence.mappedUnigramSuffix.length) ? nullToken
                             : sequence.mappedUnigramSuffix[index]);
                     break;
 
+                case bsm1:
                 case bs:
-                    feature *= posSetSize;
+                case bsp1:
+                    feature *= bigramSuffixSetSize;
                     feature += ((index < 0 || index >= sequence.mappedBigramSuffix.length) ? nullToken
                             : sequence.mappedBigramSuffix[index]);
                     break;
@@ -429,8 +424,13 @@ public class TaggerFeatureExtractor extends FeatureExtractor<TagSequence> {
         punct80(0, .8f), // 80+% punctuation
         punct100(0, 1.0f), // 100% punctuation
 
+        usm1(-1), // Unigram suffix i-1
         us(0), // Unigram suffix
-        bs(0); // Bigram suffix
+        usp1(1), // Unigram suffix i+1
+
+        bsm1(-1), // Bigram suffix i-1
+        bs(0), // Bigram suffix
+        bsp1(1); // Bigram suffix i+1
 
         final int offset;
         final float value;

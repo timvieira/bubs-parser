@@ -28,6 +28,8 @@ import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
+import edu.ohsu.cslu.grammar.TokenClassifier.TokenClassifierType;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.spmv.CscSpmvParser;
 import edu.ohsu.cslu.parser.spmv.PackedArraySpmvParser;
@@ -42,7 +44,8 @@ public class ProfilePackedArrayChart {
     @BeforeClass
     public static void suiteSetUp() throws Exception {
         if (grammar == null) {
-            grammar = new LeftCscSparseMatrixGrammar(JUnit.unitTestDataAsReader("grammars/berkeley.eng_sm6.nb.gz"));
+            grammar = new LeftCscSparseMatrixGrammar(JUnit.unitTestDataAsReader("grammars/berkeley.eng_sm6.nb.gz"),
+                    TokenClassifierType.DecisionTree, PerfectIntPairHashPackingFunction.class);
             parser = new CscSpmvParser(new ParserDriver(), grammar);
         }
 

@@ -196,4 +196,9 @@ public class DecisionTreeTokenClassifier extends TokenClassifier {
         return sb.toString();
     }
 
+    @Override
+    public TokenClassifierType type() {
+        return TokenClassifierType.DecisionTree;
+    }
+
 }

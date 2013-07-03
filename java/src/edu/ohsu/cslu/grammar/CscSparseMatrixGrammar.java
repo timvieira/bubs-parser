@@ -23,12 +23,13 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+
+import edu.ohsu.cslu.grammar.TokenClassifier.TokenClassifierType;
 
 /**
  * Stores a grammar in compressed-sparse-column (CSC) format
@@ -97,9 +98,9 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
      */
     public final float[] factoredCscBinaryProbabilities;
 
-    protected CscSparseMatrixGrammar(final Reader grammarFile,
+    protected CscSparseMatrixGrammar(final Reader grammarFile, final TokenClassifierType tokenClassifierType,
             final Class<? extends PackingFunction> cartesianProductFunctionClass) throws IOException {
-        super(grammarFile, cartesianProductFunctionClass);
+        super(grammarFile, tokenClassifierType, cartesianProductFunctionClass);
 
         // All binary productions
         final int[] populatedBinaryColumnIndices = populatedBinaryColumnIndices(tmpBinaryProductions, packingFunction);
@@ -143,21 +144,14 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
         tmpBinaryProductions = null;
     }
 
-    protected CscSparseMatrixGrammar(final Reader grammarFile) throws IOException {
-        this(grammarFile, null);
-    }
-
-    protected CscSparseMatrixGrammar(final String grammarFile) throws IOException {
-        this(new FileReader(grammarFile));
-    }
-
     public CscSparseMatrixGrammar(final ArrayList<Production> binaryProductions,
             final ArrayList<Production> unaryProductions, final ArrayList<Production> lexicalProductions,
             final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat,
-            final Class<? extends PackingFunction> functionClass, final boolean initCscMatrices) {
+            final TokenClassifierType tokenClassifierType, final Class<? extends PackingFunction> functionClass,
+            final boolean initCscMatrices) {
 
         super(binaryProductions, unaryProductions, lexicalProductions, vocabulary, lexicon, grammarFormat,
-                functionClass);
+                tokenClassifierType, functionClass);
 
         // Initialization code duplicated from constructor above to allow these fields to be final
         final int[] populatedBinaryColumnIndices = populatedBinaryColumnIndices(binaryProductions, packingFunction);

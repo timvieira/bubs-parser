@@ -26,6 +26,7 @@ import org.junit.Test;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.RightShiftFunction;
+import edu.ohsu.cslu.grammar.TokenClassifier.TokenClassifierType;
 
 /**
  * Unit tests for {@link RightChildLoopSpmlParser}
@@ -34,8 +35,9 @@ public class TestRightChildLoopSpmlParser extends SparseMatrixLoopParserTestCase
 
     @Override
     public Grammar createGrammar(final Reader grammarReader) throws Exception {
-        return grammarClass().getConstructor(new Class[] { Reader.class, Class.class }).newInstance(
-                new Object[] { grammarReader, RightShiftFunction.class });
+        return grammarClass()
+                .getConstructor(new Class[] { Reader.class, TokenClassifierType.class, Class.class })
+                .newInstance(new Object[] { grammarReader, TokenClassifierType.DecisionTree, RightShiftFunction.class });
     }
 
     @Override

@@ -23,6 +23,7 @@ import java.io.Reader;
 
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
+import edu.ohsu.cslu.grammar.TokenClassifier.TokenClassifierType;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.SparseMatrixParser;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
@@ -40,7 +41,7 @@ public class TestPrunedCartesianProductHashSpmlParser extends
     @Override
     protected LeftCscSparseMatrixGrammar createGrammar(final Reader grammarReader,
             final Class<? extends PackingFunction> packingFunctionClass) throws IOException {
-        return new LeftCscSparseMatrixGrammar(grammarReader, packingFunctionClass);
+        return new LeftCscSparseMatrixGrammar(grammarReader, TokenClassifierType.DecisionTree, packingFunctionClass);
     }
 
     @Override

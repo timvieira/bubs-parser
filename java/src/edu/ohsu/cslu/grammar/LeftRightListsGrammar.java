@@ -18,10 +18,11 @@
  */
 package edu.ohsu.cslu.grammar;
 
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.LinkedList;
+
+import edu.ohsu.cslu.grammar.TokenClassifier.TokenClassifierType;
 
 public class LeftRightListsGrammar extends LeftListGrammar {
 
@@ -29,13 +30,10 @@ public class LeftRightListsGrammar extends LeftListGrammar {
 
     private LinkedList<Production>[] binaryProdsByRightNonTerm;
 
-    public LeftRightListsGrammar(final Reader grammarFile) throws IOException {
-        super(grammarFile);
+    public LeftRightListsGrammar(final Reader grammarFile, final TokenClassifierType tokenClassifierType)
+            throws IOException {
+        super(grammarFile, tokenClassifierType);
         init();
-    }
-
-    public LeftRightListsGrammar(final String grammarFile) throws IOException {
-        this(new FileReader(grammarFile));
     }
 
     public LeftRightListsGrammar(final Grammar g) {

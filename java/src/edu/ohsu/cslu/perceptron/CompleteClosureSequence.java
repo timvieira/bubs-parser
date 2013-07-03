@@ -50,7 +50,7 @@ public class CompleteClosureSequence extends BinarySequence {
     public CompleteClosureSequence(final int[] mappedTokens, final short[] posTags,
             final CompleteClosureClassifier classifier) {
 
-        super(classifier.lexicon, classifier.unkClassSet);
+        super(classifier.lexicon, classifier.decisionTreeUnkClassSet);
         this.mappedTokens = mappedTokens;
         this.sentenceLength = (short) mappedTokens.length;
         this.posTags = posTags;
@@ -99,7 +99,7 @@ public class CompleteClosureSequence extends BinarySequence {
      * @param classifier
      */
     public CompleteClosureSequence(final BinaryTree<String> parseTree, final CompleteClosureClassifier classifier) {
-        this(parseTree, classifier.lexicon, classifier.unkClassSet, classifier.vocabulary);
+        this(parseTree, classifier.lexicon, classifier.decisionTreeUnkClassSet, classifier.vocabulary);
     }
 
     /**

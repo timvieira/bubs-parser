@@ -18,11 +18,12 @@
  */
 package edu.ohsu.cslu.grammar;
 
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Arrays;
+
+import edu.ohsu.cslu.grammar.TokenClassifier.TokenClassifierType;
 
 /**
  * Stores a sparse-matrix grammar in compressed-sparse-column (CSC) format
@@ -50,30 +51,28 @@ public class RightCscSparseMatrixGrammar extends CscSparseMatrixGrammar {
      */
     public final int[] cscBinaryRightChildEndIndices;
 
-    public RightCscSparseMatrixGrammar(final Reader grammarFile,
+    public RightCscSparseMatrixGrammar(final Reader grammarFile, final TokenClassifierType tokenClassifierType,
             final Class<? extends PackingFunction> cartesianProductFunctionClass) throws IOException {
-        super(grammarFile, cartesianProductFunctionClass);
+        super(grammarFile, tokenClassifierType, cartesianProductFunctionClass);
 
         this.cscBinaryRightChildStartIndices = new int[numNonTerms() + 1];
         this.cscBinaryRightChildEndIndices = new int[numNonTerms() + 1];
         init();
     }
 
-    public RightCscSparseMatrixGrammar(final Reader grammarFile) throws IOException {
-        this(grammarFile, RightShiftFunction.class);
-    }
-
-    public RightCscSparseMatrixGrammar(final String grammarFile) throws IOException {
-        this(new FileReader(grammarFile));
+    public RightCscSparseMatrixGrammar(final Reader grammarFile, final TokenClassifierType tokenClassifierType)
+            throws IOException {
+        this(grammarFile, tokenClassifierType, null);
     }
 
     public RightCscSparseMatrixGrammar(final ArrayList<Production> binaryProductions,
             final ArrayList<Production> unaryProductions, final ArrayList<Production> lexicalProductions,
             final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat,
-            final Class<? extends PackingFunction> functionClass, final boolean initCscMatrices) {
+            final TokenClassifierType tokenClassifierType, final Class<? extends PackingFunction> functionClass,
+            final boolean initCscMatrices) {
 
         super(binaryProductions, unaryProductions, lexicalProductions, vocabulary, lexicon, grammarFormat,
-                functionClass, initCscMatrices);
+                tokenClassifierType, functionClass, initCscMatrices);
 
         // Initialization code duplicated from constructor above to allow these fields to be final
         this.cscBinaryRightChildStartIndices = new int[numNonTerms() + 1];

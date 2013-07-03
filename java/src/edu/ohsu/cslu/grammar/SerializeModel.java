@@ -34,6 +34,7 @@ import cltool4j.BaseLogger;
 import cltool4j.GlobalConfigProperties;
 import cltool4j.args4j.Argument;
 import cltool4j.args4j.Option;
+import edu.ohsu.cslu.grammar.TokenClassifier.TokenClassifierType;
 import edu.ohsu.cslu.parser.fom.BoundaryPosModel;
 import edu.ohsu.cslu.parser.fom.FigureOfMeritModel.FOMType;
 import edu.ohsu.cslu.parser.fom.FigureOfMeritModel.FigureOfMerit;
@@ -88,7 +89,7 @@ public class SerializeModel extends BaseCommandlineTool {
         final ObjectOutputStream oos = new ObjectOutputStream(os);
 
         BaseLogger.singleton().info("Reading grammar...");
-        Grammar g = new ListGrammar(grammarReader);
+        Grammar g = new ListGrammar(grammarReader, TokenClassifierType.DecisionTree);
 
         if (grammarClass != null && grammarClass != Grammar.class.getName()) {
             BaseLogger.singleton().info("Converting grammar...");

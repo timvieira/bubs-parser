@@ -30,6 +30,8 @@ import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
+import edu.ohsu.cslu.grammar.TokenClassifier.TokenClassifierType;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.Parser.DecodeMethod;
@@ -62,7 +64,8 @@ public class ProfileBoundaryInOut {
     public static void suiteSetUp() throws IOException {
         if (parentAnnotatedGrammar == null) {
             parentAnnotatedGrammar = new LeftCscSparseMatrixGrammar(
-                    JUnit.unitTestDataAsReader("grammars/eng.R2.P1.gr.gz"));
+                    JUnit.unitTestDataAsReader("grammars/eng.R2.P1.gr.gz"), TokenClassifierType.DecisionTree,
+                    PerfectIntPairHashPackingFunction.class);
         }
         final BoundaryPosModel parentBioModel = new BoundaryPosModel(FOMType.BoundaryPOS, parentAnnotatedGrammar,
                 new BufferedReader(JUnit.unitTestDataAsReader("fom/eng.R2.P1.fom.gz")));
@@ -70,7 +73,8 @@ public class ProfileBoundaryInOut {
         parentAnnotatedBio = (BoundaryPosFom) parentBioModel.createFOM();
 
         if (berkeleyGrammar == null) {
-            berkeleyGrammar = new LeftCscSparseMatrixGrammar(JUnit.unitTestDataAsReader("../models/eng.sm6.gr.gz"));
+            berkeleyGrammar = new LeftCscSparseMatrixGrammar(JUnit.unitTestDataAsReader("../models/eng.sm6.gr.gz"),
+                    TokenClassifierType.DecisionTree, PerfectIntPairHashPackingFunction.class);
         }
         final BoundaryPosModel berkeleyBioModel = new BoundaryPosModel(FOMType.BoundaryPOS, berkeleyGrammar,
                 new BufferedReader(JUnit.unitTestDataAsReader("../models/eng.sm6.fom.gz")));

@@ -18,7 +18,6 @@
  */
 package edu.ohsu.cslu.grammar;
 
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
@@ -26,19 +25,17 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 
+import edu.ohsu.cslu.grammar.TokenClassifier.TokenClassifierType;
+
 public class LeftHashGrammar extends ListGrammar {
 
     private static final long serialVersionUID = 1L;
 
     private ArrayList<HashMap<Integer, LinkedList<Production>>> binaryProdHash;
 
-    public LeftHashGrammar(final Reader grammarFile) throws IOException {
-        super(grammarFile);
+    public LeftHashGrammar(final Reader grammarFile, final TokenClassifierType tokenClassifierType) throws IOException {
+        super(grammarFile, tokenClassifierType);
         init();
-    }
-
-    public LeftHashGrammar(final String grammarFile) throws IOException {
-        this(new FileReader(grammarFile));
     }
 
     public LeftHashGrammar(final Grammar g) {

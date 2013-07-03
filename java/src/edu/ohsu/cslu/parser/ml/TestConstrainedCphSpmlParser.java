@@ -33,6 +33,7 @@ import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
+import edu.ohsu.cslu.grammar.TokenClassifier.TokenClassifierType;
 import edu.ohsu.cslu.lela.ConstrainedCellSelector;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser.DecodeMethod;
@@ -130,8 +131,8 @@ public class TestConstrainedCphSpmlParser extends ChartParserTestCase<Constraine
      */
     @Override
     public Grammar createGrammar(final Reader grammarReader) throws Exception {
-        return grammarClass().getConstructor(new Class[] { Reader.class, Class.class }).newInstance(
-                new Object[] { grammarReader, LeftShiftFunction.class });
+        return grammarClass().getConstructor(new Class[] { Reader.class, TokenClassifierType.class, Class.class })
+                .newInstance(new Object[] { grammarReader, TokenClassifierType.DecisionTree, LeftShiftFunction.class });
     }
 
 }

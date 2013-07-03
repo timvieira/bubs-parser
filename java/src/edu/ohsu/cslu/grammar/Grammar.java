@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.TreeSet;
 
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
+import edu.ohsu.cslu.grammar.TokenClassifier.TokenClassifierType;
 import edu.ohsu.cslu.parser.cellselector.CellSelectorModel;
 import edu.ohsu.cslu.parser.fom.FigureOfMeritModel;
 
@@ -100,7 +101,7 @@ public abstract class Grammar implements Serializable {
      */
     private SymbolSet<String> coarsePosSymbolSet;
 
-    public TokenClassifier tokenClassifier = new DecisionTreeTokenClassifier(lexSet);
+    public TokenClassifier tokenClassifier;
     // TODO This field should really be final, but it's initialized in subclass constructors
     public Vocabulary nonTermSet;
 
@@ -131,6 +132,10 @@ public abstract class Grammar implements Serializable {
 
     public short nullSymbol = -1;
     public int nullWord = -1;
+
+    protected void initTokenClassifier(final TokenClassifierType tokenClassifierType, final SymbolSet<String> lexicon) {
+        this.tokenClassifier = tokenClassifierType.create(lexicon);
+    }
 
     public abstract Production getLexicalProduction(final short parent, final int lex);
 

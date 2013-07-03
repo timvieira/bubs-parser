@@ -99,7 +99,7 @@ public abstract class BinaryClassifier<S extends BinarySequence> extends Classif
         ois.close();
         this.featureTemplates = tmp.featureTemplates;
         this.lexicon = tmp.lexicon;
-        this.unkClassSet = tmp.unkClassSet;
+        this.decisionTreeUnkClassSet = tmp.unkClassSet;
         this.vocabulary = tmp.vocabulary;
         this.avgWeights = tmp.avgWeights;
         this.bias = tmp.bias;
@@ -474,7 +474,7 @@ public abstract class BinaryClassifier<S extends BinarySequence> extends Classif
         protected Model(final String featureTemplates, final SymbolSet<String> lexicon,
                 final SymbolSet<String> unkClassSet, final SymbolSet<String> vocabulary, final FloatVector avgWeights,
                 final float bias) {
-            super(featureTemplates, lexicon, unkClassSet);
+            super(featureTemplates, lexicon, unkClassSet, null);
             this.vocabulary = vocabulary;
             this.avgWeights = avgWeights;
             this.bias = bias;
