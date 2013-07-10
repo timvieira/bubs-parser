@@ -19,7 +19,17 @@
 
 package edu.ohsu.cslu.perceptron;
 
+import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
+
+import java.io.File;
+import java.io.FileInputStream;
+
+import cltool4j.BaseLogger;
+import cltool4j.args4j.Option;
+import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
+import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
 import edu.ohsu.cslu.grammar.SymbolSet;
 
 /**
@@ -32,6 +42,11 @@ import edu.ohsu.cslu.grammar.SymbolSet;
 public class UnkClassTagger extends Tagger {
 
     private static final long serialVersionUID = 1L;
+
+    // Training an UNK-class tagger requires an input grammar. We can test tagging without it, but at inference time, we
+    // need the lexicon indices to match
+    @Option(name = "-g", metaVar = "grammar", usage = "Grammar file.")
+    protected File grammarFile;
 
     SymbolSet<String> unigramSuffixSet;
     SymbolSet<String> bigramSuffixSet;
@@ -83,8 +98,40 @@ public class UnkClassTagger extends Tagger {
     }
 
     @Override
+    protected void run() throws Exception {
+        if (trainingIterations > 0) {
+            BaseLogger.singleton().info("Reading grammar file...");
+            final Grammar g = new LeftCscSparseMatrixGrammar(fileAsBufferedReader(grammarFile),
+                    new DecisionTreeTokenClassifier(), PerfectIntPairHashPackingFunction.class);
+            init(g);
+
+            train(inputAsBufferedReader());
+
+        } else {
+            readModel(new FileInputStream(modelFile));
+            classify(inputAsBufferedReader());
+        }
+    }
+
+    @Override
     protected TagSequence createSequence(final String line) {
         return new UnkClassSequence(line, this);
+    }
+
+    /**
+     * Overrides the superclass implementation to only classify unknown words
+     */
+    @Override
+    public short[] classify(final TagSequence sequence) {
+
+        for (int i = 0; i < sequence.length; i++) {
+            if (sequence.mappedTokens[i] < 0) {
+                sequence.predictedTags[i] = classify(featureExtractor.featureVector(sequence, i));
+            } else {
+                sequence.predictedTags[i] = -1;
+            }
+        }
+        return sequence.predictedTags;
     }
 
     @Override
@@ -95,7 +142,46 @@ public class UnkClassTagger extends Tagger {
         bigramSuffixSet.finalize();
     }
 
+    @Override
+    protected void initFromModel(final edu.ohsu.cslu.perceptron.Tagger.Model tmp) {
+        this.unigramSuffixSet = ((Model) tmp).unigramSuffixSet;
+        this.bigramSuffixSet = ((Model) tmp).bigramSuffixSet;
+        super.initFromModel(tmp);
+    }
+
+    @Override
+    protected TaggerFeatureExtractor featureExtractor() {
+        return new TaggerFeatureExtractor(featureTemplates, lexicon, decisionTreeUnkClassSet, posSet, unigramSuffixSet,
+                bigramSuffixSet, tagSet);
+    }
+
+    @Override
+    protected Model model() {
+        return new Model(featureTemplates, lexicon, decisionTreeUnkClassSet, posSet, unigramSuffixSet, bigramSuffixSet,
+                tagSet(), parallelArrayOffsetMap, parallelWeightArrayTags, parallelWeightArray);
+    }
+
     public static void main(final String[] args) {
         run(args);
+    }
+
+    protected static class Model extends Tagger.Model {
+
+        private static final long serialVersionUID = 1L;
+
+        final SymbolSet<String> unigramSuffixSet;
+        final SymbolSet<String> bigramSuffixSet;
+
+        protected Model(final String featureTemplates, final SymbolSet<String> lexicon,
+                final SymbolSet<String> unkClassSet, final SymbolSet<String> posSet,
+                final SymbolSet<String> unigramSuffixSet, final SymbolSet<String> bigramSuffixSet,
+                final SymbolSet<String> tagSet, final Long2IntOpenHashMap parallelArrayOffsetMap,
+                final short[] parallelWeightArrayTags, final float[] parallelWeightArray) {
+
+            super(featureTemplates, lexicon, unkClassSet, posSet, tagSet, parallelArrayOffsetMap,
+                    parallelWeightArrayTags, parallelWeightArray);
+            this.unigramSuffixSet = unigramSuffixSet;
+            this.bigramSuffixSet = bigramSuffixSet;
+        }
     }
 }

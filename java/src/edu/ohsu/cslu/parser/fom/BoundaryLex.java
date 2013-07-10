@@ -246,7 +246,7 @@ public final class BoundaryLex extends FigureOfMeritModel {
             // NB: When using the SM5 grammar, all lexical items in the training set
             // were not included in the grammar. This caused the above line to return
             // -1 and failed.
-            tmpList.add(((DecisionTreeTokenClassifier) grammar.tokenClassifier).lexiconIndex(classStr, false));
+            tmpList.add(grammar.tokenClassifier.lexiconIndex(classStr, false, grammar.lexSet));
             return tmpList;
         }
         return classToLexMap.get(classStr);
@@ -278,7 +278,7 @@ public final class BoundaryLex extends FigureOfMeritModel {
             // Expecting format: <word> <class> - split on whitespace
             final String[] split = line.split("[ \t]+");
             if (split.length >= 2) {
-                final int word = ((DecisionTreeTokenClassifier) grammar.tokenClassifier).lexiconIndex(split[0], false);
+                final int word = grammar.tokenClassifier.lexiconIndex(split[0], false, grammar.lexSet);
                 final int wordClass = wordClasses.addSymbol(split[1]);
                 lexToClassMap[word] = wordClass;
                 // NB: Multiple words may be mapped to the same UNK class with different clusters.
@@ -462,7 +462,7 @@ public final class BoundaryLex extends FigureOfMeritModel {
         final String word = leaf.contents;
 
         if (lexToClassMap != null) {
-            final int wordIndex = ((DecisionTreeTokenClassifier) grammar.tokenClassifier).lexiconIndex(word, false);
+            final int wordIndex = grammar.tokenClassifier.lexiconIndex(word, false, grammar.lexSet);
             final int clusterIndex = lexToClassMap[wordIndex];
             return wordClasses.getSymbol(clusterIndex);
         }

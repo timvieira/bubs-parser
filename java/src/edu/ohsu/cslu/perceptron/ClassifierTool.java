@@ -28,6 +28,7 @@ import java.io.Serializable;
 
 import cltool4j.BaseCommandlineTool;
 import cltool4j.args4j.Option;
+import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.SerializeModel;
 import edu.ohsu.cslu.grammar.SymbolSet;
 
@@ -51,7 +52,7 @@ import edu.ohsu.cslu.grammar.SymbolSet;
  */
 public abstract class ClassifierTool<S extends Sequence> extends BaseCommandlineTool implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
 
     @Option(name = "-ti", metaVar = "iterations", usage = "Train the tagger for n iterations (Optionally tests on dev-set with '-d' and outputs a model with '-m')")
     int trainingIterations = 0;
@@ -102,6 +103,19 @@ public abstract class ClassifierTool<S extends Sequence> extends BaseCommandline
         if (f.exists()) {
             featureTemplates = readFeatureTemplateFile(f);
         }
+    }
+
+    /**
+     * Initializes internal data structures (e.g. {@link ClassifierTool#lexicon} and
+     * {@link ClassifierTool#decisionTreeUnkClassSet}) from a {@link Grammar} instance.
+     * 
+     * @param grammar
+     */
+    void init(final Grammar grammar) {
+        this.lexicon = grammar.lexSet;
+        this.lexicon.finalize();
+        this.decisionTreeUnkClassSet = grammar.unkClassSet();
+        this.decisionTreeUnkClassSet.finalize();
     }
 
     protected void finalizeMaps() {

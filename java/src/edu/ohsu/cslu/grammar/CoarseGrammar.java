@@ -21,7 +21,6 @@ package edu.ohsu.cslu.grammar;
 import java.io.IOException;
 
 import cltool4j.BaseLogger;
-import edu.ohsu.cslu.grammar.TokenClassifier.TokenClassifierType;
 
 public class CoarseGrammar extends ListGrammar {
 
@@ -31,7 +30,7 @@ public class CoarseGrammar extends ListGrammar {
     int fineToCoarseIndex[];
 
     public CoarseGrammar(final String coarseGrammarFile, final Grammar fineGrammar) throws IOException {
-        super(coarseGrammarFile, TokenClassifierType.DecisionTree);
+        super(coarseGrammarFile, new DecisionTreeTokenClassifier());
 
         this.fineGrammar = fineGrammar;
         this.grammarFormat = fineGrammar.grammarFormat;

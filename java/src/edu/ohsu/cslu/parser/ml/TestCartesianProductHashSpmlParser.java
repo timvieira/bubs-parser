@@ -24,10 +24,11 @@ import org.cjunit.PerformanceTest;
 import org.junit.Before;
 import org.junit.Test;
 
+import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
-import edu.ohsu.cslu.grammar.TokenClassifier.TokenClassifierType;
+import edu.ohsu.cslu.grammar.TokenClassifier;
 import edu.ohsu.cslu.parser.ecp.ExhaustiveChartParserTestCase;
 
 public class TestCartesianProductHashSpmlParser extends ExhaustiveChartParserTestCase<CartesianProductHashSpmlParser> {
@@ -43,8 +44,8 @@ public class TestCartesianProductHashSpmlParser extends ExhaustiveChartParserTes
 
     @Override
     public Grammar createGrammar(final Reader grammarReader) throws Exception {
-        return grammarClass().getConstructor(new Class[] { Reader.class, TokenClassifierType.class, Class.class })
-                .newInstance(new Object[] { grammarReader, TokenClassifierType.DecisionTree, PACKING_FUNCTION_CLASS });
+        return grammarClass().getConstructor(new Class[] { Reader.class, TokenClassifier.class, Class.class })
+                .newInstance(new Object[] { grammarReader, new DecisionTreeTokenClassifier(), PACKING_FUNCTION_CLASS });
     }
 
     /**

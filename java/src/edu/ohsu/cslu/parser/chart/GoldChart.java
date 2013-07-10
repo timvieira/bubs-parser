@@ -23,7 +23,6 @@ import java.util.List;
 
 import cltool4j.BaseLogger;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
-import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.ParseTask;
@@ -92,7 +91,7 @@ public class GoldChart extends Chart {
                         // prod = grammar.getLexicalProduction(A, B);
                         // NOTE: don't want to add new words to the lexicon because they
                         // won't get mapped to UNK during decoding
-                        B = ((DecisionTreeTokenClassifier) g.tokenClassifier).lexiconEntry(B, false);
+                        B = g.tokenClassifier.lexiconEntry(B, false, grammar.lexSet);
                         prod = new Production(A, B, Float.NEGATIVE_INFINITY, true, g.nonTermSet, g.lexSet);
                     } else {
                         // prod = grammar.getUnaryProduction(A, B);

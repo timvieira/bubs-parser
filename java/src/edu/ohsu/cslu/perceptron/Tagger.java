@@ -103,7 +103,7 @@ public class Tagger extends ClassifierTool<TagSequence> {
 
     SymbolSet<String> posSet;
 
-    SymbolSet<String> tagSet;
+    protected SymbolSet<String> tagSet;
 
     /**
      * Temporary storage of the model during training. After training, this model is superseded by
@@ -159,21 +159,27 @@ public class Tagger extends ClassifierTool<TagSequence> {
     }
 
     @Override
-    protected void readModel(final InputStream is) throws IOException, ClassNotFoundException {
+    public void readModel(final InputStream is) throws IOException, ClassNotFoundException {
         // Read in the model parameters as a temporary java serialized object and copy into this object
         final ObjectInputStream ois = new ObjectInputStream(is);
         final Model tmp = (Model) ois.readObject();
         ois.close();
+        initFromModel(tmp);
+    }
+
+    protected void initFromModel(final Model tmp) {
         this.featureTemplates = tmp.featureTemplates;
         this.lexicon = tmp.lexicon;
         this.decisionTreeUnkClassSet = tmp.unkClassSet;
         this.tagSet = tmp.tagSet;
-        this.featureExtractor = new TaggerFeatureExtractor(featureTemplates, lexicon, decisionTreeUnkClassSet, posSet,
-                tagSet);
+        this.featureExtractor = featureExtractor();
         this.parallelArrayOffsetMap = tmp.parallelArrayOffsetMap;
         this.parallelWeightArrayTags = tmp.parallelWeightArrayTags;
         this.parallelWeightArray = tmp.parallelWeightArray;
-        is.close();
+    }
+
+    protected TaggerFeatureExtractor featureExtractor() {
+        return new TaggerFeatureExtractor(featureTemplates, lexicon, decisionTreeUnkClassSet, posSet, tagSet);
     }
 
     /**
@@ -186,8 +192,7 @@ public class Tagger extends ClassifierTool<TagSequence> {
      */
     protected int[] classify(final BufferedReader input) throws IOException {
 
-        final TaggerFeatureExtractor fe = new TaggerFeatureExtractor(featureTemplates, lexicon,
-                decisionTreeUnkClassSet, posSet, tagSet);
+        final TaggerFeatureExtractor fe = featureExtractor();
         int sentences = 0, words = 0, correct = 0;
         final long t0 = System.currentTimeMillis();
 
@@ -330,11 +335,15 @@ public class Tagger extends ClassifierTool<TagSequence> {
         final ArrayList<TagSequence> trainingCorpusSequences = new ArrayList<TagSequence>();
         final ArrayList<TagSequence> devCorpusSequences = new ArrayList<TagSequence>();
 
-        this.lexicon = new SymbolSet<String>();
-        this.lexicon.defaultReturnValue(Grammar.nullSymbolStr);
+        if (this.lexicon == null) {
+            this.lexicon = new SymbolSet<String>();
+            this.lexicon.defaultReturnValue(Grammar.nullSymbolStr);
+        }
 
-        this.decisionTreeUnkClassSet = new SymbolSet<String>();
-        this.decisionTreeUnkClassSet.defaultReturnValue(Grammar.nullSymbolStr);
+        if (this.decisionTreeUnkClassSet == null) {
+            this.decisionTreeUnkClassSet = new SymbolSet<String>();
+            this.decisionTreeUnkClassSet.defaultReturnValue(Grammar.nullSymbolStr);
+        }
 
         this.tagSet = new SymbolSet<String>();
         this.tagSet.defaultReturnValue(Grammar.nullSymbolStr);
@@ -365,8 +374,7 @@ public class Tagger extends ClassifierTool<TagSequence> {
         // Write out the model file to disk, using Java object serialization
         if (modelFile != null) {
             final FileOutputStream fos = new FileOutputStream(modelFile);
-            new ObjectOutputStream(fos).writeObject(new Model(featureTemplates, lexicon, decisionTreeUnkClassSet,
-                    posSet, tagSet, parallelArrayOffsetMap, parallelWeightArrayTags, parallelWeightArray));
+            new ObjectOutputStream(fos).writeObject(model());
             fos.close();
         }
 
@@ -374,11 +382,19 @@ public class Tagger extends ClassifierTool<TagSequence> {
                 String.format("Time: %d seconds\n", (System.currentTimeMillis() - startTime) / 1000));
     }
 
+    /**
+     * @return A model representing the entire state of the {@link Tagger}. Generally a subclass of {@link Model},
+     *         adding whatever additional state is required by the specific {@link Tagger}.
+     */
+    protected Model model() {
+        return new Model(featureTemplates, lexicon, decisionTreeUnkClassSet, posSet, tagSet, parallelArrayOffsetMap,
+                parallelWeightArrayTags, parallelWeightArray);
+    }
+
     void train(final ArrayList<? extends TagSequence> trainingCorpusSequences,
             final ArrayList<? extends TagSequence> devCorpusSequences, final int iterations) {
 
-        featureExtractor = new TaggerFeatureExtractor(featureTemplates, lexicon, decisionTreeUnkClassSet, posSet,
-                tagSet);
+        featureExtractor = featureExtractor();
         perceptronModel = new AveragedPerceptron(tagSet.size(), featureExtractor.vectorLength());
 
         //
@@ -514,6 +530,10 @@ public class Tagger extends ClassifierTool<TagSequence> {
                 }
             }
         }
+    }
+
+    public SymbolSet<String> tagSet() {
+        return tagSet;
     }
 
     public static void main(final String[] args) {

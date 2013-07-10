@@ -29,8 +29,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 
-import edu.ohsu.cslu.grammar.TokenClassifier.TokenClassifierType;
-
 /**
  * Stores a grammar in compressed-sparse-column (CSC) format
  */
@@ -98,9 +96,9 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
      */
     public final float[] factoredCscBinaryProbabilities;
 
-    protected CscSparseMatrixGrammar(final Reader grammarFile, final TokenClassifierType tokenClassifierType,
+    protected CscSparseMatrixGrammar(final Reader grammarFile, final TokenClassifier tokenClassifier,
             final Class<? extends PackingFunction> cartesianProductFunctionClass) throws IOException {
-        super(grammarFile, tokenClassifierType, cartesianProductFunctionClass);
+        super(grammarFile, tokenClassifier, cartesianProductFunctionClass);
 
         // All binary productions
         final int[] populatedBinaryColumnIndices = populatedBinaryColumnIndices(tmpBinaryProductions, packingFunction);
@@ -147,11 +145,11 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
     public CscSparseMatrixGrammar(final ArrayList<Production> binaryProductions,
             final ArrayList<Production> unaryProductions, final ArrayList<Production> lexicalProductions,
             final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat,
-            final TokenClassifierType tokenClassifierType, final Class<? extends PackingFunction> functionClass,
+            final TokenClassifier tokenClassifier, final Class<? extends PackingFunction> functionClass,
             final boolean initCscMatrices) {
 
         super(binaryProductions, unaryProductions, lexicalProductions, vocabulary, lexicon, grammarFormat,
-                tokenClassifierType, functionClass);
+                tokenClassifier, functionClass);
 
         // Initialization code duplicated from constructor above to allow these fields to be final
         final int[] populatedBinaryColumnIndices = populatedBinaryColumnIndices(binaryProductions, packingFunction);

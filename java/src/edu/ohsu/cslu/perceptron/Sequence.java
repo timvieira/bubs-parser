@@ -30,6 +30,9 @@ import edu.ohsu.cslu.grammar.SymbolSet;
  */
 public class Sequence {
 
+    /** Raw tokens from the sequence */
+    String[] tokens;
+
     //
     // Note: these fields should be initialized in the constructor and are semantically final, but we can't mark them as
     // such, since they're initialized in subclass constructors

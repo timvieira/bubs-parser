@@ -33,7 +33,6 @@ import cltool4j.BaseCommandlineTool;
 import cltool4j.args4j.Argument;
 import cltool4j.args4j.EnumAliasMap;
 import cltool4j.args4j.Option;
-import edu.ohsu.cslu.grammar.TokenClassifier.TokenClassifierType;
 
 public class SummarizeGrammar extends BaseCommandlineTool {
 
@@ -94,7 +93,7 @@ public class SummarizeGrammar extends BaseCommandlineTool {
         private final Set<String> preTerminals = new HashSet<String>();
 
         public SummaryGrammar(final Reader grammarFile) throws Exception {
-            super(grammarFile, TokenClassifierType.DecisionTree);
+            super(grammarFile, new DecisionTreeTokenClassifier());
             init();
         }
 

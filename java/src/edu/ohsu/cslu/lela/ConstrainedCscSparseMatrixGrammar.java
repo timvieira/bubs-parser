@@ -23,11 +23,11 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 
+import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SymbolSet;
-import edu.ohsu.cslu.grammar.TokenClassifier.TokenClassifierType;
 
 /**
  * @author Aaron Dunlop
@@ -42,12 +42,12 @@ public class ConstrainedCscSparseMatrixGrammar extends LeftCscSparseMatrixGramma
 
         super(countGrammar.binaryProductions(Float.NEGATIVE_INFINITY), countGrammar
                 .unaryProductions(Float.NEGATIVE_INFINITY), countGrammar.lexicalProductions(Float.NEGATIVE_INFINITY),
-                countGrammar.vocabulary, countGrammar.lexicon, grammarFormat, TokenClassifierType.DecisionTree,
+                countGrammar.vocabulary, countGrammar.lexicon, grammarFormat, new DecisionTreeTokenClassifier(),
                 functionClass, true);
     }
 
     public ConstrainedCscSparseMatrixGrammar(final Reader reader) throws IOException {
-        super(reader, TokenClassifierType.DecisionTree, PerfectIntPairHashPackingFunction.class);
+        super(reader, new DecisionTreeTokenClassifier(), PerfectIntPairHashPackingFunction.class);
         this.nonTermSet = new SplitVocabulary(nonTermSet);
     }
 
@@ -57,7 +57,7 @@ public class ConstrainedCscSparseMatrixGrammar extends LeftCscSparseMatrixGramma
             final Class<? extends PackingFunction> packingFunctionClass, final boolean initCscMatrices) {
 
         super(binaryProductions, unaryProductions, lexicalProductions, vocabulary, lexicon, grammarFormat,
-                TokenClassifierType.DecisionTree, packingFunctionClass, initCscMatrices);
+                new DecisionTreeTokenClassifier(), packingFunctionClass, initCscMatrices);
     }
 
     public SplitVocabulary vocabulary() {

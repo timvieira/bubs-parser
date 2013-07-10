@@ -23,8 +23,6 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import edu.ohsu.cslu.grammar.TokenClassifier.TokenClassifierType;
-
 /**
  * Stores a sparse-matrix grammar in compressed-sparse-column (CSC) format
  * 
@@ -49,28 +47,28 @@ public class LeftCscSparseMatrixGrammar extends CscSparseMatrixGrammar {
      */
     public final int[] cscBinaryLeftChildEndIndices;
 
-    public LeftCscSparseMatrixGrammar(final Reader grammarFile, final TokenClassifierType tokenClassifierType,
+    public LeftCscSparseMatrixGrammar(final Reader grammarFile, final TokenClassifier tokenClassifier,
             final Class<? extends PackingFunction> packingFunctionClass) throws IOException {
-        super(grammarFile, tokenClassifierType, packingFunctionClass);
+        super(grammarFile, tokenClassifier, packingFunctionClass);
 
         this.cscBinaryLeftChildStartIndices = new int[numNonTerms() + 1];
         this.cscBinaryLeftChildEndIndices = new int[numNonTerms() + 1];
         init();
     }
 
-    public LeftCscSparseMatrixGrammar(final Reader grammarFile, final TokenClassifierType tokenClassifierType)
+    public LeftCscSparseMatrixGrammar(final Reader grammarFile, final TokenClassifier tokenClassifier)
             throws IOException {
-        this(grammarFile, tokenClassifierType, null);
+        this(grammarFile, tokenClassifier, null);
     }
 
     public LeftCscSparseMatrixGrammar(final ArrayList<Production> binaryProductions,
             final ArrayList<Production> unaryProductions, final ArrayList<Production> lexicalProductions,
             final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat,
-            final TokenClassifierType tokenClassifierType, final Class<? extends PackingFunction> packingFunctionClass,
+            final TokenClassifier tokenClassifier, final Class<? extends PackingFunction> packingFunctionClass,
             final boolean initCscMatrices) {
 
         super(binaryProductions, unaryProductions, lexicalProductions, vocabulary, lexicon, grammarFormat,
-                tokenClassifierType, packingFunctionClass, initCscMatrices);
+                tokenClassifier, packingFunctionClass, initCscMatrices);
 
         // Initialization code duplicated from constructor above to allow these fields to be final
         this.cscBinaryLeftChildStartIndices = new int[numNonTerms() + 1];
@@ -81,17 +79,22 @@ public class LeftCscSparseMatrixGrammar extends CscSparseMatrixGrammar {
     public LeftCscSparseMatrixGrammar(final ArrayList<Production> binaryProductions,
             final ArrayList<Production> unaryProductions, final ArrayList<Production> lexicalProductions,
             final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat,
-            final TokenClassifierType tokenClassifierType) {
+            final TokenClassifier tokenClassifier) {
 
         this(binaryProductions, unaryProductions, lexicalProductions, vocabulary, lexicon, grammarFormat,
-                tokenClassifierType, PerfectIntPairHashPackingFunction.class, true);
+                tokenClassifier, PerfectIntPairHashPackingFunction.class, true);
     }
 
+    /**
+     * For unit testing
+     * 
+     * @param g
+     */
     public LeftCscSparseMatrixGrammar(final Grammar g) {
         this(((SparseMatrixGrammar) g).getBinaryProductions(), ((SparseMatrixGrammar) g).getUnaryProductions(),
                 ((SparseMatrixGrammar) g).getLexicalProductions(), ((SparseMatrixGrammar) g).nonTermSet,
                 ((SparseMatrixGrammar) g).lexSet, ((SparseMatrixGrammar) g).grammarFormat,
-                TokenClassifierType.DecisionTree, PerfectIntPairHashPackingFunction.class, true);
+                new DecisionTreeTokenClassifier(), PerfectIntPairHashPackingFunction.class, true);
     }
 
     private void init() {

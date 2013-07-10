@@ -155,7 +155,8 @@ public class BeginConstituentFeatureExtractor extends FeatureExtractor<Sentence>
 
                 tokens = new String[sentenceLength + 2 * markovOrder];
                 mappedTokens = new int[sentenceLength + 2 * markovOrder];
-                System.arraycopy(grammar.tokenClassifier.lexiconIndices(tree), 0, mappedTokens, markovOrder, sentenceLength);
+                System.arraycopy(grammar.tokenClassifier.lexiconIndices(tree, grammar.lexSet), 0, mappedTokens,
+                        markovOrder, sentenceLength);
                 beginsMultiwordConstituent = new boolean[sentenceLength];
 
                 for (int k = 0; k < markovOrder; k++) {
@@ -173,8 +174,8 @@ public class BeginConstituentFeatureExtractor extends FeatureExtractor<Sentence>
                 final String[] tmpTokens = sentence.split(" ");
 
                 mappedTokens = new int[tmpTokens.length + 2 * markovOrder];
-                System.arraycopy(grammar.tokenClassifier.lexiconIndices(sentence), 0, mappedTokens, markovOrder,
-                        tmpTokens.length);
+                System.arraycopy(grammar.tokenClassifier.lexiconIndices(sentence, grammar.lexSet), 0, mappedTokens,
+                        markovOrder, tmpTokens.length);
 
                 tokens = new String[tmpTokens.length + 2 * markovOrder];
                 System.arraycopy(tmpTokens, 0, tokens, markovOrder, tmpTokens.length);

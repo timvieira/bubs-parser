@@ -22,9 +22,9 @@ import java.io.IOException;
 import java.io.Reader;
 
 import cltool4j.GlobalConfigProperties;
+import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
-import edu.ohsu.cslu.grammar.TokenClassifier.TokenClassifierType;
 import edu.ohsu.cslu.parser.ParserDriver;
 
 /**
@@ -39,7 +39,7 @@ public class TestPrunedGrammarParallelCscSpmvParser extends
     @Override
     protected LeftCscSparseMatrixGrammar createGrammar(final Reader grammarReader,
             final Class<? extends PackingFunction> packingFunctionClass) throws IOException {
-        return new LeftCscSparseMatrixGrammar(grammarReader, TokenClassifierType.DecisionTree, packingFunctionClass);
+        return new LeftCscSparseMatrixGrammar(grammarReader, new DecisionTreeTokenClassifier(), packingFunctionClass);
     }
 
     @Override

@@ -51,6 +51,7 @@ import cltool4j.BaseLogger;
 import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.grammar.BinaryStringProduction;
+import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.ListGrammar;
@@ -61,7 +62,6 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar.StringNonTerminal;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.StringNonTerminalComparator;
 import edu.ohsu.cslu.grammar.StringProduction;
 import edu.ohsu.cslu.grammar.SymbolSet;
-import edu.ohsu.cslu.grammar.TokenClassifier.TokenClassifierType;
 import edu.ohsu.cslu.grammar.Vocabulary;
 import edu.ohsu.cslu.lela.FractionalCountGrammar;
 import edu.ohsu.cslu.parser.ParserDriver;
@@ -819,7 +819,7 @@ public class RealInsideOutsideCscSparseMatrixGrammar extends Grammar {
 
     public static Grammar read(final String grammarFile) throws IOException, ClassNotFoundException {
         final InputStream is = Util.file2inputStream(grammarFile);
-        final Grammar grammar = SparseMatrixGrammar.read(is, TokenClassifierType.DecisionTree);
+        final Grammar grammar = SparseMatrixGrammar.read(is, new DecisionTreeTokenClassifier());
         is.close();
         return grammar;
     }
@@ -839,7 +839,7 @@ public class RealInsideOutsideCscSparseMatrixGrammar extends Grammar {
             return (Grammar) ois.readObject();
         }
 
-        return new ListGrammar(new InputStreamReader(bis), TokenClassifierType.DecisionTree);
+        return new ListGrammar(new InputStreamReader(bis), new DecisionTreeTokenClassifier());
     }
 
     /**

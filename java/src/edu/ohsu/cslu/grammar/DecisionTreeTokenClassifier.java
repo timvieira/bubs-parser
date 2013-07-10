@@ -19,7 +19,6 @@
 
 package edu.ohsu.cslu.grammar;
 
-import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 
 /**
  * @author Aaron Dunlop
@@ -29,52 +28,20 @@ public class DecisionTreeTokenClassifier extends TokenClassifier {
 
     private static final long serialVersionUID = 1L;
 
-    public DecisionTreeTokenClassifier(final SymbolSet<String> lexicon) {
-        super(lexicon);
+    public DecisionTreeTokenClassifier() {
     }
 
-    /**
-     * Splits the supplied sentence on spaces and returns the lexicon-mapped indices of all words.
-     * 
-     * @param sentence
-     * @return the lexicon-mapped indices of all words
-     */
     @Override
-    public int[] lexiconIndices(final String sentence) {
-        // TODO This could probably be done faster with something other than a regex
-        final String tokens[] = sentence.split("\\s+");
-        final int tokenIndices[] = new int[tokens.length];
-        for (int i = 0; i < tokens.length; i++) {
-            tokenIndices[i] = lexiconIndex(tokens[i], i == 0);
-        }
-        return tokenIndices;
+    public int lexiconIndex(final String token, final boolean sentenceInitial, final SymbolSet<String> lexicon) {
+        return lexicon.getIndex(lexiconEntry(token, sentenceInitial, lexicon));
     }
 
-    /**
-     * Returns the lexicon-mapped indices of all words in the supplied parse tree
-     * 
-     * @param goldTree
-     * @return the lexicon-mapped indices of all words in the supplied parse tree
-     */
     @Override
-    public int[] lexiconIndices(final NaryTree<String> goldTree) {
-        final int tokenIndices[] = new int[goldTree.leaves()];
-        int i = 0;
-        for (final NaryTree<String> leaf : goldTree.leafTraversal()) {
-            tokenIndices[i++] = lexiconIndex(leaf.label(), i == 0);
+    public String lexiconEntry(final String token, final boolean sentenceInitial, final SymbolSet<String> lexicon) {
+        if (lexicon.containsKey(token)) {
+            return token;
         }
-        return tokenIndices;
-    }
-
-    public int lexiconIndex(final String word, final boolean sentenceInitial) {
-        return lexicon.getIndex(lexiconEntry(word, sentenceInitial));
-    }
-
-    public String lexiconEntry(final String word, final boolean sentenceInitial) {
-        if (lexicon.containsKey(word)) {
-            return word;
-        }
-        String unkStr = DecisionTreeTokenClassifier.berkeleyGetSignature(word, sentenceInitial, lexicon);
+        String unkStr = DecisionTreeTokenClassifier.berkeleyGetSignature(token, sentenceInitial, lexicon);
 
         // remove last feature from unk string until we find a matching entry in the lexicon
         while (!lexicon.containsKey(unkStr) && unkStr.contains("-")) {
@@ -195,10 +162,4 @@ public class DecisionTreeTokenClassifier extends TokenClassifier {
 
         return sb.toString();
     }
-
-    @Override
-    public TokenClassifierType type() {
-        return TokenClassifierType.DecisionTree;
-    }
-
 }

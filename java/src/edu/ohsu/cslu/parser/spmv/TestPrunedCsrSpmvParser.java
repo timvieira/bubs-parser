@@ -22,8 +22,8 @@ import java.io.IOException;
 import java.io.Reader;
 
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
+import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
-import edu.ohsu.cslu.grammar.TokenClassifier.TokenClassifierType;
 import edu.ohsu.cslu.parser.ParserDriver;
 
 /**
@@ -37,7 +37,7 @@ public class TestPrunedCsrSpmvParser extends PrunedSparseMatrixParserTestCase<Cs
     @Override
     protected CsrSparseMatrixGrammar createGrammar(final Reader grammarReader,
             final Class<? extends PackingFunction> packingFunctionClass) throws IOException {
-        return new CsrSparseMatrixGrammar(grammarReader, TokenClassifierType.DecisionTree, packingFunctionClass);
+        return new CsrSparseMatrixGrammar(grammarReader, new DecisionTreeTokenClassifier(), packingFunctionClass);
     }
 
     @Override

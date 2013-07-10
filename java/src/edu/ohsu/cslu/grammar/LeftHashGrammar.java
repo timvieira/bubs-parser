@@ -25,16 +25,14 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 
-import edu.ohsu.cslu.grammar.TokenClassifier.TokenClassifierType;
-
 public class LeftHashGrammar extends ListGrammar {
 
     private static final long serialVersionUID = 1L;
 
     private ArrayList<HashMap<Integer, LinkedList<Production>>> binaryProdHash;
 
-    public LeftHashGrammar(final Reader grammarFile, final TokenClassifierType tokenClassifierType) throws IOException {
-        super(grammarFile, tokenClassifierType);
+    public LeftHashGrammar(final Reader grammarFile, final TokenClassifier tokenClassifier) throws IOException {
+        super(grammarFile, tokenClassifier);
         init();
     }
 

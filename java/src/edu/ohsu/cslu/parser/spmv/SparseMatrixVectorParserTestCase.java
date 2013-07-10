@@ -28,12 +28,13 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarTestCase;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
-import edu.ohsu.cslu.grammar.TokenClassifier.TokenClassifierType;
+import edu.ohsu.cslu.grammar.TokenClassifier;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.Parser.DecodeMethod;
@@ -61,8 +62,8 @@ public abstract class SparseMatrixVectorParserTestCase<P extends SparseMatrixVec
 
     protected Grammar createGrammar(final Reader grammarReader, final Class<? extends PackingFunction> cpfClass)
             throws Exception {
-        return grammarClass().getConstructor(new Class[] { Reader.class, TokenClassifierType.class, Class.class })
-                .newInstance(new Object[] { grammarReader, TokenClassifierType.DecisionTree, cpfClass });
+        return grammarClass().getConstructor(new Class[] { Reader.class, TokenClassifier.class, Class.class })
+                .newInstance(new Object[] { grammarReader, new DecisionTreeTokenClassifier(), cpfClass });
     }
 
     @SuppressWarnings("unchecked")

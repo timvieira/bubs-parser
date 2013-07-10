@@ -112,6 +112,24 @@ public class TaggerFeatureExtractor extends FeatureExtractor<TagSequence> {
      */
     public TaggerFeatureExtractor(final String featureTemplates, final SymbolSet<String> lexicon,
             final SymbolSet<String> unkClassSet, final SymbolSet<String> posSet, final SymbolSet<String> tagSet) {
+        this(featureTemplates, lexicon, unkClassSet, posSet, null, null, tagSet);
+    }
+
+    /**
+     * Constructs a {@link FeatureExtractor} using the specified feature templates
+     * 
+     * @param featureTemplates
+     * @param lexicon
+     * @param unkClassSet
+     * @param unigramSuffixSet
+     * @param bigramSuffixSet
+     * @param tagSet
+     * @param posSet
+     */
+    public TaggerFeatureExtractor(final String featureTemplates, final SymbolSet<String> lexicon,
+            final SymbolSet<String> unkClassSet, final SymbolSet<String> posSet,
+            final SymbolSet<String> unigramSuffixSet, final SymbolSet<String> bigramSuffixSet,
+            final SymbolSet<String> tagSet) {
 
         this.lexicon = lexicon;
         this.lexiconSize = lexicon.size();
@@ -120,20 +138,25 @@ public class TaggerFeatureExtractor extends FeatureExtractor<TagSequence> {
         this.posSet = posSet;
         this.posSetSize = posSet != null ? posSet.size() : 0;
 
-        this.unigramSuffixSet = new SymbolSet<String>();
-        unigramSuffixSet.defaultReturnValue(nullToken);
-        this.bigramSuffixSet = new SymbolSet<String>();
-        bigramSuffixSet.defaultReturnValue(nullToken);
+        if (unigramSuffixSet != null) {
+            this.unigramSuffixSet = unigramSuffixSet;
+            this.bigramSuffixSet = bigramSuffixSet;
+        } else {
+            this.unigramSuffixSet = new SymbolSet<String>();
+            this.unigramSuffixSet.defaultReturnValue(nullToken);
+            this.bigramSuffixSet = new SymbolSet<String>();
+            this.bigramSuffixSet.defaultReturnValue(nullToken);
 
-        for (int i = 0; i < lexicon.size(); i++) {
-            final String token = lexicon.getSymbol(i);
-            unigramSuffixSet.addSymbol(token.substring(token.length() - 1));
-            if (token.length() > 1) {
-                bigramSuffixSet.addSymbol(token.substring(token.length() - 2));
+            for (int i = 0; i < lexicon.size(); i++) {
+                final String token = lexicon.getSymbol(i);
+                this.unigramSuffixSet.addSymbol(token.substring(token.length() - 1));
+                if (token.length() > 1) {
+                    this.bigramSuffixSet.addSymbol(token.substring(token.length() - 2));
+                }
             }
         }
-        this.unigramSuffixSetSize = unigramSuffixSet.size();
-        this.bigramSuffixSetSize = bigramSuffixSet.size();
+        this.unigramSuffixSetSize = this.unigramSuffixSet.size();
+        this.bigramSuffixSetSize = this.bigramSuffixSet.size();
 
         this.tags = tagSet;
         this.tagSetSize = tags.size();
@@ -310,7 +333,7 @@ public class TaggerFeatureExtractor extends FeatureExtractor<TagSequence> {
                 case nump1:
                     feature *= 2;
                     feature += (index < 0 || index >= sequence.mappedTokens.length) ? 0 : Strings
-                            .numeralPercentage(lexicon.getSymbol(sequence.mappedTokens[index])) > 0 ? 1 : 0;
+                            .numeralPercentage(sequence.tokens[index]) > 0 ? 1 : 0;
                     break;
 
                 case num20:
@@ -320,7 +343,7 @@ public class TaggerFeatureExtractor extends FeatureExtractor<TagSequence> {
                 case num100:
                     feature *= 2;
                     feature += (index < 0 || index >= sequence.mappedTokens.length) ? 0 : Strings
-                            .numeralPercentage(lexicon.getSymbol(sequence.mappedTokens[index])) >= t.value ? 1 : 0;
+                            .numeralPercentage(sequence.tokens[index]) >= t.value ? 1 : 0;
                     break;
 
                 case punctm1:
@@ -328,7 +351,7 @@ public class TaggerFeatureExtractor extends FeatureExtractor<TagSequence> {
                 case punctp1:
                     feature *= 2;
                     feature += (index < 0 || index >= sequence.mappedTokens.length) ? 0 : Strings
-                            .punctuationPercentage(lexicon.getSymbol(sequence.mappedTokens[index])) > 0 ? 1 : 0;
+                            .punctuationPercentage(sequence.tokens[index]) > 0 ? 1 : 0;
                     break;
 
                 case punct20:
@@ -338,7 +361,7 @@ public class TaggerFeatureExtractor extends FeatureExtractor<TagSequence> {
                 case punct100:
                     feature *= 2;
                     feature += (index < 0 || index >= sequence.mappedTokens.length) ? 0 : Strings
-                            .punctuationPercentage(lexicon.getSymbol(sequence.mappedTokens[index])) >= t.value ? 1 : 0;
+                            .punctuationPercentage(sequence.tokens[index]) >= t.value ? 1 : 0;
                     break;
 
                 case posm3:

@@ -22,17 +22,14 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.LinkedList;
 
-import edu.ohsu.cslu.grammar.TokenClassifier.TokenClassifierType;
-
 public class LeftRightListsGrammar extends LeftListGrammar {
 
     private static final long serialVersionUID = 1L;
 
     private LinkedList<Production>[] binaryProdsByRightNonTerm;
 
-    public LeftRightListsGrammar(final Reader grammarFile, final TokenClassifierType tokenClassifierType)
-            throws IOException {
-        super(grammarFile, tokenClassifierType);
+    public LeftRightListsGrammar(final Reader grammarFile, final TokenClassifier tokenClassifier) throws IOException {
+        super(grammarFile, tokenClassifier);
         init();
     }
 

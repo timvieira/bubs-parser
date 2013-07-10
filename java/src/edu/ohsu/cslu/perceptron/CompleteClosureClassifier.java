@@ -34,12 +34,12 @@ import cltool4j.BaseLogger;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.datastructs.vectors.FloatVector;
+import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
 import edu.ohsu.cslu.grammar.SymbolSet;
-import edu.ohsu.cslu.grammar.TokenClassifier.TokenClassifierType;
 
 /**
  * Complete-closure classifier, as described in Bodenstab et al., 2011,
@@ -118,8 +118,8 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
      */
     public CompleteClosureClassifier(final Grammar grammar) {
         init(grammar);
-        this.featureExtractor = new ConstituentBoundaryFeatureExtractor(featureTemplates, lexicon, decisionTreeUnkClassSet,
-                vocabulary);
+        this.featureExtractor = new ConstituentBoundaryFeatureExtractor(featureTemplates, lexicon,
+                decisionTreeUnkClassSet, vocabulary);
     }
 
     /**
@@ -129,21 +129,13 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
         this.featureTemplates = featureTemplates;
     }
 
-    /**
-     * Initializes {@link CompleteClosureClassifier#lexicon}, {@link CompleteClosureClassifier#decisionTreeUnkClassSet}, and
-     * {@link CompleteClosureClassifier#vocabulary} from the specified {@link Grammar}.
-     * 
-     * @param g
-     */
-    void init(final Grammar g) {
-        this.lexicon = g.lexSet;
-        this.lexicon.finalize();
-        this.decisionTreeUnkClassSet = g.unkClassSet();
-        this.decisionTreeUnkClassSet.finalize();
-        this.vocabulary = fullPosSet ? g.posSymbolSet() : g.coarsePosSymbolSet();
+    @Override
+    void init(final Grammar grammar) {
+        super.init(grammar);
+        this.vocabulary = fullPosSet ? grammar.posSymbolSet() : grammar.coarsePosSymbolSet();
         this.vocabulary.finalize();
-        this.binarization = g.binarization();
-        this.grammarFormat = g.grammarFormat;
+        this.binarization = grammar.binarization();
+        this.grammarFormat = grammar.grammarFormat;
     }
 
     @Override
@@ -157,6 +149,7 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
         this.bias = tmp.bias;
         this.posTagger = tmp.posTagger;
         this.fullPosSet = tmp.fullPosSet;
+        this.decisionTreeUnkClassSet = tmp.posTagger.decisionTreeUnkClassSet;
         is.close();
     }
 
@@ -167,7 +160,7 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
             if (grammarFile != null) {
                 BaseLogger.singleton().info("Reading grammar file...");
                 final Grammar g = new LeftCscSparseMatrixGrammar(fileAsBufferedReader(grammarFile),
-                        TokenClassifierType.DecisionTree, PerfectIntPairHashPackingFunction.class);
+                        new DecisionTreeTokenClassifier(), PerfectIntPairHashPackingFunction.class);
                 init(g);
 
             } else {
@@ -179,8 +172,8 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
             train(inputAsBufferedReader());
         } else {
             readModel(new FileInputStream(modelFile));
-            this.featureExtractor = new ConstituentBoundaryFeatureExtractor(featureTemplates, lexicon, decisionTreeUnkClassSet,
-                    vocabulary);
+            this.featureExtractor = new ConstituentBoundaryFeatureExtractor(featureTemplates, lexicon,
+                    decisionTreeUnkClassSet, vocabulary);
             classify(inputAsBufferedReader());
         }
     }
@@ -260,7 +253,8 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
             posTagger.train(taggerTrainingCorpusSequences, taggerDevCorpusSequences, posTaggerTrainingIterations);
         }
 
-        featureExtractor = new ConstituentBoundaryFeatureExtractor(featureTemplates, lexicon, decisionTreeUnkClassSet, vocabulary);
+        featureExtractor = new ConstituentBoundaryFeatureExtractor(featureTemplates, lexicon, decisionTreeUnkClassSet,
+                vocabulary);
 
         //
         // Tag the training sequences with the trained POS tagger

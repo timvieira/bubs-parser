@@ -41,8 +41,10 @@ import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.narytree.CharniakHeadPercolationRuleset;
 import edu.ohsu.cslu.datastructs.narytree.HeadPercolationRuleset;
 import edu.ohsu.cslu.grammar.ChildMatrixGrammar;
+import edu.ohsu.cslu.grammar.ClusterTaggerTokenClassifier;
 import edu.ohsu.cslu.grammar.CoarseGrammar;
 import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
+import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.InsideOutsideCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
@@ -55,7 +57,7 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.Int2IntHashPackingFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
-import edu.ohsu.cslu.grammar.TokenClassifier.TokenClassifierType;
+import edu.ohsu.cslu.grammar.TokenClassifier;
 import edu.ohsu.cslu.parser.Parser.DecodeMethod;
 import edu.ohsu.cslu.parser.Parser.InputFormat;
 import edu.ohsu.cslu.parser.Parser.ParserType;
@@ -309,6 +311,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
             }
         }
 
+        final TokenClassifier tokenClassifier = tokenClassifierModel != null ? new ClusterTaggerTokenClassifier(
+                tokenClassifierModel) : new DecisionTreeTokenClassifier();
+
         if (modelFile != null) {
             final ObjectInputStream ois = new ObjectInputStream(fileAsInputStream(modelFile));
             @SuppressWarnings("unused")
@@ -323,8 +328,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
             fomModel = (FigureOfMeritModel) ois.readObject();
 
         } else {
-            this.grammar = createGrammar(fileAsBufferedReader(grammarFile), researchParserType,
-                    TokenClassifierType.DecisionTree, packingFunctionType);
+            this.grammar = createGrammar(fileAsBufferedReader(grammarFile), researchParserType, tokenClassifier,
+                    packingFunctionType);
 
             if (fomTypeOrModel.equals("Inside")) {
                 fomModel = new InsideProb();
@@ -426,7 +431,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
             final PackingFunctionType packingFunctionType) throws IOException {
         // Handle gzipped and non-gzipped grammar files
         return createGrammar(fileAsBufferedReader(grammarFile, Charset.forName("UTF-8")), parserType,
-                TokenClassifierType.DecisionTree, packingFunctionType);
+                new DecisionTreeTokenClassifier(), packingFunctionType);
     }
 
     /**
@@ -435,36 +440,35 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
      * 
      * @param grammarFile
      * @param parserType
-     * @param tokenClassifierType TODO
+     * @param tokenClassifier Type of token-classifier (e.g. decision-tree or tagger)
      * @return a {@link Grammar} instance appropriate for the specified parser type
      * @throws IOException
      */
     public static Grammar createGrammar(final Reader grammarFile, final ResearchParserType parserType,
-            final TokenClassifierType tokenClassifierType, final PackingFunctionType packingFunctionType)
-            throws IOException {
+            final TokenClassifier tokenClassifier, final PackingFunctionType packingFunctionType) throws IOException {
 
         switch (parserType) {
         case ECPInsideOutside:
         case ECPCellCrossList:
-            return new LeftListGrammar(grammarFile, tokenClassifierType);
+            return new LeftListGrammar(grammarFile, tokenClassifier);
 
         case ECPCellCrossHashGrammarLoop:
         case ECPCellCrossHashGrammarLoop2:
         case ECPCellCrossHash:
-            return new LeftHashGrammar(grammarFile, tokenClassifierType);
+            return new LeftHashGrammar(grammarFile, tokenClassifier);
 
         case ECPCellCrossMatrix:
-            return new ChildMatrixGrammar(grammarFile, tokenClassifierType);
+            return new ChildMatrixGrammar(grammarFile, tokenClassifier);
 
         case ECPGrammarLoop:
         case ECPGrammarLoopBerkeleyFilter:
-            return new ListGrammar(grammarFile, tokenClassifierType);
+            return new ListGrammar(grammarFile, tokenClassifier);
 
         case AgendaParser:
         case APWithMemory:
         case APGhostEdges:
         case APDecodeFOM:
-            return new LeftRightListsGrammar(grammarFile, tokenClassifierType);
+            return new LeftRightListsGrammar(grammarFile, tokenClassifier);
 
         case BeamSearchChartParser:
         case BSCPSplitUnary:
@@ -478,31 +482,30 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
             // case BSCPBeamConf:
         case CoarseCellAgenda:
         case CoarseCellAgendaCSLUT:
-            return new LeftHashGrammar(grammarFile, tokenClassifierType);
+            return new LeftHashGrammar(grammarFile, tokenClassifier);
 
         case CsrSpmv:
         case GrammarParallelCsrSpmv:
             switch (packingFunctionType) {
             case Simple:
-                return new CsrSparseMatrixGrammar(grammarFile, tokenClassifierType, LeftShiftFunction.class);
+                return new CsrSparseMatrixGrammar(grammarFile, tokenClassifier, LeftShiftFunction.class);
             case PerfectHash:
-                return new CsrSparseMatrixGrammar(grammarFile, tokenClassifierType,
-                        PerfectIntPairHashPackingFunction.class);
+                return new CsrSparseMatrixGrammar(grammarFile, tokenClassifier, PerfectIntPairHashPackingFunction.class);
             default:
                 throw new IllegalArgumentException("Unsupported packing-function type: " + packingFunctionType);
             }
 
         case PackedOpenClSpmv:
         case DenseVectorOpenClSpmv:
-            return new CsrSparseMatrixGrammar(grammarFile, tokenClassifierType, LeftShiftFunction.class);
+            return new CsrSparseMatrixGrammar(grammarFile, tokenClassifier, LeftShiftFunction.class);
 
         case CscSpmv:
         case GrammarParallelCscSpmv:
             switch (packingFunctionType) {
             case Simple:
-                return new LeftCscSparseMatrixGrammar(grammarFile, tokenClassifierType, LeftShiftFunction.class);
+                return new LeftCscSparseMatrixGrammar(grammarFile, tokenClassifier, LeftShiftFunction.class);
             case PerfectHash:
-                return new LeftCscSparseMatrixGrammar(grammarFile, tokenClassifierType,
+                return new LeftCscSparseMatrixGrammar(grammarFile, tokenClassifier,
                         PerfectIntPairHashPackingFunction.class);
             default:
                 throw new IllegalArgumentException("Unsupported packing-function type: " + packingFunctionType);
@@ -515,29 +518,28 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
         case CartesianProductLeftChildHashMl:
             switch (packingFunctionType) {
             case Simple:
-                return new LeftCscSparseMatrixGrammar(grammarFile, tokenClassifierType, LeftShiftFunction.class);
+                return new LeftCscSparseMatrixGrammar(grammarFile, tokenClassifier, LeftShiftFunction.class);
             case Hash:
-                return new LeftCscSparseMatrixGrammar(grammarFile, tokenClassifierType,
-                        Int2IntHashPackingFunction.class);
+                return new LeftCscSparseMatrixGrammar(grammarFile, tokenClassifier, Int2IntHashPackingFunction.class);
             case PerfectHash:
-                return new LeftCscSparseMatrixGrammar(grammarFile, tokenClassifierType,
+                return new LeftCscSparseMatrixGrammar(grammarFile, tokenClassifier,
                         PerfectIntPairHashPackingFunction.class);
             default:
                 throw new IllegalArgumentException("Unsupported packing-function type: " + packingFunctionType);
             }
         case RightChildMl:
-            return new RightCscSparseMatrixGrammar(grammarFile, tokenClassifierType, LeftShiftFunction.class);
+            return new RightCscSparseMatrixGrammar(grammarFile, tokenClassifier, LeftShiftFunction.class);
         case GrammarLoopMl:
-            return new CsrSparseMatrixGrammar(grammarFile, tokenClassifierType, LeftShiftFunction.class);
+            return new CsrSparseMatrixGrammar(grammarFile, tokenClassifier, LeftShiftFunction.class);
         case InsideOutsideCartesianProductHash:
         case ViterbiInOutCph:
-            return new InsideOutsideCscSparseMatrixGrammar(grammarFile, tokenClassifierType,
+            return new InsideOutsideCscSparseMatrixGrammar(grammarFile, tokenClassifier,
                     PerfectIntPairHashPackingFunction.class);
 
         case ConstrainedCartesianProductHashMl:
             // Don't restrict the beam for constrained parsing
             GlobalConfigProperties.singleton().setProperty(Parser.PROPERTY_MAX_BEAM_WIDTH, "0");
-            return new LeftCscSparseMatrixGrammar(grammarFile, tokenClassifierType, LeftShiftFunction.class);
+            return new LeftCscSparseMatrixGrammar(grammarFile, tokenClassifier, LeftShiftFunction.class);
 
         case RealInsideOutsideCartesianProductHash:
             return new RealInsideOutsideCscSparseMatrixGrammar(grammarFile);

@@ -19,10 +19,10 @@ import org.junit.runner.RunWith;
 
 import cltool4j.ConfigProperties;
 import cltool4j.GlobalConfigProperties;
+import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.InsideOutsideCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
-import edu.ohsu.cslu.grammar.TokenClassifier.TokenClassifierType;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.Parser.DecodeMethod;
 import edu.ohsu.cslu.parser.ParserDriver;
@@ -60,7 +60,7 @@ public class TestInsideOutsideCphSpmlParser {
     @Before
     public void setUp() throws Exception {
         grammar = new InsideOutsideCscSparseMatrixGrammar(JUnit.unitTestDataAsReader("grammars/eng.R2.gr.gz"),
-                TokenClassifierType.DecisionTree, PerfectIntPairHashPackingFunction.class);
+                new DecisionTreeTokenClassifier(), PerfectIntPairHashPackingFunction.class);
 
         final ConfigProperties props = GlobalConfigProperties.singleton();
         props.put(Parser.PROPERTY_MAX_BEAM_WIDTH, "30");
@@ -127,14 +127,14 @@ public class TestInsideOutsideCphSpmlParser {
         // Max-recall decoding
         GlobalConfigProperties.singleton().setProperty(Parser.PROPERTY_MAXC_LAMBDA, "0");
         parser = new InsideOutsideCphSpmlParser(opts, new InsideOutsideCscSparseMatrixGrammar(simpleGrammar2(),
-                TokenClassifierType.DecisionTree, PerfectIntPairHashPackingFunction.class));
+                new DecisionTreeTokenClassifier(), PerfectIntPairHashPackingFunction.class));
         assertEquals("(ROOT (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))", parser
                 .parseSentence(sentence).parseBracketString(false));
 
         // Max-precision decoding
         GlobalConfigProperties.singleton().setProperty(Parser.PROPERTY_MAXC_LAMBDA, "1");
         parser = new InsideOutsideCphSpmlParser(opts, new InsideOutsideCscSparseMatrixGrammar(simpleGrammar2(),
-                TokenClassifierType.DecisionTree, PerfectIntPairHashPackingFunction.class));
+                new DecisionTreeTokenClassifier(), PerfectIntPairHashPackingFunction.class));
         assertEquals("(ROOT (S (NP (DT The) (NN fish) (NN market)) (VP (VB stands) (RB last))))",
                 parser.parseSentence(sentence).parseBracketString(false));
     }
@@ -153,14 +153,14 @@ public class TestInsideOutsideCphSpmlParser {
         // Max-recall decoding
         GlobalConfigProperties.singleton().setProperty(Parser.PROPERTY_MAXC_LAMBDA, "0");
         parser = new InsideOutsideCphSpmlParser(opts, new InsideOutsideCscSparseMatrixGrammar(simpleGrammar2(),
-                TokenClassifierType.DecisionTree, PerfectIntPairHashPackingFunction.class));
+                new DecisionTreeTokenClassifier(), PerfectIntPairHashPackingFunction.class));
         assertEquals("(ROOT (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))", parser
                 .parseSentence(sentence).parseBracketString(false));
 
         // Max-precision decoding
         GlobalConfigProperties.singleton().setProperty(Parser.PROPERTY_MAXC_LAMBDA, "1");
         parser = new InsideOutsideCphSpmlParser(opts, new InsideOutsideCscSparseMatrixGrammar(simpleGrammar2(),
-                TokenClassifierType.DecisionTree, PerfectIntPairHashPackingFunction.class));
+                new DecisionTreeTokenClassifier(), PerfectIntPairHashPackingFunction.class));
         assertEquals("(ROOT (S (DT The) (NN fish) (NN market) (VB stands) (RB last)))", parser.parseSentence(sentence)
                 .parseBracketString(false));
     }
@@ -174,7 +174,7 @@ public class TestInsideOutsideCphSpmlParser {
         final String sentence = "The fish market stands last";
 
         parser = new InsideOutsideCphSpmlParser(opts, new InsideOutsideCscSparseMatrixGrammar(simpleGrammar2(),
-                TokenClassifierType.DecisionTree, PerfectIntPairHashPackingFunction.class));
+                new DecisionTreeTokenClassifier(), PerfectIntPairHashPackingFunction.class));
         assertEquals("(ROOT (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))", parser
                 .parseSentence(sentence).parseBracketString(false));
     }
@@ -317,7 +317,7 @@ public class TestInsideOutsideCphSpmlParser {
 
         GlobalConfigProperties.singleton().setProperty(Parser.PROPERTY_MAXC_LAMBDA, "0");
         parser = new InsideOutsideCphSpmlParser(opts, new InsideOutsideCscSparseMatrixGrammar(
-                JUnit.unitTestDataAsReader("grammars/eng.R0.gr.gz"), TokenClassifierType.DecisionTree,
+                JUnit.unitTestDataAsReader("grammars/eng.R0.gr.gz"), new DecisionTreeTokenClassifier(),
                 PerfectIntPairHashPackingFunction.class));
         for (int i = 0; i < input.length; i++) {
             assertEquals("Failed on sentence " + i, expected[i],

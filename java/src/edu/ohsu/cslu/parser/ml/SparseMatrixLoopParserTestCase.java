@@ -22,11 +22,12 @@ import java.io.Reader;
 
 import org.junit.Before;
 
+import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
-import edu.ohsu.cslu.grammar.TokenClassifier.TokenClassifierType;
+import edu.ohsu.cslu.grammar.TokenClassifier;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.ecp.ExhaustiveChartParserTestCase;
@@ -36,8 +37,9 @@ public abstract class SparseMatrixLoopParserTestCase<P extends ChartParser<? ext
 
     @Override
     public Grammar createGrammar(final Reader grammarReader) throws Exception {
-        return grammarClass().getConstructor(new Class[] { Reader.class, TokenClassifierType.class, Class.class })
-                .newInstance(new Object[] { grammarReader, TokenClassifierType.DecisionTree, LeftShiftFunction.class });
+        return grammarClass()
+                .getConstructor(new Class[] { Reader.class, TokenClassifier.class, Class.class })
+                .newInstance(new Object[] { grammarReader, new DecisionTreeTokenClassifier(), LeftShiftFunction.class });
     }
 
     /**

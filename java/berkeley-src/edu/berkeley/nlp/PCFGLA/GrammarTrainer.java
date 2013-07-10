@@ -66,6 +66,9 @@ public class GrammarTrainer extends BaseCommandlineTool {
     @Option(name = "-maxL", metaVar = "words", usage = "Maximum sentence length")
     private int maxSentenceLength = 10000;
 
+    @Option(name = "-tuc", metaVar = "direction", usage = "Training corpus includes with unknown-word classes. Skips learning signature-based UNK-class rules")
+    private boolean trainingCorpusIncludesUnks;
+
     @Option(name = "-b", metaVar = "direction", usage = "Binarization direction")
     private Binarization binarization = Binarization.RIGHT;
 
@@ -175,12 +178,12 @@ public class GrammarTrainer extends BaseCommandlineTool {
 
             grammar = new Grammar(numSubStatesArray, new NoSmoothing(), minRuleProbability);
             final Lexicon tmp_lexicon = new Lexicon(numSubStatesArray, Lexicon.DEFAULT_SMOOTHING_CUTOFF, smoothParams,
-                    new NoSmoothing(), minRuleProbability);
+                    new NoSmoothing(), !trainingCorpusIncludesUnks, minRuleProbability);
             for (final Tree<StateSet> stateSetTree : trainStateSetTrees) {
                 tmp_lexicon.trainTree(stateSetTree, randomization, null, false, rareWordThreshold);
             }
             lexicon = new Lexicon(numSubStatesArray, Lexicon.DEFAULT_SMOOTHING_CUTOFF, smoothParams, new NoSmoothing(),
-                    minRuleProbability);
+                    !trainingCorpusIncludesUnks, minRuleProbability);
 
             // TODO BaseLogger.singleton().config("Markov-0 grammar size: " + grammarSummaryString(markov0Grammar));
 
@@ -262,7 +265,8 @@ public class GrammarTrainer extends BaseCommandlineTool {
 
                 // Retrain lexicon to finish the lexicon merge (updates the unknown-word model)
                 lexicon = new Lexicon(grammar.numSubStates, Lexicon.DEFAULT_SMOOTHING_CUTOFF,
-                        maxLexicon.getSmoothingParams(), maxLexicon.getSmoother(), maxLexicon.getPruningThreshold());
+                        maxLexicon.getSmoothingParams(), maxLexicon.getSmoother(), !trainingCorpusIncludesUnks,
+                        maxLexicon.getPruningThreshold());
                 final ArrayParser parser = new ArrayParser(grammar, maxLexicon);
                 emIteration(parser, grammar, maxLexicon, null, lexicon, trainStateSetTrees, rareWordThreshold);
                 // remove the unlikely tags
@@ -381,7 +385,8 @@ public class GrammarTrainer extends BaseCommandlineTool {
         //
         final Grammar newGrammar = new Grammar(currentGrammar, currentGrammar.numSubStates);
         final Lexicon newLexicon = new Lexicon(currentGrammar.numSubStates, Lexicon.DEFAULT_SMOOTHING_CUTOFF,
-                currentLexicon.getSmoothingParams(), currentLexicon.getSmoother(), currentLexicon.getPruningThreshold());
+                currentLexicon.getSmoothingParams(), currentLexicon.getSmoother(), !trainingCorpusIncludesUnks,
+                currentLexicon.getPruningThreshold());
 
         final ArrayParser parser = new ArrayParser(currentGrammar, currentLexicon);
         final double trainingLikelihood = emIteration(parser, currentGrammar, currentLexicon, newGrammar, newLexicon,

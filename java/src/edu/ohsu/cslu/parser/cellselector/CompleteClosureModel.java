@@ -24,8 +24,6 @@ import it.unimi.dsi.fastutil.shorts.ShortArrayList;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
 import java.util.logging.Level;
 
 import cltool4j.BaseCommandlineTool;
@@ -56,15 +54,6 @@ public class CompleteClosureModel extends ChainableCellSelectorModel implements 
 
     private CompleteClosureClassifier classifier;
     private Tagger posTagger;
-
-    public CompleteClosureModel(final InputStream is, final CellSelectorModel childModel) throws IOException,
-            ClassNotFoundException {
-        super(childModel);
-
-        final ObjectInputStream ois = new ObjectInputStream(is);
-        classifier = (CompleteClosureClassifier) ois.readObject();
-        posTagger = (Tagger) ois.readObject();
-    }
 
     public CompleteClosureModel(final File classifierModel, final Grammar grammar, final CellSelectorModel childModel)
             throws IOException, ClassNotFoundException {

@@ -19,36 +19,84 @@
 
 package edu.ohsu.cslu.grammar;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
+import edu.ohsu.cslu.perceptron.UnkClassSequence;
+import edu.ohsu.cslu.perceptron.UnkClassTagger;
 
 /**
+ * Classifies tokens using a sequence-tagger model, assigning each unknown word to one of a set of previously-learned
+ * clusters.
+ * 
  * @author Aaron Dunlop
- * @since Jul 2, 2013
  */
 public class ClusterTaggerTokenClassifier extends TokenClassifier {
 
+    private static final long serialVersionUID = 1L;
+    private UnkClassTagger unkClassTagger;
+
+    public ClusterTaggerTokenClassifier(final File classifierModel) throws IOException, ClassNotFoundException {
+        super();
+        this.unkClassTagger = new UnkClassTagger();
+        unkClassTagger.readModel(new FileInputStream(classifierModel));
+    }
+
     /**
+     * Splits the supplied sentence on spaces and returns the lexicon-mapped indices of all words. Convenience method
+     * that calls {@link #lexiconIndex(String, boolean, SymbolSet)} to obtain mapped indices.
+     * 
+     * @param sentence
      * @param lexicon
+     * @return the lexicon-mapped indices of all words
      */
-    public ClusterTaggerTokenClassifier(final SymbolSet<String> lexicon) {
-        super(lexicon);
-        // TODO Auto-generated constructor stub
+    @Override
+    public int[] lexiconIndices(final String sentence, final SymbolSet<String> lexicon) {
+        // TODO This could probably be done faster with something other than a regex
+        final String tokens[] = sentence.split("\\s+");
+        final int tokenIndices[] = new int[tokens.length];
+        final UnkClassSequence unkClassSequence = new UnkClassSequence(sentence, unkClassTagger);
+        final short[] unkClasses = unkClassTagger.classify(unkClassSequence);
+
+        for (int i = 0; i < tokens.length; i++) {
+            if (unkClasses[i] < 0) {
+                tokenIndices[i] = lexicon.getIndex(tokens[i]);
+            } else {
+                tokenIndices[i] = lexicon.getIndex(unkClassTagger.tagSet().getSymbol(unkClasses[i]));
+            }
+            if (tokenIndices[i] < 0) {
+                System.err.println("Something's wrong");
+            }
+        }
+        return tokenIndices;
+    }
+
+    /**
+     * Returns the lexicon-mapped indices of all words in the supplied parse tree
+     * 
+     * @param goldTree
+     * @param lexicon
+     * @return the lexicon-mapped indices of all words in the supplied parse tree
+     */
+    @Override
+    public int[] lexiconIndices(final NaryTree<String> goldTree, final SymbolSet<String> lexicon) {
+        final int tokenIndices[] = new int[goldTree.leaves()];
+        int i = 0;
+        for (final NaryTree<String> leaf : goldTree.leafTraversal()) {
+            tokenIndices[i++] = lexiconIndex(leaf.label(), i == 0, lexicon);
+        }
+        return tokenIndices;
     }
 
     @Override
-    public int[] lexiconIndices(final String sentence) {
-        // TODO Auto-generated method stub
-        return null;
+    public int lexiconIndex(final String token, final boolean sentenceInitial, final SymbolSet<String> lexicon) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
-    public int[] lexiconIndices(final NaryTree<String> goldTree) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public TokenClassifierType type() {
-        return TokenClassifierType.ClusterTagger;
+    public String lexiconEntry(final String token, final boolean sentenceInitial, final SymbolSet<String> lexicon) {
+        throw new UnsupportedOperationException();
     }
 }

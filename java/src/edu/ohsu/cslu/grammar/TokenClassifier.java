@@ -26,67 +26,70 @@ public abstract class TokenClassifier implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    protected SymbolSet<String> lexicon;
-
-    protected TokenClassifier(final SymbolSet<String> lexicon) {
-        this.lexicon = lexicon;
-    }
+    /**
+     * Returns <code>token</code> if present in the lexicon, or the appropriate unknown-word class if <code>token</code>
+     * is unknown.
+     * 
+     * Deprecated because it cannot incorporate surrounding context into the tagging decision - use
+     * {@link #lexiconIndices(String, SymbolSet)} instead.
+     * 
+     * @param token
+     * @param sentenceInitial True if the token is the first word in the sentence (some {@link TokenClassifier}
+     *            implementations treat the first word differently)
+     * @param lexicon
+     * @return the lexicon-mapped indices of <code>token</code>
+     */
+    @Deprecated
+    public abstract String lexiconEntry(final String token, final boolean sentenceInitial,
+            final SymbolSet<String> lexicon);
 
     /**
-     * Splits the supplied sentence on spaces and returns the lexicon-mapped indices of all words.
+     * Returns the lexicon-mapped index of <code>token</code>, or of the appropriate unknown-word class if
+     * <code>token</code> is not present in the <code>lexicon</code>.
+     * 
+     * Deprecated because it cannot incorporate surrounding context into the tagging decision - use
+     * {@link #lexiconIndices(String, SymbolSet)} instead.
+     * 
+     * @param token
+     * @param sentenceInitial True if the token is the first word in the sentence (some {@link TokenClassifier}
+     *            implementations treat the first word differently)
+     * @param lexicon
+     * @return the lexicon-mapped indices of <code>token</code>
+     */
+    @Deprecated
+    public abstract int lexiconIndex(final String token, final boolean sentenceInitial, final SymbolSet<String> lexicon);
+
+    /**
+     * Splits the supplied sentence on spaces and returns the lexicon-mapped indices of all words. Convenience method
+     * that calls {@link #lexiconIndex(String, boolean, SymbolSet)} to obtain mapped indices.
      * 
      * @param sentence
+     * @param lexicon
      * @return the lexicon-mapped indices of all words
      */
-    public abstract int[] lexiconIndices(final String sentence);
+    public int[] lexiconIndices(final String sentence, final SymbolSet<String> lexicon) {
+        // TODO This could probably be done faster with something other than a regex
+        final String tokens[] = sentence.split("\\s+");
+        final int tokenIndices[] = new int[tokens.length];
+        for (int i = 0; i < tokens.length; i++) {
+            tokenIndices[i] = lexiconIndex(tokens[i], i == 0, lexicon);
+        }
+        return tokenIndices;
+    }
 
     /**
      * Returns the lexicon-mapped indices of all words in the supplied parse tree
      * 
      * @param goldTree
+     * @param lexicon
      * @return the lexicon-mapped indices of all words in the supplied parse tree
      */
-    public abstract int[] lexiconIndices(final NaryTree<String> goldTree);
-
-    public abstract TokenClassifierType type();
-
-    // public int lexiconIndex(final String word, final boolean sentenceInitial) {
-    // return lexicon.getIndex(lexiconEntry(word, sentenceInitial));
-    // }
-    //
-    // public String lexiconEntry(final String word, final boolean sentenceInitial) {
-    // if (lexicon.containsKey(word)) {
-    // return word;
-    // }
-    // String unkStr = DecisionTreeTokenClassifier.berkeleyGetSignature(word, sentenceInitial, lexicon);
-    //
-    // // remove last feature from unk string until we find a matching entry in the lexicon
-    // while (!lexicon.containsKey(unkStr) && unkStr.contains("-")) {
-    // unkStr = unkStr.substring(0, unkStr.lastIndexOf('-'));
-    // }
-    //
-    // if (lexicon.containsKey(unkStr) == false) {
-    // throw new IllegalArgumentException("Word 'UNK' not found in lexicon");
-    // }
-    //
-    // return unkStr;
-    // }
-
-    public static enum TokenClassifierType {
-        DecisionTree(DecisionTreeTokenClassifier.class), ClusterTagger(ClusterTaggerTokenClassifier.class);
-
-        private Class<? extends TokenClassifier> implementationClass;
-
-        private TokenClassifierType(final Class<? extends TokenClassifier> c) {
-            this.implementationClass = c;
+    public int[] lexiconIndices(final NaryTree<String> goldTree, final SymbolSet<String> lexicon) {
+        final int tokenIndices[] = new int[goldTree.leaves()];
+        int i = 0;
+        for (final NaryTree<String> leaf : goldTree.leafTraversal()) {
+            tokenIndices[i++] = lexiconIndex(leaf.label(), i == 0, lexicon);
         }
-
-        public TokenClassifier create(final SymbolSet<String> lexicon) {
-            try {
-                return implementationClass.getConstructor(SymbolSet.class).newInstance(lexicon);
-            } catch (final Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
+        return tokenIndices;
     }
 }

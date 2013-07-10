@@ -35,7 +35,7 @@ public class UnkClassSequence extends TagSequence {
      */
     public UnkClassSequence(final String sentence, final UnkClassTagger tagger) {
         super(sentence, tagger.lexicon, tagger.decisionTreeUnkClassSet, tagger.posSet, tagger.unigramSuffixSet,
-                tagger.bigramSuffixSet, tagger.tagSet);
+                tagger.bigramSuffixSet, tagger.tagSet());
     }
 
     /**

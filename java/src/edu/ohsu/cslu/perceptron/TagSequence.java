@@ -42,7 +42,7 @@ public class TagSequence extends Sequence {
      * @param tagger
      */
     public TagSequence(final String sentence, final Tagger tagger) {
-        this(sentence, tagger.lexicon, tagger.decisionTreeUnkClassSet, null, null, null, tagger.tagSet);
+        this(sentence, tagger.lexicon, tagger.decisionTreeUnkClassSet, null, null, null, tagger.tagSet());
     }
 
     /**
@@ -72,6 +72,7 @@ public class TagSequence extends Sequence {
             // Awkward control flow, to convince the compiler that we're only initializing final fields once
             if (tree != null) {
                 this.length = tree.leaves();
+                this.tokens = new String[length];
                 this.mappedTokens = new int[length];
                 this.mappedUnkSymbols = new int[length];
                 this.tags = new short[length];
@@ -86,6 +87,7 @@ public class TagSequence extends Sequence {
 
                 int position = 0;
                 for (final NaryTree<String> leaf : tree.leafTraversal()) {
+                    tokens[position] = leaf.label();
                     map(position, leaf.parentLabel(), leaf.label());
                     position++;
                 }
@@ -94,6 +96,7 @@ public class TagSequence extends Sequence {
                 // Tree parsing failed; treat it as a series of bracketed tag/word pairs. E.g. (DT The) (NN fish)...
                 final String[] split = sentence.replaceAll(" ?\\(", "").split("\\)");
                 this.length = split.length;
+                this.tokens = new String[length];
                 this.mappedTokens = new int[length];
                 this.mappedUnkSymbols = new int[length];
                 this.tags = new short[length];
@@ -108,6 +111,7 @@ public class TagSequence extends Sequence {
 
                 for (int position = 0; position < split.length; position++) {
                     final String[] tokenAndPos = split[position].split(" ");
+                    tokens[position] = tokenAndPos[1];
                     map(position, tokenAndPos[0], tokenAndPos[1]);
                 }
             }
@@ -116,7 +120,7 @@ public class TagSequence extends Sequence {
             // It didn't start with '('; assume it is untagged
             final String[] split = sentence.split(" ");
             this.length = split.length;
-            final String[] tokens = new String[length];
+            tokens = new String[length];
             this.mappedTokens = new int[length];
             this.mappedUnkSymbols = new int[length];
             this.tags = new short[length];

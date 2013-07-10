@@ -40,7 +40,6 @@ import java.util.regex.Pattern;
 
 import cltool4j.BaseLogger;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
-import edu.ohsu.cslu.grammar.TokenClassifier.TokenClassifierType;
 import edu.ohsu.cslu.lela.FractionalCountGrammar;
 import edu.ohsu.cslu.parser.Util;
 import edu.ohsu.cslu.util.StringPool;
@@ -101,7 +100,7 @@ public class ListGrammar extends Grammar {
      * allow more efficient iteration in grammar intersection (e.g., skipping NTs only valid as left children in the
      * right cell) and more efficient chart storage (e.g., omitting storage for POS NTs in chart rows >= 2).
      */
-    public ListGrammar(final Reader grammarFile, final TokenClassifierType tokenClassifierType) throws IOException {
+    public ListGrammar(final Reader grammarFile, final TokenClassifier tokenClassifier) throws IOException {
 
         final List<StringProduction> pcfgRules = new LinkedList<StringProduction>();
         final List<StringProduction> lexicalRules = new LinkedList<StringProduction>();
@@ -109,7 +108,7 @@ public class ListGrammar extends Grammar {
         BaseLogger.singleton().finer("INFO: Reading grammar ... ");
         this.stringPool = new StringPool();
         this.grammarFormat = readPcfgAndLexicon(grammarFile, pcfgRules, lexicalRules);
-        this.tokenClassifier = tokenClassifierType.create(lexSet);
+        this.tokenClassifier = tokenClassifier;
 
         nonTermSet = new Vocabulary(grammarFormat);
         final HashSet<String> nonTerminals = new HashSet<String>();
@@ -242,7 +241,7 @@ public class ListGrammar extends Grammar {
 
     protected ListGrammar(final ArrayList<Production> binaryProductions, final ArrayList<Production> unaryProductions,
             final ArrayList<Production> lexicalProductions, final SymbolSet<String> vocabulary,
-            final SymbolSet<String> lexicon, final TokenClassifierType tokenClassifierType,
+            final SymbolSet<String> lexicon, final TokenClassifier tokenClassifier,
             final GrammarFormatType grammarFormat) {
 
         this.nonTermSet = (Vocabulary) vocabulary;
@@ -252,7 +251,7 @@ public class ListGrammar extends Grammar {
         this.nonTermInfo = null;
 
         this.lexSet = lexicon;
-        this.tokenClassifier = tokenClassifierType.create(lexicon);
+        this.tokenClassifier = tokenClassifier;
 
         this.posSet = null;
         this.phraseSet = null;
@@ -279,8 +278,8 @@ public class ListGrammar extends Grammar {
      * @param grammarFile
      * @throws IOException
      */
-    public ListGrammar(final String grammarFile, final TokenClassifierType tokenClassifierType) throws IOException {
-        this(new InputStreamReader(Util.file2inputStream(grammarFile)), tokenClassifierType);
+    public ListGrammar(final String grammarFile, final TokenClassifier tokenClassifier) throws IOException {
+        this(new InputStreamReader(Util.file2inputStream(grammarFile)), tokenClassifier);
     }
 
     /**
@@ -292,7 +291,7 @@ public class ListGrammar extends Grammar {
     protected ListGrammar(final Grammar g) {
         this(((ListGrammar) g).binaryProductions, ((ListGrammar) g).unaryProductions,
                 ((ListGrammar) g).lexicalProductions, ((ListGrammar) g).nonTermSet, ((ListGrammar) g).lexSet,
-                g.tokenClassifier.type(), ((ListGrammar) g).grammarFormat);
+                g.tokenClassifier, ((ListGrammar) g).grammarFormat);
         final ListGrammar lg = (ListGrammar) g;
         this.startSymbolStr = lg.startSymbolStr;
 
@@ -448,8 +447,8 @@ public class ListGrammar extends Grammar {
         }
     }
 
-    public static Grammar read(final String grammarFile, final TokenClassifierType tokenClassifierType)
-            throws IOException, ClassNotFoundException {
+    public static Grammar read(final String grammarFile, final TokenClassifier tokenClassifier) throws IOException,
+            ClassNotFoundException {
 
         final BufferedInputStream bis = new BufferedInputStream(Util.file2inputStream(grammarFile));
         bis.mark(2);
@@ -464,7 +463,7 @@ public class ListGrammar extends Grammar {
             return (Grammar) ois.readObject();
         }
 
-        final ListGrammar grammar = new ListGrammar(new InputStreamReader(bis), tokenClassifierType);
+        final ListGrammar grammar = new ListGrammar(new InputStreamReader(bis), tokenClassifier);
         bis.close();
         return grammar;
     }
