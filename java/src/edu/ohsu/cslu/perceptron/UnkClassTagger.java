@@ -22,7 +22,6 @@ package edu.ohsu.cslu.perceptron;
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 
 import java.io.File;
-import java.io.FileInputStream;
 
 import cltool4j.BaseLogger;
 import cltool4j.args4j.Option;
@@ -83,7 +82,7 @@ public class UnkClassTagger extends Tagger {
      */
     @Override
     protected final String DEFAULT_FEATURE_TEMPLATES() {
-        return "num,num20,num40,num60,num80,num100,punct,punct20,punct40,punct60,punct80,punct100,posm1,pos,posp1,us,bs";
+        return "num,num20,num40,num60,num80,num100,punct,punct20,punct40,punct60,punct80,punct100,posm1,pos,posp1,us,usm1,bs,bsm1,punct,punctm1,punctp1";
     }
 
     public UnkClassTagger() {
@@ -98,18 +97,13 @@ public class UnkClassTagger extends Tagger {
     }
 
     @Override
-    protected void run() throws Exception {
+    protected void setup() throws Exception {
+        super.setup();
         if (trainingIterations > 0) {
             BaseLogger.singleton().info("Reading grammar file...");
             final Grammar g = new LeftCscSparseMatrixGrammar(fileAsBufferedReader(grammarFile),
                     new DecisionTreeTokenClassifier(), PerfectIntPairHashPackingFunction.class);
             init(g);
-
-            train(inputAsBufferedReader());
-
-        } else {
-            readModel(new FileInputStream(modelFile));
-            classify(inputAsBufferedReader());
         }
     }
 

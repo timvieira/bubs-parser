@@ -293,6 +293,15 @@
             <param name="heap-size" value="1024m" />
         </antcall>
     </target>
+
+
+    <target name="classify-unks" depends="compile">
+        <antcall target="package-tool">
+            <param name="root-class" value="edu.ohsu.cslu.perceptron.UnkClassTagger" />
+            <param name="tool-name" value="classify-unks" />
+            <param name="heap-size" value="1024m" />
+        </antcall>
+    </target>
     
     
     <target name="countunks" depends="compile">

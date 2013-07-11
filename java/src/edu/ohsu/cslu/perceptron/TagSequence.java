@@ -200,7 +200,7 @@ public class TagSequence extends Sequence {
             sb.append('(');
             sb.append(tags[i] < 0 ? "---" : tagSet.getSymbol(tags[i]));
             sb.append(' ');
-            sb.append(lexicon.getSymbol(mappedTokens[i]));
+            sb.append(tokens[i]);
             sb.append(')');
 
             if (i < (length - 1)) {

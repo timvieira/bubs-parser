@@ -154,7 +154,9 @@ public class Tagger extends ClassifierTool<TagSequence> {
             train(inputAsBufferedReader());
         } else {
             readModel(new FileInputStream(modelFile));
-            classify(inputAsBufferedReader());
+            final int[] result = classify(inputAsBufferedReader());
+            BaseLogger.singleton().info(
+                    String.format("Accuracy=%.2f  Time=%d\n", result[2] * 100f / result[1], result[3]));
         }
     }
 
@@ -200,16 +202,19 @@ public class Tagger extends ClassifierTool<TagSequence> {
             sentences++;
             final TagSequence tagSequence = createSequence(line);
             for (int i = 0; i < tagSequence.length; i++) {
+                tagSequence.toString();
                 tagSequence.predictedTags[i] = classify(fe.featureVector(tagSequence, i));
             }
 
             final StringBuilder sb = new StringBuilder(line.length() * 2);
 
             for (int j = 0; j < tagSequence.length; j++) {
-                sb.append("(" + tagSet.getSymbol(tagSequence.predictedTags[j]) + " "
-                        + lexicon.getSymbol(tagSequence.mappedTokens[j]) + ")");
+                sb.append("(" + tagSet.getSymbol(tagSequence.predictedTags[j]) + " " + tagSequence.tokens[j] + ")");
                 if (j < tagSequence.length - 1) {
                     sb.append(' ');
+                }
+                if (tagSequence.tags[j] < 0) {
+                    continue;
                 }
                 if (tagSequence.predictedTags[j] == tagSequence.tags[j]) {
                     correct++;
