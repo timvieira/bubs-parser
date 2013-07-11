@@ -293,7 +293,8 @@ public class ConstrainedCphSpmlParser extends SparseMatrixLoopParser<LeftCscSpar
             if (!foundMatchingProd) {
 
                 final ShortList allSplits = baseToSplitMap.get(constrainingParent);
-                if (allSplits.size() == 1) {
+                if (allSplits.size() == 1
+                        && tmpCell.insideProbabilities[allSplits.getShort(0)] != Float.NEGATIVE_INFINITY) {
                     // There isn't much we can do in this case - we only have one split of the non-terminal, and we
                     // can't populate it twice in the unary chain. We'll have to give up and drop entries from the
                     // chain.
@@ -315,13 +316,14 @@ public class ConstrainedCphSpmlParser extends SparseMatrixLoopParser<LeftCscSpar
                 // Find the most probable populated entry matching the constraining child. We'll use that as the child
                 // of the (hallucinated) rule
                 short maxChild = -1;
-                final float maxChildInsideProbability = Float.NEGATIVE_INFINITY;
+                float maxChildInsideProbability = Float.NEGATIVE_INFINITY;
 
                 for (short nt = 0; nt < tmpCell.insideProbabilities.length; nt++) {
 
                     if (tmpCell.insideProbabilities[nt] > maxChildInsideProbability
                             && grammar.nonTermSet.getBaseIndex(nt) == constrainingChild) {
                         maxChild = nt;
+                        maxChildInsideProbability = tmpCell.insideProbabilities[nt];
                     }
                 }
 
