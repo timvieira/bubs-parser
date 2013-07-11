@@ -18,6 +18,7 @@
  */
 package edu.ohsu.cslu.parser;
 
+import java.util.Iterator;
 import java.util.logging.Level;
 
 import cltool4j.BaseLogger;
@@ -260,7 +261,18 @@ public class ParseTask {
         return result.toString();
     }
 
-    public String parseBracketString(final boolean binaryTree, final boolean printUnkLabels,
+    /**
+     * Returns a bracketed-tree representation of the parse result.
+     * 
+     * @param binaryTree Leave the tree binarized (if false, the binary tree is un-binarized)
+     * @param printUnkLabels Return UNK-class labels in place of any unknown tokens from the original sentence
+     * @param addTokens Combine tokens and UNK-class labels in the form 'UNK-class|token'. Ignored if
+     *            <code>printUnkLabels<code> is false.
+     * @param headRules Head-percolation ruleset. If supplied, the string representation will include pointers to
+     *            lexical heads
+     * @return A bracketed-tree representation of the parse result.
+     */
+    public String parseBracketString(final boolean binaryTree, final boolean printUnkLabels, final boolean addTokens,
             final HeadPercolationRuleset headRules) {
         if (binaryParse == null) {
             if (recoveryStrategy != null) {
@@ -268,7 +280,23 @@ public class ParseTask {
             }
             return "()";
         }
-        if (printUnkLabels == false) {
+        if (printUnkLabels) {
+            // The binary parse already contains the UNK labels, so if we're printing just those, we don't need to do
+            // anything
+            if (addTokens) {
+                final String[] originalTokens = sentence.split("\\s+");
+
+                int i = 0;
+                for (final Iterator<BinaryTree<String>> leafIterator = binaryParse.leafTraversal().iterator(); leafIterator
+                        .hasNext(); i++) {
+                    final BinaryTree<String> leaf = leafIterator.next();
+                    if (!grammar.lexSet.containsKey(originalTokens[i])) {
+                        leaf.setLabel(leaf.label() + '|' + originalTokens[i]);
+                    }
+                }
+            }
+        } else {
+            // The normal case is that we want to replace UNK labels with the original sentence tokens
             binaryParse.replaceLeafLabels(sentence.split("\\s+"));
         }
         if (binaryTree) {
@@ -285,7 +313,7 @@ public class ParseTask {
     }
 
     public String parseBracketString(final boolean binaryTree) {
-        return parseBracketString(binaryTree, false, null);
+        return parseBracketString(binaryTree, false, false, null);
     }
 
     public NaryTree<String> naryParseWithHeadLabels(final HeadPercolationRuleset headRules) {

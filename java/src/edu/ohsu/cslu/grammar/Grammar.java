@@ -269,16 +269,6 @@ public abstract class Grammar implements Serializable {
     }
 
     /**
-     * Convenience method. Returns true if the lexicon contains the specified word.
-     * 
-     * @param word
-     * @return true if the lexicon contains the specified word
-     */
-    public final boolean hasWord(final String word) {
-        return lexSet.containsKey(word);
-    }
-
-    /**
      * Returns all valid parents of the specified lexical item. See {@link #lexicalLogProbabilities(int)}.
      * 
      * @param wordIndex

@@ -127,6 +127,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     @Option(name = "-printUNK", usage = "Print unknown words as their UNK replacement class")
     boolean printUnkLabels = false;
 
+    @Option(name = "-addUNK", usage = "Add the UNK replacement class to any unknown words (in the form 'UNK-class|token'")
+    boolean addUnkLabels = false;
+
     @Option(name = "-binary", usage = "Leave parse tree output in binary-branching form")
     public boolean binaryTreeOutput = false;
 
@@ -603,7 +606,14 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
         sentencesParsed++;
         if (parseTask != null) {
             final StringBuilder output = new StringBuilder(512);
-            output.append(parseTask.parseBracketString(binaryTreeOutput, printUnkLabels, headPercolationRuleset));
+
+            if (addUnkLabels) {
+                output.append(parseTask.parseBracketString(binaryTreeOutput, true, true, headPercolationRuleset));
+            } else {
+                output.append(parseTask.parseBracketString(binaryTreeOutput, printUnkLabels, false,
+                        headPercolationRuleset));
+            }
+
             try {
                 parseTask.evaluate(evaluator);
                 output.append(parseTask.statsString());
