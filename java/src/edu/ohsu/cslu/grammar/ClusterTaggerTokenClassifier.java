@@ -66,9 +66,6 @@ public class ClusterTaggerTokenClassifier extends TokenClassifier {
             } else {
                 tokenIndices[i] = lexicon.getIndex(unkClassTagger.tagSet().getSymbol(unkClasses[i]));
             }
-            if (tokenIndices[i] < 0) {
-                System.err.println("Something's wrong");
-            }
         }
         return tokenIndices;
     }

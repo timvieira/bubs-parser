@@ -116,8 +116,6 @@ public class CompleteClosureSequence extends BinarySequence {
 
         super(lexicon, unkClassSet);
 
-        String[] tokens;
-
         tokens = parseTree.leafLabels();
 
         this.sentenceLength = (short) tokens.length;
@@ -129,10 +127,12 @@ public class CompleteClosureSequence extends BinarySequence {
         for (int i = 0; i < sentenceLength; i++) {
             if (lexicon.isFinalized()) {
                 mappedTokens[i] = lexicon.getIndex(tokens[i]);
-                mappedUnkSymbols[i] = unkClassSet.getIndex(DecisionTreeTokenClassifier.berkeleyGetSignature(tokens[i], i == 0, lexicon));
+                mappedUnkSymbols[i] = unkClassSet.getIndex(DecisionTreeTokenClassifier.berkeleyGetSignature(tokens[i],
+                        i == 0, lexicon));
             } else {
                 mappedTokens[i] = lexicon.addSymbol(tokens[i]);
-                mappedUnkSymbols[i] = unkClassSet.addSymbol(DecisionTreeTokenClassifier.berkeleyGetSignature(tokens[i], i == 0, lexicon));
+                mappedUnkSymbols[i] = unkClassSet.addSymbol(DecisionTreeTokenClassifier.berkeleyGetSignature(tokens[i],
+                        i == 0, lexicon));
             }
         }
 

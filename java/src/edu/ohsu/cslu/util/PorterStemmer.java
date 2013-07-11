@@ -69,7 +69,7 @@ import cltool4j.Threadable;
  * 'defaultThreads = 1'
  */
 @Threadable(defaultThreads = 1)
-public class PorterStemmer extends LinewiseCommandlineTool {
+public class PorterStemmer extends LinewiseCommandlineTool<String> {
 
     private char[] b;
     private int offset, /* offset into b */
