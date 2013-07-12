@@ -282,7 +282,7 @@ public class AveragedPerceptron extends Perceptron {
         rawGuess.inPlaceAdd(featureVector, -alpha);
     }
 
-    private void averageAllFeatures() {
+    void averageAllFeatures() {
 
         if (lastAveraged instanceof LargeVector) {
             final LargeVector largeLastAveraged = (LargeVector) lastAveraged;

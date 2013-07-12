@@ -64,7 +64,7 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence> extends
      * Temporary storage of the model during training. After training, this model is superseded by
      * {@link #parallelArrayOffsetMap} and the parallel arrays it references.
      */
-    private transient AveragedPerceptron perceptronModel;
+    protected transient AveragedPerceptron perceptronModel;
 
     // Maps feature index (long) -> offset in weight arrays (int)
     protected Long2IntOpenHashMap parallelArrayOffsetMap;
@@ -109,9 +109,9 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence> extends
             train(inputAsBufferedReader());
         } else {
             readModel(new FileInputStream(modelFile));
-            final int[] result = classify(inputAsBufferedReader());
+            final MulticlassClassifierResult result = classify(inputAsBufferedReader());
             BaseLogger.singleton().info(
-                    String.format("Accuracy=%.2f  Time=%d\n", result[2] * 100f / result[1], result[3]));
+                    String.format("Accuracy=%.2f  Time=%d\n", result.accuracy() * 100f, result.time));
         }
     }
 
@@ -145,7 +145,7 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence> extends
      * 
      * @throws IOException if a read fails
      */
-    protected int[] classify(final BufferedReader input) throws IOException {
+    protected MulticlassClassifierResult classify(final BufferedReader input) throws IOException {
 
         final FeatureExtractor<S> fe = featureExtractor();
         int sentences = 0, words = 0, correct = 0;
@@ -169,7 +169,7 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence> extends
                 words++;
             }
         }
-        return new int[] { sentences, words, correct, (int) (System.currentTimeMillis() - t0) };
+        return new MulticlassClassifierResult(sentences, words, correct, (int) (System.currentTimeMillis() - t0));
     }
 
     protected abstract S createSequence(final String line);
@@ -373,8 +373,9 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence> extends
 
                 final BitVector[] featureVectors = trainingCorpusFeatures.get(j);
                 for (int k = 0; k < featureVectors.length; k++) {
-                    if (featureVectors[k] != null) {
-                        perceptronModel.train(sequence.goldClass(k), featureVectors[k]);
+                    final BitVector featureVector = featureVectors[k];
+                    if (featureVector != null) {
+                        train(sequence.goldClass(k), featureVector);
                     }
                 }
 
@@ -403,6 +404,10 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence> extends
                             * 100f / devResult[1], devResult[3]));
 
         }
+    }
+
+    protected void train(final short goldClass, final BitVector featureVector) {
+        perceptronModel.train(goldClass, featureVector);
     }
 
     /**
@@ -440,21 +445,35 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence> extends
         tagSet.finalize();
     }
 
-    /**
-     * Copies the modeled weights from an {@link AveragedPerceptron} (which is convenient and flexible for training) to
-     * the parallel array structure ({@link #parallelArrayOffsetMap}, {@link #parallelWeightArrayTags}, and
-     * {@link #parallelWeightArray}), which we will use for subsequent tagging.
-     */
-    public void finalizeModel() {
+    private void finalizeModel() {
 
+        perceptronModel.averageAllFeatures();
+
+        final Long2ShortAVLTreeMap observedWeightCounts = observedWeightCounts(perceptronModel.avgWeights);
+        final int arraySize = finalizedArraySize(observedWeightCounts);
+
+        this.parallelArrayOffsetMap = new Long2IntOpenHashMap();
+        this.parallelArrayOffsetMap.defaultReturnValue(-1);
+        this.parallelWeightArrayTags = new short[arraySize];
+        this.parallelWeightArray = new float[arraySize];
+
+        finalizeModel(perceptronModel.avgWeights, observedWeightCounts, parallelArrayOffsetMap,
+                parallelWeightArrayTags, parallelWeightArray);
+    }
+
+    static Long2ShortAVLTreeMap observedWeightCounts(final FloatVector[] avgWeights) {
         // Count the number of non-0 weights
         final Long2ShortAVLTreeMap observedWeightCounts = new Long2ShortAVLTreeMap();
-        for (int i = 0; i < tagSet.size(); i++) {
-            for (final long feature : perceptronModel.modelWeights(i).populatedDimensions()) {
+
+        for (int i = 0; i < avgWeights.length; i++) {
+            for (final long feature : avgWeights[i].populatedDimensions()) {
                 observedWeightCounts.put(feature, (short) (observedWeightCounts.get(feature) + 1));
             }
         }
+        return observedWeightCounts;
+    }
 
+    static int finalizedArraySize(final Long2ShortAVLTreeMap observedWeightCounts) {
         // Compute the size of the parallel array
         int arraySize = 0;
         for (final long feature : observedWeightCounts.keySet()) {
@@ -463,10 +482,12 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence> extends
         // Add 1 entry for each observed feature, to record the number of non-0 weights
         arraySize += observedWeightCounts.size();
 
-        this.parallelArrayOffsetMap = new Long2IntOpenHashMap();
-        parallelArrayOffsetMap.defaultReturnValue(-1);
-        this.parallelWeightArrayTags = new short[arraySize];
-        this.parallelWeightArray = new float[arraySize];
+        return arraySize;
+    }
+
+    static void finalizeModel(final FloatVector[] avgWeights, final Long2ShortAVLTreeMap observedWeightCounts,
+            final Long2IntOpenHashMap parallelArrayOffsetMap, final short[] parallelWeightArrayTags,
+            final float[] parallelWeightArray) {
 
         // Iterate over populated features, probing each tag's perceptron model in turn.
         int index = 0;
@@ -478,15 +499,15 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence> extends
             parallelWeightArrayTags[index] = observedWeightCounts.get(feature);
             parallelArrayOffsetMap.put(feature, index++);
 
-            // Populate the associated weights for each tag
-            for (short tag = 0; tag < tagSet.size(); tag++) {
+            // Populate the associated weights for each class
+            for (short c = 0; c < avgWeights.length; c++) {
 
-                final FloatVector modelWeights = perceptronModel.modelWeights(tag);
+                final FloatVector modelWeights = avgWeights[c];
                 final float weight = (modelWeights instanceof LargeVector) ? ((LargeVector) modelWeights)
                         .getFloat(feature) : modelWeights.getFloat((int) feature);
 
                 if (weight != 0) {
-                    parallelWeightArrayTags[index] = tag;
+                    parallelWeightArrayTags[index] = c;
                     parallelWeightArray[index++] = weight;
                 }
             }
@@ -499,6 +520,25 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence> extends
 
     public static void main(final String[] args) {
         run(args);
+    }
+
+    protected static class MulticlassClassifierResult {
+        protected int sentences, words, correct;
+        protected int time;
+
+        public MulticlassClassifierResult() {
+        }
+
+        public MulticlassClassifierResult(final int sentences, final int words, final int correct, final int time) {
+            this.sentences = sentences;
+            this.words = words;
+            this.correct = correct;
+            this.time = time;
+        }
+
+        public float accuracy() {
+            return correct * 1f / words;
+        }
     }
 
     protected static class Model extends ClassifierTool.Model {

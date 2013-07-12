@@ -148,12 +148,12 @@ public abstract class BinaryClassifier<S extends BinarySequence> extends Classif
 
     private boolean classify(final BitVector featureVector) {
         if (lastExampleAllUpdated < trainExampleNumber) {
-            averageAllFeatures();
+            averageAllFeatures(rawWeights, avgWeights, lastAveraged, trainExampleNumber);
+
+            // manually record when we last updated all features. Check during
+            // classification and model writing to ensure model is up-to-date
+            lastExampleAllUpdated = trainExampleNumber;
         }
-        // TODO Remove this after debugging is complete
-        // if (BaseLogger.singleton().isLoggable(Level.FINEST)) {
-        // BaseLogger.singleton().finest(featureVector.toString());
-        // }
         return avgWeights.dotProduct(featureVector) >= bias;
     }
 
@@ -215,6 +215,11 @@ public abstract class BinaryClassifier<S extends BinarySequence> extends Classif
     }
 
     protected void update(final boolean goldClass, final BitVector featureVector, final float alpha) {
+        update(goldClass, featureVector, rawWeights, avgWeights, alpha, trainExampleNumber, lastAveraged);
+    }
+
+    static void update(final boolean goldClass, final BitVector featureVector, final FloatVector rawWeights,
+            final FloatVector avgWeights, final float alpha, final int trainExampleNumber, final IntVector lastAveraged) {
 
         // l = last-averaged example
         // e = current example
@@ -264,7 +269,8 @@ public abstract class BinaryClassifier<S extends BinarySequence> extends Classif
         rawWeights.inPlaceAdd(featureVector, alpha);
     }
 
-    private void averageAllFeatures() {
+    static void averageAllFeatures(final FloatVector rawWeights, final FloatVector avgWeights,
+            final IntVector lastAveraged, final int trainExampleNumber) {
 
         if (lastAveraged instanceof LargeVector) {
             final LargeVector largeLastAveraged = (LargeVector) lastAveraged;
@@ -302,10 +308,6 @@ public abstract class BinaryClassifier<S extends BinarySequence> extends Classif
                 }
             }
         }
-
-        // manually record when we last updated all features. Check during
-        // classification and model writing to ensure model is up-to-date
-        lastExampleAllUpdated = trainExampleNumber;
     }
 
     /**
