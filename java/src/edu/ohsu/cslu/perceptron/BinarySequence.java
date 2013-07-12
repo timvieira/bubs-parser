@@ -19,8 +19,6 @@
 
 package edu.ohsu.cslu.perceptron;
 
-import edu.ohsu.cslu.grammar.SymbolSet;
-
 /**
  * Represents a linguistic sequence and a set of binary tags. The default representation assumes one binary tag per
  * word. However, subclasses may alter that definition (e.g., by applying O(n^2) tags to chart cells for complete
@@ -29,38 +27,9 @@ import edu.ohsu.cslu.grammar.SymbolSet;
  * @author Aaron Dunlop
  * @since Feb 8, 2013
  */
-public class BinarySequence extends Sequence {
+public interface BinarySequence extends Sequence {
 
-    // These fields are populated in the constructor, but possibly in a subclass constructor, so we can't label them
-    // final
-    // TODO We could replace these with PackedBitVectors to save a little space
-    protected boolean[] classes;
-    protected boolean[] predictedClasses;
+    public boolean predictedClass(final int i);
 
-    /**
-     * Constructor for tagged training sequence
-     * 
-     * @param lexicon
-     * @param unkClassSet
-     */
-    protected BinarySequence(final SymbolSet<String> lexicon, final SymbolSet<String> unkClassSet) {
-        super(lexicon, unkClassSet);
-    }
-
-    public final boolean classification(final int i) {
-        return classes[i];
-    }
-
-    @Override
-    public String toString() {
-        final StringBuilder sb = new StringBuilder(256);
-        for (int i = 0; i < length; i++) {
-            sb.append(classes[i]);
-
-            if (i < (length - 1)) {
-                sb.append(' ');
-            }
-        }
-        return sb.toString();
-    }
+    public void setPredictedClass(final int i, final boolean classification);
 }

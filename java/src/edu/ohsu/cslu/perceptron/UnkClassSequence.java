@@ -58,15 +58,15 @@ public class UnkClassSequence extends TagSequence {
 
             // UNK-class
             if (tagSet.isFinalized()) {
-                tags[position] = (short) tagSet.getIndex(unkClass);
+                classes[position] = (short) tagSet.getIndex(unkClass);
             } else {
-                tags[position] = (short) tagSet.addSymbol(unkClass);
+                classes[position] = (short) tagSet.addSymbol(unkClass);
             }
 
         } else {
-            tags[position] = -1;
+            classes[position] = -1;
         }
-        predictedTags[position] = tags[position];
+        predictedClasses[position] = classes[position];
 
         // POS
         if (posSet.isFinalized()) {

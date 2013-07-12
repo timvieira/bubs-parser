@@ -48,7 +48,7 @@ import edu.ohsu.cslu.grammar.SymbolSet;
  * 
  * @author Aaron Dunlop
  * 
- * @param <S> The type of {@link Sequence} this tool classifies
+ * @param <S> The type of {@link BaseSequence} this tool classifies
  */
 public abstract class ClassifierTool<S extends Sequence> extends BaseCommandlineTool implements Serializable {
 

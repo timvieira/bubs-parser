@@ -55,17 +55,17 @@ public class ProfileTagger extends BaseCommandlineTool {
         for (int i = 0; i < iterations; i++) {
             for (final String line : inputLines(br)) {
                 sentences++;
-                final TagSequence tagSequence = new TagSequence(line, t.lexicon, t.decisionTreeUnkClassSet, null, null,
-                        null, t.tagSet());
+                final TagSequence tagSequence = new TagSequence(line, t.lexicon, t.decisionTreeUnkClassSet,
+                        null, null, null, t.tagSet());
 
                 for (int j = 0; j < tagSequence.length; j++) {
-                    tagSequence.predictedTags[j] = t.classify(fe.featureVector(tagSequence, j));
-                    if (tagSequence.predictedTags[j] == tagSequence.tags[j]) {
+                    tagSequence.predictedClasses[j] = t.classify(fe.featureVector(tagSequence, j));
+                    if (tagSequence.predictedClasses[j] == tagSequence.classes[j]) {
                         correct++;
                     }
                     words++;
                 }
-                Arrays.fill(tagSequence.predictedTags, (short) 0);
+                Arrays.fill(tagSequence.predictedClasses, (short) 0);
             }
             br.reset();
         }

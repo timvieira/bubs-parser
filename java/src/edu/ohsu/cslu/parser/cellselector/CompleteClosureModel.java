@@ -31,10 +31,10 @@ import cltool4j.BaseLogger;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParseTask;
+import edu.ohsu.cslu.perceptron.TagSequence;
 import edu.ohsu.cslu.perceptron.CompleteClosureClassifier;
 import edu.ohsu.cslu.perceptron.CompleteClosureSequence;
 import edu.ohsu.cslu.perceptron.ConstituentBoundaryFeatureExtractor;
-import edu.ohsu.cslu.perceptron.TagSequence;
 import edu.ohsu.cslu.perceptron.Tagger;
 
 /**

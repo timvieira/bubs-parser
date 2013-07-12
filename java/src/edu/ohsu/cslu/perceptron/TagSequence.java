@@ -26,23 +26,24 @@ import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.SymbolSet;
 
 /**
- * Represents a sequence of (possibly-tagged) tokens.
+ * @author Aaron Dunlop
+ * @since Jul 11, 2013
  */
-public class TagSequence extends Sequence {
+public class TagSequence extends BaseSequence implements MulticlassSequence {
 
     protected final SymbolSet<String> tagSet;
-    final short[] tags;
-    final short[] predictedTags;
+    final short[] classes;
+    final short[] predictedClasses;
 
     /**
      * Constructs from a bracketed string (e.g. (DT The) (NN fish) ... or from a space-delimited (untagged) string. Used
      * by {@link CompleteClosureClassifier} when an existing {@link Tagger} is already initialized.
      * 
      * @param sentence
-     * @param tagger
+     * @param classifier
      */
-    public TagSequence(final String sentence, final Tagger tagger) {
-        this(sentence, tagger.lexicon, tagger.decisionTreeUnkClassSet, null, null, null, tagger.tagSet());
+    public TagSequence(final String sentence, final MulticlassClassifier<TagSequence> classifier) {
+        this(sentence, classifier.lexicon, classifier.decisionTreeUnkClassSet, null, null, null, classifier.tagSet());
     }
 
     /**
@@ -75,8 +76,8 @@ public class TagSequence extends Sequence {
                 this.tokens = new String[length];
                 this.mappedTokens = new int[length];
                 this.mappedUnkSymbols = new int[length];
-                this.tags = new short[length];
-                this.predictedTags = new short[length];
+                this.classes = new short[length];
+                this.predictedClasses = new short[length];
                 if (unigramSuffixSet != null) {
                     this.mappedUnigramSuffix = new int[length];
                     this.mappedBigramSuffix = new int[length];
@@ -99,8 +100,8 @@ public class TagSequence extends Sequence {
                 this.tokens = new String[length];
                 this.mappedTokens = new int[length];
                 this.mappedUnkSymbols = new int[length];
-                this.tags = new short[length];
-                this.predictedTags = new short[length];
+                this.classes = new short[length];
+                this.predictedClasses = new short[length];
                 if (unigramSuffixSet != null) {
                     this.mappedUnigramSuffix = new int[length];
                     this.mappedBigramSuffix = new int[length];
@@ -123,8 +124,8 @@ public class TagSequence extends Sequence {
             tokens = new String[length];
             this.mappedTokens = new int[length];
             this.mappedUnkSymbols = new int[length];
-            this.tags = new short[length];
-            this.predictedTags = new short[length];
+            this.classes = new short[length];
+            this.predictedClasses = new short[length];
             if (unigramSuffixSet != null) {
                 this.mappedUnigramSuffix = new int[length];
                 this.mappedBigramSuffix = new int[length];
@@ -132,7 +133,7 @@ public class TagSequence extends Sequence {
             if (posSet != null) {
                 this.mappedPosSymbols = new int[length];
             }
-            Arrays.fill(tags, (short) -1);
+            Arrays.fill(classes, (short) -1);
 
             for (int i = 0; i < split.length; i++) {
                 tokens[i] = split[i];
@@ -160,11 +161,11 @@ public class TagSequence extends Sequence {
 
         // POS
         if (tagSet.isFinalized()) {
-            tags[position] = (short) tagSet.getIndex(pos);
+            classes[position] = (short) tagSet.getIndex(pos);
         } else {
-            tags[position] = (short) tagSet.addSymbol(pos);
+            classes[position] = (short) tagSet.addSymbol(pos);
         }
-        predictedTags[position] = tags[position];
+        predictedClasses[position] = classes[position];
 
         // Token
         if (lexicon.isFinalized()) {
@@ -194,11 +195,36 @@ public class TagSequence extends Sequence {
     }
 
     @Override
+    public short goldClass(final int position) {
+        return classes[position];
+    }
+
+    @Override
+    public short[] predictedClasses() {
+        return predictedClasses;
+    }
+
+    @Override
+    public short predictedClass(final int position) {
+        return predictedClasses[position];
+    }
+
+    @Override
+    public void setPredictedClass(final int position, final short newClass) {
+        predictedClasses[position] = newClass;
+    }
+
+    @Override
+    public SymbolSet<String> tagSet() {
+        return tagSet;
+    }
+
+    @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder(256);
         for (int i = 0; i < length; i++) {
             sb.append('(');
-            sb.append(tags[i] < 0 ? "---" : tagSet.getSymbol(tags[i]));
+            sb.append(classes[i] < 0 ? "---" : tagSet.getSymbol(classes[i]));
             sb.append(' ');
             sb.append(tokens[i]);
             sb.append(')');

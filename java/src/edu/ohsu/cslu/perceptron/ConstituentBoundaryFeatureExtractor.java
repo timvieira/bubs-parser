@@ -37,7 +37,7 @@ import edu.ohsu.cslu.grammar.SymbolSet;
  * @author Aaron Dunlop
  * @since Feb 8, 2013
  */
-public class ConstituentBoundaryFeatureExtractor extends FeatureExtractor<CompleteClosureSequence> {
+public class ConstituentBoundaryFeatureExtractor<S extends ConstituentBoundarySequence> extends FeatureExtractor<S> {
 
     private static final long serialVersionUID = 1L;
 
@@ -172,7 +172,7 @@ public class ConstituentBoundaryFeatureExtractor extends FeatureExtractor<Comple
      * @param position The index of a specific chart cell (disambiguating a start and end, or start and span)
      */
     @Override
-    public BitVector featureVector(final CompleteClosureSequence input, final int position) {
+    public BitVector featureVector(final S input, final int position) {
 
         final long[] featureIndices = new long[templates.length];
 

@@ -22,6 +22,7 @@ package edu.ohsu.cslu.perceptron;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 
 import cltool4j.BaseLogger;
@@ -47,7 +48,7 @@ import edu.ohsu.cslu.perceptron.Perceptron.LossFunction;
  * 
  * @author Aaron Dunlop
  */
-public abstract class BinaryClassifier<S extends BinarySequence> extends ClassifierTool<S> {
+public abstract class BinaryClassifier<S extends BinarySequence> extends ClassifierTool<S> implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -170,22 +171,22 @@ public abstract class BinaryClassifier<S extends BinarySequence> extends Classif
     protected void classify(final S sequence, final int index, final BinaryClassifierResult result) {
 
         final BitVector featureVector = featureExtractor.featureVector(sequence, index);
-        sequence.predictedClasses[index] = classify(featureVector);
+        sequence.setPredictedClass(index, classify(featureVector));
 
-        if (sequence.predictedClasses[index] == true) {
+        if (sequence.predictedClass(index) == true) {
             result.classifiedPositive++;
         } else {
             result.classifiedNegative++;
         }
 
-        if (sequence.classes[index] == true) {
+        if (sequence.predictedClass(index) == true) {
             result.positiveExamples++;
-            if (sequence.predictedClasses[index]) {
+            if (sequence.predictedClass(index)) {
                 result.correctPositive++;
             }
         } else {
             result.negativeExamples++;
-            if (!sequence.predictedClasses[index]) {
+            if (!sequence.predictedClass(index)) {
                 result.correctNegative++;
             }
         }
@@ -205,7 +206,7 @@ public abstract class BinaryClassifier<S extends BinarySequence> extends Classif
         for (final S sequence : sequences) {
             result.totalSequences++;
 
-            for (int i = 0; i < sequence.predictedClasses.length; i++) {
+            for (int i = 0; i < sequence.length(); i++) {
                 classify(sequence, i, result);
             }
         }
@@ -414,20 +415,6 @@ public abstract class BinaryClassifier<S extends BinarySequence> extends Classif
                 highBias = bias;
             }
         }
-
-        // TODO This is specific to CompleteClosureClassifier
-        // Compute and report final cell-closure statistics on the development set
-        int totalWords = 0;
-        for (final S sequence : devCorpusSequences) {
-            totalWords += sequence.mappedTokens.length;
-        }
-
-        // positiveExamples + negativeExamples + span-1 cells
-        final int totalCells = result.positiveExamples + result.negativeExamples + totalWords;
-        final int openCells = result.classifiedNegative + totalWords;
-
-        BaseLogger.singleton().info(
-                String.format("Open cells (including span-1): %d (%.3f%%)", openCells, openCells * 100f / totalCells));
     }
 
     /**

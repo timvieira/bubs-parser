@@ -24,7 +24,6 @@ import java.util.Arrays;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
-import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.SymbolSet;
 
@@ -33,12 +32,13 @@ import edu.ohsu.cslu.grammar.SymbolSet;
  * 
  * @author Aaron Dunlop
  */
-public class CompleteClosureSequence extends BinarySequence {
+public class CompleteClosureSequence extends ConstituentBoundarySequence implements BinarySequence {
 
-    /** Preterminals (part-of-speech tags) of the sentence */
-    short[] posTags;
-
-    final short sentenceLength;
+    // These fields are populated in the constructor, but possibly in a subclass constructor, so we can't label them
+    // final
+    // TODO We could replace these with PackedBitVectors to save a little space
+    protected boolean[] classes;
+    protected boolean[] predictedClasses;
 
     /**
      * Constructs from an array of tokens, mapped according to the classifier's lexicon. Used during inference.
@@ -50,10 +50,7 @@ public class CompleteClosureSequence extends BinarySequence {
     public CompleteClosureSequence(final int[] mappedTokens, final short[] posTags,
             final CompleteClosureClassifier classifier) {
 
-        super(classifier.lexicon, classifier.decisionTreeUnkClassSet);
-        this.mappedTokens = mappedTokens;
-        this.sentenceLength = (short) mappedTokens.length;
-        this.posTags = posTags;
+        super(mappedTokens, posTags, classifier.lexicon, classifier.decisionTreeUnkClassSet);
 
         // All cells spanning more than one word
         this.length = sentenceLength * (sentenceLength + 1) / 2 - sentenceLength;
@@ -62,19 +59,11 @@ public class CompleteClosureSequence extends BinarySequence {
         // Arrays.fill(classes, true);
         this.predictedClasses = new boolean[length];
         Arrays.fill(predictedClasses, true);
-
-        this.mappedUnkSymbols = new int[sentenceLength];
-        for (int i = 0; i < sentenceLength; i++) {
-            // TODO It's odd and inefficient to take mapped tokens and un-map them to their String representation, just
-            // so we can re-map their UNK-classes.
-            mappedUnkSymbols[i] = unkClassSet.getIndex(DecisionTreeTokenClassifier.berkeleyGetSignature(
-                    lexicon.getSymbol(mappedTokens[i]), i == 0, lexicon));
-        }
     }
 
     /**
-     * Constructs from a bracketed tree, populating {@link BinarySequence#classes} with open/closed classifications for
-     * each chart cell.
+     * Constructs from a bracketed tree, populating {@link #classes} with open/closed classifications for each chart
+     * cell.
      * 
      * @param parseTree
      * @param binarization
@@ -92,8 +81,8 @@ public class CompleteClosureSequence extends BinarySequence {
     }
 
     /**
-     * Constructs from a bracketed tree, populating {@link BinarySequence#classes} with open/closed classifications for
-     * each chart cell.
+     * Constructs from a bracketed tree, populating {@link #classes} with open/closed classifications for each chart
+     * cell.
      * 
      * @param parseTree
      * @param classifier
@@ -103,8 +92,8 @@ public class CompleteClosureSequence extends BinarySequence {
     }
 
     /**
-     * Constructs from a bracketed tree, populating {@link BinarySequence#classes} with open/closed classifications for
-     * each chart cell.
+     * Constructs from a bracketed tree, populating {@link #classes} with open/closed classifications for each chart
+     * cell.
      * 
      * @param parseTree
      * @param lexicon
@@ -114,30 +103,8 @@ public class CompleteClosureSequence extends BinarySequence {
     private CompleteClosureSequence(final BinaryTree<String> parseTree, final SymbolSet<String> lexicon,
             final SymbolSet<String> unkClassSet, final SymbolSet<String> vocabulary) {
 
-        super(lexicon, unkClassSet);
+        super(parseTree, lexicon, unkClassSet, vocabulary);
 
-        tokens = parseTree.leafLabels();
-
-        this.sentenceLength = (short) tokens.length;
-        this.mappedTokens = new int[sentenceLength];
-        this.mappedUnkSymbols = new int[sentenceLength];
-        this.posTags = new short[sentenceLength];
-
-        // Map all tokens, UNK symbols, and parts-of-speech
-        for (int i = 0; i < sentenceLength; i++) {
-            if (lexicon.isFinalized()) {
-                mappedTokens[i] = lexicon.getIndex(tokens[i]);
-                mappedUnkSymbols[i] = unkClassSet.getIndex(DecisionTreeTokenClassifier.berkeleyGetSignature(tokens[i],
-                        i == 0, lexicon));
-            } else {
-                mappedTokens[i] = lexicon.addSymbol(tokens[i]);
-                mappedUnkSymbols[i] = unkClassSet.addSymbol(DecisionTreeTokenClassifier.berkeleyGetSignature(tokens[i],
-                        i == 0, lexicon));
-            }
-        }
-
-        // All cells spanning more than one word
-        this.length = sentenceLength * (sentenceLength + 1) / 2 - sentenceLength;
         this.classes = new boolean[length];
         this.predictedClasses = new boolean[length];
 
@@ -164,6 +131,15 @@ public class CompleteClosureSequence extends BinarySequence {
                 classes[index] = false;
             }
         }
+    }
+
+    public final boolean predictedClass(final int i) {
+        return classes[i];
+    }
+
+    @Override
+    public void setPredictedClass(final int i, final boolean classification) {
+        classes[i] = classification;
     }
 
     @Override

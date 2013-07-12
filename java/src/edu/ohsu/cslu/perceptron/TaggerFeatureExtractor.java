@@ -303,8 +303,8 @@ public class TaggerFeatureExtractor extends FeatureExtractor<TagSequence> {
                 case tm2:
                 case tm3:
                     feature *= tagSetSize;
-                    feature += ((index < 0 || index >= sequence.predictedTags.length) ? nullTag
-                            : sequence.predictedTags[index]);
+                    feature += ((index < 0 || index >= sequence.predictedClasses.length) ? nullTag
+                            : sequence.predictedClasses[index]);
                     break;
 
                 case um2:

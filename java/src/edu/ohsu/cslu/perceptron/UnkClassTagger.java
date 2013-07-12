@@ -120,12 +120,12 @@ public class UnkClassTagger extends Tagger {
 
         for (int i = 0; i < sequence.length; i++) {
             if (sequence.mappedTokens[i] < 0) {
-                sequence.predictedTags[i] = classify(featureExtractor.featureVector(sequence, i));
+                sequence.predictedClasses[i] = classify(featureExtractor.featureVector(sequence, i));
             } else {
-                sequence.predictedTags[i] = -1;
+                sequence.predictedClasses[i] = -1;
             }
         }
-        return sequence.predictedTags;
+        return sequence.predictedClasses;
     }
 
     @Override

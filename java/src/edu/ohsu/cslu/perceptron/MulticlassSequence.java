@@ -19,11 +19,20 @@
 
 package edu.ohsu.cslu.perceptron;
 
-/**
- * @author Aaron Dunlop
- * @since Jul 11, 2013
- */
-public interface Sequence {
+import edu.ohsu.cslu.grammar.SymbolSet;
 
-    public int length();
+/**
+ * Represents a sequence of (possibly-tagged) tokens.
+ */
+public interface MulticlassSequence extends Sequence {
+
+    public short goldClass(final int position);
+
+    public short predictedClass(final int position);
+
+    public short[] predictedClasses();
+
+    public void setPredictedClass(final int position, final short newClass);
+
+    public SymbolSet<String> tagSet();
 }

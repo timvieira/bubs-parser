@@ -118,8 +118,8 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
      */
     public CompleteClosureClassifier(final Grammar grammar) {
         init(grammar);
-        this.featureExtractor = new ConstituentBoundaryFeatureExtractor(featureTemplates, lexicon,
-                decisionTreeUnkClassSet, vocabulary);
+        this.featureExtractor = new ConstituentBoundaryFeatureExtractor<CompleteClosureSequence>(featureTemplates,
+                lexicon, decisionTreeUnkClassSet, vocabulary);
     }
 
     /**
@@ -172,8 +172,8 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
             train(inputAsBufferedReader());
         } else {
             readModel(new FileInputStream(modelFile));
-            this.featureExtractor = new ConstituentBoundaryFeatureExtractor(featureTemplates, lexicon,
-                    decisionTreeUnkClassSet, vocabulary);
+            this.featureExtractor = new ConstituentBoundaryFeatureExtractor<CompleteClosureSequence>(featureTemplates,
+                    lexicon, decisionTreeUnkClassSet, vocabulary);
             classify(inputAsBufferedReader());
         }
     }
@@ -222,7 +222,8 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
 
         final ArrayList<TagSequence> taggerTrainingCorpusSequences = posTagger != null ? new ArrayList<TagSequence>()
                 : null;
-        final ArrayList<TagSequence> taggerDevCorpusSequences = posTagger != null ? new ArrayList<TagSequence>() : null;
+        final ArrayList<TagSequence> taggerDevCorpusSequences = posTagger != null ? new ArrayList<TagSequence>()
+                : null;
 
         //
         // Read in the training corpus and map each token. For some classifiers, we also pre-compute all features, but
@@ -253,8 +254,8 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
             posTagger.train(taggerTrainingCorpusSequences, taggerDevCorpusSequences, posTaggerTrainingIterations);
         }
 
-        featureExtractor = new ConstituentBoundaryFeatureExtractor(featureTemplates, lexicon, decisionTreeUnkClassSet,
-                vocabulary);
+        featureExtractor = new ConstituentBoundaryFeatureExtractor<CompleteClosureSequence>(featureTemplates, lexicon,
+                decisionTreeUnkClassSet, vocabulary);
 
         //
         // Tag the training sequences with the trained POS tagger
