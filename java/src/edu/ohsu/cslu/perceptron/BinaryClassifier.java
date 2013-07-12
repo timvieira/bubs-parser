@@ -179,7 +179,7 @@ public abstract class BinaryClassifier<S extends BinarySequence> extends Classif
             result.classifiedNegative++;
         }
 
-        if (sequence.predictedClass(index) == true) {
+        if (sequence.goldClass(index) == true) {
             result.positiveExamples++;
             if (sequence.predictedClass(index)) {
                 result.correctPositive++;

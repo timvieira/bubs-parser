@@ -29,6 +29,8 @@ package edu.ohsu.cslu.perceptron;
  */
 public interface BinarySequence extends Sequence {
 
+    public boolean goldClass(final int i);
+
     public boolean predictedClass(final int i);
 
     public void setPredictedClass(final int i, final boolean classification);

@@ -133,13 +133,17 @@ public class CompleteClosureSequence extends ConstituentBoundarySequence impleme
         }
     }
 
-    public final boolean predictedClass(final int i) {
+    public final boolean goldClass(final int i) {
         return classes[i];
+    }
+
+    public final boolean predictedClass(final int i) {
+        return predictedClasses[i];
     }
 
     @Override
     public void setPredictedClass(final int i, final boolean classification) {
-        classes[i] = classification;
+        predictedClasses[i] = classification;
     }
 
     @Override
