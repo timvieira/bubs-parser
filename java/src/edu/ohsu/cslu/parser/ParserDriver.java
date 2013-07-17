@@ -97,14 +97,14 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     public CellSelectorModel cellSelectorModel = LeftRightBottomTopTraversal.MODEL;
 
     public FigureOfMeritModel fomModel = null;
-    Grammar grammar, coarseGrammar;
+    Grammar grammar;
 
     // == Parser options ==
     @Option(name = "-p", metaVar = "PARSER", usage = "Parser implementation (cyk|beam|agenda|matrix)")
     private ParserType parserType = ParserType.Matrix;
 
     @Option(name = "-rp", hidden = true, metaVar = "PARSER", usage = "Research Parser implementation")
-    private ResearchParserType researchParserType = null;
+    public ResearchParserType researchParserType = null;
 
     // == Grammar options ==
     @Option(name = "-g", metaVar = "FILE", usage = "Grammar file (text, gzipped text, or binary serialized)")
@@ -342,33 +342,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
                 throw new IllegalArgumentException("FOM InsideWithFwdBkwd no longer supported");
 
             } else if (new File(fomTypeOrModel).exists()) {
-                // read first line and extract model type
-                final BufferedReader tmp = fileAsBufferedReader(fomTypeOrModel);
-                final HashMap<String, String> keyValue = Util.readKeyValuePairs(tmp.readLine().trim());
-                tmp.close();
-
-                if (!keyValue.containsKey("type")) {
-                    throw new IllegalArgumentException(
-                            "FOM model file has unexpected format.  Looking for 'type=' in first line.");
-                }
-                final String fomType = keyValue.get("type");
-                if (fomType.equals("BoundaryInOut")) {
-                    Grammar fomGrammar = grammar;
-                    if (this.coarseGrammarFile != null) {
-                        coarseGrammar = new CoarseGrammar(coarseGrammarFile, this.grammar);
-                        BaseLogger.singleton().fine("FOM coarse grammar stats: " + coarseGrammar.getStats());
-                        fomGrammar = coarseGrammar;
-                    }
-                    fomModel = new BoundaryPosModel(FOMType.BoundaryPOS, fomGrammar,
-                            fileAsBufferedReader(fomTypeOrModel));
-
-                } else if (fomType.equals("BoundaryLex")) {
-                    fomModel = new BoundaryLex(FOMType.BoundaryLex, grammar, fileAsBufferedReader(fomTypeOrModel));
-
-                } else {
-                    throw new IllegalArgumentException("FOM model type '" + fomType + "' in file " + fomTypeOrModel
-                            + "' not expected.");
-                }
+                fomModel = readFomModel(fomTypeOrModel, coarseGrammarFile, grammar);
 
             } else {
                 throw new IllegalArgumentException("-fom value '" + fomTypeOrModel + "' not valid.");
@@ -419,6 +393,39 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
         BaseLogger.singleton().fine(grammar.getStats());
 
         parseStartTime = System.currentTimeMillis();
+    }
+
+    public static FigureOfMeritModel readFomModel(final String fomModel, final String coarseGrammarFile,
+            final Grammar grammar) throws IOException {
+
+        // read first line and extract model type
+        final BufferedReader tmp = fileAsBufferedReader(fomModel, Charset.defaultCharset());
+        final HashMap<String, String> keyValue = Util.readKeyValuePairs(tmp.readLine().trim());
+        tmp.close();
+
+        if (!keyValue.containsKey("type")) {
+            throw new IllegalArgumentException(
+                    "FOM model file has unexpected format.  Looking for 'type=' in first line.");
+        }
+        final String fomType = keyValue.get("type");
+
+        if (fomType.equals("BoundaryInOut")) {
+            Grammar fomGrammar = grammar;
+            if (coarseGrammarFile != null) {
+                fomGrammar = new CoarseGrammar(coarseGrammarFile, grammar);
+                BaseLogger.singleton().fine("FOM coarse grammar stats: " + fomGrammar.getStats());
+            }
+            return new BoundaryPosModel(FOMType.BoundaryPOS, fomGrammar, fileAsBufferedReader(fomModel,
+                    Charset.defaultCharset()));
+
+        } else if (fomType.equals("BoundaryLex")) {
+            return new BoundaryLex(FOMType.BoundaryLex, grammar, fileAsBufferedReader(fomModel,
+                    Charset.defaultCharset()));
+
+        } else {
+            throw new IllegalArgumentException("FOM model type '" + fomType + "' in file " + fomModel
+                    + "' not expected.");
+        }
     }
 
     /**

@@ -143,7 +143,7 @@ public class TestCompleteClosure {
 
         // A trivially simple feature extractor
         final ConstituentBoundaryFeatureExtractor<CompleteClosureSequence> fe = new ConstituentBoundaryFeatureExtractor<CompleteClosureSequence>(
-                "ltm1,lt,rt,rtp1,rtp2", lexicon, unkClassSet, vocabulary);
+                "ltm1,lt,rt,rtp1,rtp2", lexicon, unkClassSet, vocabulary, true);
         final int offset1 = vocabulary.size();
         final int offset2 = vocabulary.size() * 2;
         final int offset3 = vocabulary.size() * 3;
@@ -168,7 +168,7 @@ public class TestCompleteClosure {
     public void testBigramWordFeatures() {
 
         final ConstituentBoundaryFeatureExtractor<CompleteClosureSequence> fe = new ConstituentBoundaryFeatureExtractor<CompleteClosureSequence>(
-                "lwm1_lw,rw_rwp1", lexicon, unkClassSet, vocabulary);
+                "lwm1_lw,rw_rwp1", lexicon, unkClassSet, vocabulary, true);
         final int offset1 = lexicon.size() * lexicon.size();
 
         // "This time around" (tests beginning-of-sentence features)
@@ -190,7 +190,7 @@ public class TestCompleteClosure {
     public void testSpanFeatures() {
 
         final ConstituentBoundaryFeatureExtractor<CompleteClosureSequence> fe = new ConstituentBoundaryFeatureExtractor<CompleteClosureSequence>(
-                "lt,s2,s3,s4,s5,s10,s20,s30,s40,s50,rs2,rs4,rs6,rs8,rs10", lexicon, unkClassSet, vocabulary);
+                "lt,s2,s3,s4,s5,s10,s20,s30,s40,s50,rs2,rs4,rs6,rs8,rs10", lexicon, unkClassSet, vocabulary, true);
 
         final int sOffset = vocabulary.size();
         final int rsOffset = sOffset + 9 * 2;
@@ -243,7 +243,7 @@ public class TestCompleteClosure {
     @Test
     public void testUnkFeatures() {
         final ConstituentBoundaryFeatureExtractor<CompleteClosureSequence> fe = new ConstituentBoundaryFeatureExtractor<CompleteClosureSequence>(
-                "lum1,lu,rup1", lexicon, unkClassSet, vocabulary);
+                "lum1,lu,rup1", lexicon, unkClassSet, vocabulary, true);
         final int offset1 = unkClassSet.size();
         final int offset2 = offset1 + unkClassSet.size();
 

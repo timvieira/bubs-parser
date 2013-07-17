@@ -31,10 +31,11 @@ import cltool4j.BaseLogger;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParseTask;
-import edu.ohsu.cslu.perceptron.TagSequence;
+import edu.ohsu.cslu.perceptron.BeamWidthClassifier;
 import edu.ohsu.cslu.perceptron.CompleteClosureClassifier;
 import edu.ohsu.cslu.perceptron.CompleteClosureSequence;
 import edu.ohsu.cslu.perceptron.ConstituentBoundaryFeatureExtractor;
+import edu.ohsu.cslu.perceptron.TagSequence;
 import edu.ohsu.cslu.perceptron.Tagger;
 
 /**
@@ -55,12 +56,32 @@ public class CompleteClosureModel extends ChainableCellSelectorModel implements 
     private CompleteClosureClassifier classifier;
     private Tagger posTagger;
 
+    /**
+     * Standard constructor
+     * 
+     * @param classifierModel
+     * @param grammar
+     * @param childModel
+     * @throws IOException
+     * @throws ClassNotFoundException
+     */
     public CompleteClosureModel(final File classifierModel, final Grammar grammar, final CellSelectorModel childModel)
             throws IOException, ClassNotFoundException {
 
         super(childModel);
         this.classifier = new CompleteClosureClassifier(grammar);
         classifier.readModel(new FileInputStream(classifierModel));
+        this.posTagger = classifier.posTagger;
+    }
+
+    /**
+     * Used when training a {@link BeamWidthClassifier}
+     * 
+     * @param classifier
+     */
+    public CompleteClosureModel(final CompleteClosureClassifier classifier) {
+        super(null);
+        this.classifier = classifier;
         this.posTagger = classifier.posTagger;
     }
 

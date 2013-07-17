@@ -50,6 +50,8 @@ public class ConstituentBoundaryFeatureExtractor<S extends ConstituentBoundarySe
     final int lexiconSize, vocabularySize, unkClassSetSize;
     final long featureVectorLength;
 
+    private final boolean excludeSpan1Cells;
+
     /**
      * Constructs a {@link FeatureExtractor} using the specified feature templates
      * 
@@ -59,7 +61,7 @@ public class ConstituentBoundaryFeatureExtractor<S extends ConstituentBoundarySe
      * @param vocabulary
      */
     public ConstituentBoundaryFeatureExtractor(final String featureTemplates, final SymbolSet<String> lexicon,
-            final SymbolSet<String> unkClassSet, final SymbolSet<String> vocabulary) {
+            final SymbolSet<String> unkClassSet, final SymbolSet<String> vocabulary, final boolean excludeSpan1Cells) {
 
         this.lexicon = lexicon;
         this.lexiconSize = lexicon.size();
@@ -90,6 +92,8 @@ public class ConstituentBoundaryFeatureExtractor<S extends ConstituentBoundarySe
         if (featureVectorLength < 0) {
             throw new IllegalArgumentException("Feature set too large. Features limited to " + Long.MAX_VALUE);
         }
+
+        this.excludeSpan1Cells = excludeSpan1Cells;
     }
 
     @Override
@@ -176,7 +180,7 @@ public class ConstituentBoundaryFeatureExtractor<S extends ConstituentBoundarySe
 
         final long[] featureIndices = new long[templates.length];
 
-        final short[] startAndEnd = startAndEnd(position, input.sentenceLength, true);
+        final short[] startAndEnd = startAndEnd(position, input.sentenceLength, excludeSpan1Cells);
         final short start = startAndEnd[0];
         final short end = startAndEnd[1];
         final int span = end - start;
@@ -238,6 +242,7 @@ public class ConstituentBoundaryFeatureExtractor<S extends ConstituentBoundarySe
                     break;
 
                 // Indicator features
+                case s1:
                 case s2:
                 case s3:
                 case s4:
@@ -301,20 +306,20 @@ public class ConstituentBoundaryFeatureExtractor<S extends ConstituentBoundarySe
      * {@link #cellIndex(int, int, int, boolean)}.
      * 
      * @param index
-     * @param length Sequence length
+     * @param sentenceLength Sequence length
      * @param excludeSpan1Cells If true, cell indexes start with the first cell on the span-2 row
      * @return the start and end indices of the specified chart cell.
      */
-    public static short[] startAndEnd(final int index, final int length, final boolean excludeSpan1Cells) {
+    public static short[] startAndEnd(final int index, final int sentenceLength, final boolean excludeSpan1Cells) {
 
-        for (short span = (short) (excludeSpan1Cells ? 2 : 1), currentRowStart = 0, nextRowStart = 0; span <= length; span++, currentRowStart = nextRowStart) {
-            nextRowStart = (short) (currentRowStart + (length - span + 1));
+        for (short span = (short) (excludeSpan1Cells ? 2 : 1), currentRowStart = 0, nextRowStart = 0; span <= sentenceLength; span++, currentRowStart = nextRowStart) {
+            nextRowStart = (short) (currentRowStart + (sentenceLength - span + 1));
             if (index < nextRowStart) {
                 final short start = (short) (index - currentRowStart);
                 return new short[] { start, (short) (index - currentRowStart + span) };
             }
         }
-        throw new IllegalArgumentException("Cell " + index + " not found in chart of size " + length);
+        throw new IllegalArgumentException("Cell " + index + " not found in chart of size " + sentenceLength);
     }
 
     private enum TemplateElement {
@@ -341,6 +346,7 @@ public class ConstituentBoundaryFeatureExtractor<S extends ConstituentBoundarySe
         rup1(1), // Right boundary UNK j (outside the constituent)
 
         // Absolute span - bins 2,3,4,5, >= 10, >= 20, ...
+        s1(1.0f),
         s2(2.0f),
         s3(3.0f),
         s4(4.0f),

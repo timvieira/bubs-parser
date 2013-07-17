@@ -47,6 +47,10 @@ import edu.ohsu.cslu.grammar.SymbolSet;
  * models from the command-line, and training and classification can both be embedded directly into larger systems -
  * training primarily for grammar learning, and classification (naturally) for use during inference.
  * 
+ * Implementation note: we consider a 'true' binary classification to be a closed cell, so we generally target negative
+ * recall (i.e., the number of open cells correctly classified as such). To limit inference failures, that
+ * negative-recall target ({@link BinaryClassifier#targetNegativeRecall}) should be very high - e.g., .99-.999.
+ * 
  * @author Aaron Dunlop
  * @since Feb 11, 2013
  */
@@ -119,7 +123,7 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
     public CompleteClosureClassifier(final Grammar grammar) {
         init(grammar);
         this.featureExtractor = new ConstituentBoundaryFeatureExtractor<CompleteClosureSequence>(featureTemplates,
-                lexicon, decisionTreeUnkClassSet, vocabulary);
+                lexicon, decisionTreeUnkClassSet, vocabulary, true);
     }
 
     /**
@@ -173,7 +177,7 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
         } else {
             readModel(new FileInputStream(modelFile));
             this.featureExtractor = new ConstituentBoundaryFeatureExtractor<CompleteClosureSequence>(featureTemplates,
-                    lexicon, decisionTreeUnkClassSet, vocabulary);
+                    lexicon, decisionTreeUnkClassSet, vocabulary, true);
             classify(inputAsBufferedReader());
         }
     }
@@ -201,6 +205,7 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
             }
         }
         result.time = System.currentTimeMillis() - t0;
+        outputDevsetAccuracy(1, result);
         return result;
     }
 
@@ -222,8 +227,7 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
 
         final ArrayList<TagSequence> taggerTrainingCorpusSequences = posTagger != null ? new ArrayList<TagSequence>()
                 : null;
-        final ArrayList<TagSequence> taggerDevCorpusSequences = posTagger != null ? new ArrayList<TagSequence>()
-                : null;
+        final ArrayList<TagSequence> taggerDevCorpusSequences = posTagger != null ? new ArrayList<TagSequence>() : null;
 
         //
         // Read in the training corpus and map each token. For some classifiers, we also pre-compute all features, but
@@ -255,7 +259,7 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
         }
 
         featureExtractor = new ConstituentBoundaryFeatureExtractor<CompleteClosureSequence>(featureTemplates, lexicon,
-                decisionTreeUnkClassSet, vocabulary);
+                decisionTreeUnkClassSet, vocabulary, true);
 
         //
         // Tag the training sequences with the trained POS tagger
@@ -282,6 +286,32 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
             }
         }
 
+        //
+        // Train the model
+        //
+        train(trainingCorpusSequences, devCorpusSequences);
+
+        //
+        // Write out the model file to disk
+        //
+        if (modelFile != null) {
+            if (posTagger == null) {
+                // A complete-closure model without an associated tagger isn't useful for downstream processing)
+                throw new IllegalArgumentException("Cannot serialize " + this.getClass().getName()
+                        + " without training an associated tagger.");
+            }
+            final FileOutputStream fos = new FileOutputStream(modelFile);
+            new ObjectOutputStream(fos)
+                    .writeObject(new Model(posTagger, featureTemplates, avgWeights, bias, fullPosSet));
+            fos.close();
+        }
+
+        BaseLogger.singleton().info(
+                String.format("Time: %d seconds\n", (System.currentTimeMillis() - startTime) / 1000));
+    }
+
+    void train(final ArrayList<CompleteClosureSequence> trainingCorpusSequences,
+            final ArrayList<CompleteClosureSequence> devCorpusSequences) {
         //
         // Iterate over training corpus, training the model
         //
@@ -315,26 +345,9 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
         if (targetPrecision != 0) {
             precisionBiasSearch(devCorpusSequences, featureExtractor);
         } else if (targetNegativeRecall != 0) {
-            negativeRecallBiasSearch(devCorpusSequences, featureExtractor);
+            super.negativeRecallBiasSearch(devCorpusSequences, featureExtractor);
+            evaluateDevset(devCorpusSequences);
         }
-
-        //
-        // Write out the model file to disk
-        //
-        if (modelFile != null) {
-            if (posTagger == null) {
-                // A complete-closure model without an associated tagger isn't useful for downstream processing)
-                throw new IllegalArgumentException("Cannot serialize " + this.getClass().getName()
-                        + " without training an associated tagger.");
-            }
-            final FileOutputStream fos = new FileOutputStream(modelFile);
-            new ObjectOutputStream(fos)
-                    .writeObject(new Model(posTagger, featureTemplates, avgWeights, bias, fullPosSet));
-            fos.close();
-        }
-
-        BaseLogger.singleton().info(
-                String.format("Time: %d seconds\n", (System.currentTimeMillis() - startTime) / 1000));
     }
 
     private void outputDevsetAccuracy(final int iteration, final BinaryClassifierResult result) {
@@ -353,15 +366,7 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
         evaluateDevset(devCorpusSequences);
     }
 
-    @Override
-    protected void negativeRecallBiasSearch(final ArrayList<CompleteClosureSequence> devCorpusSequences,
-            final FeatureExtractor<CompleteClosureSequence> fe) {
-
-        super.negativeRecallBiasSearch(devCorpusSequences, fe);
-        evaluateDevset(devCorpusSequences);
-    }
-
-    private void evaluateDevset(final ArrayList<CompleteClosureSequence> devCorpusSequences) {
+    void evaluateDevset(final ArrayList<CompleteClosureSequence> devCorpusSequences) {
         final long t0 = System.currentTimeMillis();
         final CompleteClosureResult result = new CompleteClosureResult();
 

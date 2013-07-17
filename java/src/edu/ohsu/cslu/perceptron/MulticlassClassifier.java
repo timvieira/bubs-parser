@@ -387,8 +387,8 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence> extends
             if (!devCorpusSequences.isEmpty() && i < iterations) {
                 final int[] devResult = classify(devCorpusSequences, devCorpusFeatures);
                 BaseLogger.singleton().info(
-                        String.format("Iteration=%d Devset Accuracy=%.2f  Time=%d\n", trainingIterations, devResult[2]
-                                * 100f / devResult[1], devResult[3]));
+                        String.format("Iteration=%d Devset Accuracy=%.2f  Time=%d\n", i, devResult[2] * 100f
+                                / devResult[1], devResult[3]));
             }
         }
 
@@ -400,8 +400,8 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence> extends
         if (!devCorpusSequences.isEmpty()) {
             final int[] devResult = classify(devCorpusSequences, devCorpusFeatures);
             BaseLogger.singleton().info(
-                    String.format("Iteration=%d Devset Accuracy=%.2f  Time=%d\n", trainingIterations, devResult[2]
-                            * 100f / devResult[1], devResult[3]));
+                    String.format("Iteration=%d Devset Accuracy=%.2f  Time=%d\n", iterations, devResult[2] * 100f
+                            / devResult[1], devResult[3]));
 
         }
     }
