@@ -26,6 +26,7 @@ import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.parser.chart.Chart;
 
 /**
  * Represents a sequence of tokens and POS tags, intended for making open/closed decisions on chart cells.
@@ -126,8 +127,7 @@ public class CompleteClosureSequence extends ConstituentBoundarySequence impleme
                 start++;
             } else if (node.leaves() > 1) {
                 final int span = node.leaves();
-                final int index = ConstituentBoundaryFeatureExtractor.cellIndex(start, start + span, sentenceLength,
-                        true);
+                final int index = Chart.cellIndex(start, start + span, sentenceLength, true);
                 classes[index] = false;
             }
         }
@@ -162,7 +162,7 @@ public class CompleteClosureSequence extends ConstituentBoundarySequence impleme
         sb.append('\n');
 
         for (int i = 0; i < length; i++) {
-            final short[] startAndEnd = ConstituentBoundaryFeatureExtractor.startAndEnd(i, sentenceLength, true);
+            final short[] startAndEnd = Chart.startAndEnd(i, sentenceLength, true);
 
             sb.append(String.format("%d,%d %s  ", startAndEnd[0], startAndEnd[1], classes[i] ? "T" : "F"));
         }

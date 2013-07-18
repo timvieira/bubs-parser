@@ -26,4 +26,12 @@ package edu.ohsu.cslu.perceptron;
 public interface Sequence {
 
     public int length();
+
+    public void allocatePredictedClasses();
+
+    /**
+     * Clears the predicted-class storage (saving heap space between uses). Supported by some {@link Sequence}
+     * implementations, and a noop for others.
+     */
+    public void clearPredictedClasses();
 }

@@ -56,9 +56,11 @@ import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
 import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser.ResearchParserType;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.cellselector.CompleteClosureModel;
+import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.fom.FigureOfMeritModel;
 import edu.ohsu.cslu.parser.ml.CartesianProductHashSpmlParser;
 import edu.ohsu.cslu.perceptron.MulticlassClassifier.MulticlassClassifierResult;
@@ -111,10 +113,13 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
     @Option(name = "-gf", metaVar = "format", requires = "-bin", usage = "Grammar format")
     protected GrammarFormatType grammarFormat;
 
-    // Training a POS-tagger requires an input grammar - we can test without it, but the output model won't be useful if
-    // lexicon and vocabulary indices don't match
+    // Training the POS-tagger and factored-only taggers requires an input grammar - we can test without it, but the
+    // output model won't be useful if lexicon and vocabulary indices don't match
     @Option(name = "-ptti", metaVar = "iterations", requires = "-g", usage = "Train a POS tagger for n iterations.")
-    private int posTaggerTrainingIterations = 0;
+    private int posTaggerTrainingIterations = 3;
+
+    @Option(name = "-foti", metaVar = "iterations", requires = "-g", usage = "Train a factored-only binary classifier for n iterations.")
+    private int factoredOnlyClassifierTrainingIterations;
 
     @Option(name = "-ptft", requires = "-ptti", metaVar = "templates or file", usage = "POS-tagger feature templates (comma-delimited), or template file")
     private String posTaggerFeatureTemplates = new Tagger().DEFAULT_FEATURE_TEMPLATES();
@@ -131,7 +136,12 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
     protected SymbolSet<String> vocabulary;
 
     private Grammar grammar;
-    private Tagger posTagger;
+
+    /** Part-of-speech tagger, executed prior to cell classification to provide POS features to the beam-width model */
+    public Tagger posTagger;
+
+    /** Factored-only binary classifier */
+    private FactoredOnlyClassifier factoredOnlyClassifier;
 
     /**
      * Maps beam width to the associated class (as defined by {@link #classBoundaryBeamWidths}). E.g., if the class
@@ -212,9 +222,11 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
      * rs1,rs2,rs4,rs6,rs8,rs10
      * </pre>
      */
+    private final static String DEFAULT_FEATURE_TEMPLATES = "ltm2,ltm1,lt,ltp1,rtm1,rt,rtp1,ltp1,lwm1,lw,rw,rwp1,lum1,lu,ru,rup1,ltm1_lt,rt_rtp1,lwm1_lw,rw_rwp1,lum1_lu,ru_rup1,s1,s2,s3,s4,s5,s10,s20,s30,s40,s50,rs2,rs4,rs6,rs8,rs10";
+
     @Override
     protected final String DEFAULT_FEATURE_TEMPLATES() {
-        return "ltm2,ltm1,lt,ltp1,rtm1,rt,rtp1,ltp1,lwm1,lw,rw,rwp1,lum1,lu,ru,rup1,ltm1_lt,rt_rtp1,lwm1_lw,rw_rwp1,lum1_lu,ru_rup1,s1,s2,s3,s4,s5,s10,s20,s30,s40,s50,rs2,rs4,rs6,rs8,rs10";
+        return DEFAULT_FEATURE_TEMPLATES;
     }
 
     /**
@@ -229,7 +241,7 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
     public BeamWidthClassifier(final Grammar grammar) {
         init(grammar);
         this.featureExtractor = new ConstituentBoundaryFeatureExtractor<BeamWidthSequence>(featureTemplates, lexicon,
-                decisionTreeUnkClassSet, grammar.nonTermSet, false);
+                decisionTreeUnkClassSet, grammar.coarsePosSymbolSet(), false);
     }
 
     /**
@@ -257,12 +269,14 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
         ois.close();
         this.vocabulary = tmp.vocabulary;
         this.posTagger = tmp.posTagger;
+        this.factoredOnlyClassifier = tmp.factoredOnlyClassifier;
         this.featureTemplates = tmp.featureTemplates;
         this.parallelArrayOffsetMap = tmp.parallelArrayOffsetMap;
         this.parallelWeightArray = tmp.parallelWeightArray;
         this.parallelWeightArrayTags = tmp.parallelWeightArrayTags;
         this.biases = tmp.biases;
         this.decisionTreeUnkClassSet = tmp.posTagger.decisionTreeUnkClassSet;
+        this.classBoundaryBeamWidths = tmp.classBoundaryBeamWidths;
         is.close();
     }
 
@@ -295,7 +309,7 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
         } else {
             readModel(new FileInputStream(modelFile));
             this.featureExtractor = new ConstituentBoundaryFeatureExtractor<BeamWidthSequence>(featureTemplates,
-                    lexicon, decisionTreeUnkClassSet, vocabulary, false);
+                    lexicon, decisionTreeUnkClassSet, grammar.coarsePosSymbolSet(), false);
             classify(inputAsBufferedReader());
         }
     }
@@ -309,16 +323,19 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
      */
     protected void classify(final BufferedReader input) throws IOException {
 
-        final BeamWidthResult result = new BeamWidthResult(classBoundaryBeamWidths.length + 1);
-
-        for (final String line : inputLines(input)) {
-            final BinaryTree<String> binaryTree = NaryTree.read(line, String.class).binarize(grammarFormat,
-                    binarization);
-            final BeamWidthSequence sequence = new BeamWidthSequence(binaryTree, this);
-            result.totalSentences++;
-            classify(sequence, result);
-        }
-        outputDevsetAccuracy(1, result);
+        // Not implemented at the moment. If we want to test from the command-line, we'd need to create a parser
+        // instance here, parse the input tree, and classify.
+        throw new UnsupportedOperationException();
+        // final BeamWidthResult result = new BeamWidthResult(classBoundaryBeamWidths.length + 1);
+        //
+        // for (final String line : inputLines(input)) {
+        // final BinaryTree<String> binaryTree = NaryTree.read(line, String.class).binarize(grammarFormat,
+        // binarization);
+        // final BeamWidthSequence sequence = new BeamWidthSequence(binaryTree, this);
+        // result.totalSentences++;
+        // classify(sequence, result);
+        // }
+        // outputDevsetAccuracy(1, result);
     }
 
     @Override
@@ -413,89 +430,49 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
         }
 
         this.featureExtractor = new ConstituentBoundaryFeatureExtractor<BeamWidthSequence>(featureTemplates, lexicon,
-                decisionTreeUnkClassSet, vocabulary, false);
+                decisionTreeUnkClassSet, grammar.coarsePosSymbolSet(), false);
 
         // Create and POS-tag sequences
-        BaseLogger.singleton().info("Reading and parsing training data");
         input.reset();
         final ArrayList<BeamWidthSequence> beamWidthTrainingCorpusSequences = new ArrayList<BeamWidthSequence>();
+        final ArrayList<FactoredOnlySequence> factoredOnlyTrainingCorpusSequences = new ArrayList<FactoredOnlySequence>();
+        readSequences(input, beamWidthTrainingCorpusSequences, factoredOnlyTrainingCorpusSequences, "training");
+
         final ArrayList<BeamWidthSequence> beamWidthDevCorpusSequences = new ArrayList<BeamWidthSequence>();
-
-        final long t0 = System.currentTimeMillis();
-        int trainingSetSentences = 0, trainingSetWords = 0, trainingSetParseFailures = 0;
-        for (final String line : inputLines(input)) {
-            try {
-                final TagSequence tagSequence = new TagSequence(line, posTagger);
-
-                final BinaryTree<String> binaryTree = NaryTree.read(line, String.class).binarize(grammarFormat,
-                        binarization);
-                trainingSetWords += binaryTree.leaves();
-                trainingSetSentences++;
-                try {
-                    final BeamWidthSequence beamWidthSequence = new BeamWidthSequence(binaryTree, this);
-                    beamWidthSequence.posTags = posTagger.classify(tagSequence);
-                    beamWidthTrainingCorpusSequences.add(beamWidthSequence);
-                } catch (final IllegalArgumentException e) {
-                    trainingSetParseFailures++;
-                }
-            } catch (final IllegalArgumentException ignore) {
-                // Skip malformed trees (e.g. INFO lines from parser output)
-            }
-            progressBar(100, 5000, trainingSetSentences);
-        }
-        finalizeMaps();
-        final long ms = System.currentTimeMillis() - t0;
-        BaseLogger.singleton().info(
-                String.format("Parsed %d of %d training sentences in %d ms  (%d failures, %.1f w/s)",
-                        trainingSetSentences - trainingSetParseFailures, trainingSetSentences, ms,
-                        trainingSetParseFailures, trainingSetWords * 1000f / ms));
+        final ArrayList<FactoredOnlySequence> factoredOnlyDevCorpusSequences = new ArrayList<FactoredOnlySequence>();
 
         // Read in the dev set
         if (devSet != null) {
             BaseLogger.singleton().info("Reading and parsing dev-set");
-            int devSetSentences = 0, devSetWords = 0, devSetParseFailures = 0;
-            final long t1 = System.currentTimeMillis();
-
-            for (final String line : fileLines(devSet)) {
-
-                final TagSequence tagSequence = new TagSequence(line, posTagger);
-
-                try {
-                    final BinaryTree<String> binaryTree = NaryTree.read(line, String.class).binarize(grammarFormat,
-                            binarization);
-                    devSetSentences++;
-                    devSetWords += binaryTree.leaves();
-                    final BeamWidthSequence beamWidthSequence = new BeamWidthSequence(binaryTree, this);
-                    beamWidthSequence.posTags = posTagger.classify(tagSequence);
-                    beamWidthDevCorpusSequences.add(beamWidthSequence);
-                } catch (final IllegalArgumentException e) {
-                    devSetParseFailures++;
-                }
-                progressBar(100, 5000, devSetSentences);
-            }
-            final long devMs = System.currentTimeMillis() - t1;
-            BaseLogger.singleton().info(
-                    String.format("Parsed %d of %d dev-set sentences in %d ms  (%d failures, %.1f w/s)",
-                            devSetSentences - devSetParseFailures, devSetSentences, ms, devSetParseFailures,
-                            devSetWords * 1000f / devMs));
+            readSequences(fileAsBufferedReader(devSet), beamWidthDevCorpusSequences, factoredOnlyDevCorpusSequences,
+                    "dev-set");
         }
 
         //
-        // Iterate over training corpus, training the model
+        // Iterate over training corpus, training the factored-only model
+        //
+        if (factoredOnlyClassifierTrainingIterations > 0) {
+            BaseLogger.singleton()
+                    .info("Training the factored-only model for " + factoredOnlyClassifierTrainingIterations
+                            + " iterations.");
+
+            this.factoredOnlyClassifier = new FactoredOnlyClassifier(featureTemplates, lexicon, decisionTreeUnkClassSet);
+            factoredOnlyClassifier.trainingIterations = factoredOnlyClassifierTrainingIterations;
+            factoredOnlyClassifier.negativeTrainingBias = negativeTrainingBias;
+            factoredOnlyClassifier.targetNegativeRecall = targetNegativeRecall;
+            factoredOnlyClassifier.train(factoredOnlyTrainingCorpusSequences, factoredOnlyDevCorpusSequences);
+        }
+
+        //
+        // Iterate over training corpus, training the beam-width model
         //
         BaseLogger.singleton().info("Training the beam-width model for " + trainingIterations + " iterations.");
         for (int i = 1, j = 0; i <= trainingIterations; i++, j = 0) {
 
             for (final BeamWidthSequence sequence : beamWidthTrainingCorpusSequences) {
                 final int cells = sequence.sentenceLength * (sequence.sentenceLength + 1) / 2;
-                for (int cellIndex = 0, k = 0; cellIndex < cells; cellIndex++) {
-                    if (cellIndex == sequence.cellIndices[k]) {
-                        train(sequence.goldClass(k), featureExtractor.featureVector(sequence, cellIndex));
-                    } else {
-                        // Cells which do not participate in the 1-best parse are automatically classified as the
-                        // smallest-beam class (normally 0)
-                        train((short) 0, featureExtractor.featureVector(sequence, cellIndex));
-                    }
+                for (int cellIndex = 0; cellIndex < cells; cellIndex++) {
+                    train(sequence.goldClass(cellIndex), featureExtractor.featureVector(sequence, cellIndex));
                 }
 
                 progressBar(100, 5000, j++);
@@ -535,13 +512,60 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
                         + " without training an associated tagger.");
             }
             final FileOutputStream fos = new FileOutputStream(modelFile);
-            new ObjectOutputStream(fos).writeObject(new Model(vocabulary, posTagger, featureTemplates,
-                    parallelArrayOffsetMap, parallelWeightArrayTags, parallelWeightArray, biases));
+            new ObjectOutputStream(fos).writeObject(new Model(vocabulary, posTagger, factoredOnlyClassifier,
+                    classBoundaryBeamWidths, featureTemplates, parallelArrayOffsetMap, parallelWeightArrayTags,
+                    parallelWeightArray, biases));
             fos.close();
         }
 
         BaseLogger.singleton().info(
                 String.format("Time: %d seconds\n", (System.currentTimeMillis() - startTime) / 1000));
+    }
+
+    private void readSequences(final BufferedReader input, final ArrayList<BeamWidthSequence> beamWidthSequences,
+            final ArrayList<FactoredOnlySequence> factoredOnlySequences, final String corpus) throws IOException {
+
+        BaseLogger.singleton().info("Reading and parsing " + corpus + " data");
+        final long t0 = System.currentTimeMillis();
+        int trainingSetSentences = 0, trainingSetWords = 0, trainingSetParseFailures = 0;
+
+        for (final String line : inputLines(input)) {
+            try {
+                final TagSequence tagSequence = new TagSequence(line, posTagger);
+
+                final BinaryTree<String> binaryTree = NaryTree.read(line, String.class).binarize(grammarFormat,
+                        binarization);
+                trainingSetWords += binaryTree.leaves();
+                trainingSetSentences++;
+
+                try {
+                    final ParseTask parseTask = ccParser.parseSentence(line);
+                    if (parseTask.parseFailed()) {
+                        throw new IllegalArgumentException("Parse failed");
+                    }
+                    final PackedArrayChart chart = ccParser.chart;
+
+                    final BeamWidthSequence beamWidthSequence = new BeamWidthSequence(chart, binaryTree, this);
+                    beamWidthSequence.posTags = posTagger.classify(tagSequence);
+                    beamWidthSequences.add(beamWidthSequence);
+
+                    final FactoredOnlySequence factoredOnlySequence = new FactoredOnlySequence(chart, binaryTree, this);
+                    factoredOnlySequence.posTags = beamWidthSequence.posTags;
+                    factoredOnlySequences.add(factoredOnlySequence);
+                } catch (final IllegalArgumentException e) {
+                    trainingSetParseFailures++;
+                }
+            } catch (final IllegalArgumentException ignore) {
+                // Skip malformed trees (e.g. INFO lines from parser output)
+            }
+            progressBar(100, 5000, trainingSetSentences);
+        }
+        finalizeMaps();
+        final long ms = System.currentTimeMillis() - t0;
+        BaseLogger.singleton().info(
+                String.format("Parsed %d of %d %s sentences in %d ms  (%d failures, %.1f w/s)", trainingSetSentences
+                        - trainingSetParseFailures, trainingSetSentences, corpus, ms, trainingSetParseFailures,
+                        trainingSetWords * 1000f / ms));
     }
 
     protected short classify(final float[] dotProducts) {
@@ -610,50 +634,51 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
         }
     }
 
-    private short classify(final BitVector featureVector) {
+    private short classifyWithParallelArray(final BitVector featureVector) {
 
-        final float[] dotProducts = new float[avgWeights.length];
+        final float[] dotProducts = new float[classBoundaryBeamWidths.length];
 
-        if (parallelWeightArray != null) {
-            // Unfortunately, we need separate cases for LargeVector and normal Vector classes
-            if (featureVector instanceof LargeVector) {
-                final LargeBitVector largeFeatureVector = (LargeBitVector) featureVector;
+        // Unfortunately, we need separate cases for LargeVector and normal Vector classes
+        if (featureVector instanceof LargeVector) {
+            final LargeBitVector largeFeatureVector = (LargeBitVector) featureVector;
 
-                // Iterate over each feature
-                for (final long feature : largeFeatureVector.longValues()) {
+            // Iterate over each feature
+            for (final long feature : largeFeatureVector.longValues()) {
 
-                    final int offset = parallelArrayOffsetMap.get(feature);
-                    // Skip any features that aren't populated in the model (those we didn't observe in the training
-                    // data)
-                    if (offset < 0) {
-                        continue;
-                    }
-
-                    // The first 'tag' position denotes the number of populated weights for this feature
-                    final int end = offset + parallelWeightArrayTags[offset];
-
-                    // Add each non-0 weight to the appropriate dot-product
-                    for (int i = offset + 1; i <= end; i++) {
-                        dotProducts[parallelWeightArrayTags[i]] += parallelWeightArray[i];
-                    }
+                final int offset = parallelArrayOffsetMap.get(feature);
+                // Skip any features that aren't populated in the model (those we didn't observe in the training
+                // data)
+                if (offset < 0) {
+                    continue;
                 }
-            } else {
-                for (final int feature : featureVector.values()) {
-                    final int offset = parallelArrayOffsetMap.get(feature);
-                    if (offset < 0) {
-                        continue;
-                    }
-                    final int end = offset + parallelWeightArrayTags[offset];
-                    for (int i = offset + 1; i <= end; i++) {
-                        dotProducts[parallelWeightArrayTags[i]] += parallelWeightArray[i];
-                    }
+
+                // The first 'tag' position denotes the number of populated weights for this feature
+                final int end = offset + parallelWeightArrayTags[offset];
+
+                // Add each non-0 weight to the appropriate dot-product
+                for (int i = offset + 1; i <= end; i++) {
+                    dotProducts[parallelWeightArrayTags[i]] += parallelWeightArray[i];
                 }
             }
-
-            return classify(dotProducts);
-
+        } else {
+            for (final int feature : featureVector.values()) {
+                final int offset = parallelArrayOffsetMap.get(feature);
+                if (offset < 0) {
+                    continue;
+                }
+                final int end = offset + parallelWeightArrayTags[offset];
+                for (int i = offset + 1; i <= end; i++) {
+                    dotProducts[parallelWeightArrayTags[i]] += parallelWeightArray[i];
+                }
+            }
         }
 
+        return classify(dotProducts);
+    }
+
+    private short classifyWithTrainingVectors(final BitVector featureVector) {
+
+        final float[] dotProducts = new float[classBoundaryBeamWidths.length];
         for (int beamClass = 0; beamClass < lastExampleAllUpdated.length; beamClass++) {
 
             if (lastExampleAllUpdated[beamClass] < trainExampleNumber) {
@@ -670,25 +695,37 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
         return classify(dotProducts);
     }
 
-    // /**
-    // * Classifies a single entry in the specified sequence
-    // *
-    // * @param sequence
-    // * @param index
-    // * @return Boolean classification of the specified entry in <code>sequence</code>
-    // */
-    // public short classify(final BeamWidthSequence sequence, final int index) {
-    // return classify(featureExtractor.featureVector(sequence, index));
-    // }
-    //
-    protected void classify(final BeamWidthSequence sequence, final BeamWidthResult result) {
+    /**
+     * Classifies the supplied sequence, populating {@link BeamWidthSequence#predictedClasses}.
+     * 
+     * @param sequence
+     */
+    public void classify(final BeamWidthSequence sequence) {
+
+        sequence.allocatePredictedClasses();
+
+        for (int cellIndex = 0; cellIndex < sequence.predictedClasses.length; cellIndex++) {
+            final BitVector featureVector = featureExtractor.featureVector(sequence, cellIndex);
+            sequence.setPredictedClass(cellIndex, classifyWithParallelArray(featureVector));
+        }
+    }
+
+    /**
+     * Classifies the supplied <code>sequence</code>, incrementing counts in the <code>result</code>. Note that this
+     * method is intended for training only, and that {@link BeamWidthSequence#predictedClasses} is <em>not</em>
+     * populated.
+     * 
+     * @param sequence
+     * @param result
+     */
+    private void classify(final BeamWidthSequence sequence, final BeamWidthResult result) {
 
         sequence.allocatePredictedClasses();
         int underestimatedBeam = 0;
 
         for (int cellIndex = 0; cellIndex < sequence.predictedClasses.length; cellIndex++) {
             final BitVector featureVector = featureExtractor.featureVector(sequence, cellIndex);
-            sequence.setPredictedClass(cellIndex, classify(featureVector));
+            sequence.setPredictedClass(cellIndex, classifyWithTrainingVectors(featureVector));
 
             final short goldClass = sequence.goldClass(cellIndex);
             final short predictedClass = sequence.predictedClass(cellIndex);
@@ -820,6 +857,14 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
         }
     }
 
+    public FactoredOnlyClassifier factoredOnlyClassifier() {
+        return factoredOnlyClassifier;
+    }
+
+    public short beamWidth(final short beamClass) {
+        return beamClass >= classBoundaryBeamWidths.length ? Short.MAX_VALUE : classBoundaryBeamWidths[beamClass];
+    }
+
     // private void evaluateDevset(final ArrayList<BeamWidthSequence> devCorpusSequences) {
     // final long t0 = System.currentTimeMillis();
     // final BeamWidthResult result = new BeamWidthResult();
@@ -913,6 +958,7 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
                     }
 
                 } else {
+                    // Correct classification is negative
                     negativeExamples[currentClass]++;
 
                     if (predictedClass > currentClass) {
@@ -927,7 +973,8 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
         }
 
         public float precision(final int goldClass) {
-            return (1f * correctPositive[goldClass] / positiveExamples[goldClass]);
+            final int incorrectPositive = negativeExamples[goldClass] - correctNegative[goldClass];
+            return correctPositive[goldClass] * 1f / (correctPositive[goldClass] + incorrectPositive);
         }
 
         public float negativeRecall(final int goldClass) {
@@ -953,25 +1000,166 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
         }
     }
 
+    protected class FactoredOnlyClassifier extends BinaryClassifier<FactoredOnlySequence> {
+
+        private static final long serialVersionUID = 1L;
+
+        /**
+         * @param featureTemplates
+         * @param lexicon
+         * @param decisionTreeUnkClassSet
+         */
+        public FactoredOnlyClassifier(final String featureTemplates, final SymbolSet<String> lexicon,
+                final SymbolSet<String> decisionTreeUnkClassSet) {
+
+            this.featureTemplates = featureTemplates;
+            this.lexicon = lexicon;
+            this.decisionTreeUnkClassSet = decisionTreeUnkClassSet;
+            // TODO We should really probably exclude span-1 cells, but that doesn't (currently) agree with the feature
+            // extractors
+            this.featureExtractor = new ConstituentBoundaryFeatureExtractor<FactoredOnlySequence>(featureTemplates,
+                    lexicon, decisionTreeUnkClassSet, grammar.coarsePosSymbolSet(), false);
+        }
+
+        /**
+         * @param trainingCorpusSequences
+         * @param devCorpusSequences
+         */
+        public void train(final ArrayList<FactoredOnlySequence> trainingCorpusSequences,
+                final ArrayList<FactoredOnlySequence> devCorpusSequences) {
+            //
+            // Iterate over training corpus, training the model
+            //
+            BaseLogger.singleton().info(
+                    "Training the complete-closure model for " + trainingIterations + " iterations.");
+            for (int i = 1, j = 0; i <= trainingIterations; i++, j = 0) {
+
+                for (final FactoredOnlySequence sequence : trainingCorpusSequences) {
+                    for (int k = 0; k < sequence.length(); k++) {
+                        train(sequence.goldClass(k), featureExtractor.featureVector(sequence, k));
+                    }
+
+                    progressBar(100, 5000, j++);
+                }
+
+                // Skip the last iteration - we'll test after we finalize below
+                if (!devCorpusSequences.isEmpty() && i < trainingIterations) {
+                    System.out.println();
+                    outputDevsetAccuracy(i, classify(devCorpusSequences));
+                }
+            }
+
+            // Test on the dev-set
+            if (!devCorpusSequences.isEmpty()) {
+                System.out.println();
+                outputDevsetAccuracy(trainingIterations, classify(devCorpusSequences));
+            }
+
+            //
+            // Search for a bias that satisfies the requested precision or recall
+            //
+            if (targetPrecision != 0) {
+                precisionBiasSearch(devCorpusSequences, featureExtractor);
+            } else if (targetNegativeRecall != 0) {
+                super.negativeRecallBiasSearch(devCorpusSequences, featureExtractor);
+                evaluateDevset(devCorpusSequences);
+            }
+        }
+
+        private void outputDevsetAccuracy(final int iteration, final BinaryClassifierResult result) {
+
+            BaseLogger.singleton().info(
+                    String.format(
+                            "Iteration=%d Devset Accuracy=%.2f  P=%.3f  R=%.3f  neg-P=%.3f  neg-R=%.3f  Time=%d\n",
+                            iteration, result.accuracy() * 100f, result.precision() * 100f, result.recall() * 100f,
+                            result.negativePrecision() * 100f, result.negativeRecall() * 100f, result.time));
+        }
+
+        void evaluateDevset(final ArrayList<FactoredOnlySequence> devCorpusSequences) {
+            final long t0 = System.currentTimeMillis();
+            final BinaryClassifierResult result = new BinaryClassifierResult();
+
+            int sentencesWithMisclassifiedNegative = 0;
+
+            for (final FactoredOnlySequence sequence : devCorpusSequences) {
+                result.totalSequences++;
+                sequence.allocatePredictedClasses();
+                for (int cellIndex = 0; cellIndex < sequence.predictedClasses.length; cellIndex++) {
+                    classify(sequence, cellIndex, result);
+                }
+
+                for (int cellIndex = 0; cellIndex < sequence.predictedClasses.length; cellIndex++) {
+                    if (sequence.goldClass(cellIndex) == false && sequence.predictedClass(cellIndex) == true) {
+                        sentencesWithMisclassifiedNegative++;
+                        break;
+                    }
+                }
+                sequence.clearPredictedClasses();
+            }
+            result.time = System.currentTimeMillis() - t0;
+
+            // Compute and report final cell-closure statistics on the development set
+            int totalWords = 0;
+            for (final FactoredOnlySequence sequence : devCorpusSequences) {
+                totalWords += sequence.mappedTokens.length;
+            }
+
+            // positiveExamples + negativeExamples + span-1 cells
+            final int totalCells = result.positiveExamples + result.negativeExamples + totalWords;
+            final int factoredOnlyCells = result.classifiedPositive;
+
+            final float sentenceNegativeRecall = (devCorpusSequences.size() - sentencesWithMisclassifiedNegative) * 1f
+                    / devCorpusSequences.size();
+
+            BaseLogger.singleton().info(
+                    String.format("Factored-only cells (including span-1): %d (%.3f%%)", factoredOnlyCells,
+                            factoredOnlyCells * 100f / totalCells));
+            BaseLogger.singleton().info(
+                    String.format("Sentence-level recall (fraction with all open cells classified correctly): %.3f%%",
+                            sentenceNegativeRecall * 100f));
+        }
+
+        @Override
+        protected String DEFAULT_FEATURE_TEMPLATES() {
+            return DEFAULT_FEATURE_TEMPLATES;
+        }
+
+        @Override
+        protected void train(final BufferedReader input) throws IOException {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        protected void run() throws Exception {
+            throw new UnsupportedOperationException();
+        }
+
+    }
+
     protected static class Model implements Serializable {
 
         private static final long serialVersionUID = 1L;
 
         private final SymbolSet<String> vocabulary;
         private final Tagger posTagger;
+        private final FactoredOnlyClassifier factoredOnlyClassifier;
 
+        private final short[] classBoundaryBeamWidths;
         private final String featureTemplates;
         private final Long2IntOpenHashMap parallelArrayOffsetMap;
         private final short[] parallelWeightArrayTags;
         private final float[] parallelWeightArray;
         private final float[] biases;
 
-        protected Model(final SymbolSet<String> vocabulary, final Tagger posTagger, final String featureTemplates,
-                final Long2IntOpenHashMap parallelArrayOffsetMap, final short[] parallelWeightArrayTags,
-                final float[] parallelWeightArray, final float[] biases) {
+        protected Model(final SymbolSet<String> vocabulary, final Tagger posTagger,
+                final FactoredOnlyClassifier factoredOnlyClassifier, final short[] classBoundaryBeamWidths,
+                final String featureTemplates, final Long2IntOpenHashMap parallelArrayOffsetMap,
+                final short[] parallelWeightArrayTags, final float[] parallelWeightArray, final float[] biases) {
 
             this.vocabulary = vocabulary;
             this.posTagger = posTagger;
+            this.classBoundaryBeamWidths = classBoundaryBeamWidths;
+            this.factoredOnlyClassifier = factoredOnlyClassifier;
             this.featureTemplates = featureTemplates;
 
             this.parallelArrayOffsetMap = parallelArrayOffsetMap;

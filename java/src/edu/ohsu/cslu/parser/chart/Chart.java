@@ -125,9 +125,10 @@ public abstract class Chart {
      * @param start
      * @param end
      * @param size
+     * @param excludeSpan1Cells
      * @return the index of the specified cell in the parallel chart arrays
      */
-    public static int cellIndex(final int start, final int end, final int size) {
+    public static int cellIndex(final int start, final int end, final int size, final boolean excludeSpan1Cells) {
 
         if (start < 0 || start > size) {
             throw new IllegalArgumentException("Illegal start: " + start);
@@ -137,9 +138,63 @@ public abstract class Chart {
             throw new IllegalArgumentException("Illegal end: " + end);
         }
 
-        // final int row = end - start - 1;
-        // return size * row - ((row - 1) * row / 2) + start;
+        if (excludeSpan1Cells) {
+            return size * start - ((start - 1) * start / 2) + end - start * 2 - 2;
+        }
         return size * start - ((start - 1) * start / 2) + end - start - 1;
+    }
+
+    /**
+     * Returns the index of the specified cell in the parallel chart arrays (note that this computation must agree with
+     * that of {@link ParallelArrayChart#cellOffset(int, int)}
+     * 
+     * @param start
+     * @param end
+     * @param size
+     * @return the index of the specified cell in the parallel chart arrays
+     */
+    public static int cellIndex(final int start, final int end, final int size) {
+        return cellIndex(start, end, size, false);
+    }
+
+    /**
+     * Returns the start and end indices of a specified chart cell. Inverse of {@link #cellIndex(int, int, int)}.
+     * 
+     * @param cellIndex
+     * @param sentenceLength Sentence length (in words)
+     * @param excludeSpan1Cells
+     * @return the start and end indices of the specified chart cell.
+     */
+    public static short[] startAndEnd(final int cellIndex, final int sentenceLength, final boolean excludeSpan1Cells) {
+
+        if (excludeSpan1Cells) {
+            for (short start = 0, currentColumnStart = 0, nextColumnStart = 0, rows = (short) (sentenceLength - 1); start < sentenceLength; start++, rows--, currentColumnStart = nextColumnStart) {
+                nextColumnStart = (short) (currentColumnStart + rows);
+                if (cellIndex < nextColumnStart) {
+                    return new short[] { start, (short) (start + cellIndex - currentColumnStart + 2) };
+                }
+            }
+            throw new IllegalArgumentException("Cell " + cellIndex + " not found in chart of size " + sentenceLength);
+        }
+
+        for (short start = 0, currentColumnStart = 0, nextColumnStart = 0, rows = (short) sentenceLength; start < sentenceLength; start++, rows--, currentColumnStart = nextColumnStart) {
+            nextColumnStart = (short) (currentColumnStart + rows);
+            if (cellIndex < nextColumnStart) {
+                return new short[] { start, (short) (start + cellIndex - currentColumnStart + 1) };
+            }
+        }
+        throw new IllegalArgumentException("Cell " + cellIndex + " not found in chart of size " + sentenceLength);
+    }
+
+    /**
+     * Returns the start and end indices of a specified chart cell. Inverse of {@link #cellIndex(int, int, int)}.
+     * 
+     * @param cellIndex
+     * @param sentenceLength Sentence length (in words)
+     * @return the start and end indices of the specified chart cell.
+     */
+    public static short[] startAndEnd(final int cellIndex, final int sentenceLength) {
+        return startAndEnd(cellIndex, sentenceLength, false);
     }
 
     /**

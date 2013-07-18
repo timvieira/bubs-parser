@@ -123,7 +123,7 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
     public CompleteClosureClassifier(final Grammar grammar) {
         init(grammar);
         this.featureExtractor = new ConstituentBoundaryFeatureExtractor<CompleteClosureSequence>(featureTemplates,
-                lexicon, decisionTreeUnkClassSet, vocabulary, true);
+                lexicon, decisionTreeUnkClassSet, grammar.coarsePosSymbolSet(), true);
     }
 
     /**

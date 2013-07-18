@@ -28,6 +28,7 @@ import edu.ohsu.cslu.datastructs.vectors.DenseIntVector;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.cellselector.DepGraphCellSelectorModel.DepGraphCellSelector;
+import edu.ohsu.cslu.parser.chart.Chart;
 
 /**
  * Iterates through open cells in a chart. Some implementations (e.g. {@link LeftRightBottomTopTraversal}) use a simple
@@ -227,11 +228,73 @@ public abstract class CellSelector implements CellClosureClassifier, Iterator<sh
      * 
      * TODO The naming and interface still aren't great.
      */
-    public int getBeamWidth(final short start, final short end) {
+    public int getBeamWidth(final int cellIndex) {
         return Integer.MAX_VALUE;
+    }
+
+    /**
+     * Returns the beam width for the current cell. Consumers generally set the cell beam width to
+     * java.lang.Math.min(getCelValue(), beamWidth), so they will not attempt to search a range larger than the maximum
+     * beam width of the parser.
+     * 
+     * TODO The naming and interface still aren't great.
+     */
+    public int getBeamWidth(final short start, final short end) {
+        return getBeamWidth(Chart.cellIndex(start, end, parseTask.sentenceLength()));
     }
 
     protected final boolean isGrammarLeftBinarized() {
         return parser.grammar.binarization() == Binarization.LEFT;
+    }
+
+    protected abstract static class ChainableCellSelector extends CellSelector {
+
+        protected ChainableCellSelector(final CellSelector child) {
+            super(child);
+        }
+
+        @Override
+        public void reset(final boolean enableConstraints) {
+            super.reset(enableConstraints);
+
+            if (!enableConstraints) {
+                // Replace cellIndices with all chart cells.
+                final int sentenceLength = parser.chart.size();
+                openCells = sentenceLength * (sentenceLength + 1) / 2;
+                if (cellIndices == null || cellIndices.length < openCells * 2) {
+                    cellIndices = new short[openCells * 2];
+                }
+
+                int i = 0;
+                for (short span = 1; span <= sentenceLength; span++) {
+                    for (short start = 0; start < sentenceLength - span + 1; start++) { // beginning
+                        cellIndices[i++] = start;
+                        cellIndices[i++] = (short) (start + span);
+                    }
+                }
+            }
+        }
+
+        @Override
+        public boolean isCellOpen(final short start, final short end) {
+            if (childCellSelector != null && !childCellSelector.isCellOpen(start, end)) {
+                return false;
+            }
+
+            // For now, just iterate through cells. We might decide to improve on this later, but it's only used when
+            // combining multiple cell selectors, so it's not a high priority.
+            final int span = end - start;
+            for (int i = 0; i < cellIndices.length; i += 2) {
+                final short start2 = cellIndices[i];
+                final short end2 = cellIndices[i + 1];
+
+                if (start2 == start && end2 == end) {
+                    return true;
+                } else if (end2 - end2 > span) {
+                    return false;
+                }
+            }
+            return false;
+        }
     }
 }

@@ -36,6 +36,7 @@ import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.perceptron.BinaryClassifier.BinaryClassifierResult;
 import edu.ohsu.cslu.tests.JUnit;
 
@@ -114,18 +115,18 @@ public class TestCompleteClosure {
         // Test with indexes including span-1 cells
         for (short span = 1; span < 5; span++) {
             for (short start = 0; start <= 5 - span; start++) {
-                final int cellIndex = ConstituentBoundaryFeatureExtractor.cellIndex(start, start + span, 5, false);
-                assertEquals(start, ConstituentBoundaryFeatureExtractor.startAndEnd(cellIndex, 5, false)[0]);
-                assertEquals(start + span, ConstituentBoundaryFeatureExtractor.startAndEnd(cellIndex, 5, false)[1]);
+                final int cellIndex = Chart.cellIndex(start, start + span, 5, false);
+                assertEquals(start, Chart.startAndEnd(cellIndex, 5, false)[0]);
+                assertEquals(start + span, Chart.startAndEnd(cellIndex, 5, false)[1]);
             }
         }
 
         // And excluding span-1
         for (short span = 2; span < 5; span++) {
             for (short start = 0; start <= 5 - span; start++) {
-                final int cellIndex = ConstituentBoundaryFeatureExtractor.cellIndex(start, start + span, 5, true);
-                assertEquals(start, ConstituentBoundaryFeatureExtractor.startAndEnd(cellIndex, 5, true)[0]);
-                assertEquals(start + span, ConstituentBoundaryFeatureExtractor.startAndEnd(cellIndex, 5, true)[1]);
+                final int cellIndex = Chart.cellIndex(start, start + span, 5, true);
+                assertEquals(start, Chart.startAndEnd(cellIndex, 5, true)[0]);
+                assertEquals(start + span, Chart.startAndEnd(cellIndex, 5, true)[1]);
             }
         }
     }
@@ -150,18 +151,14 @@ public class TestCompleteClosure {
         final int offset4 = vocabulary.size() * 4;
 
         // "This time around" (tests beginning-of-sentence)
-        assertEquals(
-                new SparseBitVector(fe.featureVectorLength, new int[] { nullTag, offset1 + dtTag, offset2 + rpTag,
-                        offset3 + commaTag, offset4 + prpTag }),
-                fe.featureVector(trainingCorpusSequences.get(0),
-                        ConstituentBoundaryFeatureExtractor.cellIndex(0, 3, 10, true)));
+        assertEquals(new SparseBitVector(fe.featureVectorLength, new int[] { nullTag, offset1 + dtTag, offset2 + rpTag,
+                offset3 + commaTag, offset4 + prpTag }),
+                fe.featureVector(trainingCorpusSequences.get(0), Chart.cellIndex(0, 3, 10, true)));
 
         // " 're moving even faster" (tests middle and end-of-sentence features
-        assertEquals(
-                new SparseBitVector(fe.featureVectorLength, new int[] { prpTag, offset1 + vbpTag, offset2 + rbrTag,
-                        offset3 + periodTag, offset4 + nullTag }),
-                fe.featureVector(trainingCorpusSequences.get(0),
-                        ConstituentBoundaryFeatureExtractor.cellIndex(5, 9, 10, true)));
+        assertEquals(new SparseBitVector(fe.featureVectorLength, new int[] { prpTag, offset1 + vbpTag,
+                offset2 + rbrTag, offset3 + periodTag, offset4 + nullTag }),
+                fe.featureVector(trainingCorpusSequences.get(0), Chart.cellIndex(5, 9, 10, true)));
     }
 
     @Test
@@ -172,18 +169,14 @@ public class TestCompleteClosure {
         final int offset1 = lexicon.size() * lexicon.size();
 
         // "This time around" (tests beginning-of-sentence features)
-        assertEquals(
-                new SparseBitVector(fe.featureVectorLength, new int[] { nullToken * lexicon.size() + thisToken,
-                        offset1 + aroundToken * lexicon.size() + commaToken }),
-                fe.featureVector(trainingCorpusSequences.get(0),
-                        ConstituentBoundaryFeatureExtractor.cellIndex(0, 3, 10, true)));
+        assertEquals(new SparseBitVector(fe.featureVectorLength, new int[] { nullToken * lexicon.size() + thisToken,
+                offset1 + aroundToken * lexicon.size() + commaToken }),
+                fe.featureVector(trainingCorpusSequences.get(0), Chart.cellIndex(0, 3, 10, true)));
 
         // " 're moving even faster " (tests middle and end-of-sentence features)
-        assertEquals(
-                new SparseBitVector(fe.featureVectorLength, new int[] { theyToken * lexicon.size() + reToken,
-                        offset1 + fasterToken * lexicon.size() + periodToken }),
-                fe.featureVector(trainingCorpusSequences.get(0),
-                        ConstituentBoundaryFeatureExtractor.cellIndex(5, 9, 10, true)));
+        assertEquals(new SparseBitVector(fe.featureVectorLength, new int[] { theyToken * lexicon.size() + reToken,
+                offset1 + fasterToken * lexicon.size() + periodToken }),
+                fe.featureVector(trainingCorpusSequences.get(0), Chart.cellIndex(5, 9, 10, true)));
     }
 
     @Test
@@ -196,48 +189,42 @@ public class TestCompleteClosure {
         final int rsOffset = sOffset + 9 * 2;
 
         // "time around" (short-span features)
-        assertEquals(
-                new SparseBitVector(fe.featureVectorLength, new int[] { nnTag,
+        assertEquals(new SparseBitVector(fe.featureVectorLength, new int[] { nnTag,
 
-                sOffset + 1, // s2 - true
-                        sOffset + 2, // s3 - false
-                        sOffset + 4, // s4 - false
-                        sOffset + 6, // s5 - false
-                        sOffset + 8, // s10 - false
-                        sOffset + 10, // s20 - false
-                        sOffset + 12, // s30 - false
-                        sOffset + 14, // s40 - false
-                        sOffset + 16, // s50 - false
-                        rsOffset + 1, // rs2 - true
-                        rsOffset + 2, // rs4 - false
-                        rsOffset + 4, // rs6 - false
-                        rsOffset + 6, // rs8 - false
-                        rsOffset + 8 // rs10 - false
-                        }),
-                fe.featureVector(trainingCorpusSequences.get(0),
-                        ConstituentBoundaryFeatureExtractor.cellIndex(1, 3, 10, true)));
+        sOffset + 1, // s2 - true
+                sOffset + 2, // s3 - false
+                sOffset + 4, // s4 - false
+                sOffset + 6, // s5 - false
+                sOffset + 8, // s10 - false
+                sOffset + 10, // s20 - false
+                sOffset + 12, // s30 - false
+                sOffset + 14, // s40 - false
+                sOffset + 16, // s50 - false
+                rsOffset + 1, // rs2 - true
+                rsOffset + 2, // rs4 - false
+                rsOffset + 4, // rs6 - false
+                rsOffset + 6, // rs8 - false
+                rsOffset + 8 // rs10 - false
+                }), fe.featureVector(trainingCorpusSequences.get(0), Chart.cellIndex(1, 3, 10, true)));
 
         // " 're moving even faster " (longer-span features)
-        assertEquals(
-                new SparseBitVector(fe.featureVectorLength, new int[] { vbpTag,
+        assertEquals(new SparseBitVector(fe.featureVectorLength, new int[] { vbpTag,
 
-                sOffset + 1, // s2 - true
-                        sOffset + 3, // s3 - true
-                        sOffset + 5, // s4 - true
-                        sOffset + 6, // s5 - false
-                        sOffset + 8, // s10 - false
-                        sOffset + 10, // s20 - false
-                        sOffset + 12, // s30 - false
-                        sOffset + 14, // s40 - false
-                        sOffset + 16, // s50 - false
-                        rsOffset + 1, // rs2 - true
-                        rsOffset + 3, // rs4 - true
-                        rsOffset + 4, // rs6 - false
-                        rsOffset + 6, // rs8 - false
-                        rsOffset + 8 // rs10 - false
-                        }),
-                fe.featureVector(trainingCorpusSequences.get(0),
-                        ConstituentBoundaryFeatureExtractor.cellIndex(5, 9, 10, true)));
+        sOffset + 1, // s2 - true
+                sOffset + 3, // s3 - true
+                sOffset + 5, // s4 - true
+                sOffset + 6, // s5 - false
+                sOffset + 8, // s10 - false
+                sOffset + 10, // s20 - false
+                sOffset + 12, // s30 - false
+                sOffset + 14, // s40 - false
+                sOffset + 16, // s50 - false
+                rsOffset + 1, // rs2 - true
+                rsOffset + 3, // rs4 - true
+                rsOffset + 4, // rs6 - false
+                rsOffset + 6, // rs8 - false
+                rsOffset + 8 // rs10 - false
+                }), fe.featureVector(trainingCorpusSequences.get(0), Chart.cellIndex(5, 9, 10, true)));
     }
 
     @Test
@@ -249,14 +236,13 @@ public class TestCompleteClosure {
 
         // "This time around"
         assertEquals(new SparseBitVector(fe.featureVectorLength, new int[] { nullUnk, offset1 + thisUnk,
-                offset2 + commaUnk }), fe.featureVector(trainingCorpusSequences.get(0),
-                ConstituentBoundaryFeatureExtractor.cellIndex(0, 3, 10, true)));
+                offset2 + commaUnk }),
+                fe.featureVector(trainingCorpusSequences.get(0), Chart.cellIndex(0, 3, 10, true)));
 
         // " 're moving even faster " (longer-span features)
-        assertEquals(
-                new SparseBitVector(fe.featureVectorLength, new int[] { theyUnk, offset1 + reUnk, offset2 + periodUnk }),
-                fe.featureVector(trainingCorpusSequences.get(0),
-                        ConstituentBoundaryFeatureExtractor.cellIndex(5, 9, 10, true)));
+        assertEquals(new SparseBitVector(fe.featureVectorLength, new int[] { theyUnk, offset1 + reUnk,
+                offset2 + periodUnk }),
+                fe.featureVector(trainingCorpusSequences.get(0), Chart.cellIndex(5, 9, 10, true)));
     }
 
     @Test

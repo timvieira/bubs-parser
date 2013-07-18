@@ -206,9 +206,11 @@ public abstract class BinaryClassifier<S extends BinarySequence> extends Classif
         for (final S sequence : sequences) {
             result.totalSequences++;
 
+            sequence.allocatePredictedClasses();
             for (int i = 0; i < sequence.length(); i++) {
                 classify(sequence, i, result);
             }
+            sequence.clearPredictedClasses();
         }
         result.time = System.currentTimeMillis() - t0;
         return result;

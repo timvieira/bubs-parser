@@ -23,6 +23,7 @@ import org.junit.runners.Suite;
 
 import edu.ohsu.cslu.dep.AllDependencyTests;
 import edu.ohsu.cslu.grammar.AllGrammarTests;
+import edu.ohsu.cslu.parser.chart.TestChart;
 import edu.ohsu.cslu.parser.ecp.TestECPCellCrossHash;
 import edu.ohsu.cslu.parser.ecp.TestECPCellCrossList;
 import edu.ohsu.cslu.parser.ecp.TestECPCellCrossMatrix;
@@ -32,8 +33,8 @@ import edu.ohsu.cslu.parser.ml.AllMatrixLoopParserTests;
 import edu.ohsu.cslu.parser.spmv.AllSparseMatrixVectorParserTests;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses({ AllGrammarTests.class, AllDependencyTests.class, TestParser.class, TestECPGramLoop.class,
-        TestECPGramLoopBerkFilter.class, TestECPCellCrossHash.class, TestECPCellCrossList.class,
+@Suite.SuiteClasses({ AllGrammarTests.class, AllDependencyTests.class, TestChart.class, TestParser.class,
+        TestECPGramLoop.class, TestECPGramLoopBerkFilter.class, TestECPCellCrossHash.class, TestECPCellCrossList.class,
         TestECPCellCrossMatrix.class, AllSparseMatrixVectorParserTests.class, AllMatrixLoopParserTests.class,
         TestParserDriver.class })
 public class AllParserTests {

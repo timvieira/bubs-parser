@@ -24,6 +24,7 @@ import edu.ohsu.cslu.datastructs.vectors.LargeSparseBitVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.parser.chart.Chart;
 
 /**
  * 
@@ -47,7 +48,7 @@ public class ConstituentBoundaryFeatureExtractor<S extends ConstituentBoundarySe
     final SymbolSet<String> lexicon;
 
     final int nullToken, nullTag;
-    final int lexiconSize, vocabularySize, unkClassSetSize;
+    final int lexiconSize, posSetSize, unkClassSetSize;
     final long featureVectorLength;
 
     private final boolean excludeSpan1Cells;
@@ -58,18 +59,18 @@ public class ConstituentBoundaryFeatureExtractor<S extends ConstituentBoundarySe
      * @param featureTemplates
      * @param lexicon
      * @param unkClassSet
-     * @param vocabulary
+     * @param posSet
      */
     public ConstituentBoundaryFeatureExtractor(final String featureTemplates, final SymbolSet<String> lexicon,
-            final SymbolSet<String> unkClassSet, final SymbolSet<String> vocabulary, final boolean excludeSpan1Cells) {
+            final SymbolSet<String> unkClassSet, final SymbolSet<String> posSet, final boolean excludeSpan1Cells) {
 
         this.lexicon = lexicon;
         this.lexiconSize = lexicon.size();
         this.nullToken = lexicon.getIndex(Grammar.nullSymbolStr);
 
         this.unkClassSetSize = unkClassSet.size();
-        this.nullTag = vocabulary.getIndex(Grammar.nullSymbolStr);
-        this.vocabularySize = vocabulary.size();
+        this.nullTag = posSet.getIndex(Grammar.nullSymbolStr);
+        this.posSetSize = posSet.size();
 
         final String[] templateStrings = featureTemplates.split(",");
         this.templates = new TemplateElement[templateStrings.length][];
@@ -123,7 +124,7 @@ public class ConstituentBoundaryFeatureExtractor<S extends ConstituentBoundarySe
             case rt:
             case rtp1:
             case rtp2:
-                size *= vocabularySize;
+                size *= posSetSize;
                 break;
 
             case lum1:
@@ -141,6 +142,7 @@ public class ConstituentBoundaryFeatureExtractor<S extends ConstituentBoundarySe
                 break;
 
             // Indicator features
+            case s1:
             case s2:
             case s3:
             case s4:
@@ -180,7 +182,7 @@ public class ConstituentBoundaryFeatureExtractor<S extends ConstituentBoundarySe
 
         final long[] featureIndices = new long[templates.length];
 
-        final short[] startAndEnd = startAndEnd(position, input.sentenceLength, excludeSpan1Cells);
+        final short[] startAndEnd = Chart.startAndEnd(position, input.sentenceLength, excludeSpan1Cells);
         final short start = startAndEnd[0];
         final short end = startAndEnd[1];
         final int span = end - start;
@@ -199,7 +201,7 @@ public class ConstituentBoundaryFeatureExtractor<S extends ConstituentBoundarySe
                 case ltm1:
                 case lt:
                 case ltp1:
-                    feature *= vocabularySize;
+                    feature *= posSetSize;
                     feature += ((leftIndex < 0 || leftIndex >= input.posTags.length) ? nullTag
                             : input.posTags[leftIndex]);
                     break;
@@ -208,7 +210,7 @@ public class ConstituentBoundaryFeatureExtractor<S extends ConstituentBoundarySe
                 case rt:
                 case rtp1:
                 case rtp2:
-                    feature *= vocabularySize;
+                    feature *= posSetSize;
                     feature += ((rightIndex < 0 || rightIndex >= input.posTags.length) ? nullTag
                             : input.posTags[rightIndex]);
                     break;
@@ -280,47 +282,49 @@ public class ConstituentBoundaryFeatureExtractor<S extends ConstituentBoundarySe
                 : new SparseBitVector(featureVectorLength, featureIndices);
     }
 
-    /**
-     * Returns the chart array index of a chart cell, using left-to-right, bottom-up traversal. Inverse of
-     * {@link #startAndEnd(int, int, boolean)}.
-     * 
-     * @param start
-     * @param end
-     * @param length Sequence length
-     * @param excludeSpan1Cells If true, cell indexes will start with the first cell on the span-2 row
-     * @return the chart array index of a chart cell, using left-to-right, bottom-up traversal.
-     */
-    public static int cellIndex(final int start, final int end, final int length, final boolean excludeSpan1Cells) {
-        final int span = end - start;
-        if (excludeSpan1Cells && end - start == 1) {
-            throw new IllegalArgumentException("Cannot compute an index for " + start + "," + end
-                    + " while excluding span-1 cells");
-        }
-        final int index = length * (span - 1) - ((span - 2) * (span - 1) / 2) + start
-                - (excludeSpan1Cells ? length : 0);
-        return index;
-    }
-
-    /**
-     * Returns the start and end indices of a specified chart cell, using left-to-right, bottom-up traversal. Inverse of
-     * {@link #cellIndex(int, int, int, boolean)}.
-     * 
-     * @param index
-     * @param sentenceLength Sequence length
-     * @param excludeSpan1Cells If true, cell indexes start with the first cell on the span-2 row
-     * @return the start and end indices of the specified chart cell.
-     */
-    public static short[] startAndEnd(final int index, final int sentenceLength, final boolean excludeSpan1Cells) {
-
-        for (short span = (short) (excludeSpan1Cells ? 2 : 1), currentRowStart = 0, nextRowStart = 0; span <= sentenceLength; span++, currentRowStart = nextRowStart) {
-            nextRowStart = (short) (currentRowStart + (sentenceLength - span + 1));
-            if (index < nextRowStart) {
-                final short start = (short) (index - currentRowStart);
-                return new short[] { start, (short) (index - currentRowStart + span) };
-            }
-        }
-        throw new IllegalArgumentException("Cell " + index + " not found in chart of size " + sentenceLength);
-    }
+    // /**
+    // * Returns the chart array index of a chart cell, using left-to-right, bottom-up traversal. Inverse of
+    // * {@link #startAndEnd(int, int, boolean)}.
+    // *
+    // * @param start
+    // * @param end
+    // * @param length Sequence length
+    // * @param excludeSpan1Cells If true, cell indexes will start with the first cell on the span-2 row
+    // * @return the chart array index of a chart cell, using left-to-right, bottom-up traversal.
+    // */
+    // public static int cellIndex(final int start, final int end, final int length, final boolean excludeSpan1Cells) {
+    // final int span = end - start;
+    // if (excludeSpan1Cells && end - start == 1) {
+    // throw new IllegalArgumentException("Cannot compute an index for " + start + "," + end
+    // + " while excluding span-1 cells");
+    // }
+    // final int index = length * (span - 1) - ((span - 2) * (span - 1) / 2) + start
+    // - (excludeSpan1Cells ? length : 0);
+    // return index;
+    // }
+    //
+    // /**
+    // * Returns the start and end indices of a specified chart cell, using left-to-right, bottom-up traversal. Inverse
+    // of
+    // * {@link #cellIndex(int, int, int, boolean)}.
+    // *
+    // * @param index
+    // * @param sentenceLength Sequence length
+    // * @param excludeSpan1Cells If true, cell indexes start with the first cell on the span-2 row
+    // * @return the start and end indices of the specified chart cell.
+    // */
+    // public static short[] startAndEnd(final int index, final int sentenceLength, final boolean excludeSpan1Cells) {
+    //
+    // for (short span = (short) (excludeSpan1Cells ? 2 : 1), currentRowStart = 0, nextRowStart = 0; span <=
+    // sentenceLength; span++, currentRowStart = nextRowStart) {
+    // nextRowStart = (short) (currentRowStart + (sentenceLength - span + 1));
+    // if (index < nextRowStart) {
+    // final short start = (short) (index - currentRowStart);
+    // return new short[] { start, (short) (index - currentRowStart + span) };
+    // }
+    // }
+    // throw new IllegalArgumentException("Cell " + index + " not found in chart of size " + sentenceLength);
+    // }
 
     private enum TemplateElement {
         ltm2(-2), // Left boundary tag i-2 (outside the constituent)

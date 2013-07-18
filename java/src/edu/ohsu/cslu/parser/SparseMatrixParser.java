@@ -343,7 +343,7 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
 
         final TemporaryChartCell tmpCell = spvChartCell.tmpCell;
 
-        final int cellBeamWidth = Math.min(cellSelector.getBeamWidth(start, end),
+        final int cellBeamWidth = Math.min(cellSelector.getBeamWidth(spvChartCell.cellIndex),
                 (end - start == 1 ? lexicalRowBeamWidth : beamWidth));
         if (cellBeamWidth == 1) {
             // Special-case when we are pruning down to only a single entry. We can't add any unary productions, so just

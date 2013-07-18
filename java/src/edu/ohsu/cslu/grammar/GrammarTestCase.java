@@ -34,7 +34,8 @@ public abstract class GrammarTestCase {
 
     public static <C extends Grammar> C createGrammar(final Class<C> grammarClass, final Reader grammarReader)
             throws Exception {
-        return grammarClass.getConstructor(new Class[] { Reader.class }).newInstance(new Object[] { grammarReader });
+        return grammarClass.getConstructor(new Class[] { Reader.class, TokenClassifier.class }).newInstance(
+                new Object[] { grammarReader, new DecisionTreeTokenClassifier() });
     }
 
     public static <C extends Grammar> C createGrammar(final Class<C> grammarClass, final Reader grammarReader,

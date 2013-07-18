@@ -53,8 +53,8 @@ public class ConstituentBoundarySequence extends BaseSequence {
 
         this.mappedUnkSymbols = new int[sentenceLength];
         for (int i = 0; i < sentenceLength; i++) {
-            mappedUnkSymbols[i] = unkClassSet.getIndex(DecisionTreeTokenClassifier.berkeleyGetSignature(tokens[i],
-                    i == 0, lexicon));
+            mappedUnkSymbols[i] = unkClassSet.getIndex(DecisionTreeTokenClassifier.berkeleyGetSignature(
+                    lexicon.getSymbol(mappedTokens[i]), i == 0, lexicon));
         }
     }
 

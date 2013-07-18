@@ -27,11 +27,15 @@ import java.util.Arrays;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SymbolSet;
-import edu.ohsu.cslu.parser.ParseTask;
+import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.fom.FigureOfMeritModel.FigureOfMerit;
 
 /**
+ * Represents the observed and predicted beam-width classes of cells in a parse tree.
+ * 
+ * @see BeamWidthClassifier
+ * 
  * @author Aaron Dunlop
  * @since Jul 11, 2013
  */
@@ -40,7 +44,7 @@ public class BeamWidthSequence extends ConstituentBoundarySequence implements Mu
     /**
      * Gold classes from the training tree, one for each classified cell (those that participate in the 1-best parse
      * tree). Parallel array to {@link #cellIndices}. All other cells are considered to be class 0 (closed), and are
-     * omitted from the data structure to conserve heap memory.
+     * omitted from the data structure to conserve heap memory during training.
      */
     protected final short[] classes;
 
@@ -53,38 +57,25 @@ public class BeamWidthSequence extends ConstituentBoundarySequence implements Mu
      */
     protected short[] predictedClasses;
 
-    // /**
-    // * Constructs from an array of tokens, mapped according to the classifier's lexicon. Used during inference.
-    // *
-    // * @param mappedTokens
-    // * @param posTags
-    // * @param classifier
-    // */
-    // public BeamWidthSequence(final int[] mappedTokens, final short[] posTags,
-    // final BeamWidthClassifier classifier) {
-    //
-    // super(mappedTokens, posTags, classifier.lexicon, classifier.decisionTreeUnkClassSet);
-    // this.classBoundaryBeamWidths = classifier.classBoundaryBeamWidths;
-    //
-    // // this.mappedTokens = mappedTokens;
-    // // this.sentenceLength = (short) mappedTokens.length;
-    // // this.posTags = posTags;
-    // //
-    // // this.mappedUnkSymbols = new int[sentenceLength];
-    // // for (int i = 0; i < sentenceLength; i++) {
-    // // // TODO It's odd and inefficient to take mapped tokens and un-map them to their String representation, just
-    // // // so we can re-map their UNK-classes.
-    // // mappedUnkSymbols[i] = unkClassSet.getIndex(DecisionTreeTokenClassifier.berkeleyGetSignature(
-    // // lexicon.getSymbol(mappedTokens[i]), i == 0, lexicon));
-    // // }
-    //
-    // // All cells spanning more than one word
-    // this.length = sentenceLength * (sentenceLength + 1) / 2 - sentenceLength;
-    // this.classes = null;
-    //
-    // this.predictedClasses = new short[length];
-    // Arrays.fill(predictedClasses, (short) -1);
-    // }
+    private final BeamWidthClassifier classifier;
+
+    /**
+     * Constructs from an array of tokens, mapped according to the classifier's lexicon. Used during inference.
+     * 
+     * @param mappedTokens
+     * @param posTags
+     * @param classifier
+     */
+    public BeamWidthSequence(final int[] mappedTokens, final short[] posTags, final BeamWidthClassifier classifier) {
+
+        super(mappedTokens, posTags, classifier.lexicon, classifier.decisionTreeUnkClassSet);
+
+        // All cells spanning more than one word
+        this.length = sentenceLength * (sentenceLength + 1) / 2 - sentenceLength;
+        this.classes = null;
+        this.predictedClasses = new short[length];
+        this.classifier = classifier;
+    }
 
     /**
      * Used during training. Constructs from a bracketed tree, populating {@link #classes} with open/closed
@@ -93,42 +84,19 @@ public class BeamWidthSequence extends ConstituentBoundarySequence implements Mu
      * @param parseTree
      * @param classifier
      */
-    public BeamWidthSequence(final BinaryTree<String> parseTree, final BeamWidthClassifier classifier) {
+    public BeamWidthSequence(final PackedArrayChart chart, final BinaryTree<String> parseTree,
+            final BeamWidthClassifier classifier) {
+
         super(parseTree, classifier.lexicon, classifier.decisionTreeUnkClassSet, classifier.vocabulary);
-
-        // tokens = parseTree.leafLabels();
-        //
-        // this.sentenceLength = (short) tokens.length;
-        // this.mappedTokens = new int[sentenceLength];
-        // this.mappedUnkSymbols = new int[sentenceLength];
-        // this.posTags = new short[sentenceLength];
-        //
-        // // Map all tokens, UNK symbols, and parts-of-speech
-        // for (int i = 0; i < sentenceLength; i++) {
-        // if (lexicon.isFinalized()) {
-        // mappedTokens[i] = lexicon.getIndex(tokens[i]);
-        // mappedUnkSymbols[i] = unkClassSet.getIndex(DecisionTreeTokenClassifier.berkeleyGetSignature(tokens[i],
-        // i == 0, lexicon));
-        // } else {
-        // mappedTokens[i] = lexicon.addSymbol(tokens[i]);
-        // mappedUnkSymbols[i] = unkClassSet.addSymbol(DecisionTreeTokenClassifier.berkeleyGetSignature(tokens[i],
-        // i == 0, lexicon));
-        // }
-        // }
-
-        final ParseTask parseTask = classifier.ccParser.parseSentence(parseTree.toString());
-        if (parseTask.parseFailed()) {
-            throw new IllegalArgumentException("Parse failed");
-        }
-        final PackedArrayChart chart = classifier.ccParser.chart;
+        this.classifier = classifier;
 
         //
-        // Populate classes and predictedClasses for each open cell
+        // Populate classes for each open cell
         //
         final short[] tmpClasses = new short[sentenceLength * (sentenceLength + 1) / 2];
         Arrays.fill(tmpClasses, (short) -1);
 
-        classifyCell(chart, (short) 0, (short) chart.size(), chart.sparseMatrixGrammar.startSymbol,
+        recoverBeamWidths(chart, (short) 0, (short) chart.size(), chart.sparseMatrixGrammar.startSymbol,
                 classifier.ccParser.figureOfMerit, classifier.beamWidthClasses, tmpClasses);
 
         // One entry per open cell
@@ -147,23 +115,24 @@ public class BeamWidthSequence extends ConstituentBoundarySequence implements Mu
                 i++;
             }
         }
-
-        final int i = 2;
-        // // TODO Populate POS tags?
-        // int start = 0;
-        // for (final BinaryTree<String> node : parseTree.leafTraversal()) {
-        // if (this.vocabulary.isFinalized()) {
-        // posTags[start] = (short) vocabulary.getIndex(node.parentLabel());
-        // } else {
-        // posTags[start] = (short) vocabulary.addSymbol(node.parentLabel());
-        // }
-        // // Increment the start index every time we process a leaf
-        // start++;
-        // }
+        edu.ohsu.cslu.util.Arrays.sort(cellIndices, classes);
     }
 
-    private void classifyCell(final PackedArrayChart chart, final short start, final short end, final short parent,
-            final FigureOfMerit fom, final short[] beamWidthClasses, final short[] tmpClasses) {
+    /**
+     * Recurses down through the chart, recovering the beam-width class of each populated cell (unpopulated cells
+     * default to class 0, which is assumed to denote a beam of 0). Populates <code>tmpClasses</code>, indexed by
+     * cellIndex. Subsequent processing may omit the empty cells to compact that storage.
+     * 
+     * @param chart
+     * @param start
+     * @param end
+     * @param parent
+     * @param fom
+     * @param beamWidthClasses
+     * @param tmpClasses
+     */
+    private void recoverBeamWidths(final PackedArrayChart chart, final short start, final short end,
+            final short parent, final FigureOfMerit fom, final short[] beamWidthClasses, final short[] tmpClasses) {
 
         final int cellIndex = chart.cellIndex(start, end);
         final int offset = chart.offset(cellIndex);
@@ -210,10 +179,10 @@ public class BeamWidthSequence extends ConstituentBoundarySequence implements Mu
 
         // Recurse through child cells
         if (chart.sparseMatrixGrammar.packingFunction.unpackRightChild(chart.packedChildren[bottomEntryIndex]) != Production.LEXICAL_PRODUCTION) {
-            classifyCell(chart, start, chart.midpoints[bottomEntryIndex],
+            recoverBeamWidths(chart, start, chart.midpoints[bottomEntryIndex],
                     (short) chart.sparseMatrixGrammar.packingFunction
                             .unpackLeftChild(chart.packedChildren[bottomEntryIndex]), fom, beamWidthClasses, tmpClasses);
-            classifyCell(chart, chart.midpoints[bottomEntryIndex], end,
+            recoverBeamWidths(chart, chart.midpoints[bottomEntryIndex], end,
                     chart.sparseMatrixGrammar.packingFunction.unpackRightChild(chart.packedChildren[bottomEntryIndex]),
                     fom, beamWidthClasses, tmpClasses);
         }
@@ -225,10 +194,12 @@ public class BeamWidthSequence extends ConstituentBoundarySequence implements Mu
         return i >= 0 ? classes[i] : 0;
     }
 
+    @Override
     public void allocatePredictedClasses() {
         this.predictedClasses = new short[sentenceLength * (sentenceLength + 1) / 2];
     }
 
+    @Override
     public void clearPredictedClasses() {
         // Conserve memory between uses
         this.predictedClasses = null;
@@ -251,28 +222,26 @@ public class BeamWidthSequence extends ConstituentBoundarySequence implements Mu
 
     @Override
     public SymbolSet<String> tagSet() {
-        // TODO Auto-generated method stub
-        return null;
+        final SymbolSet<String> tagSet = new SymbolSet<String>();
+        for (final int beam : classifier.classBoundaryBeamWidths) {
+            tagSet.addSymbol(Integer.toString(beam));
+        }
+        return tagSet;
     }
 
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder(256);
         for (int i = 0; i < classes.length; i++) {
-            sb.append(lexicon.getSymbol(mappedTokens[i]));
-            sb.append(' ');
-            sb.append(classes[i]);
-            sb.append(')');
-
-            if (i < (classes.length - 1)) {
-                sb.append(' ');
+            final short[] startAndEnd = Chart.startAndEnd(cellIndices[i], sentenceLength, false);
+            if (predictedClasses != null) {
+                sb.append(String.format("%d,%d  gold class=%d (%d)  predictedClass=%s (%d)\n", startAndEnd[0],
+                        startAndEnd[1], classes[i], classifier.beamWidth(classes[i]), predictedClasses[i],
+                        classifier.beamWidth(predictedClasses[i])));
+            } else {
+                sb.append(String.format("%d,%d  gold class=%d (%d)\n", startAndEnd[0], startAndEnd[1], classes[i],
+                        classifier.beamWidth(classes[i])));
             }
-        }
-        sb.append('\n');
-
-        for (int i = 0; i < classes.length; i++) {
-            final short[] startAndEnd = ConstituentBoundaryFeatureExtractor.startAndEnd(i, length, true);
-            sb.append(String.format("%d,%d %s  ", startAndEnd[0], startAndEnd[1], classes[i]));
         }
         return sb.toString();
     }

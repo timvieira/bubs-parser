@@ -257,7 +257,7 @@ public abstract class ParallelArrayChart extends Chart {
 
         public TemporaryChartCell tmpCell;
 
-        protected final int cellIndex;
+        public final int cellIndex;
         protected final int offset;
 
         protected ParallelArrayChartCell(final int start, final int end) {

@@ -63,13 +63,13 @@ import edu.ohsu.cslu.parser.Parser.InputFormat;
 import edu.ohsu.cslu.parser.Parser.ParserType;
 import edu.ohsu.cslu.parser.Parser.ReparseStrategy;
 import edu.ohsu.cslu.parser.Parser.ResearchParserType;
+import edu.ohsu.cslu.parser.cellselector.BeamWidthModel;
 import edu.ohsu.cslu.parser.cellselector.CellConstraintsComboModel;
 import edu.ohsu.cslu.parser.cellselector.CellSelectorModel;
 import edu.ohsu.cslu.parser.cellselector.CompleteClosureModel;
 import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
 import edu.ohsu.cslu.parser.cellselector.LimitedSpanTraversalModel;
 import edu.ohsu.cslu.parser.cellselector.OHSUCellConstraintsModel;
-import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthModel;
 import edu.ohsu.cslu.parser.chart.Chart.RecoveryStrategy;
 import edu.ohsu.cslu.parser.fom.BoundaryLex;
 import edu.ohsu.cslu.parser.fom.BoundaryPosModel;
@@ -356,12 +356,10 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
                 defaultCellSelector = false;
             }
 
-            PerceptronBeamWidthModel beamConstraints = null;
+            BeamWidthModel beamConstraints = null;
             if (beamModelFileName != null) {
-                beamConstraints = defaultCellSelector ? new PerceptronBeamWidthModel(
-                        fileAsBufferedReader(beamModelFileName), null) : new PerceptronBeamWidthModel(
-                        fileAsBufferedReader(beamModelFileName), cellSelectorModel);
-                cellSelectorModel = beamConstraints;
+                cellSelectorModel = beamConstraints = new BeamWidthModel(new File(beamModelFileName), grammar,
+                        defaultCellSelector ? null : cellSelectorModel);
                 defaultCellSelector = false;
             } else if (pruningModels != null && pruningModels.length > 0) {
                 final ObjectInputStream ois = new ObjectInputStream(fileAsInputStream(pruningModels[0]));

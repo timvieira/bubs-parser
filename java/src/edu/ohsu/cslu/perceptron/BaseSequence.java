@@ -127,4 +127,12 @@ public class BaseSequence implements Sequence {
     public int length() {
         return length;
     }
+
+    @Override
+    public void allocatePredictedClasses() {
+    }
+
+    @Override
+    public void clearPredictedClasses() {
+    }
 }

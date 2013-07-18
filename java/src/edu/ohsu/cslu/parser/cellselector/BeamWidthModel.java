@@ -33,27 +33,27 @@ import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.cellselector.CellSelector.ChainableCellSelector;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.perceptron.BeamWidthClassifier;
-import edu.ohsu.cslu.perceptron.CompleteClosureClassifier;
-import edu.ohsu.cslu.perceptron.CompleteClosureSequence;
+import edu.ohsu.cslu.perceptron.BeamWidthSequence;
 import edu.ohsu.cslu.perceptron.TagSequence;
 import edu.ohsu.cslu.perceptron.Tagger;
 
 /**
- * Implements 'Complete Closure', using a discriminative model to classify each cell as open or closed. The method is
- * fully described in Bodenstab et al., 2011, "Beam-Width Prediction for Efficient Context-Free Parsing". This class is
- * a reimplementation of the original work, and depends on a model trained with {@link CompleteClosureClassifier} (and
- * the {@link Tagger} embedded therein for POS tagging).
+ * Implements 'Beam-width prediction', using a series of discriminative models to classify the beam width of each cell
+ * as open or closed. The method is fully described in Bodenstab et al., 2011,
+ * "Beam-Width Prediction for Efficient Context-Free Parsing". This class is a reimplementation of the original work,
+ * and depends on a model trained with {@link BeamWidthClassifier} (and the {@link Tagger} embedded therein for POS
+ * tagging).
  * 
- * @see BeamWidthModel
+ * @see CompleteClosureModel
  * 
  * @author Aaron Dunlop
- * @since Feb 14, 2013
+ * @since Jul 17, 2013
  */
-public class CompleteClosureModel extends ChainableCellSelectorModel implements CellSelectorModel {
+public class BeamWidthModel extends ChainableCellSelectorModel implements CellSelectorModel {
 
     private static final long serialVersionUID = 1L;
 
-    private CompleteClosureClassifier classifier;
+    private BeamWidthClassifier classifier;
     private Tagger posTagger;
 
     /**
@@ -65,11 +65,11 @@ public class CompleteClosureModel extends ChainableCellSelectorModel implements 
      * @throws IOException
      * @throws ClassNotFoundException
      */
-    public CompleteClosureModel(final File classifierModel, final Grammar grammar, final CellSelectorModel childModel)
+    public BeamWidthModel(final File classifierModel, final Grammar grammar, final CellSelectorModel childModel)
             throws IOException, ClassNotFoundException {
 
         super(childModel);
-        this.classifier = new CompleteClosureClassifier(grammar);
+        this.classifier = new BeamWidthClassifier(grammar);
         classifier.readModel(new FileInputStream(classifierModel));
         this.posTagger = classifier.posTagger;
     }
@@ -79,26 +79,32 @@ public class CompleteClosureModel extends ChainableCellSelectorModel implements 
      * 
      * @param classifier
      */
-    public CompleteClosureModel(final CompleteClosureClassifier classifier) {
+    public BeamWidthModel(final BeamWidthClassifier classifier) {
         super(null);
         this.classifier = classifier;
         this.posTagger = classifier.posTagger;
     }
 
     public CellSelector createCellSelector() {
-        return new CompleteClosureSelector(childModel != null ? childModel.createCellSelector() : null);
+        return new BeamWidthSelector(childModel != null ? childModel.createCellSelector() : null);
     }
 
-    public class CompleteClosureSelector extends ChainableCellSelector {
+    public class BeamWidthSelector extends ChainableCellSelector {
 
-        public CompleteClosureSelector(final CellSelector child) {
+        private short[] beamWidths;
+        // private boolean[] factoredOnly;
+        private short sentenceLength;
+
+        public BeamWidthSelector(final CellSelector child) {
             super(child);
         }
 
         @Override
         public void initSentence(final ChartParser<?, ?> p, final ParseTask task) {
             super.initSentence(p, task);
-            final short sentenceLength = (short) p.chart.size();
+            sentenceLength = (short) p.chart.size();
+
+            this.beamWidths = new short[sentenceLength * (sentenceLength + 1) / 2];
 
             // POS-tag the sentence with a discriminative tagger
             // TODO Use the same lexicon, tagSet, etc. We already have a mapped int[] representation of the sentence, we
@@ -107,27 +113,26 @@ public class CompleteClosureModel extends ChainableCellSelectorModel implements 
             task.posTags = posTagger.classify(tagSequence);
 
             // Classify each chart cell, in left-to-right, bottom-up order
-            final ShortArrayList tmpCellIndices = new ShortArrayList(sentenceLength * sentenceLength);
+            final ShortArrayList tmpCellIndices = new ShortArrayList(sentenceLength * (sentenceLength + 1) / 2);
 
-            // All span-1 cells are open
-            for (short start = 0; start < sentenceLength; start++) {
-                tmpCellIndices.add(start);
-                tmpCellIndices.add((short) (start + 1));
-            }
+            final BeamWidthSequence sequence = new BeamWidthSequence(task.tokens, task.posTags, classifier);
+            classifier.classify(sequence);
 
-            final CompleteClosureSequence sequence = task.inputTree != null ? new CompleteClosureSequence(
-                    task.inputTree.binarize(task.grammar.grammarFormat, task.grammar.binarization()), classifier)
-                    : new CompleteClosureSequence(task.tokens, task.posTags, classifier);
-
-            for (short span = 2; span <= sentenceLength; span++) {
+            for (short span = 1; span <= sentenceLength; span++) {
                 for (short start = 0; start < sentenceLength - span + 1; start++) {
+                    final short end = (short) (start + span);
+                    final int cellIndex = Chart.cellIndex(start, end, sentenceLength, false);
+                    final short predictedClass = sequence.predictedClass(cellIndex);
 
-                    final boolean closed = classifier.classify(sequence,
-                            Chart.cellIndex(start, start + span, sentenceLength, true));
-
-                    if (!closed) {
+                    // All span-1 cells are open
+                    if (span == 1 || predictedClass > 0) {
                         tmpCellIndices.add(start);
                         tmpCellIndices.add((short) (start + span));
+                        beamWidths[cellIndex] = classifier.beamWidth(predictedClass);
+                        // TODO Implement factored-only classification
+                        // if (classifier.factoredOnlyClassifier() != null) {
+                        // factoredOnly[cellIndex]
+                        // }
                     }
                 }
             }
@@ -141,6 +146,36 @@ public class CompleteClosureModel extends ChainableCellSelectorModel implements 
                         String.format("Sentence length: %d. Total cells: %d  Open cells: %d", sentenceLength,
                                 sentenceLength * (sentenceLength + 1) / 2, tmpCellIndices.size() / 2));
             }
+        }
+
+        @Override
+        public boolean isCellOpen(final short start, final short end) {
+            if (childCellSelector != null && !childCellSelector.isCellOpen(start, end)) {
+                return false;
+            }
+
+            return !constraintsEnabled
+                    || (beamWidths[Chart.cellIndex(start, end, sentenceLength, false)] > 0 && !isCellOnlyFactored(
+                            start, end));
+        }
+
+        @Override
+        public boolean isCellOnlyFactored(final short start, final short end) {
+            return false;
+            // TODO Implement factored-only classification
+            // return !constraintsEnabled || classifier.factoredOnlyClassifier() == null ||
+            // classifier.factoredOnlyClassifier();
+        }
+
+        @Override
+        public int getBeamWidth(final int cellIndex) {
+            return constraintsEnabled ? beamWidths[cellIndex] : Short.MAX_VALUE;
+        }
+
+        @Override
+        public int getBeamWidth(final short start, final short end) {
+            return constraintsEnabled ? beamWidths[Chart.cellIndex(start, end, sentenceLength, false)]
+                    : Short.MAX_VALUE;
         }
     }
 }
