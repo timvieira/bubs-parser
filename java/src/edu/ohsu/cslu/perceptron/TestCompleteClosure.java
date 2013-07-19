@@ -106,31 +106,6 @@ public class TestCompleteClosure {
         periodUnk = unkClassSet.getIndex(DecisionTreeTokenClassifier.berkeleyGetSignature(".", false, lexicon));
     }
 
-    /**
-     * Tests {@link ConstituentBoundaryFeatureExtractor#cellIndex(int, int, int, boolean)} and
-     * {@link ConstituentBoundaryFeatureExtractor#startAndEnd(int, int, boolean)}
-     */
-    @Test
-    public void testCellIndexing() {
-        // Test with indexes including span-1 cells
-        for (short span = 1; span < 5; span++) {
-            for (short start = 0; start <= 5 - span; start++) {
-                final int cellIndex = Chart.cellIndex(start, start + span, 5, false);
-                assertEquals(start, Chart.startAndEnd(cellIndex, 5, false)[0]);
-                assertEquals(start + span, Chart.startAndEnd(cellIndex, 5, false)[1]);
-            }
-        }
-
-        // And excluding span-1
-        for (short span = 2; span < 5; span++) {
-            for (short start = 0; start <= 5 - span; start++) {
-                final int cellIndex = Chart.cellIndex(start, start + span, 5, true);
-                assertEquals(start, Chart.startAndEnd(cellIndex, 5, true)[0]);
-                assertEquals(start + span, Chart.startAndEnd(cellIndex, 5, true)[1]);
-            }
-        }
-    }
-
     @Test
     public void testSymbolSets() {
         // tagSet includes <null>; lexicon includes <null> and UNK classes
