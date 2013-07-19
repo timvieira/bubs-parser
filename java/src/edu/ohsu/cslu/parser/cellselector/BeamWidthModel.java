@@ -145,6 +145,18 @@ public class BeamWidthModel extends ChainableCellSelectorModel implements CellSe
                 BaseLogger.singleton().fine(
                         String.format("Sentence length: %d. Total cells: %d  Open cells: %d", sentenceLength,
                                 sentenceLength * (sentenceLength + 1) / 2, tmpCellIndices.size() / 2));
+
+                if (BaseLogger.singleton().isLoggable(Level.FINER)) {
+                    final StringBuilder sb = new StringBuilder(256);
+                    final int[] counts = new int[classifier.classes()];
+                    for (int cellIndex = 0; cellIndex < beamWidths.length; cellIndex++) {
+                        counts[sequence.predictedClass(cellIndex)]++;
+                    }
+                    for (short i = 0; i < counts.length; i++) {
+                        sb.append("Beam=" + classifier.beamWidth(i) + ": " + counts[i] + "   ");
+                    }
+                    BaseLogger.singleton().fine(sb.toString());
+                }
             }
         }
 

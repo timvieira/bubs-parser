@@ -819,16 +819,29 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
                     String.format("Performing bias search on class %d for negative-classification recall %.5f",
                             goldClass, targetNegativeRecall));
 
-            BeamWidthResult result = classify(devCorpusSequences);
-
             //
             // Binary search over bias settings, until we find the desired recall
             //
             float lowBias = avgWeights[goldClass].min() * fe.templateCount();
             float highBias = avgWeights[goldClass].max() * fe.templateCount();
 
+            // Check whether we can attain the requested recall, and reset the target accordingly
+            biases[goldClass] = lowBias;
+            BeamWidthResult result = classify(devCorpusSequences);
+            final float maxNegR = result.negativeRecall(goldClass);
+            boolean maxBiasSearch = false;
+
+            if (maxNegR < targetNegativeRecall) {
+                BaseLogger.singleton().info(
+                        String.format("Cannot attain neg-R of %.3f; Searching for maximum bias at %.3f",
+                                targetNegativeRecall * 100f, (maxNegR - .0001) * 100f));
+                maxBiasSearch = true;
+            }
+
+            biases[goldClass] = 0;
+            result = classify(devCorpusSequences);
             for (float r = result.negativeRecall(goldClass); r < targetNegativeRecall - epsilon
-                    || r > targetNegativeRecall + epsilon || Float.isNaN(r);) {
+                    || r > targetNegativeRecall + epsilon || Float.isNaN(r) || maxBiasSearch;) {
 
                 final float prevBias = biases[goldClass];
                 biases[goldClass] = lowBias + (highBias - lowBias) / 2;
@@ -847,10 +860,11 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
                                 result.negativeRecall(goldClass) * 100f, result.sentenceNegativeRecall() * 100f));
                 r = result.negativeRecall(goldClass);
 
-                if (r < targetNegativeRecall) {
-                    highBias = biases[goldClass];
-                } else {
+                // Binary search for the target
+                if (r > targetNegativeRecall || (maxBiasSearch && r > (maxNegR - epsilon))) {
                     lowBias = biases[goldClass];
+                } else {
+                    highBias = biases[goldClass];
                 }
             }
         }
@@ -862,6 +876,10 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
 
     public short beamWidth(final short beamClass) {
         return beamClass >= classBoundaryBeamWidths.length ? Short.MAX_VALUE : classBoundaryBeamWidths[beamClass];
+    }
+
+    public short classes() {
+        return (short) (classBoundaryBeamWidths.length + 1);
     }
 
     // private void evaluateDevset(final ArrayList<BeamWidthSequence> devCorpusSequences) {

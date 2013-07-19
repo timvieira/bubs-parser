@@ -273,6 +273,16 @@
         </antcall>
     </target>
 
+    
+    <target name="train-bw" depends="compile">
+        <antcall target="package-tool">
+            <param name="root-class" value="edu.ohsu.cslu.perceptron.BeamWidthClassifier" />
+            <param name="tool-name" value="train-bw" />
+            <param name="heap-size" value="3g" />
+            <param name="package-gpl-libs" value="true" />
+        </antcall>
+    </target>
+    
 
     <!-- -->
     <!-- Text normalization and lexical clustering tools --> 
