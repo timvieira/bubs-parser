@@ -186,9 +186,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     private String headRules = null;
     private HeadPercolationRuleset headPercolationRuleset = null;
 
-    @Option(name = "-geometricInsideNorm", hidden = true, usage = "Use the geometric mean of the Inside score. Only needed for agenda parsers")
-    public static boolean geometricInsideNorm = false;
-
     @Option(name = "-ccPrint", hidden = true, usage = "Print Cell Constraints for each input sentence and exit (no parsing done)")
     public static boolean chartConstraintsPrint = false;
 

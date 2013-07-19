@@ -105,6 +105,9 @@ public abstract class Parser<G extends Grammar> {
     /** Tunes maxc chart decoding between max-recall (0) and max-precision (1) */
     public final static String PROPERTY_MAXC_LAMBDA = "maxcLambda";
 
+    /** Use the geometric mean of the Inside score. Only used by agenda parsers */
+    public final static String PROPERTY_GEOMETRIC_INSIDE_NORM = "geometricInsideNorm";
+
     /** Parser configuration */
     public ParserDriver opts;
 

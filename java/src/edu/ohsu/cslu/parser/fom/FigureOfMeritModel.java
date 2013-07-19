@@ -52,7 +52,10 @@ import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.PackingFunctionType;
 public abstract class FigureOfMeritModel {
 
     protected FOMType type;
-    float normInsideTune = GlobalConfigProperties.singleton().getFloatProperty("normInsideTune", 0);
+    private final static float normInsideTune = GlobalConfigProperties.singleton()
+            .getFloatProperty("normInsideTune", 0);
+    private final static boolean geometricInsideNorm = GlobalConfigProperties.singleton().getBooleanProperty(
+            "geometricInsideNorm", false);
 
     // float ngramOutsideTune = GlobalConfigProperties.singleton().getFloatProperty("ngramOutsideTune");
 
@@ -98,14 +101,15 @@ public abstract class FigureOfMeritModel {
         }
 
         protected float normInside(final int start, final int end, final float insideProb) {
-            if (ParserDriver.geometricInsideNorm) {
+            if (geometricInsideNorm) {
                 // Geometric mean normalization (used by C&C)
                 // non-log: sqrt(span, insideProb)
                 return insideProb / (end - start);
             }
+
             // Gives larger spread of constituent scores over all span lengths (compared to geometric mean)
             // non-log: insideProb * e^(span*X)
-            return insideProb + (end - start) * normInsideTune;
+            return normInsideTune != 0 ? insideProb + (end - start) * normInsideTune : insideProb;
         }
 
         /**
