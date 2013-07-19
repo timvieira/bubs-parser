@@ -70,6 +70,7 @@ import edu.ohsu.cslu.parser.cellselector.CompleteClosureModel;
 import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
 import edu.ohsu.cslu.parser.cellselector.LimitedSpanTraversalModel;
 import edu.ohsu.cslu.parser.cellselector.OHSUCellConstraintsModel;
+import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthModel;
 import edu.ohsu.cslu.parser.chart.Chart.RecoveryStrategy;
 import edu.ohsu.cslu.parser.fom.BoundaryLex;
 import edu.ohsu.cslu.parser.fom.BoundaryPosModel;
@@ -163,6 +164,9 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
 
     @Option(name = "-ccClassifier", hidden = true, metaVar = "FILE", usage = "Complete closure classifier model (Java Serialized)")
     private File completeClosureClassifierFile = null;
+
+    @Option(name = "-bwClassifier", hidden = true, metaVar = "FILE", usage = "Beam-width prediction model (Java Serialized)")
+    private File beamWidthClassifierFile = null;
 
     // Leaving this around for a bit, in case we get back to limited-span parsing, but it doesn't work currently
     // @Option(name = "-lsccModel", hidden = true,
@@ -356,11 +360,18 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
                 defaultCellSelector = false;
             }
 
-            BeamWidthModel beamConstraints = null;
-            if (beamModelFileName != null) {
-                cellSelectorModel = beamConstraints = new BeamWidthModel(new File(beamModelFileName), grammar,
-                        defaultCellSelector ? null : cellSelectorModel);
+            PerceptronBeamWidthModel beamConstraints = null;
+            if (beamWidthClassifierFile != null) {
+                cellSelectorModel = new BeamWidthModel(beamWidthClassifierFile, grammar, defaultCellSelector ? null
+                        : cellSelectorModel);
                 defaultCellSelector = false;
+
+            } else if (beamModelFileName != null) {
+                beamConstraints = defaultCellSelector ? new PerceptronBeamWidthModel(
+                        fileAsBufferedReader(beamModelFileName), null) : new PerceptronBeamWidthModel(
+                        fileAsBufferedReader(beamModelFileName), cellSelectorModel);
+                cellSelectorModel = beamConstraints;
+
             } else if (pruningModels != null && pruningModels.length > 0) {
                 final ObjectInputStream ois = new ObjectInputStream(fileAsInputStream(pruningModels[0]));
                 cellSelectorModel = (CellSelectorModel) ois.readObject();

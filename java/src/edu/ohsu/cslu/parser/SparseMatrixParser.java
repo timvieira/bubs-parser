@@ -444,8 +444,6 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
         } else { // Span >= 2
             for (short nt = 0; nt < grammar.numNonTerms(); nt++) {
 
-                grammar.nonTermSet.getSymbol(nt);
-
                 // Skip edges that don't meet the maximum delta
                 if (tmpCell.insideProbabilities[nt] > minInsideProbability) {
                     final float fom = figureOfMerit.calcFOM(start, end, nt, tmpCell.insideProbabilities[nt]);
@@ -519,7 +517,7 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
                                 // storage to reflect the new unary child and probability
                                 queueEdges.packedChildren[parent] = grammar.packingFunction().packUnary(child);
                                 queueEdges.insideProbabilities[parent] = jointProbability;
-                                queueEdges.midpoints[parent] = tmpCell.midpoints[parent] = end;
+                                queueEdges.midpoints[parent] = end;
                             }
                         }
                     }
