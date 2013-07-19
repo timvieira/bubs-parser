@@ -159,7 +159,11 @@ public class BeamWidthSequence extends ConstituentBoundarySequence implements Mu
 
         for (int i = 0, j = offset; i < nts.length; i++, j++) {
             nts[i] = chart.nonTerminalIndices[j];
-            foms[i] = fom.calcFOM(start, end, nts[i], chart.insideProbabilities[j]);
+            if (end - start == 1) {
+                foms[i] = fom.calcLexicalFOM(start, end, nts[i], chart.insideProbabilities[j]);
+            } else {
+                foms[i] = fom.calcFOM(start, end, nts[i], chart.insideProbabilities[j]);
+            }
         }
 
         // Sort by FOM

@@ -443,7 +443,6 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
 
         // Read in the dev set
         if (devSet != null) {
-            BaseLogger.singleton().info("Reading and parsing dev-set");
             readSequences(fileAsBufferedReader(devSet), beamWidthDevCorpusSequences, factoredOnlyDevCorpusSequences,
                     "dev-set");
         }
