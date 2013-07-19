@@ -288,7 +288,7 @@ public class RealInsideOutsideCscSparseMatrixGrammar extends Grammar {
         this.tmpStringPool = new StringPool();
         this.grammarFormat = readPcfgAndLexicon(grammarFile, pcfgRules, lexicalRules);
 
-        this.nullWord = lexSet.addSymbol(nullSymbolStr);
+        this.nullToken = lexSet.addSymbol(nullSymbolStr);
 
         final HashSet<String> nonTerminals = new HashSet<String>();
         final HashSet<String> pos = new HashSet<String>();

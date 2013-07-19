@@ -129,8 +129,17 @@ public abstract class Grammar implements Serializable {
      */
     public short[] phraseSet;
 
-    public short nullSymbol = -1;
-    public int nullWord = -1;
+    /**
+     * The 'null' symbol, as mapped by the non-terminal vocabulary. Logically final, but we can't declare it that way
+     * because it's initialized in subclass constructors
+     */
+    protected short nullSymbol;
+
+    /**
+     * The 'null' symbol, as mapped by the lexicon. Logically final, but we can't declare it that way because it's
+     * initialized in subclass constructors
+     */
+    protected int nullToken;
 
     public abstract Production getLexicalProduction(final short parent, final int lex);
 
@@ -325,7 +334,7 @@ public abstract class Grammar implements Serializable {
      * @return the index of the null symbol
      */
     public short nullSymbol() {
-        return (short) nonTermSet.getIndex(nullSymbolStr);
+        return nullSymbol;
     }
 
     /**
@@ -335,7 +344,7 @@ public abstract class Grammar implements Serializable {
      * @return the index of the null symbol in the lexicon
      */
     public int nullToken() {
-        return lexSet.getIndex(nullSymbolStr);
+        return nullToken;
     }
 
     /**

@@ -190,7 +190,7 @@ public class ListGrammar extends Grammar {
         this.startSymbol = (short) nonTermSet.addSymbol(startSymbolStr);
         nonTermSet.setStartSymbol(startSymbol);
         this.nullSymbol = (short) nonTermSet.addSymbol(nullSymbolStr);
-        this.nullWord = lexSet.addSymbol(nullSymbolStr);
+        this.nullToken = lexSet.addSymbol(nullSymbolStr);
 
         // Now that all NTs are mapped, we can create Production instances for lexical rules (we don't care
         // about sort order here)

@@ -944,7 +944,7 @@ public abstract class Chart {
         if (tokIndex < 0 || tokIndex >= parseTask.sentenceLength()) {
             // System.out.println("old=" + grammar.mapNonterminal(Grammar.nullSymbolStr) + " new=" + grammar.nullWord);
             // return grammar.mapNonterminal(Grammar.nullSymbolStr);
-            return grammar.nullWord;
+            return grammar.nullToken();
         }
         return parseTask.tokens[tokIndex];
     }

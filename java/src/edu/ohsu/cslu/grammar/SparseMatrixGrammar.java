@@ -182,7 +182,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
         this.grammarFormat = readPcfgAndLexicon(grammarFile, pcfgRules, lexicalRules);
         this.tokenClassifier = tokenClassifier;
 
-        this.nullWord = lexSet.addSymbol(nullSymbolStr);
+        this.nullToken = lexSet.addSymbol(nullSymbolStr);
 
         final HashSet<String> nonTerminals = new HashSet<String>();
         final HashSet<String> pos = new HashSet<String>();
