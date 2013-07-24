@@ -22,33 +22,34 @@ package edu.ohsu.cslu.perceptron;
 import java.util.Arrays;
 
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
+import edu.ohsu.cslu.datastructs.vectors.BitVector;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 
 /**
- * Represents the observed and predicted contents of cells in a parse tree - specifically, whether the cell contains (or
- * should contain) a factored non-terminal.
+ * Represents binary classification for open chart cells (i.e., those with a beam width > 0, as classified by
+ * {@link BeamWidthClassifier}).
  * 
  * @author Aaron Dunlop
- * @since Jul 17, 2013
+ * @since Jul 19, 2013
  */
-public class FactoredOnlySequence extends ConstituentBoundarySequence implements BinarySequence {
+public abstract class BinaryConstituentBoundarySequence extends ConstituentBoundarySequence implements BinarySequence {
 
     /**
-     * Gold classes from the training tree, one for each factored-only cell (those that have a factored non-terminal in
-     * the 1-best parse tree).All other cells are considered to be closed or non-factored, and are omitted from the data
-     * structure to conserve heap memory during training.
+     * Indices for positive-classification cells. All other cells are considered to be closed or classified as negative,
+     * and are omitted from the data structure to conserve heap memory during training.
      */
-    protected int[] goldFactoredOnlyCellIndices;
+    protected int[] goldCellIndices;
 
     /**
      * Predicted classes, one for each cell in the chart (note that this is many more than are stored in
-     * {@link #goldFactoredOnlyCellIndices}, so we must special-case comparisons when evaluating classification
-     * accuracy.)
+     * {@link #goldCellIndices}, so we must special-case comparisons when evaluating classification accuracy.)
+     * 
+     * TODO We could replace this with a {@link BitVector} to save a little storage.
      */
     protected boolean[] predictedClasses;
 
-    public FactoredOnlySequence(final PackedArrayChart chart, final BinaryTree<String> parseTree,
+    public BinaryConstituentBoundarySequence(final PackedArrayChart chart, final BinaryTree<String> parseTree,
             final BeamWidthClassifier classifier) {
 
         super(parseTree, classifier.lexicon, classifier.decisionTreeUnkClassSet, classifier.vocabulary);
@@ -63,36 +64,34 @@ public class FactoredOnlySequence extends ConstituentBoundarySequence implements
 
         // Copy from temporary storage (one entry per chart cell) to a compact structure with one entry for each cell in
         // the 1-best parse output
-        int factoredCells = 0;
+        int positiveCells = 0;
         for (int i = 0; i < tmpClasses.length; i++) {
             if (tmpClasses[i]) {
-                factoredCells++;
+                positiveCells++;
             }
         }
-        this.goldFactoredOnlyCellIndices = new int[factoredCells];
+        this.goldCellIndices = new int[positiveCells];
 
         for (int cellIndex = 0, i = 0; cellIndex < tmpClasses.length; cellIndex++) {
             if (tmpClasses[cellIndex]) {
-                this.goldFactoredOnlyCellIndices[i] = cellIndex;
+                this.goldCellIndices[i] = cellIndex;
                 i++;
             }
         }
     }
 
     /**
-     * Recurses down through the chart, recovering the beam-width class of each populated cell (unpopulated cells
-     * default to class 0, which is assumed to denote a beam of 0). Populates <code>tmpClasses</code>, indexed by
-     * cellIndex. Subsequent processing may omit the empty cells to compact that storage.
+     * Recurses down through the chart, recovering the classification of each populated cell (unpopulated cells are by
+     * definition classified as false). Populates <code>tmpClasses</code>, indexed by cellIndex. Subsequent processing
+     * in the constructor will omit the empty cells to compact that storage.
      * 
      * @param chart
      * @param start
      * @param end
      * @param parent
-     * @param fom
-     * @param beamWidthClasses
      * @param tmpClasses
      */
-    private void recoverClasses(final PackedArrayChart chart, final short start, final short end, final short parent,
+    protected void recoverClasses(final PackedArrayChart chart, final short start, final short end, final short parent,
             final boolean[] tmpClasses) {
 
         final int cellIndex = chart.cellIndex(start, end);
@@ -101,18 +100,18 @@ public class FactoredOnlySequence extends ConstituentBoundarySequence implements
         int bottomEntryIndex = Arrays.binarySearch(chart.nonTerminalIndices, offset, offset
                 + chart.numNonTerminals[cellIndex], parent);
 
-        if (chart.sparseMatrixGrammar.grammarFormat.isFactored(chart.sparseMatrixGrammar.nonTermSet.getSymbol(parent))) {
+        if (classifyCell(chart, bottomEntryIndex)) {
             tmpClasses[cellIndex] = true;
-        } else {
-            // Iterate through the unary chain (if any) to the bottom entry
-            short bottomEntry = parent;
+        }
 
-            while (chart.sparseMatrixGrammar.packingFunction.unpackRightChild(chart.packedChildren[bottomEntryIndex]) == Production.UNARY_PRODUCTION) {
-                bottomEntry = (short) chart.sparseMatrixGrammar.packingFunction
-                        .unpackLeftChild(chart.packedChildren[bottomEntryIndex]);
-                bottomEntryIndex = Arrays.binarySearch(chart.nonTerminalIndices, offset, offset
-                        + chart.numNonTerminals[cellIndex], bottomEntry);
-            }
+        // Iterate through the unary chain (if any) to the bottom entry
+        short bottomEntry = parent;
+
+        while (chart.sparseMatrixGrammar.packingFunction.unpackRightChild(chart.packedChildren[bottomEntryIndex]) == Production.UNARY_PRODUCTION) {
+            bottomEntry = (short) chart.sparseMatrixGrammar.packingFunction
+                    .unpackLeftChild(chart.packedChildren[bottomEntryIndex]);
+            bottomEntryIndex = Arrays.binarySearch(chart.nonTerminalIndices, offset, offset
+                    + chart.numNonTerminals[cellIndex], bottomEntry);
         }
 
         // Recurse through child cells
@@ -126,15 +125,25 @@ public class FactoredOnlySequence extends ConstituentBoundarySequence implements
         }
     }
 
+    /**
+     * @param chart
+     * @param nonterminalOffset
+     * @return True the boolean classification of the supplied cell, as determined by the subclass of
+     *         {@link BinaryConstituentBoundarySequence}
+     */
+    protected abstract boolean classifyCell(final PackedArrayChart chart, final int nonterminalOffset);
+
     @Override
     public boolean goldClass(final int cellIndex) {
-        return Arrays.binarySearch(goldFactoredOnlyCellIndices, cellIndex) >= 0;
+        return Arrays.binarySearch(goldCellIndices, cellIndex) >= 0;
     }
 
+    @Override
     public void allocatePredictedClasses() {
         this.predictedClasses = new boolean[sentenceLength * (sentenceLength + 1) / 2];
     }
 
+    @Override
     public void clearPredictedClasses() {
         // Conserve memory between uses
         this.predictedClasses = null;
@@ -149,5 +158,4 @@ public class FactoredOnlySequence extends ConstituentBoundarySequence implements
     public void setPredictedClass(final int cellIndex, final boolean classification) {
         predictedClasses[cellIndex] = classification;
     }
-
 }

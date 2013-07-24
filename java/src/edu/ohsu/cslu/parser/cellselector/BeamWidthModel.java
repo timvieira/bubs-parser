@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.util.logging.Level;
 
 import cltool4j.BaseLogger;
+import edu.ohsu.cslu.datastructs.vectors.BitVector;
+import edu.ohsu.cslu.datastructs.vectors.PackedBitVector;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParseTask;
@@ -71,7 +73,7 @@ public class BeamWidthModel extends ChainableCellSelectorModel implements CellSe
         super(childModel);
         this.classifier = new BeamWidthClassifier(grammar);
         classifier.readModel(new FileInputStream(classifierModel));
-        this.posTagger = classifier.posTagger;
+        this.posTagger = classifier.posTagger();
     }
 
     /**
@@ -82,7 +84,7 @@ public class BeamWidthModel extends ChainableCellSelectorModel implements CellSe
     public BeamWidthModel(final BeamWidthClassifier classifier) {
         super(null);
         this.classifier = classifier;
-        this.posTagger = classifier.posTagger;
+        this.posTagger = classifier.posTagger();
     }
 
     public CellSelector createCellSelector() {
@@ -95,6 +97,9 @@ public class BeamWidthModel extends ChainableCellSelectorModel implements CellSe
         // private boolean[] factoredOnly;
         private short sentenceLength;
 
+        private BitVector factoredOnly;
+        private BitVector unariesDisallowed;
+
         public BeamWidthSelector(final CellSelector child) {
             super(child);
         }
@@ -104,7 +109,10 @@ public class BeamWidthModel extends ChainableCellSelectorModel implements CellSe
             super.initSentence(p, task);
             sentenceLength = (short) p.chart.size();
 
-            this.beamWidths = new short[sentenceLength * (sentenceLength + 1) / 2];
+            final int cells = sentenceLength * (sentenceLength + 1) / 2;
+            this.beamWidths = new short[cells];
+            this.factoredOnly = new PackedBitVector(cells);
+            this.unariesDisallowed = new PackedBitVector(cells);
 
             // POS-tag the sentence with a discriminative tagger
             // TODO Use the same lexicon, tagSet, etc. We already have a mapped int[] representation of the sentence, we
@@ -113,9 +121,11 @@ public class BeamWidthModel extends ChainableCellSelectorModel implements CellSe
             task.posTags = posTagger.classify(tagSequence);
 
             // Classify each chart cell, in left-to-right, bottom-up order
-            final ShortArrayList tmpCellIndices = new ShortArrayList(sentenceLength * (sentenceLength + 1) / 2);
+            final ShortArrayList tmpCellIndices = new ShortArrayList(cells);
 
             final BeamWidthSequence sequence = new BeamWidthSequence(task.tokens, task.posTags, classifier);
+            sequence.allocatePredictedClasses();
+
             classifier.classify(sequence);
 
             for (short span = 1; span <= sentenceLength; span++) {
@@ -124,15 +134,17 @@ public class BeamWidthModel extends ChainableCellSelectorModel implements CellSe
                     final int cellIndex = Chart.cellIndex(start, end, sentenceLength, false);
                     final short predictedClass = sequence.predictedClass(cellIndex);
 
+                    final BitVector featureVector = classifier.featureExtractor().featureVector(sequence, cellIndex);
+                    final float[] dotProducts = classifier.dotProducts(featureVector);
+                    sequence.setPredictedClass(cellIndex, classifier.beamClass(dotProducts));
+
                     // All span-1 cells are open
                     if (span == 1 || predictedClass > 0) {
                         tmpCellIndices.add(start);
                         tmpCellIndices.add((short) (start + span));
                         beamWidths[cellIndex] = classifier.beamWidth(predictedClass);
-                        // TODO Implement factored-only classification
-                        // if (classifier.factoredOnlyClassifier() != null) {
-                        // factoredOnly[cellIndex]
-                        // }
+                        factoredOnly.set(cellIndex, classifier.factoredOnly(dotProducts));
+                        unariesDisallowed.set(cellIndex, classifier.factoredOnly(dotProducts));
                     }
                 }
             }
@@ -143,8 +155,8 @@ public class BeamWidthModel extends ChainableCellSelectorModel implements CellSe
 
             if (BaseLogger.singleton().isLoggable(Level.FINE)) {
                 BaseLogger.singleton().fine(
-                        String.format("Sentence length: %d. Total cells: %d  Open cells: %d", sentenceLength,
-                                sentenceLength * (sentenceLength + 1) / 2, tmpCellIndices.size() / 2));
+                        String.format("Sentence length: %d. Total cells: %d  Open cells: %d", sentenceLength, cells,
+                                tmpCellIndices.size() / 2));
 
                 if (BaseLogger.singleton().isLoggable(Level.FINER)) {
                     final StringBuilder sb = new StringBuilder(256);
@@ -173,10 +185,12 @@ public class BeamWidthModel extends ChainableCellSelectorModel implements CellSe
 
         @Override
         public boolean isCellOnlyFactored(final short start, final short end) {
-            return false;
-            // TODO Implement factored-only classification
-            // return !constraintsEnabled || classifier.factoredOnlyClassifier() == null ||
-            // classifier.factoredOnlyClassifier();
+            return !constraintsEnabled || factoredOnly.getBoolean(Chart.cellIndex(start, end, sentenceLength));
+        }
+
+        @Override
+        public boolean isUnaryOpen(final short start, final short end) {
+            return constraintsEnabled || !unariesDisallowed.getBoolean(Chart.cellIndex(start, end, sentenceLength));
         }
 
         @Override

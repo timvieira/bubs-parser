@@ -271,6 +271,21 @@ public abstract class BinaryClassifier<S extends BinarySequence> extends Classif
         rawWeights.inPlaceAdd(featureVector, alpha);
     }
 
+    /**
+     * Averages all accumulated weights
+     */
+    public void averageAllFeatures() {
+        averageAllFeatures(rawWeights, avgWeights, lastAveraged, trainExampleNumber);
+    }
+
+    /**
+     * Averages weights accumulated in <code>rawWeights</code>, storing them in <code>avgWeights</code>
+     * 
+     * @param rawWeights Raw perceptron weights
+     * @param avgWeights Averaged perceptron weights (possibly averaged one or more times previously).
+     * @param lastAveraged The last example for which an average weight was computed for each individual feature
+     * @param trainExampleNumber The current training example
+     */
     static void averageAllFeatures(final FloatVector rawWeights, final FloatVector avgWeights,
             final IntVector lastAveraged, final int trainExampleNumber) {
 
