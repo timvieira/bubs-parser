@@ -29,6 +29,7 @@ import edu.ohsu.cslu.grammar.SymbolSet;
  */
 public class ConstituentBoundarySequence extends BaseSequence {
 
+    // TODO Merge with BaseSequence.mappedPosSymbols?
     /** Preterminals (part-of-speech tags) of the sentence */
     short[] posTags;
 

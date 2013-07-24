@@ -282,50 +282,6 @@ public class ConstituentBoundaryFeatureExtractor<S extends ConstituentBoundarySe
                 : new SparseBitVector(featureVectorLength, featureIndices);
     }
 
-    // /**
-    // * Returns the chart array index of a chart cell, using left-to-right, bottom-up traversal. Inverse of
-    // * {@link #startAndEnd(int, int, boolean)}.
-    // *
-    // * @param start
-    // * @param end
-    // * @param length Sequence length
-    // * @param excludeSpan1Cells If true, cell indexes will start with the first cell on the span-2 row
-    // * @return the chart array index of a chart cell, using left-to-right, bottom-up traversal.
-    // */
-    // public static int cellIndex(final int start, final int end, final int length, final boolean excludeSpan1Cells) {
-    // final int span = end - start;
-    // if (excludeSpan1Cells && end - start == 1) {
-    // throw new IllegalArgumentException("Cannot compute an index for " + start + "," + end
-    // + " while excluding span-1 cells");
-    // }
-    // final int index = length * (span - 1) - ((span - 2) * (span - 1) / 2) + start
-    // - (excludeSpan1Cells ? length : 0);
-    // return index;
-    // }
-    //
-    // /**
-    // * Returns the start and end indices of a specified chart cell, using left-to-right, bottom-up traversal. Inverse
-    // of
-    // * {@link #cellIndex(int, int, int, boolean)}.
-    // *
-    // * @param index
-    // * @param sentenceLength Sequence length
-    // * @param excludeSpan1Cells If true, cell indexes start with the first cell on the span-2 row
-    // * @return the start and end indices of the specified chart cell.
-    // */
-    // public static short[] startAndEnd(final int index, final int sentenceLength, final boolean excludeSpan1Cells) {
-    //
-    // for (short span = (short) (excludeSpan1Cells ? 2 : 1), currentRowStart = 0, nextRowStart = 0; span <=
-    // sentenceLength; span++, currentRowStart = nextRowStart) {
-    // nextRowStart = (short) (currentRowStart + (sentenceLength - span + 1));
-    // if (index < nextRowStart) {
-    // final short start = (short) (index - currentRowStart);
-    // return new short[] { start, (short) (index - currentRowStart + span) };
-    // }
-    // }
-    // throw new IllegalArgumentException("Cell " + index + " not found in chart of size " + sentenceLength);
-    // }
-
     private enum TemplateElement {
         ltm2(-2), // Left boundary tag i-2 (outside the constituent)
         ltm1(-1), // Left boundary tag i-1 (outside the constituent)
@@ -349,7 +305,7 @@ public class ConstituentBoundaryFeatureExtractor<S extends ConstituentBoundarySe
         ru(0), // Right boundary UNK j (inside the constituent)
         rup1(1), // Right boundary UNK j (outside the constituent)
 
-        // Absolute span - bins 2,3,4,5, >= 10, >= 20, ...
+        // Absolute span - bins 1,2,3,4,5, >= 10, >= 20, ...
         s1(1.0f),
         s2(2.0f),
         s3(3.0f),
@@ -361,7 +317,7 @@ public class ConstituentBoundaryFeatureExtractor<S extends ConstituentBoundarySe
         s40(40.0f),
         s50(50.0f),
 
-        // Relative span - .2, .4, .6, .8, 1.0
+        // Relative span (fraction of the entire sentence) - .2, .4, .6, .8, 1.0
         rs2(.2f),
         rs4(.4f),
         rs6(.6f),
