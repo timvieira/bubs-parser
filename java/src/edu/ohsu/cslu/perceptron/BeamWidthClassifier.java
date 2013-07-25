@@ -34,6 +34,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 
 import cltool4j.BaseLogger;
+import cltool4j.GlobalConfigProperties;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
@@ -127,6 +128,9 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
 
     @Option(name = "-ucti", metaVar = "iterations", requires = "-g", usage = "Train a unary-constraint binary classifier for n iterations.")
     private int unaryConstraintClassifierTrainingIterations;
+
+    @Option(name = "-ucft", requires = "-ucti", metaVar = "templates or file", usage = "Feature templates for unary classifier (comma-delimited or template file)")
+    protected String unaryClassifierFeatureTemplates = DEFAULT_FEATURE_TEMPLATES();
 
     @Option(name = "-b", metaVar = "bias", usage = "Biased training penalty for underestimation of beam. To correct for imbalanced training data and downstream cost) - ratio 1:<bias>")
     protected volatile float negativeTrainingBias = 1f;
@@ -490,7 +494,7 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
                     "Training the unary constraint model for " + unaryConstraintClassifierTrainingIterations
                             + " iterations.");
 
-            this.unaryConstraintClassifier = new UnaryConstraintClassifier(featureTemplates, lexicon,
+            this.unaryConstraintClassifier = new UnaryConstraintClassifier(unaryClassifierFeatureTemplates, lexicon,
                     decisionTreeUnkClassSet);
             unaryConstraintClassifier.trainingIterations = factoredOnlyClassifierTrainingIterations;
             unaryConstraintClassifier.negativeTrainingBias = negativeTrainingBias;
@@ -624,16 +628,16 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
      */
     public short beamClass(final float[] dotProducts) {
 
-        final short classes = classes();
+        final short unboundedClass = (short) (classes() - 1);
 
         // Evaluate each dot-product as an independent binary classification, searching for the first positive
         // classification
-        for (short c = 0; c < classes - 1; c++) {
+        for (short c = 0; c < unboundedClass; c++) {
             if (dotProducts[c] + biases[c] > 0) {
                 return c;
             }
         }
-        return classes;
+        return unboundedClass;
     }
 
     public boolean factoredOnly(final float[] dotProducts) {
@@ -709,7 +713,7 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
 
     public float[] dotProducts(final BitVector featureVector) {
 
-        final float[] dotProducts = new float[classBoundaryBeamWidths.length];
+        final float[] dotProducts = new float[biases.length];
 
         // Unfortunately, we need separate cases for LargeVector and normal Vector classes
         if (featureVector instanceof LargeVector) {
@@ -719,8 +723,8 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
             for (final long feature : largeFeatureVector.longValues()) {
 
                 final int offset = parallelArrayOffsetMap.get(feature);
-                // Skip any features that aren't populated in the model (those we didn't observe in the training
-                // data)
+                // Skip any features that aren't populated in the model (those we didn't observe in training, or which
+                // weren't discriminatively useful)
                 if (offset < 0) {
                     continue;
                 }
@@ -846,21 +850,28 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
 
         final FloatVector[] allAvgWeights = new FloatVector[avgWeights.length
                 + (factoredOnlyClassifier != null ? 1 : 0) + (unaryConstraintClassifier != null ? 1 : 0)];
+        final float[] allBiases = new float[allAvgWeights.length];
 
         int i = 0;
         for (i = 0; i < avgWeights.length; i++) {
             allAvgWeights[i] = avgWeights[i];
+            allBiases[i] = biases[i];
         }
 
         if (factoredOnlyClassifier != null) {
             factoredOnlyClassifier.averageAllFeatures();
-            allAvgWeights[i++] = factoredOnlyClassifier.avgWeights;
+            factoredOnlyOffset = i;
+            allAvgWeights[i] = factoredOnlyClassifier.avgWeights;
+            allBiases[i++] = factoredOnlyClassifier.bias;
         }
 
         if (unaryConstraintClassifier != null) {
             unaryConstraintClassifier.averageAllFeatures();
-            allAvgWeights[i++] = unaryConstraintClassifier.avgWeights;
+            unaryConstraintOffset = i;
+            allAvgWeights[i] = unaryConstraintClassifier.avgWeights;
+            allBiases[i++] = unaryConstraintClassifier.bias;
         }
+        this.biases = allBiases;
 
         // And store in the compact, cache-efficient data structures
         final Long2ShortAVLTreeMap observedWeightCounts = MulticlassClassifier.observedWeightCounts(allAvgWeights);
@@ -1093,8 +1104,6 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
             this.featureTemplates = featureTemplates;
             this.lexicon = lexicon;
             this.decisionTreeUnkClassSet = decisionTreeUnkClassSet;
-            // TODO We should really probably exclude span-1 cells, but that doesn't (currently) agree with the feature
-            // extractors
             this.featureExtractor = new ConstituentBoundaryFeatureExtractor<S>(featureTemplates, lexicon,
                     decisionTreeUnkClassSet, grammar.coarsePosSymbolSet(), false);
         }
@@ -1110,26 +1119,26 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
             for (int i = 1, j = 0; i <= trainingIterations; i++, j = 0) {
 
                 for (final S sequence : trainingCorpusSequences) {
-                    // TODO Train only on open cells
-                    for (int k = 0; k < sequence.length(); k++) {
-                        train(sequence.goldClass(k), featureExtractor.featureVector(sequence, k));
+                    // Train only on open cells
+                    for (final int cellIndex : sequence.goldCellIndices()) {
+                        train(sequence.goldClass(cellIndex), featureExtractor.featureVector(sequence, cellIndex));
                     }
 
                     progressBar(100, 5000, j++);
                 }
 
-                // Skip the last iteration - we'll test after we finalize below
-                if (!devCorpusSequences.isEmpty() && i < trainingIterations) {
+                // Evaluate on the dev-set
+                if (!devCorpusSequences.isEmpty()) {
                     System.out.println();
-                    outputDevsetAccuracy(i, classify(devCorpusSequences));
+                    final edu.ohsu.cslu.perceptron.BinaryClassifier.BinaryClassifierResult result = classify(devCorpusSequences);
+                    BaseLogger
+                            .singleton()
+                            .info(String
+                                    .format("Iteration=%d Devset Accuracy=%.2f  P=%.3f  R=%.3f  neg-P=%.3f  neg-R=%.3f  Time=%d\n",
+                                            i, result.accuracy() * 100f, result.precision() * 100f,
+                                            result.recall() * 100f, result.negativePrecision() * 100f,
+                                            result.negativeRecall() * 100f, result.time));
                 }
-            }
-
-            // Test on the dev-set
-            if (!devCorpusSequences.isEmpty()) {
-                System.out.println();
-                // TODO Test only on open cells
-                outputDevsetAccuracy(trainingIterations, classify(devCorpusSequences));
             }
 
             //
@@ -1143,13 +1152,29 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
             }
         }
 
-        private void outputDevsetAccuracy(final int iteration, final BinaryClassifierResult result) {
+        /**
+         * Overrides the superclass implementation to classify only open cells
+         * 
+         * @param sequences
+         * @return results of classifying the input sequences (if they contain gold classifications)
+         */
+        @Override
+        protected BinaryClassifierResult classify(final ArrayList<S> sequences) {
 
-            BaseLogger.singleton().info(
-                    String.format(
-                            "Iteration=%d Devset Accuracy=%.2f  P=%.3f  R=%.3f  neg-P=%.3f  neg-R=%.3f  Time=%d\n",
-                            iteration, result.accuracy() * 100f, result.precision() * 100f, result.recall() * 100f,
-                            result.negativePrecision() * 100f, result.negativeRecall() * 100f, result.time));
+            final long t0 = System.currentTimeMillis();
+            final BinaryClassifierResult result = new BinaryClassifierResult();
+
+            for (final S sequence : sequences) {
+                result.totalSequences++;
+
+                sequence.allocatePredictedClasses();
+                for (final int cellIndex : sequence.goldCellIndices()) {
+                    classify(sequence, cellIndex, result);
+                }
+                sequence.clearPredictedClasses();
+            }
+            result.time = System.currentTimeMillis() - t0;
+            return result;
         }
 
         final void evaluateDevset(final ArrayList<S> devCorpusSequences) {
@@ -1161,12 +1186,14 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
             for (final S sequence : devCorpusSequences) {
                 result.totalSequences++;
                 sequence.allocatePredictedClasses();
-                for (int cellIndex = 0; cellIndex < sequence.predictedClasses.length; cellIndex++) {
+                for (final int cellIndex : sequence.goldCellIndices()) {
                     classify(sequence, cellIndex, result);
                 }
 
-                for (int cellIndex = 0; cellIndex < sequence.predictedClasses.length; cellIndex++) {
+                for (final int cellIndex : sequence.goldCellIndices()) {
                     if (sequence.goldClass(cellIndex) == false && sequence.predictedClass(cellIndex) == true) {
+                        // final short[] startAndEnd = Chart.startAndEnd(cellIndex, sequence.sentenceLength);
+                        // System.err.println(startAndEnd[0] + "," + startAndEnd[1]);
                         sentencesWithMisclassifiedNegative++;
                         break;
                     }
@@ -1234,9 +1261,15 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
         }
 
         @Override
-        protected boolean classifyCell(final PackedArrayChart chart, final int nonterminalOffset) {
+        protected boolean classifyCell(final PackedArrayChart chart, final short start, final short end,
+                final int nonterminalOffset) {
             return chart.sparseMatrixGrammar.grammarFormat.isFactored(chart.sparseMatrixGrammar.nonTermSet
                     .getSymbol(chart.nonTerminalIndices[nonterminalOffset]));
+        }
+
+        @Override
+        protected boolean includeCell(final short start, final short end) {
+            return end - start > 1;
         }
     }
 
@@ -1268,7 +1301,10 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
      * Represents the observed and predicted contents of cells in a parse tree - specifically, whether the cell contains
      * (or should contain) one or more unary productions.
      */
-    private class UnaryConstraintSequence extends BinaryConstituentBoundarySequence {
+    private static class UnaryConstraintSequence extends BinaryConstituentBoundarySequence {
+
+        private final static boolean UNARY_CONSTRAINTS_SPAN_1_ONLY = GlobalConfigProperties.singleton()
+                .getBooleanProperty(ParserDriver.OPT_UNARY_CLASSIFIER_SPAN_1_ONLY, false);
 
         public UnaryConstraintSequence(final PackedArrayChart chart, final BinaryTree<String> parseTree,
                 final BeamWidthClassifier classifier) {
@@ -1276,8 +1312,17 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
         }
 
         @Override
-        protected boolean classifyCell(final PackedArrayChart chart, final int nonterminalOffset) {
+        protected boolean classifyCell(final PackedArrayChart chart, final short start, final short end,
+                final int nonterminalOffset) {
+            if (UNARY_CONSTRAINTS_SPAN_1_ONLY && end - start > 1) {
+                return false;
+            }
             return chart.sparseMatrixGrammar.packingFunction.unpackRightChild(chart.packedChildren[nonterminalOffset]) == Production.UNARY_PRODUCTION;
+        }
+
+        @Override
+        protected boolean includeCell(final short start, final short end) {
+            return !UNARY_CONSTRAINTS_SPAN_1_ONLY || (end - start == 1);
         }
     }
 

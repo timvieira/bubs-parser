@@ -471,7 +471,7 @@ public final class BoundaryLex extends FigureOfMeritModel {
         return word;
     }
 
-    public class BoundaryLexFom extends FigureOfMerit {
+    public final class BoundaryLexFom extends FigureOfMerit {
 
         private static final long serialVersionUID = 1L;
         private int tokens[];

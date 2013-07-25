@@ -43,9 +43,9 @@ public class ConstrainedInsideOutsideParser extends
         SparseMatrixLoopParser<ConstrainedInsideOutsideGrammar, ConstrainedChart> implements ConstrainedChartParser {
 
     protected final static boolean APPROXIMATE_SUM = GlobalConfigProperties.singleton().getBooleanProperty(
-            ParserDriver.PROPERTY_APPROXIMATE_LOG_SUM, false);
+            ParserDriver.OPT_APPROXIMATE_LOG_SUM, false);
     protected final static float SUM_DELTA = GlobalConfigProperties.singleton().getFloatProperty(
-            ParserDriver.PROPERTY_LOG_SUM_DELTA, 16f);
+            ParserDriver.OPT_LOG_SUM_DELTA, 16f);
 
     ConstrainingChart constrainingChart;
 

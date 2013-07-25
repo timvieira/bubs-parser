@@ -71,12 +71,12 @@ import edu.ohsu.cslu.util.Strings;
 public class PackedArrayChart extends ParallelArrayChart {
 
     protected final static boolean APPROXIMATE_SUM = GlobalConfigProperties.singleton().getBooleanProperty(
-            ParserDriver.PROPERTY_APPROXIMATE_LOG_SUM, false);
+            ParserDriver.OPT_APPROXIMATE_LOG_SUM, false);
     protected final static float SUM_DELTA = GlobalConfigProperties.singleton().getFloatProperty(
-            ParserDriver.PROPERTY_LOG_SUM_DELTA, 16f);
+            ParserDriver.OPT_LOG_SUM_DELTA, 16f);
     /** Use the prioritization / FOM model's estimate of outside probabilities (eliminating the outside pass). */
     protected final static boolean HEURISTIC_OUTSIDE = GlobalConfigProperties.singleton().getBooleanProperty(
-            ParserDriver.PROPERTY_HEURISTIC_OUTSIDE, false);
+            ParserDriver.OPT_HEURISTIC_OUTSIDE, false);
 
     /**
      * Parallel array storing non-terminals (parallel to {@link ParallelArrayChart#insideProbabilities},

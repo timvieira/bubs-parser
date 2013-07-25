@@ -19,11 +19,15 @@
 
 package edu.ohsu.cslu.perceptron;
 
+import it.unimi.dsi.fastutil.booleans.BooleanArrayList;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+
 import java.util.Arrays;
 
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.datastructs.vectors.BitVector;
 import edu.ohsu.cslu.grammar.Production;
+import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 
 /**
@@ -36,10 +40,18 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 public abstract class BinaryConstituentBoundarySequence extends ConstituentBoundarySequence implements BinarySequence {
 
     /**
-     * Indices for positive-classification cells. All other cells are considered to be closed or classified as negative,
-     * and are omitted from the data structure to conserve heap memory during training.
+     * Gold classifications for open cells (those that participate in the 1-best constrained parse); parallel array to
+     * {@link #goldCellIndices}. All other cells are considered to be classified as negative, and are omitted from the
+     * data structure to conserve heap memory during training. In most cases, closed cells are excluded from training
+     * and evaluation, as they will also be omitted during inference.
      */
-    protected int[] goldCellIndices;
+    protected final boolean[] goldClasses;
+
+    /**
+     * Indices for open cells (those that participate in the 1-best constrained parse); parallel array to
+     * {@link #goldClasses}.
+     */
+    protected final int[] goldCellIndices;
 
     /**
      * Predicted classes, one for each cell in the chart (note that this is many more than are stored in
@@ -64,20 +76,18 @@ public abstract class BinaryConstituentBoundarySequence extends ConstituentBound
 
         // Copy from temporary storage (one entry per chart cell) to a compact structure with one entry for each cell in
         // the 1-best parse output
-        int positiveCells = 0;
-        for (int i = 0; i < tmpClasses.length; i++) {
-            if (tmpClasses[i]) {
-                positiveCells++;
+        final BooleanArrayList tmpGoldClasses = new BooleanArrayList();
+        final IntArrayList tmpGoldCellIndices = new IntArrayList();
+        for (int cellIndex = 0; cellIndex < tmpClasses.length; cellIndex++) {
+            final short[] startAndEnd = Chart.startAndEnd(cellIndex, sentenceLength);
+            if (chart.numNonTerminals[cellIndex] > 0 && includeCell(startAndEnd[0], startAndEnd[1])) {
+                tmpGoldClasses.add(tmpClasses[cellIndex]);
+                tmpGoldCellIndices.add(cellIndex);
             }
         }
-        this.goldCellIndices = new int[positiveCells];
 
-        for (int cellIndex = 0, i = 0; cellIndex < tmpClasses.length; cellIndex++) {
-            if (tmpClasses[cellIndex]) {
-                this.goldCellIndices[i] = cellIndex;
-                i++;
-            }
-        }
+        this.goldClasses = tmpGoldClasses.toBooleanArray();
+        this.goldCellIndices = tmpGoldCellIndices.toIntArray();
     }
 
     /**
@@ -100,7 +110,7 @@ public abstract class BinaryConstituentBoundarySequence extends ConstituentBound
         int bottomEntryIndex = Arrays.binarySearch(chart.nonTerminalIndices, offset, offset
                 + chart.numNonTerminals[cellIndex], parent);
 
-        if (classifyCell(chart, bottomEntryIndex)) {
+        if (includeCell(start, end) && classifyCell(chart, start, end, bottomEntryIndex)) {
             tmpClasses[cellIndex] = true;
         }
 
@@ -126,16 +136,32 @@ public abstract class BinaryConstituentBoundarySequence extends ConstituentBound
     }
 
     /**
+     * @param start
+     * @param end
+     * @return True the boolean classification of the supplied cell, as determined by the subclass of
+     *         {@link BinaryConstituentBoundarySequence}
+     */
+    protected abstract boolean includeCell(short start, short end);
+
+    /**
      * @param chart
+     * @param start
+     * @param end
      * @param nonterminalOffset
      * @return True the boolean classification of the supplied cell, as determined by the subclass of
      *         {@link BinaryConstituentBoundarySequence}
      */
-    protected abstract boolean classifyCell(final PackedArrayChart chart, final int nonterminalOffset);
+    protected abstract boolean classifyCell(final PackedArrayChart chart, short start, short end,
+            final int nonterminalOffset);
+
+    public int[] goldCellIndices() {
+        return goldCellIndices;
+    }
 
     @Override
     public boolean goldClass(final int cellIndex) {
-        return Arrays.binarySearch(goldCellIndices, cellIndex) >= 0;
+        final int i = Arrays.binarySearch(goldCellIndices, cellIndex);
+        return i >= 0 ? goldClasses[i] : false;
     }
 
     @Override
@@ -157,5 +183,22 @@ public abstract class BinaryConstituentBoundarySequence extends ConstituentBound
     @Override
     public void setPredictedClass(final int cellIndex, final boolean classification) {
         predictedClasses[cellIndex] = classification;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder(512);
+
+        for (int i = 0; i < goldCellIndices.length; i++) {
+            final int cellIndex = goldCellIndices[i];
+            final short[] startAndEnd = Chart.startAndEnd(cellIndex, sentenceLength);
+            sb.append("(" + startAndEnd[0] + "," + startAndEnd[1] + " " + (goldClasses[i] ? "T" : "F"));
+            if (predictedClasses != null) {
+                sb.append(predictedClasses[cellIndex] ? "/T" : "/F");
+
+            }
+            sb.append(")   ");
+        }
+        return sb.toString();
     }
 }

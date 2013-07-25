@@ -27,11 +27,13 @@ import java.io.IOException;
 import java.util.logging.Level;
 
 import cltool4j.BaseLogger;
+import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.datastructs.vectors.BitVector;
 import edu.ohsu.cslu.datastructs.vectors.PackedBitVector;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParseTask;
+import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.cellselector.CellSelector.ChainableCellSelector;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.perceptron.BeamWidthClassifier;
@@ -57,6 +59,15 @@ public class BeamWidthModel extends ChainableCellSelectorModel implements CellSe
 
     private BeamWidthClassifier classifier;
     private Tagger posTagger;
+
+    private final static boolean FACTORED_ONLY_CONSTRAINTS_DISABLED = GlobalConfigProperties.singleton()
+            .getBooleanProperty(ParserDriver.OPT_DISABLE_FACTORED_ONLY_CLASSIFIER, false);
+
+    private final static boolean UNARY_CONSTRAINTS_DISABLED = GlobalConfigProperties.singleton().getBooleanProperty(
+            ParserDriver.OPT_DISABLE_UNARY_CLASSIFIER, false);
+
+    private final static boolean UNARY_CONSTRAINTS_SPAN_1_ONLY = GlobalConfigProperties.singleton().getBooleanProperty(
+            ParserDriver.OPT_UNARY_CLASSIFIER_SPAN_1_ONLY, false);
 
     /**
      * Standard constructor
@@ -126,25 +137,26 @@ public class BeamWidthModel extends ChainableCellSelectorModel implements CellSe
             final BeamWidthSequence sequence = new BeamWidthSequence(task.tokens, task.posTags, classifier);
             sequence.allocatePredictedClasses();
 
-            classifier.classify(sequence);
-
             for (short span = 1; span <= sentenceLength; span++) {
                 for (short start = 0; start < sentenceLength - span + 1; start++) {
                     final short end = (short) (start + span);
                     final int cellIndex = Chart.cellIndex(start, end, sentenceLength, false);
-                    final short predictedClass = sequence.predictedClass(cellIndex);
 
                     final BitVector featureVector = classifier.featureExtractor().featureVector(sequence, cellIndex);
                     final float[] dotProducts = classifier.dotProducts(featureVector);
-                    sequence.setPredictedClass(cellIndex, classifier.beamClass(dotProducts));
+                    final short beamClass = classifier.beamClass(dotProducts);
+                    sequence.setPredictedClass(cellIndex, beamClass);
+                    final short beamWidth = classifier.beamWidth(beamClass);
+                    beamWidths[cellIndex] = beamWidth;
 
                     // All span-1 cells are open
-                    if (span == 1 || predictedClass > 0) {
+                    if (span == 1 || beamWidth > 0) {
                         tmpCellIndices.add(start);
                         tmpCellIndices.add((short) (start + span));
-                        beamWidths[cellIndex] = classifier.beamWidth(predictedClass);
-                        factoredOnly.set(cellIndex, classifier.factoredOnly(dotProducts));
-                        unariesDisallowed.set(cellIndex, classifier.factoredOnly(dotProducts));
+                        if (beamWidth > 0) {
+                            factoredOnly.set(cellIndex, classifier.factoredOnly(dotProducts));
+                        }
+                        unariesDisallowed.set(cellIndex, classifier.unariesDisallowed(dotProducts));
                     }
                 }
             }
@@ -185,12 +197,15 @@ public class BeamWidthModel extends ChainableCellSelectorModel implements CellSe
 
         @Override
         public boolean isCellOnlyFactored(final short start, final short end) {
-            return !constraintsEnabled || factoredOnly.getBoolean(Chart.cellIndex(start, end, sentenceLength));
+            return !FACTORED_ONLY_CONSTRAINTS_DISABLED
+                    && (!constraintsEnabled || factoredOnly.getBoolean(Chart.cellIndex(start, end, sentenceLength)));
         }
 
         @Override
         public boolean isUnaryOpen(final short start, final short end) {
-            return constraintsEnabled || !unariesDisallowed.getBoolean(Chart.cellIndex(start, end, sentenceLength));
+            return UNARY_CONSTRAINTS_DISABLED || !constraintsEnabled
+                    || (UNARY_CONSTRAINTS_SPAN_1_ONLY && end - start > 1)
+                    || !unariesDisallowed.getBoolean(Chart.cellIndex(start, end, sentenceLength));
         }
 
         @Override

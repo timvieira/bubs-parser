@@ -100,7 +100,7 @@ public abstract class FigureOfMeritModel {
         public void initSentence(final ParseTask parseTask, final Chart chart) {
         }
 
-        protected float normInside(final int start, final int end, final float insideProb) {
+        protected final float normInside(final int start, final int end, final float insideProb) {
             if (geometricInsideNorm) {
                 // Geometric mean normalization (used by C&C)
                 // non-log: sqrt(span, insideProb)
