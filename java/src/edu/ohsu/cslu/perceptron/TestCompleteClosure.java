@@ -229,7 +229,7 @@ public class TestCompleteClosure {
         classifier.grammarFormat = GrammarFormatType.Berkeley;
         classifier.lexicon = new SymbolSet<String>();
         classifier.decisionTreeUnkClassSet = new SymbolSet<String>();
-        classifier.vocabulary = new SymbolSet<String>();
+        classifier.nonterminalVocabulary = new SymbolSet<String>();
         classifier.train(new BufferedReader(new StringReader(tree)));
 
         final BinaryClassifierResult result = classifier.classify(new BufferedReader(new StringReader(tree)));
@@ -246,7 +246,7 @@ public class TestCompleteClosure {
         classifier.grammarFormat = GrammarFormatType.Berkeley;
         classifier.lexicon = new SymbolSet<String>();
         classifier.decisionTreeUnkClassSet = new SymbolSet<String>();
-        classifier.vocabulary = new SymbolSet<String>();
+        classifier.nonterminalVocabulary = new SymbolSet<String>();
 
         classifier.train(new BufferedReader(JUnit.unitTestDataAsReader(file)));
         final BinaryClassifierResult result = classifier.classify(new BufferedReader(JUnit.unitTestDataAsReader(file)));

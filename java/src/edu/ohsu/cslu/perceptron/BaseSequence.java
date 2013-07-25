@@ -49,7 +49,7 @@ public class BaseSequence implements Sequence {
     /**
      * Integer representation of the part-of-speech for each token in the sequence (as mapped by {@link #posSet}).
      */
-    int[] mappedPosSymbols;
+    short[] mappedPosSymbols;
 
     /**
      * Integer representation of the unigram suffix for each token in the sequence (as mapped by

@@ -181,6 +181,11 @@ public abstract class BinaryConstituentBoundarySequence extends ConstituentBound
     }
 
     @Override
+    public boolean[] predictedClasses() {
+        return predictedClasses;
+    }
+
+    @Override
     public void setPredictedClass(final int cellIndex, final boolean classification) {
         predictedClasses[cellIndex] = classification;
     }

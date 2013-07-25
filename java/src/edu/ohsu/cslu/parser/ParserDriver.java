@@ -279,9 +279,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     /** Configuration property key to disable unary-constraint classification in {@link BeamWidthModel}. */
     public final static String OPT_DISABLE_UNARY_CLASSIFIER = "disableUnaryClassifier";
 
-    /** Configuration property key to restrict unary classification to span-1 cells in {@link BeamWidthModel}. */
-    public final static String OPT_UNARY_CLASSIFIER_SPAN_1_ONLY = "classifyOnlySpan1Unaries";
-
     public static void main(final String[] args) {
         run(args);
     }

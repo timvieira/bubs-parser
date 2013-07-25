@@ -121,7 +121,7 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
      * Used during parsing inference
      */
     public CompleteClosureClassifier(final Grammar grammar) {
-        init(grammar);
+        init(grammar, fullPosSet);
         this.featureExtractor = new ConstituentBoundaryFeatureExtractor<CompleteClosureSequence>(featureTemplates,
                 lexicon, decisionTreeUnkClassSet, grammar.coarsePosSymbolSet(), true);
     }
@@ -134,10 +134,8 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
     }
 
     @Override
-    void init(final Grammar grammar) {
-        super.init(grammar);
-        this.vocabulary = fullPosSet ? grammar.posSymbolSet() : grammar.coarsePosSymbolSet();
-        this.vocabulary.finalize();
+    void init(final Grammar grammar, final boolean fullNonterminalVocabulary) {
+        super.init(grammar, fullNonterminalVocabulary);
         this.binarization = grammar.binarization();
         this.grammarFormat = grammar.grammarFormat;
     }
@@ -165,19 +163,19 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
                 BaseLogger.singleton().info("Reading grammar file...");
                 final Grammar g = new LeftCscSparseMatrixGrammar(fileAsBufferedReader(grammarFile),
                         new DecisionTreeTokenClassifier(), PerfectIntPairHashPackingFunction.class);
-                init(g);
+                init(g, fullPosSet);
 
             } else {
                 this.lexicon = new SymbolSet<String>();
                 this.decisionTreeUnkClassSet = new SymbolSet<String>();
-                this.vocabulary = new SymbolSet<String>();
+                this.nonterminalVocabulary = new SymbolSet<String>();
             }
 
             train(inputAsBufferedReader());
         } else {
             readModel(new FileInputStream(modelFile));
             this.featureExtractor = new ConstituentBoundaryFeatureExtractor<CompleteClosureSequence>(featureTemplates,
-                    lexicon, decisionTreeUnkClassSet, vocabulary, true);
+                    lexicon, decisionTreeUnkClassSet, nonterminalVocabulary, true);
             classify(inputAsBufferedReader());
         }
     }
@@ -197,7 +195,7 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
 
         for (final String line : inputLines(input)) {
             final CompleteClosureSequence sequence = new CompleteClosureSequence(line, binarization, grammarFormat,
-                    lexicon, decisionTreeUnkClassSet, vocabulary);
+                    lexicon, decisionTreeUnkClassSet, nonterminalVocabulary);
             result.totalSequences++;
 
             for (int i = 0; i < sequence.classes.length; i++) {
@@ -215,19 +213,21 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
 
         this.lexicon.defaultReturnValue(Grammar.nullSymbolStr);
         this.decisionTreeUnkClassSet.defaultReturnValue(Grammar.nullSymbolStr);
-        this.vocabulary.defaultReturnValue(Grammar.nullSymbolStr);
+        this.nonterminalVocabulary.defaultReturnValue(Grammar.nullSymbolStr);
 
         final long startTime = System.currentTimeMillis();
         final ArrayList<CompleteClosureSequence> trainingCorpusSequences = new ArrayList<CompleteClosureSequence>();
         final ArrayList<CompleteClosureSequence> devCorpusSequences = new ArrayList<CompleteClosureSequence>();
 
         if (posTaggerTrainingIterations != 0) {
-            this.posTagger = new Tagger(posTaggerFeatureTemplates, lexicon, decisionTreeUnkClassSet, vocabulary);
+            this.posTagger = new Tagger(posTaggerFeatureTemplates, lexicon, decisionTreeUnkClassSet,
+                    nonterminalVocabulary);
         }
 
-        final ArrayList<TagSequence> taggerTrainingCorpusSequences = posTagger != null ? new ArrayList<TagSequence>()
+        final ArrayList<MulticlassTagSequence> taggerTrainingCorpusSequences = posTagger != null ? new ArrayList<MulticlassTagSequence>()
                 : null;
-        final ArrayList<TagSequence> taggerDevCorpusSequences = posTagger != null ? new ArrayList<TagSequence>() : null;
+        final ArrayList<MulticlassTagSequence> taggerDevCorpusSequences = posTagger != null ? new ArrayList<MulticlassTagSequence>()
+                : null;
 
         //
         // Read in the training corpus and map each token. For some classifiers, we also pre-compute all features, but
@@ -239,9 +239,9 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
         for (final String line : inputLines(input)) {
             try {
                 trainingCorpusSequences.add(new CompleteClosureSequence(line, binarization, grammarFormat, lexicon,
-                        decisionTreeUnkClassSet, vocabulary));
+                        decisionTreeUnkClassSet, nonterminalVocabulary));
                 if (posTagger != null) {
-                    taggerTrainingCorpusSequences.add(new TagSequence(line, posTagger));
+                    taggerTrainingCorpusSequences.add(new MulticlassTagSequence(line, posTagger));
                 }
             } catch (final IllegalArgumentException ignore) {
                 // Skip malformed trees (e.g. INFO lines from parser output)
@@ -259,7 +259,7 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
         }
 
         featureExtractor = new ConstituentBoundaryFeatureExtractor<CompleteClosureSequence>(featureTemplates, lexicon,
-                decisionTreeUnkClassSet, vocabulary, true);
+                decisionTreeUnkClassSet, nonterminalVocabulary, true);
 
         //
         // Tag the training sequences with the trained POS tagger
@@ -277,11 +277,11 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
             for (final String line : fileLines(devSet)) {
 
                 final CompleteClosureSequence ccs = new CompleteClosureSequence(line, binarization, grammarFormat,
-                        lexicon, decisionTreeUnkClassSet, vocabulary);
+                        lexicon, decisionTreeUnkClassSet, nonterminalVocabulary);
                 devCorpusSequences.add(ccs);
 
                 if (posTagger != null) {
-                    ccs.posTags = posTagger.classify(new TagSequence(line, posTagger));
+                    ccs.posTags = posTagger.classify(new MulticlassTagSequence(line, posTagger));
                 }
             }
         }

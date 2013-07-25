@@ -39,6 +39,7 @@ import edu.ohsu.cslu.datastructs.vectors.LargeVector;
 import edu.ohsu.cslu.datastructs.vectors.MutableSparseFloatVector;
 import edu.ohsu.cslu.datastructs.vectors.MutableSparseIntVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
+import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.perceptron.Perceptron.LossFunction;
 
@@ -84,12 +85,29 @@ public abstract class BinaryClassifier<S extends BinarySequence> extends Classif
     private transient int trainExampleNumber = 0;
     private transient LossFunction lossFunction;
 
-    protected SymbolSet<String> vocabulary;
+    protected SymbolSet<String> nonterminalVocabulary;
+
+    public BinaryClassifier() {
+    }
+
+    /**
+     * Constructor for use in embedded training (e.g. when jointly training a POS tagger and unary constraint classifier
+     * in {@link BeamWidthClassifier}).
+     */
+    protected BinaryClassifier(final String featureTemplates, final Grammar grammar) {
+        init(grammar);
+    }
+
+    void init(final Grammar grammar, final boolean fullNonterminalVocabulary) {
+        super.init(grammar);
+        this.nonterminalVocabulary = fullNonterminalVocabulary ? grammar.posSymbolSet() : grammar.coarsePosSymbolSet();
+        this.nonterminalVocabulary.finalize();
+    }
 
     @Override
     public void finalizeMaps() {
         super.finalizeMaps();
-        vocabulary.finalize();
+        nonterminalVocabulary.finalize();
     }
 
     @Override
@@ -101,7 +119,7 @@ public abstract class BinaryClassifier<S extends BinarySequence> extends Classif
         this.featureTemplates = tmp.featureTemplates;
         this.lexicon = tmp.lexicon;
         this.decisionTreeUnkClassSet = tmp.unkClassSet;
-        this.vocabulary = tmp.vocabulary;
+        this.nonterminalVocabulary = tmp.vocabulary;
         this.avgWeights = tmp.avgWeights;
         this.bias = tmp.bias;
         is.close();

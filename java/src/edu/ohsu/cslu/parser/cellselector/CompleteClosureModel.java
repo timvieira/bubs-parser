@@ -35,7 +35,7 @@ import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.perceptron.BeamWidthClassifier;
 import edu.ohsu.cslu.perceptron.CompleteClosureClassifier;
 import edu.ohsu.cslu.perceptron.CompleteClosureSequence;
-import edu.ohsu.cslu.perceptron.TagSequence;
+import edu.ohsu.cslu.perceptron.MulticlassTagSequence;
 import edu.ohsu.cslu.perceptron.Tagger;
 
 /**
@@ -103,7 +103,7 @@ public class CompleteClosureModel extends ChainableCellSelectorModel implements 
             // POS-tag the sentence with a discriminative tagger
             // TODO Use the same lexicon, tagSet, etc. We already have a mapped int[] representation of the sentence, we
             // shouldn't need to do it again. But this is safe to start with.
-            final TagSequence tagSequence = new TagSequence(task.sentence, posTagger);
+            final MulticlassTagSequence tagSequence = new MulticlassTagSequence(task.sentence, posTagger);
             task.posTags = posTagger.classify(tagSequence);
 
             // Classify each chart cell, in left-to-right, bottom-up order

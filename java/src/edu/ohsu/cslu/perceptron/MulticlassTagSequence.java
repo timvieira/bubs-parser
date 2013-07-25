@@ -29,34 +29,36 @@ import edu.ohsu.cslu.grammar.SymbolSet;
  * @author Aaron Dunlop
  * @since Jul 11, 2013
  */
-public class TagSequence extends BaseSequence implements MulticlassSequence {
+public class MulticlassTagSequence extends BaseSequence implements MulticlassSequence {
 
     protected final SymbolSet<String> tagSet;
-    final short[] classes;
+    final short[] goldClasses;
     final short[] predictedClasses;
 
     /**
-     * Constructs from a bracketed string (e.g. (DT The) (NN fish) ... or from a space-delimited (untagged) string. Used
-     * by {@link CompleteClosureClassifier} when an existing {@link Tagger} is already initialized.
+     * Constructs from a tree, a bracketed string (e.g. (DT The) (NN fish) ...), or from a space-delimited (untagged)
+     * string. Used by {@link CompleteClosureClassifier} when an existing {@link Tagger} is already initialized.
      * 
      * @param sentence
      * @param classifier
      */
-    public TagSequence(final String sentence, final MulticlassClassifier<TagSequence> classifier) {
+    public MulticlassTagSequence(final String sentence, final MulticlassClassifier<MulticlassTagSequence> classifier) {
         this(sentence, classifier.lexicon, classifier.decisionTreeUnkClassSet, null, null, null, classifier.tagSet());
     }
 
     /**
-     * Constructs from a bracketed string (e.g. (DT The) (NN fish) ... or from a space-delimited (untagged) string.
+     * Constructs from a tree, a bracketed string (e.g. (DT The) (NN fish) ...), or from a space-delimited (untagged)
+     * string.
      * 
      * @param sentence
      * @param lexicon
      * @param unkClassSet
      * @param tagSet
      */
-    public TagSequence(final String sentence, final SymbolSet<String> lexicon, final SymbolSet<String> unkClassSet,
-            final SymbolSet<String> posSet, final SymbolSet<String> unigramSuffixSet,
-            final SymbolSet<String> bigramSuffixSet, final SymbolSet<String> tagSet) {
+    public MulticlassTagSequence(final String sentence, final SymbolSet<String> lexicon,
+            final SymbolSet<String> unkClassSet, final SymbolSet<String> posSet,
+            final SymbolSet<String> unigramSuffixSet, final SymbolSet<String> bigramSuffixSet,
+            final SymbolSet<String> tagSet) {
 
         super(lexicon, unkClassSet, posSet, unigramSuffixSet, bigramSuffixSet);
 
@@ -76,14 +78,14 @@ public class TagSequence extends BaseSequence implements MulticlassSequence {
                 this.tokens = new String[length];
                 this.mappedTokens = new int[length];
                 this.mappedUnkSymbols = new int[length];
-                this.classes = new short[length];
+                this.goldClasses = new short[length];
                 this.predictedClasses = new short[length];
                 if (unigramSuffixSet != null) {
                     this.mappedUnigramSuffix = new int[length];
                     this.mappedBigramSuffix = new int[length];
                 }
                 if (posSet != null) {
-                    this.mappedPosSymbols = new int[length];
+                    this.mappedPosSymbols = new short[length];
                 }
 
                 int position = 0;
@@ -100,14 +102,14 @@ public class TagSequence extends BaseSequence implements MulticlassSequence {
                 this.tokens = new String[length];
                 this.mappedTokens = new int[length];
                 this.mappedUnkSymbols = new int[length];
-                this.classes = new short[length];
+                this.goldClasses = new short[length];
                 this.predictedClasses = new short[length];
                 if (unigramSuffixSet != null) {
                     this.mappedUnigramSuffix = new int[length];
                     this.mappedBigramSuffix = new int[length];
                 }
                 if (posSet != null) {
-                    this.mappedPosSymbols = new int[length];
+                    this.mappedPosSymbols = new short[length];
                 }
 
                 for (int position = 0; position < split.length; position++) {
@@ -124,16 +126,16 @@ public class TagSequence extends BaseSequence implements MulticlassSequence {
             tokens = new String[length];
             this.mappedTokens = new int[length];
             this.mappedUnkSymbols = new int[length];
-            this.classes = new short[length];
+            this.goldClasses = new short[length];
             this.predictedClasses = new short[length];
             if (unigramSuffixSet != null) {
                 this.mappedUnigramSuffix = new int[length];
                 this.mappedBigramSuffix = new int[length];
             }
             if (posSet != null) {
-                this.mappedPosSymbols = new int[length];
+                this.mappedPosSymbols = new short[length];
             }
-            Arrays.fill(classes, (short) -1);
+            Arrays.fill(goldClasses, (short) -1);
 
             for (int i = 0; i < split.length; i++) {
                 tokens[i] = split[i];
@@ -161,11 +163,11 @@ public class TagSequence extends BaseSequence implements MulticlassSequence {
 
         // POS
         if (tagSet.isFinalized()) {
-            classes[position] = (short) tagSet.getIndex(pos);
+            goldClasses[position] = (short) tagSet.getIndex(pos);
         } else {
-            classes[position] = (short) tagSet.addSymbol(pos);
+            goldClasses[position] = (short) tagSet.addSymbol(pos);
         }
-        predictedClasses[position] = classes[position];
+        predictedClasses[position] = goldClasses[position];
 
         // Token
         if (lexicon.isFinalized()) {
@@ -196,7 +198,7 @@ public class TagSequence extends BaseSequence implements MulticlassSequence {
 
     @Override
     public short goldClass(final int position) {
-        return classes[position];
+        return goldClasses[position];
     }
 
     @Override
@@ -224,7 +226,7 @@ public class TagSequence extends BaseSequence implements MulticlassSequence {
         final StringBuilder sb = new StringBuilder(256);
         for (int i = 0; i < length; i++) {
             sb.append('(');
-            sb.append(classes[i] < 0 ? "---" : tagSet.getSymbol(classes[i]));
+            sb.append(goldClasses[i] < 0 ? "---" : tagSet.getSymbol(goldClasses[i]));
             sb.append(' ');
             sb.append(tokens[i]);
             sb.append(')');

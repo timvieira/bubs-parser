@@ -34,7 +34,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 
 import cltool4j.BaseLogger;
-import cltool4j.GlobalConfigProperties;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
@@ -55,7 +54,6 @@ import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
-import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
 import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.parser.ParseTask;
@@ -121,7 +119,7 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
     private int posTaggerTrainingIterations = 3;
 
     @Option(name = "-ptft", requires = "-ptti", metaVar = "templates or file", usage = "POS-tagger feature templates (comma-delimited), or template file")
-    private String posTaggerFeatureTemplates = new Tagger().DEFAULT_FEATURE_TEMPLATES();
+    private String posTaggerFeatureTemplates = Tagger.DEFAULT_FEATURE_TEMPLATES;
 
     @Option(name = "-foti", metaVar = "iterations", requires = "-g", usage = "Train a factored-only binary classifier for n iterations.")
     private int factoredOnlyClassifierTrainingIterations;
@@ -130,7 +128,7 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
     private int unaryConstraintClassifierTrainingIterations;
 
     @Option(name = "-ucft", requires = "-ucti", metaVar = "templates or file", usage = "Feature templates for unary classifier (comma-delimited or template file)")
-    protected String unaryClassifierFeatureTemplates = DEFAULT_FEATURE_TEMPLATES();
+    protected String unaryClassifierFeatureTemplates = Tagger.DEFAULT_FEATURE_TEMPLATES;
 
     @Option(name = "-b", metaVar = "bias", usage = "Biased training penalty for underestimation of beam. To correct for imbalanced training data and downstream cost) - ratio 1:<bias>")
     protected volatile float negativeTrainingBias = 1f;
@@ -158,7 +156,7 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
      * Unary constraint binary classifier - used only during training. Following training, {@link #finalizeModel()}
      * packs the learned parameters into {@link #parallelWeightArrayTags} and {@link #parallelWeightArray}.
      */
-    private volatile UnaryConstraintClassifier unaryConstraintClassifier;
+    private UnaryConstraintClassifier unaryConstraintClassifier;
 
     /**
      * Maps beam width to the associated class (as defined by {@link #classBoundaryBeamWidths}). E.g., if the class
@@ -288,6 +286,7 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
         ois.close();
         this.vocabulary = tmp.vocabulary;
         this.posTagger = tmp.posTagger;
+        this.unaryConstraintClassifier = tmp.unaryConstraintClassifier;
         this.featureTemplates = tmp.featureTemplates;
         this.parallelArrayOffsetMap = tmp.parallelArrayOffsetMap;
         this.parallelWeightArray = tmp.parallelWeightArray;
@@ -296,7 +295,6 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
         this.decisionTreeUnkClassSet = tmp.posTagger.decisionTreeUnkClassSet;
         this.classBoundaryBeamWidths = tmp.classBoundaryBeamWidths;
         this.factoredOnlyOffset = tmp.factoredOnlyOffset;
-        this.unaryConstraintOffset = tmp.unaryConstraintOffset;
         is.close();
     }
 
@@ -369,8 +367,8 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
 
         final long startTime = System.currentTimeMillis();
 
-        final ArrayList<TagSequence> taggerTrainingCorpusSequences = new ArrayList<TagSequence>();
-        final ArrayList<TagSequence> taggerDevCorpusSequences = new ArrayList<TagSequence>();
+        final ArrayList<MulticlassTagSequence> taggerTrainingCorpusSequences = new ArrayList<MulticlassTagSequence>();
+        final ArrayList<MulticlassTagSequence> taggerDevCorpusSequences = new ArrayList<MulticlassTagSequence>();
 
         final ArrayList<CompleteClosureSequence> ccTrainingCorpusSequences = new ArrayList<CompleteClosureSequence>();
         final ArrayList<CompleteClosureSequence> ccDevCorpusSequences = new ArrayList<CompleteClosureSequence>();
@@ -397,7 +395,7 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
                 final BinaryTree<String> binaryTree = NaryTree.read(line, String.class).binarize(grammarFormat,
                         binarization);
                 ccTrainingCorpusSequences.add(new CompleteClosureSequence(binaryTree, ccClassifier));
-                taggerTrainingCorpusSequences.add(new TagSequence(line, posTagger));
+                taggerTrainingCorpusSequences.add(new MulticlassTagSequence(line, posTagger));
             } catch (final IllegalArgumentException ignore) {
                 // Skip malformed trees (e.g. INFO lines from parser output)
             }
@@ -410,7 +408,7 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
                 final BinaryTree<String> binaryTree = NaryTree.read(line, String.class).binarize(grammarFormat,
                         binarization);
                 ccDevCorpusSequences.add(new CompleteClosureSequence(binaryTree, ccClassifier));
-                taggerDevCorpusSequences.add(new TagSequence(line, posTagger));
+                taggerDevCorpusSequences.add(new MulticlassTagSequence(line, posTagger));
             }
         }
 
@@ -453,20 +451,29 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
                 decisionTreeUnkClassSet, grammar.coarsePosSymbolSet(), false);
 
         // Create and POS-tag sequences
-        input.reset();
         final ArrayList<BeamWidthSequence> beamWidthTrainingCorpusSequences = new ArrayList<BeamWidthSequence>();
-        final ArrayList<FactoredOnlySequence> factoredOnlyTrainingCorpusSequences = factoredOnlyClassifierTrainingIterations > 0 ? new ArrayList<FactoredOnlySequence>()
-                : null;
-        final ArrayList<UnaryConstraintSequence> unaryConstraintTrainingCorpusSequences = unaryConstraintClassifierTrainingIterations > 0 ? new ArrayList<UnaryConstraintSequence>()
-                : null;
+        final ArrayList<BeamWidthSequence> beamWidthDevCorpusSequences = new ArrayList<BeamWidthSequence>();
+
+        ArrayList<BinaryTagSequence> unaryConstraintTrainingCorpusSequences = null;
+        ArrayList<BinaryTagSequence> unaryConstraintDevCorpusSequences = null;
+        if (unaryConstraintClassifierTrainingIterations > 0) {
+            this.unaryConstraintClassifier = new UnaryConstraintClassifier(unaryClassifierFeatureTemplates, grammar);
+            unaryConstraintTrainingCorpusSequences = unaryConstraintClassifierTrainingIterations > 0 ? new ArrayList<BinaryTagSequence>()
+                    : null;
+            unaryConstraintDevCorpusSequences = new ArrayList<BinaryTagSequence>();
+        }
+
+        ArrayList<FactoredOnlySequence> factoredOnlyTrainingCorpusSequences = null;
+        ArrayList<FactoredOnlySequence> factoredOnlyDevCorpusSequences = null;
+        if (factoredOnlyClassifierTrainingIterations > 0) {
+            this.factoredOnlyClassifier = new FactoredOnlyClassifier(featureTemplates, lexicon, decisionTreeUnkClassSet);
+            factoredOnlyTrainingCorpusSequences = new ArrayList<BeamWidthClassifier.FactoredOnlySequence>();
+            factoredOnlyDevCorpusSequences = new ArrayList<BeamWidthClassifier.FactoredOnlySequence>();
+        }
+
+        input.reset();
         readSequences(input, beamWidthTrainingCorpusSequences, factoredOnlyTrainingCorpusSequences,
                 unaryConstraintTrainingCorpusSequences, "training");
-
-        final ArrayList<BeamWidthSequence> beamWidthDevCorpusSequences = new ArrayList<BeamWidthSequence>();
-        final ArrayList<FactoredOnlySequence> factoredOnlyDevCorpusSequences = factoredOnlyClassifierTrainingIterations > 0 ? new ArrayList<FactoredOnlySequence>()
-                : null;
-        final ArrayList<UnaryConstraintSequence> unaryConstraintDevCorpusSequences = unaryConstraintClassifierTrainingIterations > 0 ? new ArrayList<UnaryConstraintSequence>()
-                : null;
 
         // Read in the dev set
         if (devSet != null) {
@@ -482,7 +489,6 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
                     .info("Training the factored-only model for " + factoredOnlyClassifierTrainingIterations
                             + " iterations.");
 
-            this.factoredOnlyClassifier = new FactoredOnlyClassifier(featureTemplates, lexicon, decisionTreeUnkClassSet);
             factoredOnlyClassifier.trainingIterations = factoredOnlyClassifierTrainingIterations;
             factoredOnlyClassifier.negativeTrainingBias = negativeTrainingBias;
             factoredOnlyClassifier.targetNegativeRecall = targetNegativeRecall;
@@ -494,9 +500,7 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
                     "Training the unary constraint model for " + unaryConstraintClassifierTrainingIterations
                             + " iterations.");
 
-            this.unaryConstraintClassifier = new UnaryConstraintClassifier(unaryClassifierFeatureTemplates, lexicon,
-                    decisionTreeUnkClassSet);
-            unaryConstraintClassifier.trainingIterations = factoredOnlyClassifierTrainingIterations;
+            unaryConstraintClassifier.trainingIterations = unaryConstraintClassifierTrainingIterations;
             unaryConstraintClassifier.negativeTrainingBias = negativeTrainingBias;
             unaryConstraintClassifier.targetNegativeRecall = targetNegativeRecall;
             unaryConstraintClassifier.train(unaryConstraintTrainingCorpusSequences, unaryConstraintDevCorpusSequences);
@@ -551,9 +555,9 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
                         + " without training an associated tagger.");
             }
             final FileOutputStream fos = new FileOutputStream(modelFile);
-            new ObjectOutputStream(fos).writeObject(new Model(vocabulary, posTagger, classBoundaryBeamWidths,
-                    featureTemplates, parallelArrayOffsetMap, parallelWeightArrayTags, parallelWeightArray, biases,
-                    factoredOnlyOffset, unaryConstraintOffset));
+            new ObjectOutputStream(fos).writeObject(new Model(vocabulary, posTagger, unaryConstraintClassifier,
+                    classBoundaryBeamWidths, featureTemplates, parallelArrayOffsetMap, parallelWeightArrayTags,
+                    parallelWeightArray, biases, factoredOnlyOffset));
             fos.close();
         }
 
@@ -563,7 +567,7 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
 
     private void readSequences(final BufferedReader input, final ArrayList<BeamWidthSequence> beamWidthSequences,
             final ArrayList<FactoredOnlySequence> factoredOnlySequences,
-            final ArrayList<UnaryConstraintSequence> unaryConstraintSequences, final String corpus) throws IOException {
+            final ArrayList<BinaryTagSequence> unaryConstraintSequences, final String corpus) throws IOException {
 
         BaseLogger.singleton().info("Reading and parsing " + corpus + " data");
         final long t0 = System.currentTimeMillis();
@@ -571,7 +575,7 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
 
         for (final String line : inputLines(input)) {
             try {
-                final TagSequence tagSequence = new TagSequence(line, posTagger);
+                final MulticlassTagSequence tagSequence = new MulticlassTagSequence(line, posTagger);
 
                 final BinaryTree<String> binaryTree = NaryTree.read(line, String.class).binarize(grammarFormat,
                         binarization);
@@ -597,9 +601,9 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
                     }
 
                     if (unaryConstraintSequences != null) {
-                        final UnaryConstraintSequence unaryConstraintSequence = new UnaryConstraintSequence(chart,
-                                binaryTree, this);
-                        unaryConstraintSequence.posTags = beamWidthSequence.posTags;
+                        final UnaryConstraintSequence unaryConstraintSequence = new UnaryConstraintSequence(binaryTree,
+                                unaryConstraintClassifier);
+                        unaryConstraintSequence.mappedPosSymbols = beamWidthSequence.posTags;
                         unaryConstraintSequences.add(unaryConstraintSequence);
                     }
 
@@ -641,19 +645,20 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
     }
 
     public boolean factoredOnly(final float[] dotProducts) {
-        try {
-            return dotProducts[factoredOnlyOffset] + biases[factoredOnlyOffset] > 0;
-        } catch (final ArrayIndexOutOfBoundsException e) {
+
+        if (factoredOnlyOffset < 0) {
             return false;
         }
+        return factoredOnlyOffset < 0 ? false : dotProducts[factoredOnlyOffset] + biases[factoredOnlyOffset] > 0;
+    }
+
+    public UnaryConstraintClassifier unaryConstraintClassifier() {
+        return unaryConstraintClassifier;
     }
 
     public boolean unariesDisallowed(final float[] dotProducts) {
-        try {
-            return dotProducts[unaryConstraintOffset] + biases[unaryConstraintOffset] > 0;
-        } catch (final ArrayIndexOutOfBoundsException e) {
-            return false;
-        }
+        return unaryConstraintOffset < 0 ? false
+                : dotProducts[unaryConstraintOffset] + biases[unaryConstraintOffset] > 0;
     }
 
     /**
@@ -1276,62 +1281,213 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
     /**
      * Unary constraint classifier, as described in Roark et al., 2012
      * "Finite-State Chart Constraints for Reduced Complexity Context-Free Parsing Pipelines". This implementation
-     * trains and tests unary-constraint models .
+     * trains and tests unary-constraint models only for span-1 cells (consistent with the approach in Roark et al.). We
+     * experimented with classifying every open cell in the chart, but it appears that it's very difficult to correctly
+     * classify cells spanning more than one word, reducing precision of positive classifications (and thus incorrectly
+     * closing some cells to unaries).
      * 
      * Implementation note: we consider a 'true' binary classification to be a closed cell, so we generally target
      * negative recall (i.e., the number of open cells correctly classified as such). To limit inference failures, that
      * negative-recall target ({@link BinaryClassifier#targetNegativeRecall}) should be very high - e.g., .99-.999.
      */
-    protected class UnaryConstraintClassifier extends BinaryCellClassifier<UnaryConstraintSequence> {
+    public class UnaryConstraintClassifier extends BinaryClassifier<BinaryTagSequence> {
 
         private static final long serialVersionUID = 1L;
 
+        SymbolSet<String> unigramSuffixSet;
+        SymbolSet<String> bigramSuffixSet;
+
         /**
          * @param featureTemplates
-         * @param lexicon
-         * @param decisionTreeUnkClassSet
+         * @param grammar
          */
-        public UnaryConstraintClassifier(final String featureTemplates, final SymbolSet<String> lexicon,
-                final SymbolSet<String> decisionTreeUnkClassSet) {
-            super(featureTemplates, lexicon, decisionTreeUnkClassSet);
+        public UnaryConstraintClassifier(final String featureTemplates, final Grammar grammar) {
+            super(featureTemplates, grammar);
+            final SymbolSet<String> tagSet = new SymbolSet<String>();
+            tagSet.addSymbol("F");
+            tagSet.addSymbol("T");
+            tagSet.defaultReturnValue(tagSet.addSymbol(Grammar.nullSymbolStr));
+
+            this.unigramSuffixSet = new SymbolSet<String>();
+            this.unigramSuffixSet.defaultReturnValue(Grammar.nullSymbolStr);
+
+            this.bigramSuffixSet = new SymbolSet<String>();
+            this.bigramSuffixSet.defaultReturnValue(Grammar.nullSymbolStr);
+
+            this.featureExtractor = new BinaryTaggerFeatureExtractor(featureTemplates, lexicon, grammar.unkClassSet(),
+                    nonterminalVocabulary, tagSet);
+        }
+
+        /**
+         * @param trainingCorpusSequences
+         * @param devCorpusSequences
+         */
+        public final void train(final ArrayList<BinaryTagSequence> trainingCorpusSequences,
+                final ArrayList<BinaryTagSequence> devCorpusSequences) {
+            //
+            // Iterate over training corpus, training the model
+            //
+            for (int i = 1, j = 0; i <= trainingIterations; i++, j = 0) {
+
+                for (final BinaryTagSequence sequence : trainingCorpusSequences) {
+                    // Train on all span-1 cells
+                    for (short start = 0; start < sequence.length; start++) {
+                        train(sequence.goldClass(start), featureExtractor.featureVector(sequence, start));
+                    }
+
+                    progressBar(100, 5000, j++);
+                }
+
+                // Evaluate on the dev-set
+                if (!devCorpusSequences.isEmpty()) {
+                    System.out.println();
+                    final edu.ohsu.cslu.perceptron.BinaryClassifier.BinaryClassifierResult result = classify(devCorpusSequences);
+                    BaseLogger
+                            .singleton()
+                            .info(String
+                                    .format("Iteration=%d Devset Accuracy=%.2f  P=%.3f  R=%.3f  neg-P=%.3f  neg-R=%.3f  Time=%d\n",
+                                            i, result.accuracy() * 100f, result.precision() * 100f,
+                                            result.recall() * 100f, result.negativePrecision() * 100f,
+                                            result.negativeRecall() * 100f, result.time));
+                }
+            }
+
+            //
+            // Search for a bias that satisfies the requested precision or recall
+            //
+            if (targetPrecision != 0) {
+                precisionBiasSearch(devCorpusSequences, featureExtractor);
+            } else if (targetNegativeRecall != 0) {
+                super.negativeRecallBiasSearch(devCorpusSequences, featureExtractor);
+                evaluateDevset(devCorpusSequences);
+            }
+        }
+
+        /**
+         * Overrides the superclass implementation to classify only open cells
+         * 
+         * @param sequences
+         * @return results of classifying the input sequences (if they contain gold classifications)
+         */
+        @Override
+        protected BinaryClassifierResult classify(final ArrayList<BinaryTagSequence> sequences) {
+
+            final long t0 = System.currentTimeMillis();
+            final BinaryClassifierResult result = new BinaryClassifierResult();
+
+            for (final BinaryTagSequence sequence : sequences) {
+                result.totalSequences++;
+
+                sequence.allocatePredictedClasses();
+                // Classify all span-1 cells
+                for (short start = 0; start < sequence.length; start++) {
+                    classify(sequence, start, result);
+                }
+                sequence.clearPredictedClasses();
+            }
+            result.time = System.currentTimeMillis() - t0;
+            return result;
+        }
+
+        final void evaluateDevset(final ArrayList<BinaryTagSequence> devCorpusSequences) {
+            final long t0 = System.currentTimeMillis();
+            final BinaryClassifierResult result = new BinaryClassifierResult();
+
+            int sentencesWithMisclassifiedNegative = 0;
+
+            for (final BinaryTagSequence sequence : devCorpusSequences) {
+                result.totalSequences++;
+                sequence.allocatePredictedClasses();
+                boolean misclassifiedNegative = false;
+
+                // Classify all span-1 cells
+                for (short start = 0; start < sequence.length; start++) {
+                    classify(sequence, start, result);
+                    if (sequence.goldClass(start) == false && sequence.predictedClass(start) == true) {
+                        misclassifiedNegative = true;
+                    }
+                }
+
+                if (misclassifiedNegative) {
+                    sentencesWithMisclassifiedNegative++;
+                }
+                sequence.clearPredictedClasses();
+            }
+            result.time = System.currentTimeMillis() - t0;
+
+            // Compute and report final classification statistics on the development set
+            final float sentenceNegativeRecall = (devCorpusSequences.size() - sentencesWithMisclassifiedNegative) * 1f
+                    / devCorpusSequences.size();
+
+            BaseLogger.singleton().info(
+                    String.format("Cells classified positive (including span-1): %d/%d  %d correct (%.3f%% )",
+                            result.classifiedPositive, result.positiveExamples, result.correctPositive,
+                            result.correctPositive * 100f / result.positiveExamples));
+            BaseLogger.singleton().info(
+                    String.format("Sentence-level recall (fraction with all open cells classified correctly): %.3f%%",
+                            sentenceNegativeRecall * 100f));
+        }
+
+        @Override
+        protected String DEFAULT_FEATURE_TEMPLATES() {
+            return DEFAULT_FEATURE_TEMPLATES;
+        }
+
+        @Override
+        protected final void train(final BufferedReader input) throws IOException {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        protected final void run() throws Exception {
+            throw new UnsupportedOperationException();
         }
     }
 
     /**
-     * Represents the observed and predicted contents of cells in a parse tree - specifically, whether the cell contains
-     * (or should contain) one or more unary productions.
+     * Represents presence or absence of unary productions in span-1 cells in a parse tree.
      */
-    private static class UnaryConstraintSequence extends BinaryConstituentBoundarySequence {
+    public static class UnaryConstraintSequence extends BinaryTagSequence {
 
-        private final static boolean UNARY_CONSTRAINTS_SPAN_1_ONLY = GlobalConfigProperties.singleton()
-                .getBooleanProperty(ParserDriver.OPT_UNARY_CLASSIFIER_SPAN_1_ONLY, false);
+        /**
+         * Constructor for use in training
+         * 
+         * @param tree
+         * @param classifier
+         */
+        public UnaryConstraintSequence(final BinaryTree<String> tree, final UnaryConstraintClassifier classifier) {
+            super(tree, classifier, classifier.nonterminalVocabulary, classifier.unigramSuffixSet,
+                    classifier.bigramSuffixSet);
+        }
 
-        public UnaryConstraintSequence(final PackedArrayChart chart, final BinaryTree<String> parseTree,
-                final BeamWidthClassifier classifier) {
-            super(chart, parseTree, classifier);
+        /**
+         * Constructor for use during inference
+         * 
+         * @param mappedTokens
+         * @param classifier
+         */
+        public UnaryConstraintSequence(final int[] mappedTokens, final UnaryConstraintClassifier classifier) {
+            super(mappedTokens, classifier, classifier.nonterminalVocabulary, classifier.unigramSuffixSet,
+                    classifier.bigramSuffixSet);
         }
 
         @Override
-        protected boolean classifyCell(final PackedArrayChart chart, final short start, final short end,
-                final int nonterminalOffset) {
-            if (UNARY_CONSTRAINTS_SPAN_1_ONLY && end - start > 1) {
+        protected boolean classifyLeaf(final BinaryTree<String> leaf) {
+            if (leaf.parent() == null || leaf.parent().parent() == null || leaf.parent().parent().leaves() == 1) {
                 return false;
             }
-            return chart.sparseMatrixGrammar.packingFunction.unpackRightChild(chart.packedChildren[nonterminalOffset]) == Production.UNARY_PRODUCTION;
-        }
 
-        @Override
-        protected boolean includeCell(final short start, final short end) {
-            return !UNARY_CONSTRAINTS_SPAN_1_ONLY || (end - start == 1);
+            return true;
         }
     }
 
     protected static class Model implements Serializable {
 
-        private static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = 2L;
 
         private final SymbolSet<String> vocabulary;
         private final Tagger posTagger;
+        private final UnaryConstraintClassifier unaryConstraintClassifier;
 
         private final short[] classBoundaryBeamWidths;
         private final String featureTemplates;
@@ -1339,16 +1495,17 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
         private final short[] parallelWeightArrayTags;
         private final float[] parallelWeightArray;
         private final float[] biases;
-        private final int factoredOnlyOffset, unaryConstraintOffset;
+        private final int factoredOnlyOffset;
 
         protected Model(final SymbolSet<String> vocabulary, final Tagger posTagger,
-                final short[] classBoundaryBeamWidths, final String featureTemplates,
-                final Long2IntOpenHashMap parallelArrayOffsetMap, final short[] parallelWeightArrayTags,
-                final float[] parallelWeightArray, final float[] biases, final int factoredOnlyOffset,
-                final int unaryConstraintOffset) {
+                final UnaryConstraintClassifier unaryConstraintClassifier, final short[] classBoundaryBeamWidths,
+                final String featureTemplates, final Long2IntOpenHashMap parallelArrayOffsetMap,
+                final short[] parallelWeightArrayTags, final float[] parallelWeightArray, final float[] biases,
+                final int factoredOnlyOffset) {
 
             this.vocabulary = vocabulary;
             this.posTagger = posTagger;
+            this.unaryConstraintClassifier = unaryConstraintClassifier;
             this.classBoundaryBeamWidths = classBoundaryBeamWidths;
             this.featureTemplates = featureTemplates;
 
@@ -1358,7 +1515,6 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
 
             this.biases = biases;
             this.factoredOnlyOffset = factoredOnlyOffset;
-            this.unaryConstraintOffset = unaryConstraintOffset;
         }
     }
 }

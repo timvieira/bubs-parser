@@ -33,5 +33,7 @@ public interface BinarySequence extends Sequence {
 
     public boolean predictedClass(final int i);
 
+    public boolean[] predictedClasses();
+
     public void setPredictedClass(final int i, final boolean classification);
 }

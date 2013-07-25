@@ -108,7 +108,7 @@ public class UnkClassTagger extends Tagger {
     }
 
     @Override
-    protected TagSequence createSequence(final String line) {
+    protected MulticlassTagSequence createSequence(final String line) {
         return new UnkClassSequence(line, this);
     }
 
@@ -116,7 +116,7 @@ public class UnkClassTagger extends Tagger {
      * Overrides the superclass implementation to only classify unknown words
      */
     @Override
-    public short[] classify(final TagSequence sequence) {
+    public short[] classify(final MulticlassTagSequence sequence) {
 
         for (int i = 0; i < sequence.length; i++) {
             if (sequence.mappedTokens[i] < 0) {
@@ -144,9 +144,9 @@ public class UnkClassTagger extends Tagger {
     }
 
     @Override
-    protected TaggerFeatureExtractor featureExtractor() {
-        return new TaggerFeatureExtractor(featureTemplates, lexicon, decisionTreeUnkClassSet, posSet, unigramSuffixSet,
-                bigramSuffixSet, tagSet);
+    protected MulticlassTaggerFeatureExtractor featureExtractor() {
+        return new MulticlassTaggerFeatureExtractor(featureTemplates, lexicon, decisionTreeUnkClassSet, posSet,
+                unigramSuffixSet, bigramSuffixSet, tagSet);
     }
 
     @Override

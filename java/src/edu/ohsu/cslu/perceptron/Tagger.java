@@ -27,14 +27,12 @@ import edu.ohsu.cslu.grammar.SymbolSet;
  * 
  * Input: Tagged tokens, one sentence per line. Format: '(tag token) (tag token) ...'
  * 
- * TODO Handle tree input so we can train directly on a treebank
- * 
  * TODO In classification mode, output tagged sequences
  * 
  * @author Aaron Dunlop
  * @since Jul 11, 2013
  */
-public class Tagger extends MulticlassClassifier<TagSequence> {
+public class Tagger extends MulticlassClassifier<MulticlassTagSequence> {
 
     private static final long serialVersionUID = 1L;
 
@@ -74,9 +72,11 @@ public class Tagger extends MulticlassClassifier<TagSequence> {
      * wm2_tm1
      * </pre>
      */
+    public static final String DEFAULT_FEATURE_TEMPLATES = "wm2,wm1,w,wp1,wp2,um2,um1,u,up1,up2,tm3,tm2,tm1,wm2_wm1,wm1_w,w_wp1,wp1_wp2,wm2_um1,wm1_u,u_wp1,up1_wp2,wm2_wm1_w,wm1_w_wp1,w_wp1_wp2,tm3_tm2,tm2_tm1,tm1_wm1,tm1_w,wm2_tm1";
+
     @Override
     protected String DEFAULT_FEATURE_TEMPLATES() {
-        return "wm2,wm1,w,wp1,wp2,um2,um1,u,up1,up2,tm3,tm2,tm1,wm2_wm1,wm1_w,w_wp1,wp1_wp2,wm2_um1,wm1_u,u_wp1,up1_wp2,wm2_wm1_w,wm1_w_wp1,w_wp1_wp2,tm3_tm2,tm2_tm1,tm1_wm1,tm1_w,wm2_tm1";
+        return DEFAULT_FEATURE_TEMPLATES;
     }
 
     public Tagger() {
@@ -89,13 +89,13 @@ public class Tagger extends MulticlassClassifier<TagSequence> {
     }
 
     @Override
-    protected TaggerFeatureExtractor featureExtractor() {
-        return new TaggerFeatureExtractor(featureTemplates, lexicon, decisionTreeUnkClassSet, posSet, tagSet);
+    protected MulticlassTaggerFeatureExtractor featureExtractor() {
+        return new MulticlassTaggerFeatureExtractor(featureTemplates, lexicon, decisionTreeUnkClassSet, posSet, tagSet);
     }
 
     @Override
-    protected TagSequence createSequence(final String line) {
-        return new TagSequence(line, this);
+    protected MulticlassTagSequence createSequence(final String line) {
+        return new MulticlassTagSequence(line, this);
     }
 
     public static void main(final String[] args) {

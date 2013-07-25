@@ -47,7 +47,7 @@ public class ProfileTagger extends BaseCommandlineTool {
         final BufferedReader br = inputAsBufferedReader();
         br.mark(20 * 1024 * 1024);
         int sentences = 0, words = 0, correct = 0;
-        final TaggerFeatureExtractor fe = new TaggerFeatureExtractor(t.featureTemplates, t.lexicon,
+        final MulticlassTaggerFeatureExtractor fe = new MulticlassTaggerFeatureExtractor(t.featureTemplates, t.lexicon,
                 t.decisionTreeUnkClassSet, null, t.tagSet());
 
         final long t0 = System.currentTimeMillis();
@@ -55,12 +55,12 @@ public class ProfileTagger extends BaseCommandlineTool {
         for (int i = 0; i < iterations; i++) {
             for (final String line : inputLines(br)) {
                 sentences++;
-                final TagSequence tagSequence = new TagSequence(line, t.lexicon, t.decisionTreeUnkClassSet,
-                        null, null, null, t.tagSet());
+                final MulticlassTagSequence tagSequence = new MulticlassTagSequence(line, t.lexicon,
+                        t.decisionTreeUnkClassSet, null, null, null, t.tagSet());
 
                 for (int j = 0; j < tagSequence.length; j++) {
                     tagSequence.predictedClasses[j] = t.classify(fe.featureVector(tagSequence, j));
-                    if (tagSequence.predictedClasses[j] == tagSequence.classes[j]) {
+                    if (tagSequence.predictedClasses[j] == tagSequence.goldClasses[j]) {
                         correct++;
                     }
                     words++;

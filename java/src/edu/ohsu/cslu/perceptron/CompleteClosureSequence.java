@@ -89,7 +89,7 @@ public class CompleteClosureSequence extends ConstituentBoundarySequence impleme
      * @param classifier
      */
     public CompleteClosureSequence(final BinaryTree<String> parseTree, final CompleteClosureClassifier classifier) {
-        this(parseTree, classifier.lexicon, classifier.decisionTreeUnkClassSet, classifier.vocabulary);
+        this(parseTree, classifier.lexicon, classifier.decisionTreeUnkClassSet, classifier.nonterminalVocabulary);
     }
 
     /**
@@ -139,6 +139,11 @@ public class CompleteClosureSequence extends ConstituentBoundarySequence impleme
 
     public final boolean predictedClass(final int i) {
         return predictedClasses[i];
+    }
+
+    @Override
+    public boolean[] predictedClasses() {
+        return predictedClasses;
     }
 
     @Override

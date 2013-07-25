@@ -37,8 +37,9 @@ import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.cellselector.CellSelector.ChainableCellSelector;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.perceptron.BeamWidthClassifier;
+import edu.ohsu.cslu.perceptron.BeamWidthClassifier.UnaryConstraintSequence;
 import edu.ohsu.cslu.perceptron.BeamWidthSequence;
-import edu.ohsu.cslu.perceptron.TagSequence;
+import edu.ohsu.cslu.perceptron.MulticlassTagSequence;
 import edu.ohsu.cslu.perceptron.Tagger;
 
 /**
@@ -65,9 +66,6 @@ public class BeamWidthModel extends ChainableCellSelectorModel implements CellSe
 
     private final static boolean UNARY_CONSTRAINTS_DISABLED = GlobalConfigProperties.singleton().getBooleanProperty(
             ParserDriver.OPT_DISABLE_UNARY_CLASSIFIER, false);
-
-    private final static boolean UNARY_CONSTRAINTS_SPAN_1_ONLY = GlobalConfigProperties.singleton().getBooleanProperty(
-            ParserDriver.OPT_UNARY_CLASSIFIER_SPAN_1_ONLY, false);
 
     /**
      * Standard constructor
@@ -123,12 +121,15 @@ public class BeamWidthModel extends ChainableCellSelectorModel implements CellSe
             final int cells = sentenceLength * (sentenceLength + 1) / 2;
             this.beamWidths = new short[cells];
             this.factoredOnly = new PackedBitVector(cells);
-            this.unariesDisallowed = new PackedBitVector(cells);
+
+            final BeamWidthClassifier.UnaryConstraintClassifier unaryConstraintClassifier = UNARY_CONSTRAINTS_DISABLED ? null
+                    : classifier.unaryConstraintClassifier();
+            this.unariesDisallowed = unaryConstraintClassifier != null ? new PackedBitVector(cells) : null;
 
             // POS-tag the sentence with a discriminative tagger
             // TODO Use the same lexicon, tagSet, etc. We already have a mapped int[] representation of the sentence, we
             // shouldn't need to do it again. But this is safe to start with.
-            final TagSequence tagSequence = new TagSequence(task.sentence, posTagger);
+            final MulticlassTagSequence tagSequence = new MulticlassTagSequence(task.sentence, posTagger);
             task.posTags = posTagger.classify(tagSequence);
 
             // Classify each chart cell, in left-to-right, bottom-up order
@@ -136,6 +137,9 @@ public class BeamWidthModel extends ChainableCellSelectorModel implements CellSe
 
             final BeamWidthSequence sequence = new BeamWidthSequence(task.tokens, task.posTags, classifier);
             sequence.allocatePredictedClasses();
+
+            final BeamWidthClassifier.UnaryConstraintSequence unaryConstraintSequence = unaryConstraintClassifier != null ? new UnaryConstraintSequence(
+                    task.tokens, unaryConstraintClassifier) : null;
 
             for (short span = 1; span <= sentenceLength; span++) {
                 for (short start = 0; start < sentenceLength - span + 1; start++) {
@@ -153,10 +157,17 @@ public class BeamWidthModel extends ChainableCellSelectorModel implements CellSe
                     if (span == 1 || beamWidth > 0) {
                         tmpCellIndices.add(start);
                         tmpCellIndices.add((short) (start + span));
-                        if (beamWidth > 0) {
-                            factoredOnly.set(cellIndex, classifier.factoredOnly(dotProducts));
-                        }
-                        unariesDisallowed.set(cellIndex, classifier.unariesDisallowed(dotProducts));
+                    }
+
+                    // Classify unaries in span-1 cells
+                    if (span == 1 && unaryConstraintClassifier != null) {
+                        unariesDisallowed.set(cellIndex,
+                                unaryConstraintClassifier.classify(unaryConstraintSequence, start));
+                    }
+
+                    // Classify factored-only
+                    if (span > 1 && beamWidth > 0) {
+                        factoredOnly.set(cellIndex, classifier.factoredOnly(dotProducts));
                     }
                 }
             }
@@ -204,7 +215,6 @@ public class BeamWidthModel extends ChainableCellSelectorModel implements CellSe
         @Override
         public boolean isUnaryOpen(final short start, final short end) {
             return UNARY_CONSTRAINTS_DISABLED || !constraintsEnabled
-                    || (UNARY_CONSTRAINTS_SPAN_1_ONLY && end - start > 1)
                     || !unariesDisallowed.getBoolean(Chart.cellIndex(start, end, sentenceLength));
         }
 

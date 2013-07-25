@@ -26,7 +26,7 @@ import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
  * 
  * @author Aaron Dunlop
  */
-public class UnkClassSequence extends TagSequence {
+public class UnkClassSequence extends MulticlassTagSequence {
 
     /**
      * Used by subclasses
@@ -58,15 +58,15 @@ public class UnkClassSequence extends TagSequence {
 
             // UNK-class
             if (tagSet.isFinalized()) {
-                classes[position] = (short) tagSet.getIndex(unkClass);
+                goldClasses[position] = (short) tagSet.getIndex(unkClass);
             } else {
-                classes[position] = (short) tagSet.addSymbol(unkClass);
+                goldClasses[position] = (short) tagSet.addSymbol(unkClass);
             }
 
         } else {
-            classes[position] = -1;
+            goldClasses[position] = -1;
         }
-        predictedClasses[position] = classes[position];
+        predictedClasses[position] = goldClasses[position];
 
         // POS
         if (posSet.isFinalized()) {
