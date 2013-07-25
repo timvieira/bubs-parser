@@ -278,8 +278,8 @@ public class ConstituentBoundaryFeatureExtractor<S extends ConstituentBoundarySe
             featureIndices[i] = featureIndex;
         }
 
-        return featureVectorLength > Integer.MAX_VALUE ? new LargeSparseBitVector(featureVectorLength, featureIndices)
-                : new SparseBitVector(featureVectorLength, featureIndices);
+        return featureVectorLength > Integer.MAX_VALUE ? new LargeSparseBitVector(featureVectorLength, featureIndices,
+                true) : new SparseBitVector(featureVectorLength, featureIndices);
     }
 
     private enum TemplateElement {

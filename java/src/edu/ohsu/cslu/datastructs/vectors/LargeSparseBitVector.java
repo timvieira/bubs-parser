@@ -18,12 +18,28 @@ public final class LargeSparseBitVector extends BaseVector implements LargeBitVe
     /**
      * Constructs a {@link SparseBitVector} from a long array.
      * 
+     * @param length
+     * @param array populated indices
+     * @param useSortedArrayReference
+     */
+    public LargeSparseBitVector(final long length, final long[] array, final boolean useSortedArrayReference) {
+        super(length);
+        if (useSortedArrayReference) {
+            this.elements = array;
+        } else {
+            elements = array.clone();
+            Arrays.sort(elements);
+        }
+    }
+
+    /**
+     * Constructs a {@link SparseBitVector} from a sorted long array.
+     * 
+     * @param length
      * @param array populated indices
      */
     public LargeSparseBitVector(final long length, final long[] array) {
-        super(length);
-        elements = array.clone();
-        Arrays.sort(elements);
+        this(length, array, false);
     }
 
     /**
