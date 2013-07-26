@@ -36,17 +36,17 @@ import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.cellselector.CellSelector.ChainableCellSelector;
 import edu.ohsu.cslu.parser.chart.Chart;
-import edu.ohsu.cslu.perceptron.BeamWidthClassifier;
-import edu.ohsu.cslu.perceptron.BeamWidthClassifier.UnaryConstraintSequence;
+import edu.ohsu.cslu.perceptron.AdaptiveBeamClassifier;
+import edu.ohsu.cslu.perceptron.AdaptiveBeamClassifier.UnaryConstraintSequence;
 import edu.ohsu.cslu.perceptron.BeamWidthSequence;
 import edu.ohsu.cslu.perceptron.MulticlassTagSequence;
 import edu.ohsu.cslu.perceptron.Tagger;
 
 /**
- * Implements 'Beam-width prediction', using a series of discriminative models to classify the beam width of each cell
+ * Implements 'Adaptive-beam' modeling, using a series of discriminative models to classify the beam width of each cell
  * as open or closed. The method is fully described in Bodenstab et al., 2011,
  * "Beam-Width Prediction for Efficient Context-Free Parsing". This class is a reimplementation of the original work,
- * and depends on a model trained with {@link BeamWidthClassifier} (and the {@link Tagger} embedded therein for POS
+ * and depends on a model trained with {@link AdaptiveBeamClassifier} (and the {@link Tagger} embedded therein for POS
  * tagging).
  * 
  * @see CompleteClosureModel
@@ -54,11 +54,11 @@ import edu.ohsu.cslu.perceptron.Tagger;
  * @author Aaron Dunlop
  * @since Jul 17, 2013
  */
-public class BeamWidthModel extends ChainableCellSelectorModel implements CellSelectorModel {
+public class AdaptiveBeamModel extends ChainableCellSelectorModel implements CellSelectorModel {
 
     private static final long serialVersionUID = 1L;
 
-    private BeamWidthClassifier classifier;
+    private AdaptiveBeamClassifier classifier;
     private Tagger posTagger;
 
     private final static boolean FACTORED_ONLY_CONSTRAINTS_DISABLED = GlobalConfigProperties.singleton()
@@ -76,21 +76,21 @@ public class BeamWidthModel extends ChainableCellSelectorModel implements CellSe
      * @throws IOException
      * @throws ClassNotFoundException
      */
-    public BeamWidthModel(final File classifierModel, final Grammar grammar, final CellSelectorModel childModel)
+    public AdaptiveBeamModel(final File classifierModel, final Grammar grammar, final CellSelectorModel childModel)
             throws IOException, ClassNotFoundException {
 
         super(childModel);
-        this.classifier = new BeamWidthClassifier(grammar);
+        this.classifier = new AdaptiveBeamClassifier(grammar);
         classifier.readModel(new FileInputStream(classifierModel));
         this.posTagger = classifier.posTagger();
     }
 
     /**
-     * Used when training a {@link BeamWidthClassifier}
+     * Used when training a {@link AdaptiveBeamClassifier}
      * 
      * @param classifier
      */
-    public BeamWidthModel(final BeamWidthClassifier classifier) {
+    public AdaptiveBeamModel(final AdaptiveBeamClassifier classifier) {
         super(null);
         this.classifier = classifier;
         this.posTagger = classifier.posTagger();
@@ -122,7 +122,7 @@ public class BeamWidthModel extends ChainableCellSelectorModel implements CellSe
             this.beamWidths = new short[cells];
             this.factoredOnly = new PackedBitVector(cells);
 
-            final BeamWidthClassifier.UnaryConstraintClassifier unaryConstraintClassifier = UNARY_CONSTRAINTS_DISABLED ? null
+            final AdaptiveBeamClassifier.UnaryConstraintClassifier unaryConstraintClassifier = UNARY_CONSTRAINTS_DISABLED ? null
                     : classifier.unaryConstraintClassifier();
             this.unariesDisallowed = unaryConstraintClassifier != null ? new PackedBitVector(cells) : null;
 
@@ -138,7 +138,7 @@ public class BeamWidthModel extends ChainableCellSelectorModel implements CellSe
             final BeamWidthSequence sequence = new BeamWidthSequence(task.tokens, task.posTags, classifier);
             sequence.allocatePredictedClasses();
 
-            final BeamWidthClassifier.UnaryConstraintSequence unaryConstraintSequence = unaryConstraintClassifier != null ? new UnaryConstraintSequence(
+            final AdaptiveBeamClassifier.UnaryConstraintSequence unaryConstraintSequence = unaryConstraintClassifier != null ? new UnaryConstraintSequence(
                     task.tokens, unaryConstraintClassifier) : null;
 
             for (short span = 1; span <= sentenceLength; span++) {

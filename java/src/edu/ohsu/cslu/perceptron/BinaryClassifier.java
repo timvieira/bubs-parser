@@ -92,7 +92,7 @@ public abstract class BinaryClassifier<S extends BinarySequence> extends Classif
 
     /**
      * Constructor for use in embedded training (e.g. when jointly training a POS tagger and unary constraint classifier
-     * in {@link BeamWidthClassifier}).
+     * in {@link AdaptiveBeamClassifier}).
      */
     protected BinaryClassifier(final String featureTemplates, final Grammar grammar) {
         init(grammar);

@@ -63,7 +63,7 @@ import edu.ohsu.cslu.parser.Parser.InputFormat;
 import edu.ohsu.cslu.parser.Parser.ParserType;
 import edu.ohsu.cslu.parser.Parser.ReparseStrategy;
 import edu.ohsu.cslu.parser.Parser.ResearchParserType;
-import edu.ohsu.cslu.parser.cellselector.BeamWidthModel;
+import edu.ohsu.cslu.parser.cellselector.AdaptiveBeamModel;
 import edu.ohsu.cslu.parser.cellselector.CellConstraintsComboModel;
 import edu.ohsu.cslu.parser.cellselector.CellSelectorModel;
 import edu.ohsu.cslu.parser.cellselector.CompleteClosureModel;
@@ -165,8 +165,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     @Option(name = "-ccClassifier", hidden = true, metaVar = "FILE", usage = "Complete closure classifier model (Java Serialized)")
     private File completeClosureClassifierFile = null;
 
-    @Option(name = "-bwClassifier", hidden = true, metaVar = "FILE", usage = "Beam-width prediction model (Java Serialized)")
-    private File beamWidthClassifierFile = null;
+    @Option(name = "-abModel", hidden = true, metaVar = "FILE", usage = "Adaptive-beam model (Java Serialized)")
+    private File adaptiveBeamModelFile = null;
 
     // Leaving this around for a bit, in case we get back to limited-span parsing, but it doesn't work currently
     // @Option(name = "-lsccModel", hidden = true,
@@ -176,7 +176,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     @Option(name = "-pm", aliases = { "-pruningmodel" }, hidden = true, metaVar = "FILE", usage = "Cell selector model file")
     private File[] pruningModels = null;
 
-    @Option(name = "-tcm", aliases = { "--token-classifier-model" }, hidden = true, metaVar = "FILE", usage = "Token classifier model file")
+    @Option(name = "-tcModel", aliases = { "--token-classifier-model" }, hidden = true, metaVar = "FILE", usage = "Token classifier model file")
     private File tokenClassifierModel = null;
 
     @Option(name = "-maxSubtreeSpan", hidden = true, metaVar = "span", usage = "Maximum subtree span for limited-depth parsing")
@@ -273,10 +273,10 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
      */
     public final static String OPT_HEURISTIC_OUTSIDE = "heuristicOutside";
 
-    /** Configuration property key to disable factored-only classification in {@link BeamWidthModel}. */
+    /** Configuration property key to disable factored-only classification in {@link AdaptiveBeamModel}. */
     public final static String OPT_DISABLE_FACTORED_ONLY_CLASSIFIER = "disableFactoredOnlyClassifier";
 
-    /** Configuration property key to disable unary-constraint classification in {@link BeamWidthModel}. */
+    /** Configuration property key to disable unary-constraint classification in {@link AdaptiveBeamModel}. */
     public final static String OPT_DISABLE_UNARY_CLASSIFIER = "disableUnaryClassifier";
 
     public static void main(final String[] args) {
@@ -362,8 +362,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
             }
 
             PerceptronBeamWidthModel beamConstraints = null;
-            if (beamWidthClassifierFile != null) {
-                cellSelectorModel = new BeamWidthModel(beamWidthClassifierFile, grammar, defaultCellSelector ? null
+            if (adaptiveBeamModelFile != null) {
+                cellSelectorModel = new AdaptiveBeamModel(adaptiveBeamModelFile, grammar, defaultCellSelector ? null
                         : cellSelectorModel);
                 defaultCellSelector = false;
 

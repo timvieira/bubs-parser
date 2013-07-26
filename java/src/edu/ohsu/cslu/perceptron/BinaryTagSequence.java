@@ -25,7 +25,7 @@ import edu.ohsu.cslu.grammar.SymbolSet;
 
 /**
  * Represents a sequence of tokens, each with a binary classification (e.g. for unary constraint classification, as in
- * {@link BeamWidthClassifier.UnaryConstraintClassifier}.
+ * {@link AdaptiveBeamClassifier.UnaryConstraintClassifier}.
  * 
  * @author Aaron Dunlop
  * @since Jul 25, 2013

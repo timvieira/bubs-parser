@@ -274,10 +274,10 @@
     </target>
 
     
-    <target name="train-bw" depends="compile">
+    <target name="train-ab" depends="compile">
         <antcall target="package-tool">
-            <param name="root-class" value="edu.ohsu.cslu.perceptron.BeamWidthClassifier" />
-            <param name="tool-name" value="train-bw" />
+            <param name="root-class" value="edu.ohsu.cslu.perceptron.AdaptiveBeamClassifier" />
+            <param name="tool-name" value="train-ab" />
             <param name="heap-size" value="3g" />
             <param name="package-gpl-libs" value="true" />
         </antcall>

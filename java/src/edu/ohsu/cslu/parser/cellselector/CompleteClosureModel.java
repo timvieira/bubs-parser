@@ -32,7 +32,7 @@ import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.cellselector.CellSelector.ChainableCellSelector;
 import edu.ohsu.cslu.parser.chart.Chart;
-import edu.ohsu.cslu.perceptron.BeamWidthClassifier;
+import edu.ohsu.cslu.perceptron.AdaptiveBeamClassifier;
 import edu.ohsu.cslu.perceptron.CompleteClosureClassifier;
 import edu.ohsu.cslu.perceptron.CompleteClosureSequence;
 import edu.ohsu.cslu.perceptron.MulticlassTagSequence;
@@ -44,7 +44,7 @@ import edu.ohsu.cslu.perceptron.Tagger;
  * a reimplementation of the original work, and depends on a model trained with {@link CompleteClosureClassifier} (and
  * the {@link Tagger} embedded therein for POS tagging).
  * 
- * @see BeamWidthModel
+ * @see AdaptiveBeamModel
  * 
  * @author Aaron Dunlop
  * @since Feb 14, 2013
@@ -75,7 +75,7 @@ public class CompleteClosureModel extends ChainableCellSelectorModel implements 
     }
 
     /**
-     * Used when training a {@link BeamWidthClassifier}
+     * Used when training a {@link AdaptiveBeamClassifier}
      * 
      * @param classifier
      */

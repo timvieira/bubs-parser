@@ -327,7 +327,7 @@ public class Tagger extends ClassifierTool<MulticlassTagSequence> {
 
     /**
      * Returns the selected class, per the computed dot products. The default implementation is a simple <b>argmax</b>,
-     * but a chained classifier (e.g. {@link BeamWidthClassifier}) evaluates each dot-product sequentially as
+     * but a chained classifier (e.g. {@link AdaptiveBeamClassifier}) evaluates each dot-product sequentially as
      * independent binary classifiers.
      * 
      * @param dotProducts

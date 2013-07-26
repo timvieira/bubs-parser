@@ -32,7 +32,7 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 
 /**
  * Represents binary classification for open chart cells (i.e., those with a beam width > 0, as classified by
- * {@link BeamWidthClassifier}).
+ * {@link AdaptiveBeamClassifier}).
  * 
  * @author Aaron Dunlop
  * @since Jul 19, 2013
@@ -62,7 +62,7 @@ public abstract class BinaryConstituentBoundarySequence extends ConstituentBound
     protected boolean[] predictedClasses;
 
     public BinaryConstituentBoundarySequence(final PackedArrayChart chart, final BinaryTree<String> parseTree,
-            final BeamWidthClassifier classifier) {
+            final AdaptiveBeamClassifier classifier) {
 
         super(parseTree, classifier.lexicon, classifier.decisionTreeUnkClassSet, classifier.vocabulary);
 

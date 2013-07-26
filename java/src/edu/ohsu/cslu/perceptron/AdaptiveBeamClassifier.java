@@ -117,7 +117,7 @@ import edu.ohsu.cslu.perceptron.Tagger.MulticlassClassifierResult;
  * @author Aaron Dunlop
  * @since Jul 11, 2013
  */
-public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
+public class AdaptiveBeamClassifier extends ClassifierTool<BeamWidthSequence> {
 
     private static final long serialVersionUID = 1L;
 
@@ -274,13 +274,13 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
     /**
      * Default constructor
      */
-    public BeamWidthClassifier() {
+    public AdaptiveBeamClassifier() {
     }
 
     /**
      * Used during parsing inference
      */
-    public BeamWidthClassifier(final Grammar grammar) {
+    public AdaptiveBeamClassifier(final Grammar grammar) {
         init(grammar);
         this.featureExtractor = new ConstituentBoundaryFeatureExtractor<BeamWidthSequence>(featureTemplates, lexicon,
                 decisionTreeUnkClassSet, grammar.coarsePosSymbolSet(), false);
@@ -289,7 +289,7 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
     /**
      * For unit testing
      */
-    public BeamWidthClassifier(final String featureTemplates) {
+    public AdaptiveBeamClassifier(final String featureTemplates) {
         this.featureTemplates = featureTemplates;
     }
 
@@ -492,8 +492,8 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
         ArrayList<FactoredOnlySequence> factoredOnlyDevCorpusSequences = null;
         if (factoredOnlyClassifierTrainingIterations > 0) {
             this.factoredOnlyClassifier = new FactoredOnlyClassifier(featureTemplates, lexicon, decisionTreeUnkClassSet);
-            factoredOnlyTrainingCorpusSequences = new ArrayList<BeamWidthClassifier.FactoredOnlySequence>();
-            factoredOnlyDevCorpusSequences = new ArrayList<BeamWidthClassifier.FactoredOnlySequence>();
+            factoredOnlyTrainingCorpusSequences = new ArrayList<AdaptiveBeamClassifier.FactoredOnlySequence>();
+            factoredOnlyDevCorpusSequences = new ArrayList<AdaptiveBeamClassifier.FactoredOnlySequence>();
         }
 
         input.reset();
@@ -1286,7 +1286,7 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
     public class FactoredOnlySequence extends BinaryConstituentBoundarySequence {
 
         public FactoredOnlySequence(final PackedArrayChart chart, final BinaryTree<String> parseTree,
-                final BeamWidthClassifier classifier) {
+                final AdaptiveBeamClassifier classifier) {
             super(chart, parseTree, classifier);
         }
 

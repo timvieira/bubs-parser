@@ -34,7 +34,7 @@ import edu.ohsu.cslu.parser.fom.FigureOfMeritModel.FigureOfMerit;
 /**
  * Represents the observed and predicted beam-width classes of cells in a parse tree.
  * 
- * @see BeamWidthClassifier
+ * @see AdaptiveBeamClassifier
  * 
  * @author Aaron Dunlop
  * @since Jul 11, 2013
@@ -57,7 +57,7 @@ public class BeamWidthSequence extends ConstituentBoundarySequence implements Mu
      */
     protected short[] predictedClasses;
 
-    private final BeamWidthClassifier classifier;
+    private final AdaptiveBeamClassifier classifier;
 
     /**
      * Constructs from an array of tokens, mapped according to the classifier's lexicon. Used during inference.
@@ -66,7 +66,7 @@ public class BeamWidthSequence extends ConstituentBoundarySequence implements Mu
      * @param posTags
      * @param classifier
      */
-    public BeamWidthSequence(final int[] mappedTokens, final short[] posTags, final BeamWidthClassifier classifier) {
+    public BeamWidthSequence(final int[] mappedTokens, final short[] posTags, final AdaptiveBeamClassifier classifier) {
 
         super(mappedTokens, posTags, classifier.lexicon, classifier.decisionTreeUnkClassSet);
 
@@ -85,7 +85,7 @@ public class BeamWidthSequence extends ConstituentBoundarySequence implements Mu
      * @param classifier
      */
     public BeamWidthSequence(final PackedArrayChart chart, final BinaryTree<String> parseTree,
-            final BeamWidthClassifier classifier) {
+            final AdaptiveBeamClassifier classifier) {
 
         super(parseTree, classifier.lexicon, classifier.decisionTreeUnkClassSet, classifier.vocabulary);
         this.classifier = classifier;
