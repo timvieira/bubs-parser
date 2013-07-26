@@ -237,15 +237,18 @@ public class Tagger extends ClassifierTool<MulticlassTagSequence> {
         return new MulticlassTagSequence(line, this);
     }
 
-    private int[] classify(final ArrayList<? extends MulticlassSequence> devCorpusSequences,
-            final ArrayList<BitVector[]> devCorpusFeatures) {
+    private MulticlassClassifierResult classify(final ArrayList<? extends MulticlassSequence> devCorpusSequences,
+            final ArrayList<BitVector[]> devCorpusFeatures, MulticlassClassifierResult result) {
+
+        if (result == null) {
+            result = new MulticlassClassifierResult();
+        }
 
         // Test the development set
-        int sentences = 0, words = 0, correct = 0;
         final long t0 = System.currentTimeMillis();
 
         for (int j = 0; j < devCorpusFeatures.size(); j++) {
-            sentences++;
+            result.sentences++;
             final MulticlassSequence tagSequence = devCorpusSequences.get(j);
             final BitVector[] featureVectors = devCorpusFeatures.get(j);
 
@@ -253,14 +256,15 @@ public class Tagger extends ClassifierTool<MulticlassTagSequence> {
                 if (featureVectors[k] != null) {
                     tagSequence.setPredictedClass(k, classify(featureVectors[k]));
                     if (tagSequence.predictedClass(k) == tagSequence.goldClass(k)) {
-                        correct++;
+                        result.correct++;
                     }
-                    words++;
+                    result.words++;
                 }
             }
             Arrays.fill(tagSequence.predictedClasses(), (short) 0);
         }
-        return new int[] { sentences, words, correct, (int) (System.currentTimeMillis() - t0) };
+        result.time += (int) (System.currentTimeMillis() - t0);
+        return result;
     }
 
     /**
@@ -422,13 +426,15 @@ public class Tagger extends ClassifierTool<MulticlassTagSequence> {
      */
     protected void crossValidate(final BufferedReader input) throws IOException {
 
-        final long startTime = System.currentTimeMillis();
         final ArrayList<MulticlassTagSequence> allSequences = readTrainingCorpus(input);
 
         final int foldSize = Math.round(1f * allSequences.size() / crossValidationFolds);
 
+        MulticlassClassifierResult totalResult = new MulticlassClassifierResult();
+
         for (int i = 0; i < crossValidationFolds; i++) {
 
+            BaseLogger.singleton().info("--- Cross-validation fold " + i + " ---");
             //
             // Separate the training corpus into training and held-out sets
             //
@@ -446,11 +452,10 @@ public class Tagger extends ClassifierTool<MulticlassTagSequence> {
             //
             // Train
             //
-            train(allSequences, devSequences, trainingIterations);
+            totalResult = totalResult.sum(train(allSequences, devSequences, trainingIterations));
         }
 
-        BaseLogger.singleton().info(
-                String.format("Time: %d seconds\n", (System.currentTimeMillis() - startTime) / 1000));
+        BaseLogger.singleton().info(String.format("Cross-validation Accuracy=%.2f", totalResult.accuracy() * 100f));
     }
 
     /**
@@ -462,9 +467,10 @@ public class Tagger extends ClassifierTool<MulticlassTagSequence> {
                 parallelWeightArrayTags, parallelWeightArray);
     }
 
-    void train(final ArrayList<MulticlassTagSequence> trainingCorpusSequences,
+    MulticlassClassifierResult train(final ArrayList<MulticlassTagSequence> trainingCorpusSequences,
             final ArrayList<MulticlassTagSequence> devCorpusSequences, final int iterations) {
 
+        MulticlassClassifierResult devResult = null;
         featureExtractor = featureExtractor();
         perceptronModel = new AveragedPerceptron(tagSet.size(), featureExtractor.vectorLength());
 
@@ -495,10 +501,10 @@ public class Tagger extends ClassifierTool<MulticlassTagSequence> {
 
             // Skip the last iteration - we'll test after we finalize below
             if (!devCorpusSequences.isEmpty() && i < iterations) {
-                final int[] devResult = classify(devCorpusSequences, devCorpusFeatures);
+                devResult = classify(devCorpusSequences, devCorpusFeatures, null);
                 BaseLogger.singleton().info(
-                        String.format("Iteration=%d Devset Accuracy=%.2f  Time=%d\n", i, devResult[2] * 100f
-                                / devResult[1], devResult[3]));
+                        String.format("Iteration=%d Devset Accuracy=%.2f  Time=%d\n", i, devResult.accuracy() * 100f,
+                                devResult.time));
             }
         }
 
@@ -508,12 +514,12 @@ public class Tagger extends ClassifierTool<MulticlassTagSequence> {
 
         // Test on the dev-set
         if (!devCorpusSequences.isEmpty()) {
-            final int[] devResult = classify(devCorpusSequences, devCorpusFeatures);
+            devResult = classify(devCorpusSequences, devCorpusFeatures, null);
             BaseLogger.singleton().info(
-                    String.format("Iteration=%d Devset Accuracy=%.2f  Time=%d\n", iterations, devResult[2] * 100f
-                            / devResult[1], devResult[3]));
-
+                    String.format("Iteration=%d Devset Accuracy=%.2f  Time=%d\n", iterations,
+                            devResult.accuracy() * 100f, devResult.time));
         }
+        return devResult;
     }
 
     protected void train(final short goldClass, final BitVector featureVector) {
@@ -644,6 +650,11 @@ public class Tagger extends ClassifierTool<MulticlassTagSequence> {
 
         public float accuracy() {
             return correct * 1f / words;
+        }
+
+        public MulticlassClassifierResult sum(final MulticlassClassifierResult other) {
+            return new MulticlassClassifierResult(sentences + other.sentences, words + other.words, correct
+                    + other.correct, time + other.time);
         }
     }
 
