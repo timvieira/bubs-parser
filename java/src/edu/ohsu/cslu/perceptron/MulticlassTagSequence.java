@@ -42,7 +42,7 @@ public class MulticlassTagSequence extends BaseSequence implements MulticlassSeq
      * @param sentence
      * @param classifier
      */
-    public MulticlassTagSequence(final String sentence, final MulticlassClassifier<MulticlassTagSequence> classifier) {
+    public MulticlassTagSequence(final String sentence, final Tagger classifier) {
         this(sentence, classifier.lexicon, classifier.decisionTreeUnkClassSet, null, null, null, classifier.tagSet());
     }
 

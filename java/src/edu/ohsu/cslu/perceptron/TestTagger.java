@@ -32,7 +32,7 @@ import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.SymbolSet;
-import edu.ohsu.cslu.perceptron.MulticlassClassifier.MulticlassClassifierResult;
+import edu.ohsu.cslu.perceptron.Tagger.MulticlassClassifierResult;
 import edu.ohsu.cslu.tests.JUnit;
 
 /**

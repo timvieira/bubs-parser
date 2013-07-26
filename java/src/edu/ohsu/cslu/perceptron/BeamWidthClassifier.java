@@ -60,11 +60,12 @@ import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser.ResearchParserType;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.cellselector.CompleteClosureModel;
+import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.fom.FigureOfMeritModel;
 import edu.ohsu.cslu.parser.ml.CartesianProductHashSpmlParser;
-import edu.ohsu.cslu.perceptron.MulticlassClassifier.MulticlassClassifierResult;
 import edu.ohsu.cslu.perceptron.Perceptron.LossFunction;
+import edu.ohsu.cslu.perceptron.Tagger.MulticlassClassifierResult;
 
 /**
  * Beam-width prediction model, as described in Bodenstab et al., 2011,
@@ -80,14 +81,38 @@ import edu.ohsu.cslu.perceptron.Perceptron.LossFunction;
  * beam=MAX_BEAM_WIDTH.
  * 
  * This class (unfortunately) includes a lot of code duplicated from {@link BinaryClassifier},
- * {@link CompleteClosureClassifier}, and {@link MulticlassClassifier} but those systems are specific enough to their
- * own tasks that it wasn't easy to directly share the implementation.
+ * {@link CompleteClosureClassifier}, and {@link Tagger} but those systems are specific enough to their own tasks that
+ * it wasn't easy to directly share the implementation.
  * 
  * Training a beam-width model is a multi-step process. First, we train a part-of-speech (POS) tagger. The predicted POS
  * tags are used as features for subsequent stages (and for classification during inference). We then train a
  * complete-closure (CC) model. While the CC model is not strictly necessary, it greatly speeds inference during the
  * subsequent beam-width training stage, and produces cell populations very similar to those of the beam-width model,
  * improving beam-width prediction.
+ * 
+ * We then read in and process the training corpus, performing pruned inference - beam-search guided by the supplied FOM
+ * and constrained by the new CC model. This produces a {@link Chart} structure for each training tree. We consider the
+ * 1-best parse in this {@link Chart} to be the 'gold' tree. I.e., we're training the beam-width model to keep the
+ * 1-best within the beam search. This differs slightly from the approach in Bodenstab et al., which trained on the
+ * 1-best chart from an exhaustive parse. However, the CC model has several advantages:
+ * 
+ * <ol>
+ * <li>It improves accuracy slightly vs. an unconstrained Viterbi parse.</li>
+ * <li>The chart (hypergraph) produced by CC-constrained parse is more similar to the one we expect from a beam-width
+ * model during final inference.</li>
+ * <li>It is <em>much</em> faster, allowing us to incorporate parsing directly into the model training system and train
+ * a beam-width models quickly for an arbitrary grammar.</li>
+ * </ol>
+ * 
+ * After parsing each training sequence, we extract from each cell of the 'gold' chart:
+ * <ul>
+ * <li>The beam class (the location within the FOM-priotized cell population of the 1-best constituent</li>
+ * <li>Whether a span-1 cell contains a unary production (for unary constraint tagging)</li>
+ * <li>Whether a span > 1 cell contains a factored non-terminal (for factored-only constraint classification)</li>
+ * </ul>
+ * 
+ * Finally, we train the beam-width model, and (if specified), the unary and factored-only constraint models, and
+ * optimize the biases of each to achieve the requested negative-label recall.
  * 
  * @author Aaron Dunlop
  * @since Jul 11, 2013
@@ -879,16 +904,16 @@ public class BeamWidthClassifier extends ClassifierTool<BeamWidthSequence> {
         this.biases = allBiases;
 
         // And store in the compact, cache-efficient data structures
-        final Long2ShortAVLTreeMap observedWeightCounts = MulticlassClassifier.observedWeightCounts(allAvgWeights);
-        final int arraySize = MulticlassClassifier.finalizedArraySize(observedWeightCounts);
+        final Long2ShortAVLTreeMap observedWeightCounts = Tagger.observedWeightCounts(allAvgWeights);
+        final int arraySize = Tagger.finalizedArraySize(observedWeightCounts);
 
         this.parallelArrayOffsetMap = new Long2IntOpenHashMap();
         this.parallelArrayOffsetMap.defaultReturnValue(-1);
         this.parallelWeightArrayTags = new short[arraySize];
         this.parallelWeightArray = new float[arraySize];
 
-        MulticlassClassifier.finalizeModel(allAvgWeights, observedWeightCounts, parallelArrayOffsetMap,
-                parallelWeightArrayTags, parallelWeightArray);
+        Tagger.finalizeModel(allAvgWeights, observedWeightCounts, parallelArrayOffsetMap, parallelWeightArrayTags,
+                parallelWeightArray);
     }
 
     // protected void update(final boolean goldClass, final BitVector featureVector, final float alpha) {

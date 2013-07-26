@@ -143,6 +143,9 @@ public class UnkClassTagger extends Tagger {
         super.initFromModel(tmp);
     }
 
+    /**
+     * Overrides the superclass implementation to include {@link #unigramSuffixSet} and {@link #bigramSuffixSet}.
+     */
     @Override
     protected MulticlassTaggerFeatureExtractor featureExtractor() {
         return new MulticlassTaggerFeatureExtractor(featureTemplates, lexicon, decisionTreeUnkClassSet, posSet,
