@@ -44,7 +44,7 @@ public class UnkClassTagger extends Tagger {
 
     // Training an UNK-class tagger requires an input grammar. We can test tagging without it, but at inference time, we
     // need the lexicon indices to match
-    @Option(name = "-g", metaVar = "grammar", usage = "Grammar file.")
+    @Option(name = "-g", requires = "-m", metaVar = "grammar", usage = "Grammar file.")
     protected File grammarFile;
 
     SymbolSet<String> unigramSuffixSet;
@@ -99,7 +99,7 @@ public class UnkClassTagger extends Tagger {
     @Override
     protected void setup() throws Exception {
         super.setup();
-        if (trainingIterations > 0) {
+        if (trainingIterations > 0 && crossValidationFolds == 0) {
             BaseLogger.singleton().info("Reading grammar file...");
             final Grammar g = new LeftCscSparseMatrixGrammar(fileAsBufferedReader(grammarFile),
                     new DecisionTreeTokenClassifier(), PerfectIntPairHashPackingFunction.class);

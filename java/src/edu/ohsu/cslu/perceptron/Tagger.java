@@ -65,7 +65,7 @@ public class Tagger extends ClassifierTool<MulticlassTagSequence> {
     private static final long serialVersionUID = 1L;
 
     @Option(name = "-xv", metaVar = "folds", choiceGroup = "model", usage = "Perform k-fold cross-validation on the training set (dev-set will be ignored and no model file will be written)")
-    private int crossValidationFolds;
+    protected int crossValidationFolds;
 
     /**
      * Default Feature Templates:
@@ -188,6 +188,8 @@ public class Tagger extends ClassifierTool<MulticlassTagSequence> {
         this.lexicon = tmp.lexicon;
         this.decisionTreeUnkClassSet = tmp.unkClassSet;
         this.tagSet = tmp.tagSet;
+        this.posSet = tmp.posSet;
+
         this.featureExtractor = featureExtractor();
         this.parallelArrayOffsetMap = tmp.parallelArrayOffsetMap;
         this.parallelWeightArrayTags = tmp.parallelWeightArrayTags;
@@ -216,12 +218,11 @@ public class Tagger extends ClassifierTool<MulticlassTagSequence> {
             sentences++;
             final MulticlassTagSequence sequence = createSequence(line);
             for (int i = 0; i < sequence.length(); i++) {
-                sequence.toString();
                 sequence.setPredictedClass(i, classify(fe.featureVector(sequence, i)));
             }
 
             for (int j = 0; j < sequence.length(); j++) {
-                if (sequence.predictedClass(j) < 0) {
+                if (sequence.goldClass(j) < 0) {
                     continue;
                 }
                 if (sequence.predictedClass(j) == sequence.goldClass(j)) {
