@@ -55,7 +55,7 @@ public abstract class ClassifierTool<S extends Sequence> extends BaseCommandline
     private static final long serialVersionUID = 2L;
 
     @Option(name = "-ti", metaVar = "iterations", usage = "Train the tagger for n iterations (Optionally tests on dev-set with '-d' and outputs a model with '-m')")
-    int trainingIterations = 2;
+    protected int trainingIterations;
 
     @Option(name = "-ft", requires = "-ti", metaVar = "templates or file", usage = "Feature templates (comma-delimited), or template file")
     protected String featureTemplates = DEFAULT_FEATURE_TEMPLATES();

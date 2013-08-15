@@ -41,7 +41,7 @@ public abstract class Classifier implements Serializable {
 
     public abstract String getFeatureTemplate();
 
-    // not sure if I want this here ...
+    // TODO Remove this if we retire PerceptronBeamWidthModel and BinaryPerceptronSet
     public abstract void setBias(final String biasString);
 
     public int numClasses() {

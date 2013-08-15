@@ -809,7 +809,7 @@ public class AdaptiveBeamClassifier extends ClassifierTool<BeamWidthSequence> {
      */
     public void classify(final BeamWidthSequence sequence) {
 
-        sequence.allocatePredictedClasses();
+        sequence.allocatePredictionStorage();
 
         for (int cellIndex = 0; cellIndex < sequence.predictedClasses.length; cellIndex++) {
             final BitVector featureVector = featureExtractor.featureVector(sequence, cellIndex);
@@ -827,7 +827,7 @@ public class AdaptiveBeamClassifier extends ClassifierTool<BeamWidthSequence> {
      */
     private void classify(final BeamWidthSequence sequence, final BeamWidthResult result) {
 
-        sequence.allocatePredictedClasses();
+        sequence.allocatePredictionStorage();
         int underestimatedBeam = 0;
 
         for (int cellIndex = 0; cellIndex < sequence.predictedClasses.length; cellIndex++) {
@@ -848,7 +848,7 @@ public class AdaptiveBeamClassifier extends ClassifierTool<BeamWidthSequence> {
         }
 
         // Null out predicted classes
-        sequence.clearPredictedClasses();
+        sequence.clearPredictionStorage();
     }
 
     /**
@@ -1197,11 +1197,11 @@ public class AdaptiveBeamClassifier extends ClassifierTool<BeamWidthSequence> {
             for (final S sequence : sequences) {
                 result.totalSequences++;
 
-                sequence.allocatePredictedClasses();
+                sequence.allocatePredictionStorage();
                 for (final int cellIndex : sequence.goldCellIndices()) {
                     classify(sequence, cellIndex, result);
                 }
-                sequence.clearPredictedClasses();
+                sequence.clearPredictionStorage();
             }
             result.time = System.currentTimeMillis() - t0;
             return result;
@@ -1215,7 +1215,7 @@ public class AdaptiveBeamClassifier extends ClassifierTool<BeamWidthSequence> {
 
             for (final S sequence : devCorpusSequences) {
                 result.totalSequences++;
-                sequence.allocatePredictedClasses();
+                sequence.allocatePredictionStorage();
                 for (final int cellIndex : sequence.goldCellIndices()) {
                     classify(sequence, cellIndex, result);
                 }
@@ -1228,7 +1228,7 @@ public class AdaptiveBeamClassifier extends ClassifierTool<BeamWidthSequence> {
                         break;
                     }
                 }
-                sequence.clearPredictedClasses();
+                sequence.clearPredictionStorage();
             }
             result.time = System.currentTimeMillis() - t0;
 
@@ -1403,12 +1403,12 @@ public class AdaptiveBeamClassifier extends ClassifierTool<BeamWidthSequence> {
             for (final BinaryTagSequence sequence : sequences) {
                 result.totalSequences++;
 
-                sequence.allocatePredictedClasses();
+                sequence.allocatePredictionStorage();
                 // Classify all span-1 cells
                 for (short start = 0; start < sequence.length; start++) {
                     classify(sequence, start, result);
                 }
-                sequence.clearPredictedClasses();
+                sequence.clearPredictionStorage();
             }
             result.time = System.currentTimeMillis() - t0;
             return result;
@@ -1422,7 +1422,7 @@ public class AdaptiveBeamClassifier extends ClassifierTool<BeamWidthSequence> {
 
             for (final BinaryTagSequence sequence : devCorpusSequences) {
                 result.totalSequences++;
-                sequence.allocatePredictedClasses();
+                sequence.allocatePredictionStorage();
                 boolean misclassifiedNegative = false;
 
                 // Classify all span-1 cells
@@ -1436,7 +1436,7 @@ public class AdaptiveBeamClassifier extends ClassifierTool<BeamWidthSequence> {
                 if (misclassifiedNegative) {
                     sentencesWithMisclassifiedNegative++;
                 }
-                sequence.clearPredictedClasses();
+                sequence.clearPredictionStorage();
             }
             result.time = System.currentTimeMillis() - t0;
 

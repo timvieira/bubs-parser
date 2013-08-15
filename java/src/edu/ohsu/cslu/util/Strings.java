@@ -723,4 +723,33 @@ public class Strings {
         }
         return numerals / token.length();
     }
+
+    // TODO Our own floating-point formatter, in case we decide to replace String.format() in ParseTask.statsString()
+    // with a faster implementation.
+    //
+    // public static String format(final double d, final int decimalPlaces) {
+    //
+    // }
+    //
+    // public static void formatAndAppend(double d, final int decimalPlaces, final StringBuilder sb) {
+    // if (d < 0) {
+    // sb.append('-');
+    // d = -d;
+    // }
+    // final long scaled = (long) (d * 1e6 + 0.5);
+    // long factor = 1000000;
+    // int scale = 7;
+    // while (factor * 10 <= scaled) {
+    // factor *= 10;
+    // scale++;
+    // }
+    // while (scale > 0) {
+    // if (scale == 6)
+    // sb.append('.');
+    // final long c = scaled / factor % 10;
+    // factor /= 10;
+    // sb.append((char) ('0' + c));
+    // scale--;
+    // }
+    // }
 }

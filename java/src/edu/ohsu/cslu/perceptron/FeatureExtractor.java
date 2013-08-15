@@ -53,9 +53,6 @@ import edu.ohsu.cslu.datastructs.vectors.NumericVector;
  * <li>tm1_w: Word/tag feature including tag(i-1) and word(i)</li>
  * </ul>
  * 
- * TODO Consider merging with {@link BaseSequence}. It seems like a sequence should probably be able to extract its own
- * features (and, when instantiated with training or test data, its own gold tags).
- * 
  * @param <I> the type of sequence or other input that features will be extracted from
  * 
  * @author Aaron Dunlop

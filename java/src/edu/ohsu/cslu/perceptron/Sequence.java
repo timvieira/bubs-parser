@@ -20,6 +20,8 @@
 package edu.ohsu.cslu.perceptron;
 
 /**
+ * Represents a sequence of classification or regression input. Often, but not necessarily a sentence.
+ * 
  * @author Aaron Dunlop
  * @since Jul 11, 2013
  */
@@ -27,11 +29,14 @@ public interface Sequence {
 
     public int length();
 
-    public void allocatePredictedClasses();
+    /**
+     * Allocates storage for predictions. Supported by some {@link Sequence} implementations, and a noop for others.
+     */
+    public void allocatePredictionStorage();
 
     /**
      * Clears the predicted-class storage (saving heap space between uses). Supported by some {@link Sequence}
      * implementations, and a noop for others.
      */
-    public void clearPredictedClasses();
+    public void clearPredictionStorage();
 }

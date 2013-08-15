@@ -39,6 +39,8 @@ import edu.ohsu.cslu.parser.Util;
 /**
  * Trains a perceptron model from a corpus. Features and objective tags are derived using a {@link FeatureExtractor}.
  * 
+ * TODO Remove, now that we have {@link Tagger} and {@link AdaptiveBeamClassifier}
+ * 
  * @author Nathan Bodenstab
  */
 public class TrainPerceptron extends BaseCommandlineTool {

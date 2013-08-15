@@ -224,11 +224,11 @@ public abstract class BinaryClassifier<S extends BinarySequence> extends Classif
         for (final S sequence : sequences) {
             result.totalSequences++;
 
-            sequence.allocatePredictedClasses();
+            sequence.allocatePredictionStorage();
             for (int i = 0; i < sequence.length(); i++) {
                 classify(sequence, i, result);
             }
-            sequence.clearPredictedClasses();
+            sequence.clearPredictionStorage();
         }
         result.time = System.currentTimeMillis() - t0;
         return result;
@@ -304,7 +304,7 @@ public abstract class BinaryClassifier<S extends BinarySequence> extends Classif
      * @param lastAveraged The last example for which an average weight was computed for each individual feature
      * @param trainExampleNumber The current training example
      */
-    static void averageAllFeatures(final FloatVector rawWeights, final FloatVector avgWeights,
+    public static void averageAllFeatures(final FloatVector rawWeights, final FloatVector avgWeights,
             final IntVector lastAveraged, final int trainExampleNumber) {
 
         if (lastAveraged instanceof LargeVector) {

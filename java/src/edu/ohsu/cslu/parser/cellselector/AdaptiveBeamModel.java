@@ -136,7 +136,7 @@ public class AdaptiveBeamModel extends ChainableCellSelectorModel implements Cel
             final ShortArrayList tmpCellIndices = new ShortArrayList(cells);
 
             final BeamWidthSequence sequence = new BeamWidthSequence(task.tokens, task.posTags, classifier);
-            sequence.allocatePredictedClasses();
+            sequence.allocatePredictionStorage();
 
             final AdaptiveBeamClassifier.UnaryConstraintSequence unaryConstraintSequence = unaryConstraintClassifier != null ? new UnaryConstraintSequence(
                     task.tokens, unaryConstraintClassifier) : null;

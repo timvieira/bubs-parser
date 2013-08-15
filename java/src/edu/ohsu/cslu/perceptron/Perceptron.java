@@ -292,45 +292,4 @@ public class Perceptron extends Classifier {
     public void writeModel(final BufferedWriter stream) throws IOException {
         stream.write(toString());
     }
-
-    // /**
-    // * For unit testing.
-    // *
-    // * @param feature
-    // * @return raw weight for the specified feature
-    // */
-    // float rawFeatureWeight(final int feature) {
-    // return rawPerceptron.getFloat(feature);
-    // }
-    //
-    // /**
-    // * For unit testing.
-    // *
-    // * @param feature
-    // * @param example
-    // * @return averaged weight for the specified feature at the specified example
-    // */
-    // float averagedFeatureWeight(final int feature, final int example) {
-    // final int la = lastAveraged.getInt(feature);
-    // if (la == 0) {
-    // return rawPerceptron.getFloat(feature);
-    // } else if (la > example) {
-    // throw new IllegalArgumentException("Feature " + feature + " updated at example " + la
-    // + " (more recently than requested example " + example + ")");
-    // }
-    //
-    // final float currentAverage = averagedPerceptron.getFloat(feature);
-    // // Average up to the current example
-    // final float update = (rawPerceptron.getFloat(feature) - currentAverage) * (example - la) / example;
-    // return currentAverage + update;
-    // }
-    // /**
-    // * Returns the floating-point output of the raw perceptron model for the specified feature vector.
-    // *
-    // * @param featureVector
-    // * @return the floating-point output of the averaged perceptron model for the specified feature vector.
-    // */
-    // private float rawFloatOutput(final Vector featureVector) {
-    // return rawPerceptron.dotProduct(featureVector);
-    // }
 }

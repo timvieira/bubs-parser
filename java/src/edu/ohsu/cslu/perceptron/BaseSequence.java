@@ -129,10 +129,10 @@ public class BaseSequence implements Sequence {
     }
 
     @Override
-    public void allocatePredictedClasses() {
+    public void allocatePredictionStorage() {
     }
 
     @Override
-    public void clearPredictedClasses() {
+    public void clearPredictionStorage() {
     }
 }

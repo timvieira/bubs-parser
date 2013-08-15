@@ -199,12 +199,12 @@ public class BeamWidthSequence extends ConstituentBoundarySequence implements Mu
     }
 
     @Override
-    public void allocatePredictedClasses() {
+    public void allocatePredictionStorage() {
         this.predictedClasses = new short[sentenceLength * (sentenceLength + 1) / 2];
     }
 
     @Override
-    public void clearPredictedClasses() {
+    public void clearPredictionStorage() {
         // Conserve memory between uses
         this.predictedClasses = null;
     }
