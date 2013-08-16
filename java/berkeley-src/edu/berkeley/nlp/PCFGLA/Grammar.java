@@ -710,13 +710,16 @@ public class Grammar implements Serializable, Cloneable {
     }
 
     /**
-     * Tally the probability of seeing each substate. This data is needed for tallyMergeScores. mergeWeights is indexed
-     * as [state][substate]. This data should be normalized before being used by another function.
+     * Tally the conditional probability of each substate, given its parent state. This data is needed for
+     * tallyMergeScores. <code>substateProbabilities</code> is indexed as [state][substate]. This data should be
+     * normalized before being used by another function.
      * 
      * @param tree
-     * @param mergeWeights The probability of seeing substate given state.
+     * @param substateScores The conditional probability of each substate given its parent state. Note: these counts are
+     *            not normalized, so they are not proper probabilities until normalization (after all trees have been
+     *            tallied).
      */
-    public void tallyMergeWeights(final Tree<StateSet> tree, final double mergeWeights[][]) {
+    public void tallySubstateScores(final Tree<StateSet> tree, final double substateScores[][]) {
 
         if (tree.isLeaf()) {
             return;
@@ -738,42 +741,28 @@ public class Grammar implements Serializable, Cloneable {
         }
 
         for (short i = 0; i < label.numSubStates(); i++) {
-            mergeWeights[state][i] += probs[i] / total;
+            substateScores[state][i] += probs[i] / total;
         }
         for (final Tree<StateSet> child : tree.children()) {
-            tallyMergeWeights(child, mergeWeights);
+            tallySubstateScores(child, substateScores);
         }
     }
 
     /**
-     * normalize merge weights. assumes that the mergeWeights are given as logs. the normalized weights are returned as
-     * probabilities.
-     * 
-     * TODO Only used in {@link GrammarMerger}. Move it there? Or combine into Grammar?
-     */
-    public void normalizeMergeWeights(final double[][] mergeWeights) {
-        for (int state = 0; state < mergeWeights.length; state++) {
-            double sum = 0;
-            for (int subState = 0; subState < numSubStates[state]; subState++) {
-                sum += mergeWeights[state][subState];
-            }
-            if (sum == 0)
-                sum = 1;
-            for (int subState = 0; subState < numSubStates[state]; subState++) {
-                mergeWeights[state][subState] /= sum;
-            }
-        }
-    }
-
-    /**
-     * Calculate the log likelihood gain of merging pairs of split states together. This information is returned in
-     * deltas[state][merged substate]. It requires mergeWeights to be calculated by tallyMergeWeights.
+     * Accumulates the log likelihood gain (or loss) of merging pairs of split states together. This information is
+     * returned in <code>likelihoodDeltas[state][merged substate]</code>. It requires conditional substate
+     * probabilities, as calculated by
+     * {@link GrammarMerger#computeSubstateConditionalProbabilities(Grammar, Lexicon, StateSetTreeList)}.
      * 
      * @param tree
-     * @param deltas The log likelihood gained by merging pairs of substates.
-     * @param mergeWeights The probability of seeing substate given state.
+     * @param likelihoodDeltas The log likelihood gained by merging pairs of substates (usually negative). Indexed by
+     *            state, substate 1, substate 2. Accumulated as each training tree is tallied.
+     * @param substateConditionalProbabilities Substate probabilities, conditioned on the occurrence of the parent
+     *            state. Indexed by state, substate. As computed by
+     *            {@link GrammarMerger#computeSubstateConditionalProbabilities(Grammar, Lexicon, StateSetTreeList)}.
      */
-    public void tallyMergeScores(final Tree<StateSet> tree, final double[][][] deltas, final double[][] mergeWeights) {
+    public void tallyMergeLikelihoodDeltas(final Tree<StateSet> tree, final double[][][] likelihoodDeltas,
+            final double[][] substateConditionalProbabilities) {
         if (tree.isLeaf())
             return;
         final StateSet label = tree.label();
@@ -797,33 +786,40 @@ public class Grammar implements Serializable, Cloneable {
                 map[0] = i;
                 map[1] = j;
                 final double[] tmp1 = new double[2], tmp2 = new double[2];
+
                 double mergeWeightSum = 0;
                 for (int k = 0; k < 2; k++) {
-                    mergeWeightSum += mergeWeights[state][map[k]];
+                    mergeWeightSum += substateConditionalProbabilities[state][map[k]];
                 }
-                if (mergeWeightSum == 0)
+                if (mergeWeightSum == 0) {
                     mergeWeightSum = 1;
+                }
+
                 for (int k = 0; k < 2; k++) {
-                    tmp1[k] = label.insideScore(map[k]) * mergeWeights[state][map[k]] / mergeWeightSum;
+                    tmp1[k] = label.insideScore(map[k]) * substateConditionalProbabilities[state][map[k]]
+                            / mergeWeightSum;
                     tmp2[k] = label.outsideScore(map[k]);
                 }
+
                 combinedScore = (tmp1[0] + tmp1[1]) * (tmp2[0] + tmp2[1]);
                 combinedScores[i] = combinedScore;
                 combinedScores[j] = 0;
                 if (combinedScore != 0 && separatedScoreSum != 0)
-                    deltas[state][i][j] += Math.log(separatedScoreSum / edu.ohsu.cslu.util.Arrays.sum(combinedScores));
+                    likelihoodDeltas[state][i][j] += Math.log(separatedScoreSum
+                            / edu.ohsu.cslu.util.Arrays.sum(combinedScores));
                 for (int k = 0; k < 2; k++)
                     combinedScores[map[k]] = separatedScores[map[k]];
-                if (Double.isNaN(deltas[state][i][j])) {
+                if (Double.isNaN(likelihoodDeltas[state][i][j])) {
                     System.out.println(" deltas[" + tagNumberer.symbol(state) + "][" + i + "][" + j + "] = NaN");
                     System.out.println(Arrays.toString(separatedScores) + " " + Arrays.toString(tmp1) + " "
-                            + Arrays.toString(tmp2) + " " + combinedScore + " " + Arrays.toString(mergeWeights[state]));
+                            + Arrays.toString(tmp2) + " " + combinedScore + " "
+                            + Arrays.toString(substateConditionalProbabilities[state]));
                 }
             }
         }
 
         for (final Tree<StateSet> child : tree.children()) {
-            tallyMergeScores(child, deltas, mergeWeights);
+            tallyMergeLikelihoodDeltas(child, likelihoodDeltas, substateConditionalProbabilities);
         }
     }
 

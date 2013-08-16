@@ -246,20 +246,21 @@ public class GrammarTrainer extends BaseCommandlineTool {
                 lexicon = maxLexicon;
 
             } else if (splitIndex % 3 == 1) {
+                // Merge stage
 
-                // Merge
                 if (mergeFraction == 0) {
                     continue;
                 }
 
-                final double[][] mergeWeights = GrammarMerger.computeMergeWeights(maxGrammar, maxLexicon,
-                        trainStateSetTrees);
-                final double[][][] deltas = GrammarMerger.computeDeltas(maxGrammar, maxLexicon, mergeWeights,
-                        trainStateSetTrees);
-                final boolean[][][] mergeThesePairs = GrammarMerger.determineMergePairs(deltas, mergeFraction,
-                        maxGrammar);
+                final double[][] substateProbabilities = GrammarMerger.computeSubstateConditionalProbabilities(
+                        maxGrammar, maxLexicon, trainStateSetTrees);
+                final double[][][] mergeLikelihoodDeltas = GrammarMerger.computeMergeLikelihoodDeltas(maxGrammar,
+                        maxLexicon, substateProbabilities, trainStateSetTrees);
+                final boolean[][][] mergeThesePairs = GrammarMerger.selectMergePairs(mergeLikelihoodDeltas,
+                        mergeFraction, maxGrammar);
 
-                grammar = GrammarMerger.doTheMerges(maxGrammar, maxLexicon, mergeThesePairs, mergeWeights);
+                grammar = GrammarMerger.merge(maxGrammar, maxLexicon, mergeThesePairs, substateProbabilities);
+
                 trainStateSetTrees = new StateSetTreeList(trainStateSetTrees, grammar.numSubStates, false);
                 devSetStateSetTrees = new StateSetTreeList(devSetStateSetTrees, grammar.numSubStates, false);
 
