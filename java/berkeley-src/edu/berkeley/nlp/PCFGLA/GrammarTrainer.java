@@ -45,6 +45,9 @@ public class GrammarTrainer extends BaseCommandlineTool {
     @Option(name = "-mf", metaVar = "fraction", usage = "Fraction of new splits to re-merge in each split-merge cycle")
     private double mergeFraction = 0.5;
 
+    @Option(name = "-mrf", metaVar = "objective function", usage = "Merge-candidate ranking function")
+    private edu.berkeley.nlp.PCFGLA.GrammarMerger.MergeRankingFunction mergeRankingFunction = edu.berkeley.nlp.PCFGLA.GrammarMerger.MergeRankingFunction.Likelihood;
+
     @Option(name = "-i", usage = "EM iterations per split-merge cycle")
     private int emIterationsPerCycle = 50;
 
@@ -254,10 +257,10 @@ public class GrammarTrainer extends BaseCommandlineTool {
 
                 final double[][] substateProbabilities = GrammarMerger.computeSubstateConditionalProbabilities(
                         maxGrammar, maxLexicon, trainStateSetTrees);
-                final double[][][] mergeLikelihoodDeltas = GrammarMerger.computeMergeLikelihoodDeltas(maxGrammar,
+                final float[][][] mergeLikelihoodDeltas = GrammarMerger.computeMergeLikelihoodDeltas(maxGrammar,
                         maxLexicon, substateProbabilities, trainStateSetTrees);
                 final boolean[][][] mergeThesePairs = GrammarMerger.selectMergePairs(mergeLikelihoodDeltas,
-                        mergeFraction, maxGrammar);
+                        mergeFraction, maxGrammar, maxLexicon, mergeRankingFunction);
 
                 grammar = GrammarMerger.merge(maxGrammar, maxLexicon, mergeThesePairs, substateProbabilities);
 

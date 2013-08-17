@@ -761,7 +761,7 @@ public class Grammar implements Serializable, Cloneable {
      *            state. Indexed by state, substate. As computed by
      *            {@link GrammarMerger#computeSubstateConditionalProbabilities(Grammar, Lexicon, StateSetTreeList)}.
      */
-    public void tallyMergeLikelihoodDeltas(final Tree<StateSet> tree, final double[][][] likelihoodDeltas,
+    public void tallyMergeLikelihoodDeltas(final Tree<StateSet> tree, final float[][][] likelihoodDeltas,
             final double[][] substateConditionalProbabilities) {
         if (tree.isLeaf())
             return;
@@ -1062,7 +1062,12 @@ public class Grammar implements Serializable, Cloneable {
      */
     public static void calculateMergeArrays(final boolean[][][] mergeThesePairs, final short[] newNumSubStates,
             final short[][] mapping, final short[][][] partners, final short[] numSubStates) {
+
         for (short state = 0; state < numSubStates.length; state++) {
+            if (mergeThesePairs[state] == null) {
+                continue;
+            }
+
             final short mergeTarget[] = new short[mergeThesePairs[state].length];
             Arrays.fill(mergeTarget, (short) -1);
             short count = 0;
@@ -1218,6 +1223,121 @@ public class Grammar implements Serializable, Cloneable {
             nBinary += rule.ruleCount(minimumRuleProbability);
         }
         return nBinary;
+    }
+
+    /**
+     * Returns the reduction in rule-count if each pair of non-terminals is merged. These counts are exact for each
+     * possible merge (e.g., NP_1 into NP_0), but do not account for the interactions between multiple simultaneous
+     * non-terminal merges. I.e., these counts will always be an overestimate of the rule-count savings when multiple
+     * NTs are merged en-masse.
+     * 
+     * The returned array is indexed by non-terminal state and split/substate, and contains separate counts for binary,
+     * unary, and lexical rules.
+     * 
+     * @return Array of rule-count savings, indexed by state, substate, and finally by 0, 1, 2 (binary, unary, and
+     *         lexical)
+     */
+    public int[][][] estimateMergeRuleCountDelta(final Lexicon lexicon) {
+        final int[][][] ruleCountDelta = new int[numStates][][];
+        for (int state = 0; state < numStates; state++) {
+            ruleCountDelta[state] = new int[numSubStates[state]][3];
+        }
+
+        //
+        // Binary productions
+        //
+        final BinaryRule[][][] unpackedBinaryRules = new BinaryRule[numStates][][];
+
+        for (final PackedBinaryRule packedBinaryRule : packedBinaryRuleMap.values()) {
+            final BinaryRule unpackedRule = new BinaryRule(packedBinaryRule, numSubStates);
+            if (unpackedBinaryRules[packedBinaryRule.unsplitLeftChild] == null) {
+                unpackedBinaryRules[packedBinaryRule.unsplitLeftChild] = new BinaryRule[numStates][];
+            }
+            if (unpackedBinaryRules[packedBinaryRule.unsplitLeftChild][packedBinaryRule.unsplitRightChild] == null) {
+                unpackedBinaryRules[packedBinaryRule.unsplitLeftChild][packedBinaryRule.unsplitRightChild] = new BinaryRule[numStates];
+            }
+            unpackedBinaryRules[packedBinaryRule.unsplitLeftChild][packedBinaryRule.unsplitRightChild][packedBinaryRule.unsplitParent] = unpackedRule;
+        }
+
+        for (final PackedBinaryRule packedBinaryRule : packedBinaryRuleMap.values()) {
+
+            for (int i = 0, j = 0; i < packedBinaryRule.ruleScores.length; i++, j += 3) {
+
+                final short leftChildSplit = packedBinaryRule.substates[j];
+                final short rightChildSplit = packedBinaryRule.substates[j + 1];
+                final short parentSplit = packedBinaryRule.substates[j + 2];
+
+                final BinaryRule unpackedRule = unpackedBinaryRules[packedBinaryRule.unsplitLeftChild][packedBinaryRule.unsplitRightChild][packedBinaryRule.unsplitParent];
+
+                // Consider merging the parent. Does an identical rule exist with the sibling parent split?
+                if (parentSplit % 2 == 1 && unpackedRule.scores[leftChildSplit] != null
+                        && unpackedRule.scores[leftChildSplit][rightChildSplit] != null
+                        && unpackedRule.scores[leftChildSplit][rightChildSplit][parentSplit - 1] > 0) {
+                    ruleCountDelta[packedBinaryRule.unsplitParent][parentSplit][0]--;
+                }
+
+                // Consider merging the left child split
+                if (leftChildSplit % 2 == 1 && unpackedRule.scores[leftChildSplit - 1] != null
+                        && unpackedRule.scores[leftChildSplit - 1][rightChildSplit] != null
+                        && unpackedRule.scores[leftChildSplit - 1][rightChildSplit][parentSplit] > 0) {
+                    ruleCountDelta[packedBinaryRule.unsplitLeftChild][leftChildSplit][0]--;
+                }
+
+                // And the right child split
+                if (rightChildSplit % 2 == 1 && unpackedRule.scores[leftChildSplit] != null
+                        && unpackedRule.scores[leftChildSplit][rightChildSplit - 1] != null
+                        && unpackedRule.scores[leftChildSplit][rightChildSplit - 1][parentSplit] > 0) {
+                    ruleCountDelta[packedBinaryRule.unsplitRightChild][rightChildSplit][0]--;
+                }
+            }
+        }
+
+        //
+        // Unary productions
+        //
+        final UnaryRule[][] unpackedUnaryRules = new UnaryRule[numStates][];
+
+        for (final PackedUnaryRule packedUnaryRule : packedUnaryRuleMap.values()) {
+            final UnaryRule unpackedRule = new UnaryRule(packedUnaryRule, numSubStates);
+            if (unpackedUnaryRules[packedUnaryRule.unsplitChild] == null) {
+                unpackedUnaryRules[packedUnaryRule.unsplitChild] = new UnaryRule[numStates];
+            }
+            unpackedUnaryRules[packedUnaryRule.unsplitChild][packedUnaryRule.unsplitParent] = unpackedRule;
+        }
+
+        for (final PackedUnaryRule packedUnaryRule : packedUnaryRuleMap.values()) {
+
+            for (int i = 0, j = 0; i < packedUnaryRule.ruleScores.length; i++, j += 2) {
+
+                final short childSplit = packedUnaryRule.substates[j];
+                final short parentSplit = packedUnaryRule.substates[j + 1];
+
+                final UnaryRule unpackedRule = unpackedUnaryRules[packedUnaryRule.unsplitChild][packedUnaryRule.unsplitParent];
+
+                // Consider merging the parent split. Does an identical rule exist with the sibling parent split?
+                if (parentSplit % 2 == 1 && unpackedRule.scores[childSplit] != null
+                        && unpackedRule.scores[childSplit][parentSplit - 1] > 0) {
+                    ruleCountDelta[packedUnaryRule.unsplitParent][parentSplit][0]--;
+                }
+
+                // And the child split
+                if (childSplit % 2 == 1 && unpackedRule.scores[childSplit - 1] != null
+                        && unpackedRule.scores[childSplit - 1][parentSplit] > 0) {
+                    ruleCountDelta[packedUnaryRule.unsplitChild][childSplit][0]--;
+                }
+            }
+        }
+
+        //
+        // Lexical productions
+        //
+        final int[][] lexicalRuleCountDelta = lexicon.estimatedMergeRuleCountDelta(this);
+        for (int state = 0; state < numStates; state++) {
+            for (int substate = 0; substate < numSubStates[state]; substate++) {
+                ruleCountDelta[state][substate][2] = lexicalRuleCountDelta[state][substate];
+            }
+        }
+        return ruleCountDelta;
     }
 
     private static abstract class BasePackedBinaryRule implements Serializable {

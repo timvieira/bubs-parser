@@ -848,9 +848,9 @@ public class Lexicon implements java.io.Serializable {
      * For that, retrain the Lexicon!
      * 
      * @param mergeThesePairs
-     * @param mergeWeights
+     * @param substateConditionalProbabilities
      */
-    public void mergeStates(final boolean[][][] mergeThesePairs, final double[][] mergeWeights) {
+    public void mergeStates(final boolean[][][] mergeThesePairs, final double[][] substateConditionalProbabilities) {
         final short[] newNumSubStates = new short[numSubStates.length];
         final short[][] mapping = new short[numSubStates.length][];
         // invariant: if partners[state][substate][0] == substate, it's the 1st
@@ -957,6 +957,51 @@ public class Lexicon implements java.io.Serializable {
     @Override
     public String toString() {
         return toString(0);
+    }
+
+    /**
+     * Returns the reduction in lexical rule-count if each pair of non-terminals is merged. These counts are exact for
+     * each possible merge (e.g., NN_1 into NN_0), but do not account for the interactions between multiple simultaneous
+     * non-terminal merges. I.e., these counts will always be an overestimate of the rule-count savings when multiple
+     * NTs are merged en-masse.
+     * 
+     * @return Array of rule-count savings, indexed by state, split/substate
+     */
+    public int[][] estimatedMergeRuleCountDelta(final Grammar grammar) {
+        final int[][] ruleCountDelta = new int[grammar.numStates][];
+        for (int state = 0; state < grammar.numStates; state++) {
+            ruleCountDelta[state] = new int[numSubStates[state]];
+        }
+
+        // Lots of copy-and-paste from toString()
+        for (int tag = 0; tag < wordToTagCounters.length; tag++) {
+
+            if (wordToTagCounters[tag] != null) {
+                for (final String word : wordToTagCounters[tag].keySet()) {
+
+                    final double[] scores = score(word, (short) tag, 0, false, false);
+                    for (int split = 1; split < scores.length; split += 2) {
+                        if (scores[split] > 0 && scores[split - 1] > 0) {
+                            ruleCountDelta[tag][split]--;
+                        }
+                    }
+                }
+            }
+
+            if (unseenWordToTagCounters != null && unseenWordToTagCounters[tag] != null) {
+                for (final String word : unseenWordToTagCounters[tag].keySet()) {
+
+                    final double[] scores = score(word, (short) tag, 0, false, true);
+                    for (int split = 1; split < scores.length; split += 2) {
+                        if (scores[split] > 0 && scores[split - 1] > 0) {
+                            ruleCountDelta[tag][split]--;
+                        }
+                    }
+                }
+            }
+        }
+
+        return ruleCountDelta;
     }
 
     public String toString(final double minimumRuleProbability) {

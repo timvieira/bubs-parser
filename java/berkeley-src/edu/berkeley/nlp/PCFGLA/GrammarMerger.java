@@ -3,6 +3,7 @@ package edu.berkeley.nlp.PCFGLA;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 import java.util.logging.Level;
 
 import cltool4j.BaseLogger;
@@ -10,7 +11,6 @@ import cltool4j.GlobalConfigProperties;
 import edu.berkeley.nlp.syntax.StateSet;
 import edu.berkeley.nlp.syntax.Tree;
 import edu.berkeley.nlp.util.Numberer;
-import edu.ohsu.cslu.lela.TrainGrammar;
 import edu.ohsu.cslu.util.IEEEDoubleScaling;
 
 /**
@@ -19,18 +19,6 @@ import edu.ohsu.cslu.util.IEEEDoubleScaling;
 public class GrammarMerger {
 
     protected final static Numberer tagNumberer = Numberer.getGlobalNumberer("tags");
-
-    /**
-     * Configuration property key for the weight of estimated likelihood loss when ordering merge candidates. See also
-     * {@link #OPT_RULE_COUNT_LAMBDA}.
-     */
-    public final static String OPT_LIKELIHOOD_LAMBDA = "likelihoodLambda";
-
-    /**
-     * Configuration property key for the weight of estimated rule count savings when ordering merge candidates. See
-     * also {@link #OPT_LIKELIHOOD_LAMBDA}.
-     */
-    public final static String OPT_RULE_COUNT_LAMBDA = "ruleCountLambda";
 
     /**
      * This function was written to have the ability to also merge non-sibling pairs, however this functionality is not
@@ -51,10 +39,11 @@ public class GrammarMerger {
         while (true) {
             // we want to continue as long as there's something to merge
             boolean somethingToMerge = false;
-            for (int tag = 0; tag < numSubStatesArray.length; tag++) {
-                for (int i = 0; i < newNumSubStatesArray[tag]; i++) {
-                    for (int j = 0; j < newNumSubStatesArray[tag]; j++) {
-                        somethingToMerge |= mergeThesePairs[tag][i][j];
+
+            for (int state = 0; state < numSubStatesArray.length; state++) {
+                for (int substate1 = 0; substate1 < newNumSubStatesArray[state]; substate1++) {
+                    for (int substate2 = 0; substate2 < newNumSubStatesArray[state]; substate2++) {
+                        somethingToMerge |= mergeThesePairs[state][substate1][substate2];
                     }
                 }
             }
@@ -68,34 +57,43 @@ public class GrammarMerger {
              */
             final boolean[][][] mergeThisIteration = new boolean[newNumSubStatesArray.length][][];
             // make mergeThisIteration a copy of mergeTheseStates
-            for (int tag = 0; tag < numSubStatesArray.length; tag++) {
-                mergeThisIteration[tag] = new boolean[mergeThesePairs[tag].length][mergeThesePairs[tag].length];
-                for (int i = 0; i < mergeThesePairs[tag].length; i++) {
-                    for (int j = 0; j < mergeThesePairs[tag].length; j++) {
-                        mergeThisIteration[tag][i][j] = mergeThesePairs[tag][i][j];
+            for (int state = 0; state < numSubStatesArray.length; state++) {
+                mergeThisIteration[state] = new boolean[mergeThesePairs[state].length][mergeThesePairs[state].length];
+                for (int substate1 = 0; substate1 < mergeThesePairs[state].length; substate1++) {
+                    for (int substate2 = 0; substate2 < mergeThesePairs[state].length; substate2++) {
+                        mergeThisIteration[state][substate1][substate2] = mergeThesePairs[state][substate1][substate2];
                     }
                 }
             }
             // delete all complicated merges from mergeThisIteration
-            for (int tag = 0; tag < numSubStatesArray.length; tag++) {
-                final boolean[] alreadyDecidedToMerge = new boolean[mergeThesePairs[tag].length];
-                for (int i = 0; i < mergeThesePairs[tag].length; i++) {
-                    for (int j = 0; j < mergeThesePairs[tag].length; j++) {
-                        if (alreadyDecidedToMerge[i] || alreadyDecidedToMerge[j])
-                            mergeThisIteration[tag][i][j] = false;
-                        alreadyDecidedToMerge[i] = alreadyDecidedToMerge[i] || mergeThesePairs[tag][i][j];
-                        alreadyDecidedToMerge[j] = alreadyDecidedToMerge[j] || mergeThesePairs[tag][i][j];
+            for (int state = 0; state < numSubStatesArray.length; state++) {
+                final boolean[] alreadyDecidedToMerge = new boolean[mergeThesePairs[state].length];
+
+                for (int substate1 = 0; substate1 < mergeThesePairs[state].length; substate1++) {
+                    for (int substate2 = 0; substate2 < mergeThesePairs[state].length; substate2++) {
+
+                        if (alreadyDecidedToMerge[substate1] || alreadyDecidedToMerge[substate2]) {
+                            mergeThisIteration[state][substate1][substate2] = false;
+                        }
+
+                        alreadyDecidedToMerge[substate1] = alreadyDecidedToMerge[substate1]
+                                || mergeThesePairs[state][substate1][substate2];
+                        alreadyDecidedToMerge[substate2] = alreadyDecidedToMerge[substate2]
+                                || mergeThesePairs[state][substate1][substate2];
                     }
                 }
             }
+
             // remove merges in mergeThisIteration from mergeThesePairs
-            for (int tag = 0; tag < numSubStatesArray.length; tag++) {
-                for (int i = 0; i < mergeThesePairs[tag].length; i++) {
-                    for (int j = 0; j < mergeThesePairs[tag].length; j++) {
-                        mergeThesePairs[tag][i][j] = mergeThesePairs[tag][i][j] && !mergeThisIteration[tag][i][j];
+            for (int state = 0; state < numSubStatesArray.length; state++) {
+                for (int substate1 = 0; substate1 < mergeThesePairs[state].length; substate1++) {
+                    for (int substate2 = 0; substate2 < mergeThesePairs[state].length; substate2++) {
+                        mergeThesePairs[state][substate1][substate2] = mergeThesePairs[state][substate1][substate2]
+                                && !mergeThisIteration[state][substate1][substate2];
                     }
                 }
             }
+
             newGrammar = grammar.mergeStates(mergeThisIteration, substateConditionalProbabilities);
             lexicon.mergeStates(mergeThisIteration, substateConditionalProbabilities);
             // fix merge weights
@@ -120,11 +118,11 @@ public class GrammarMerger {
      * @return Merge likelihood deltas for each merge candidate (substate pair). Indexed by state, substate 1, substate
      *         2.
      */
-    public static double[][][] computeMergeLikelihoodDeltas(final Grammar grammar, final Lexicon lexicon,
+    public static float[][][] computeMergeLikelihoodDeltas(final Grammar grammar, final Lexicon lexicon,
             final double[][] substateConditionalProbabilities, final StateSetTreeList trainStateSetTrees) {
 
         final ArrayParser parser = new ArrayParser(grammar, lexicon);
-        final double[][][] deltas = new double[grammar.numSubStates.length][substateConditionalProbabilities[0].length][substateConditionalProbabilities[0].length];
+        final float[][][] deltas = new float[grammar.numSubStates.length][substateConditionalProbabilities[0].length][substateConditionalProbabilities[0].length];
 
         for (final Tree<StateSet> stateSetTree : trainStateSetTrees) {
 
@@ -191,61 +189,67 @@ public class GrammarMerger {
     }
 
     /**
+     * Ranks merge candidates by a {@link MergeRankingFunction} and selects the bottom n to be merged. For the moment,
+     * the return type is still a <code>boolean</code> array, to match other historical code, although returning a
+     * {@link List} of {@link MergeCandidate}s might be more intuitive.
      * 
      * @param mergeLikelihoodDeltas Merge likelihood deltas (i.e. log-likelihood gain or loss) for each merge candidate
      *            (substate pair). Indexed by state, substate 1, substate 2. As computed by
      *            {@link GrammarMerger#computeMergeLikelihoodDeltas(Grammar, Lexicon, double[][], StateSetTreeList)}.
+     * @param mergingPercentage
+     * @param grammar
+     * @param lexicon
+     * @param rankingFunction
+     * 
      * @return Boolean array indexed by state, substate 1, substate 2; pairs to be merged indicated by <code>true</code>
      *         values.
      */
-    public static boolean[][][] selectMergePairs(final double[][][] mergeLikelihoodDeltas,
-            final double mergingPercentage, final Grammar grammar) {
+    public static boolean[][][] selectMergePairs(final float[][][] mergeLikelihoodDeltas,
+            final double mergingPercentage, final Grammar grammar, final Lexicon lexicon,
+            final MergeRankingFunction rankingFunction) {
 
         final boolean[][][] mergeThesePairs = new boolean[grammar.numSubStates.length][][];
         final short[] numSubStatesArray = grammar.numSubStates;
 
-        // Log-likelihood gain / loss of merging each candidate pair. Not indexed - used only to select a threshold
-        final ArrayList<Double> deltaSiblings = new ArrayList<Double>();
+        final int[][][] ruleCountDeltas = grammar.estimateMergeRuleCountDelta(lexicon);
 
-        int nSiblings = 0;
+        final ArrayList<MergeCandidate> mergeCandidates = new ArrayList<GrammarMerger.MergeCandidate>();
 
-        for (int state = 0; state < numSubStatesArray.length; state++) {
+        for (short state = 0; state < numSubStatesArray.length; state++) {
 
-            for (int sub1 = 0; sub1 < numSubStatesArray[state] - 1; sub1++) {
+            for (short sub1 = 0; sub1 < numSubStatesArray[state] - 1; sub1++) {
 
                 // Always merge 'down' from substate 2 into substate 1 (sub1 % 2 == 0)
                 if (sub1 % 2 == 0 && mergeLikelihoodDeltas[state][sub1][sub1 + 1] != 0) {
-                    deltaSiblings.add(mergeLikelihoodDeltas[state][sub1][sub1 + 1]);
-                    nSiblings++;
+                    mergeCandidates.add(new MergeCandidate(state, sub1, (short) (sub1 + 1),
+                            mergeLikelihoodDeltas[state][sub1][sub1 + 1], ruleCountDeltas[state][sub1 + 1]));
                 }
             }
         }
-        Collections.sort(deltaSiblings);
 
-        final double threshold = deltaSiblings.get((int) (nSiblings * mergingPercentage));
+        // Compute all merge costs, per the ranking function
+        computeMergeCostsAndRankings(mergeCandidates, rankingFunction);
+
+        // Order the merge candidates and select a threshold
+        Collections.sort(mergeCandidates, rankingFunction.comparator());
+        final int thresholdCandidate = (int) (mergeCandidates.size() * mergingPercentage);
+
+        final float threshold = mergeCandidates.get(thresholdCandidate).mergeCost;
         BaseLogger.singleton().info("Merge threshold: " + threshold);
 
-        int mergeSiblings = 0;
-        for (int state = 0; state < numSubStatesArray.length; state++) {
+        // Select the bottom portion of the ranked list as the candidates to be merged
+        final List<MergeCandidate> mergePairs = mergeCandidates.subList(0, thresholdCandidate + 1);
 
+        for (int state = 0; state < mergeThesePairs.length; state++) {
             mergeThesePairs[state] = new boolean[numSubStatesArray[state]][numSubStatesArray[state]];
-
-            for (int sub1 = 0; sub1 < numSubStatesArray[state] - 1; sub1++) {
-
-                if (sub1 % 2 == 0 && mergeLikelihoodDeltas[state][sub1][sub1 + 1] != 0) {
-                    final boolean underThreshold = (mergeLikelihoodDeltas[state][sub1][sub1 + 1] <= threshold);
-
-                    if (underThreshold) {
-                        mergeThesePairs[state][sub1][sub1 + 1] = true;
-                        mergeSiblings++;
-                    }
-                }
-            }
+        }
+        for (final MergeCandidate c : mergePairs) {
+            mergeThesePairs[c.state][c.substate1][c.substate2] = true;
         }
 
         // Output merge pairs
         if (BaseLogger.singleton().isLoggable(Level.INFO)) {
-            BaseLogger.singleton().info("Merging " + mergeSiblings + " siblings.");
+            BaseLogger.singleton().info("Merging " + mergePairs.size() + " siblings.");
 
             for (short state = 0; state < mergeLikelihoodDeltas.length; state++) {
                 for (int i = 0; i < numSubStatesArray[state]; i++) {
@@ -266,33 +270,36 @@ public class GrammarMerger {
      * Sorts the list of merge costs by various criteria and assigns ranking numbers for each (e.g. estimated likelihood
      * loss, rule count savings, etc.), then computes total merge cost for each non-terminal pair
      * 
-     * @param mergeCosts An unordered list of estimated merge costs. Note that this list will be reordered.
+     * @param grammar
+     * @param mergeCandidates An unordered list of estimated merge costs. Note that this list will be reordered.
      * @param rankingFunction A merge-cost ranking function
      */
-    private void rankMergeCosts(final ArrayList<MergeCost> mergeCosts, final MergeRanking rankingFunction) {
+    private static void computeMergeCostsAndRankings(final ArrayList<MergeCandidate> mergeCandidates,
+            final MergeRankingFunction rankingFunction) {
 
         // Estimated likelihood loss
-        Collections.sort(mergeCosts, MergeRanking.Likelihood.comparator());
-        for (int i = 0; i < mergeCosts.size(); i++) {
-            mergeCosts.get(i).likelihoodLossRanking = i;
+        Collections.sort(mergeCandidates, MergeRankingFunction.Likelihood.comparator());
+        for (int i = 0; i < mergeCandidates.size(); i++) {
+            mergeCandidates.get(i).likelihoodLossRanking = i;
         }
 
         // Total rule count delta
-        Collections.sort(mergeCosts, MergeRanking.TotalRuleCount.comparator());
-        for (int i = 0; i < mergeCosts.size(); i++) {
-            mergeCosts.get(i).totalRuleCountRanking = i;
+        Collections.sort(mergeCandidates, MergeRankingFunction.TotalRuleCount.comparator());
+        for (int i = 0; i < mergeCandidates.size(); i++) {
+            mergeCandidates.get(i).totalRuleCountRanking = i;
         }
 
-        for (final MergeCost mc : mergeCosts) {
+        for (final MergeCandidate mc : mergeCandidates) {
             mc.mergeCost = rankingFunction.objectiveFunction.mergeCost(mc);
         }
     }
 
-    private static class MergeCost {
+    private static class MergeCandidate {
 
         private final short state;
-        private final short substate;
-        private final float estimatedLikelihoodLoss;
+        private final short substate1;
+        private final short substate2;
+        private final float estimatedLikelihoodDelta;
         private final int binaryRuleCountDelta;
         private final int unaryRuleCountDelta;
         private final int lexicalRuleCountDelta;
@@ -300,13 +307,13 @@ public class GrammarMerger {
         private final int totalRuleCountDelta;
 
         /**
-         * The ordinal ranking of this non-terminal pair within the list of {@link MergeCost}s if sorted by
-         * {@link #estimatedLikelihoodLoss}.
+         * The ordinal ranking of this non-terminal pair within the list of {@link MergeCandidate}s if sorted by
+         * {@link #estimatedLikelihoodDelta}.
          */
         private int likelihoodLossRanking;
 
         /**
-         * The ordinal ranking of this non-terminal pair within the list of {@link MergeCost}s if sorted by
+         * The ordinal ranking of this non-terminal pair within the list of {@link MergeCandidate}s if sorted by
          * {@link #totalRuleCountDelta}.
          */
         private int totalRuleCountRanking;
@@ -316,31 +323,39 @@ public class GrammarMerger {
 
         /**
          * @param state
-         * @param substate
-         * @param estimatedLikelihoodLoss Estimated likelihood loss on the training corpus.
+         * @param substate1
+         * @param substate2
+         * @param estimatedLikelihoodDelta Estimated likelihood loss on the training corpus.
          * @param ruleCountDelta Estimated rule-count savings if this pair is merged. 3-tuple of binary, unary, and
          *            lexical counts.
          */
-        public MergeCost(final short state, final short substate, final float estimatedLikelihoodLoss,
-                final int[] ruleCountDelta) {
+        public MergeCandidate(final short state, final short substate1, final short substate2,
+                final float estimatedLikelihoodDelta, final int[] ruleCountDelta) {
 
             this.state = state;
-            this.substate = substate;
+            this.substate1 = substate1;
+            this.substate2 = substate2;
 
-            this.estimatedLikelihoodLoss = estimatedLikelihoodLoss;
+            this.estimatedLikelihoodDelta = estimatedLikelihoodDelta;
 
-            this.binaryRuleCountDelta = ruleCountDelta[0];
-            this.unaryRuleCountDelta = ruleCountDelta[1];
-            this.lexicalRuleCountDelta = ruleCountDelta[2];
+            if (ruleCountDelta != null) {
+                this.binaryRuleCountDelta = ruleCountDelta[0];
+                this.unaryRuleCountDelta = ruleCountDelta[1];
+                this.lexicalRuleCountDelta = ruleCountDelta[2];
+            } else {
+                this.binaryRuleCountDelta = 0;
+                this.unaryRuleCountDelta = 0;
+                this.lexicalRuleCountDelta = 0;
+            }
 
             this.totalRuleCountDelta = binaryRuleCountDelta + unaryRuleCountDelta + lexicalRuleCountDelta;
         }
 
         @Override
         public String toString() {
-            return String.format("%d  %d  %14.6f  %6d  %6d  %6d  %6d  %6d  %6d  %7.2f", state, substate,
-                    estimatedLikelihoodLoss, likelihoodLossRanking, binaryRuleCountDelta, unaryRuleCountDelta,
-                    lexicalRuleCountDelta, totalRuleCountDelta, totalRuleCountRanking, mergeCost);
+            return String.format("%d  %d  %d  %14.6f  %6d  %6d  %6d  %6d  %6d  %6d  %7.2f", state, substate1,
+                    substate2, estimatedLikelihoodDelta, likelihoodLossRanking, binaryRuleCountDelta,
+                    unaryRuleCountDelta, lexicalRuleCountDelta, totalRuleCountDelta, totalRuleCountRanking, mergeCost);
         }
     }
 
@@ -348,35 +363,38 @@ public class GrammarMerger {
      * Objective functions for non-terminal merge ranking. Each enumeration option constructs and exposes an anonymous
      * {@link Comparator} to re-rank merge candidates.
      */
-    private static enum MergeRanking {
+    public static enum MergeRankingFunction {
 
         Likelihood(new MergeObjectiveFunction() {
             @Override
-            public float mergeCost(final MergeCost mergeCost) {
-                return mergeCost.estimatedLikelihoodLoss;
+            public float mergeCost(final MergeCandidate mergeCost) {
+                return mergeCost.estimatedLikelihoodDelta;
             }
         }),
 
         TotalRuleCount(new MergeObjectiveFunction() {
             @Override
-            public float mergeCost(final MergeCost mergeCost) {
+            public float mergeCost(final MergeCandidate mergeCost) {
                 return mergeCost.totalRuleCountDelta;
             }
         }),
 
         /**
          * Note: Likelihood and rule-count rankings must be computed, as in
-         * {@link TrainGrammar#computeMergeCosts(ArrayList)} before applying this function
+         * {@link GrammarMerger#computeMergeCostsAndRankings(ArrayList, MergeRankingFunction)} before applying this
+         * function.
+         * 
+         * Controlled by the configuration parameter "ruleCountLambda", ranging from 0-1. At lambda=0, merges are
+         * controlled entirely by likelihood (as in {@link #Likelihood}) and at \lambda = 1, entirely by rule-count (as
+         * in {@link #TotalRuleCount}).
          */
-        Combined(new MergeObjectiveFunction() {
+        SparsePrior(new MergeObjectiveFunction() {
 
-            final float likelihoodLambda = GlobalConfigProperties.singleton()
-                    .getFloatProperty(OPT_LIKELIHOOD_LAMBDA, 1);
-            final float ruleCountLambda = GlobalConfigProperties.singleton().getFloatProperty(OPT_RULE_COUNT_LAMBDA, 1);
+            final float ruleCountLambda = GlobalConfigProperties.singleton().getFloatProperty("ruleCountLambda", 0);
 
             @Override
-            public float mergeCost(final MergeCost mergeCost) {
-                return mergeCost.likelihoodLossRanking * likelihoodLambda + mergeCost.totalRuleCountRanking
+            public float mergeCost(final MergeCandidate mergeCost) {
+                return mergeCost.likelihoodLossRanking * (1 - ruleCountLambda) + mergeCost.totalRuleCountRanking
                         * ruleCountLambda;
             }
         });
@@ -384,22 +402,21 @@ public class GrammarMerger {
         /** Comparator for the specified objective function */
         public final MergeObjectiveFunction objectiveFunction;
 
-        private MergeRanking(final MergeObjectiveFunction objectiveFunction) {
+        private MergeRankingFunction(final MergeObjectiveFunction objectiveFunction) {
             this.objectiveFunction = objectiveFunction;
         }
 
-        public Comparator<MergeCost> comparator() {
-            return new Comparator<MergeCost>() {
+        public Comparator<MergeCandidate> comparator() {
+            return new Comparator<MergeCandidate>() {
                 @Override
-                public int compare(final MergeCost o1, final MergeCost o2) {
+                public int compare(final MergeCandidate o1, final MergeCandidate o2) {
                     return Float.compare(objectiveFunction.mergeCost(o1), objectiveFunction.mergeCost(o2));
                 }
             };
         }
 
         private static abstract class MergeObjectiveFunction {
-            public abstract float mergeCost(MergeCost mergeCost);
+            public abstract float mergeCost(MergeCandidate mergeCost);
         }
-
     }
 }
