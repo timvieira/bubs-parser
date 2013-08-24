@@ -205,14 +205,13 @@ public class MulticlassTagSequence extends BaseSequence implements MulticlassSeq
         predictedClasses[position] = goldClasses[position];
 
         // Token
+        final String unkClass = DecisionTreeTokenClassifier.berkeleyGetSignature(token, position == 0, lexicon);
         if (lexicon.isFinalized()) {
             mappedTokens[position] = lexicon.getIndex(token);
-            mappedUnkSymbols[position] = unkClassSet.getIndex(DecisionTreeTokenClassifier.berkeleyGetSignature(token,
-                    position == 0, lexicon));
+            mappedUnkSymbols[position] = unkClassSet.getIndex(unkClass);
         } else {
             mappedTokens[position] = lexicon.addSymbol(token);
-            mappedUnkSymbols[position] = unkClassSet.addSymbol(DecisionTreeTokenClassifier.berkeleyGetSignature(token,
-                    position == 0, lexicon));
+            mappedUnkSymbols[position] = unkClassSet.addSymbol(unkClass);
         }
 
         // Suffixes

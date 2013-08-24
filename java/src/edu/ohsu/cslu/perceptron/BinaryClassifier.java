@@ -56,10 +56,10 @@ public abstract class BinaryClassifier<S extends BinarySequence> extends Classif
     @Option(name = "-b", metaVar = "bias", usage = "Biased training penalty for incorrect positive classification (to correct for imbalanced training data or downstream cost) - ratio 1:<bias>")
     protected volatile float negativeTrainingBias = 1f;
 
-    @Option(name = "-tp", metaVar = "precision", requires = "-d", choiceGroup = "target", usage = "Target dev-set precision. If specified, after training a binary search will be performed to find the optimal bias")
+    @Option(name = "-tp", metaVar = "precision", requires = "-d", optionalChoiceGroup = "target", usage = "Target dev-set precision. If specified, after training a binary search will be performed to find the optimal bias")
     protected volatile float targetPrecision = 0f;
 
-    @Option(name = "-tnr", metaVar = "recall", requires = "-d", choiceGroup = "target", usage = "Target dev-set negative-classification recall")
+    @Option(name = "-tnr", metaVar = "recall", requires = "-d", optionalChoiceGroup = "target", usage = "Target dev-set negative-classification recall")
     protected volatile float targetNegativeRecall = 0f;
 
     @Option(name = "-lr", metaVar = "rate", usage = "Learning rate")
@@ -99,15 +99,20 @@ public abstract class BinaryClassifier<S extends BinarySequence> extends Classif
     }
 
     void init(final Grammar grammar, final boolean fullNonterminalVocabulary) {
-        super.init(grammar);
-        this.nonterminalVocabulary = fullNonterminalVocabulary ? grammar.posSymbolSet() : grammar.coarsePosSymbolSet();
-        this.nonterminalVocabulary.finalize();
+        if (grammar != null) {
+            super.init(grammar);
+            this.nonterminalVocabulary = fullNonterminalVocabulary ? grammar.posSymbolSet() : grammar
+                    .coarsePosSymbolSet();
+            this.nonterminalVocabulary.finalize();
+        }
     }
 
     @Override
     public void finalizeMaps() {
         super.finalizeMaps();
-        nonterminalVocabulary.finalize();
+        if (nonterminalVocabulary != null) {
+            nonterminalVocabulary.finalize();
+        }
     }
 
     @Override

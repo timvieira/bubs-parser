@@ -20,7 +20,6 @@
 package edu.ohsu.cslu.perceptron;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -34,11 +33,7 @@ import cltool4j.BaseLogger;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.datastructs.vectors.FloatVector;
-import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.GrammarFormatType;
-import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
 import edu.ohsu.cslu.grammar.SymbolSet;
 
 /**
@@ -58,27 +53,14 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
 
     private static final long serialVersionUID = 1L;
 
-    // If a grammar is specified, we'll binarize in the same direction; otherwise, the user must supply the binarization
-    // direction and grammar format
-    @Option(name = "-g", metaVar = "grammar", choiceGroup = "binarization", usage = "Grammar file. If specified, the vocabulary and lexicon from this grammar will be used.")
-    protected File grammarFile;
+    @Option(name = "-bin", metaVar = "direction", usage = "Binarization direction")
+    protected Binarization binarization = Binarization.LEFT;
 
-    @Option(name = "-bin", metaVar = "direction", choiceGroup = "binarization", usage = "Binarization direction")
-    protected Binarization binarization;
-
-    @Option(name = "-gf", metaVar = "format", requires = "-bin", usage = "Grammar format")
-    protected GrammarFormatType grammarFormat;
-
-    // Training a POS-tagger requires an input grammar - we can test without it, but the output model won't be useful if
-    // lexicon and vocabulary indices don't match
-    @Option(name = "-ptti", metaVar = "iterations", requires = "-g", usage = "Train a POS tagger for n iterations. If specified, a POS-tagger will be trained before the complete-closure model.")
+    @Option(name = "-ptti", metaVar = "iterations", requires = "-ti", usage = "Train a POS tagger for n iterations")
     private int posTaggerTrainingIterations = 0;
 
-    @Option(name = "-ptft", requires = "-ptti", metaVar = "templates or file", usage = "POS-tagger feature templates (comma-delimited), or template file")
+    @Option(name = "-ptft", metaVar = "templates or file", usage = "POS-tagger feature templates (comma-delimited), or template file")
     private String posTaggerFeatureTemplates = new Tagger().DEFAULT_FEATURE_TEMPLATES();
-
-    @Option(name = "-fp", aliases = "--full-pos", requires = "-g", usage = "Train POS tagger and cell classifier with full POS set (state-splits from grammar)")
-    private boolean fullPosSet;
 
     public Tagger posTagger = null;
 
@@ -118,26 +100,10 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
     }
 
     /**
-     * Used during parsing inference
-     */
-    public CompleteClosureClassifier(final Grammar grammar) {
-        init(grammar, fullPosSet);
-        this.featureExtractor = new ConstituentBoundaryFeatureExtractor<CompleteClosureSequence>(featureTemplates,
-                lexicon, decisionTreeUnkClassSet, grammar.coarsePosSymbolSet(), true);
-    }
-
-    /**
      * For unit testing
      */
     public CompleteClosureClassifier(final String featureTemplates) {
         this.featureTemplates = featureTemplates;
-    }
-
-    @Override
-    void init(final Grammar grammar, final boolean fullNonterminalVocabulary) {
-        super.init(grammar, fullNonterminalVocabulary);
-        this.binarization = grammar.binarization();
-        this.grammarFormat = grammar.grammarFormat;
     }
 
     @Override
@@ -150,32 +116,28 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
         this.avgWeights = tmp.avgWeights;
         this.bias = tmp.bias;
         this.posTagger = tmp.posTagger;
-        this.fullPosSet = tmp.fullPosSet;
-        this.decisionTreeUnkClassSet = tmp.posTagger.decisionTreeUnkClassSet;
+        this.binarization = tmp.binarization;
+
+        this.decisionTreeUnkClassSet = posTagger.decisionTreeUnkClassSet;
+        this.lexicon = posTagger.lexicon;
+
+        this.featureExtractor = new ConstituentBoundaryFeatureExtractor<CompleteClosureSequence>(featureTemplates,
+                lexicon, decisionTreeUnkClassSet, posTagger.tagSet, true);
         is.close();
     }
 
     @Override
     protected void run() throws Exception {
+
         if (trainingIterations > 0) {
-
-            if (grammarFile != null) {
-                BaseLogger.singleton().info("Reading grammar file...");
-                final Grammar g = new LeftCscSparseMatrixGrammar(fileAsBufferedReader(grammarFile),
-                        new DecisionTreeTokenClassifier(), PerfectIntPairHashPackingFunction.class);
-                init(g, fullPosSet);
-
-            } else {
-                this.lexicon = new SymbolSet<String>();
-                this.decisionTreeUnkClassSet = new SymbolSet<String>();
-                this.nonterminalVocabulary = new SymbolSet<String>();
-            }
-
+            this.lexicon = new SymbolSet<String>();
+            this.decisionTreeUnkClassSet = new SymbolSet<String>();
             train(inputAsBufferedReader());
+
         } else {
             readModel(new FileInputStream(modelFile));
             this.featureExtractor = new ConstituentBoundaryFeatureExtractor<CompleteClosureSequence>(featureTemplates,
-                    lexicon, decisionTreeUnkClassSet, nonterminalVocabulary, true);
+                    lexicon, decisionTreeUnkClassSet, posTagger.tagSet, true);
             classify(inputAsBufferedReader());
         }
     }
@@ -194,8 +156,8 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
         final BinaryClassifierResult result = new BinaryClassifierResult();
 
         for (final String line : inputLines(input)) {
-            final CompleteClosureSequence sequence = new CompleteClosureSequence(line, binarization, grammarFormat,
-                    lexicon, decisionTreeUnkClassSet, nonterminalVocabulary);
+            final CompleteClosureSequence sequence = new CompleteClosureSequence(line, binarization, lexicon,
+                    decisionTreeUnkClassSet, posTagger.tagSet);
             result.totalSequences++;
 
             for (int i = 0; i < sequence.classes.length; i++) {
@@ -207,27 +169,22 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
         return result;
     }
 
-    @SuppressWarnings("null")
     @Override
     protected void train(final BufferedReader input) throws IOException {
 
         this.lexicon.defaultReturnValue(Grammar.nullSymbolStr);
         this.decisionTreeUnkClassSet.defaultReturnValue(Grammar.nullSymbolStr);
-        this.nonterminalVocabulary.defaultReturnValue(Grammar.nullSymbolStr);
+        final SymbolSet<String> posTagSet = new SymbolSet<String>();
+        posTagSet.defaultReturnValue(Grammar.nullSymbolStr);
 
         final long startTime = System.currentTimeMillis();
         final ArrayList<CompleteClosureSequence> trainingCorpusSequences = new ArrayList<CompleteClosureSequence>();
         final ArrayList<CompleteClosureSequence> devCorpusSequences = new ArrayList<CompleteClosureSequence>();
 
-        if (posTaggerTrainingIterations != 0) {
-            this.posTagger = new Tagger(posTaggerFeatureTemplates, lexicon, decisionTreeUnkClassSet,
-                    nonterminalVocabulary);
-        }
+        this.posTagger = new Tagger(posTaggerFeatureTemplates, lexicon, decisionTreeUnkClassSet, posTagSet);
 
-        final ArrayList<MulticlassTagSequence> taggerTrainingCorpusSequences = posTagger != null ? new ArrayList<MulticlassTagSequence>()
-                : null;
-        final ArrayList<MulticlassTagSequence> taggerDevCorpusSequences = posTagger != null ? new ArrayList<MulticlassTagSequence>()
-                : null;
+        final ArrayList<MulticlassTagSequence> taggerTrainingCorpusSequences = new ArrayList<MulticlassTagSequence>();
+        final ArrayList<MulticlassTagSequence> taggerDevCorpusSequences = new ArrayList<MulticlassTagSequence>();
 
         //
         // Read in the training corpus and map each token. For some classifiers, we also pre-compute all features, but
@@ -238,11 +195,9 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
         //
         for (final String line : inputLines(input)) {
             try {
-                trainingCorpusSequences.add(new CompleteClosureSequence(line, binarization, grammarFormat, lexicon,
-                        decisionTreeUnkClassSet, nonterminalVocabulary));
-                if (posTagger != null) {
-                    taggerTrainingCorpusSequences.add(new MulticlassTagSequence(line, posTagger));
-                }
+                trainingCorpusSequences.add(new CompleteClosureSequence(line, binarization, lexicon,
+                        decisionTreeUnkClassSet, posTagSet));
+                taggerTrainingCorpusSequences.add(new MulticlassTagSequence(line, posTagger));
             } catch (final IllegalArgumentException ignore) {
                 // Skip malformed trees (e.g. INFO lines from parser output)
             }
@@ -253,13 +208,11 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
         // If specified, train a POS-tagger. We'll use output from that tagger instead of gold POS-tags when
         // training the cell classifier, and output both models together
         //
-        if (posTagger != null) {
-            BaseLogger.singleton().info("Training POS tagger for " + posTaggerTrainingIterations + " iterations");
-            posTagger.train(taggerTrainingCorpusSequences, taggerDevCorpusSequences, posTaggerTrainingIterations);
-        }
+        BaseLogger.singleton().info("Training POS tagger for " + posTaggerTrainingIterations + " iterations");
+        posTagger.train(taggerTrainingCorpusSequences, taggerDevCorpusSequences, posTaggerTrainingIterations);
 
-        featureExtractor = new ConstituentBoundaryFeatureExtractor<CompleteClosureSequence>(featureTemplates, lexicon,
-                decisionTreeUnkClassSet, nonterminalVocabulary, true);
+        featureExtractor = new ConstituentBoundaryFeatureExtractor<CompleteClosureSequence>(featureTemplates,
+                posTagger.lexicon, posTagger.decisionTreeUnkClassSet, posTagger.tagSet, true);
 
         //
         // Tag the training sequences with the trained POS tagger
@@ -276,13 +229,10 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
         if (devSet != null) {
             for (final String line : fileLines(devSet)) {
 
-                final CompleteClosureSequence ccs = new CompleteClosureSequence(line, binarization, grammarFormat,
-                        lexicon, decisionTreeUnkClassSet, nonterminalVocabulary);
+                final CompleteClosureSequence ccs = new CompleteClosureSequence(line, binarization, posTagger.lexicon,
+                        posTagger.decisionTreeUnkClassSet, posTagger.tagSet);
                 devCorpusSequences.add(ccs);
-
-                if (posTagger != null) {
-                    ccs.posTags = posTagger.classify(new MulticlassTagSequence(line, posTagger));
-                }
+                ccs.posTags = posTagger.classify(new MulticlassTagSequence(line, posTagger));
             }
         }
 
@@ -295,14 +245,9 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
         // Write out the model file to disk
         //
         if (modelFile != null) {
-            if (posTagger == null) {
-                // A complete-closure model without an associated tagger isn't useful for downstream processing)
-                throw new IllegalArgumentException("Cannot serialize " + this.getClass().getName()
-                        + " without training an associated tagger.");
-            }
             final FileOutputStream fos = new FileOutputStream(modelFile);
-            new ObjectOutputStream(fos)
-                    .writeObject(new Model(posTagger, featureTemplates, avgWeights, bias, fullPosSet));
+            new ObjectOutputStream(fos).writeObject(new Model(posTagger, featureTemplates, avgWeights, bias,
+                    binarization));
             fos.close();
         }
 
@@ -402,27 +347,31 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
                         result.sentenceNegativeRecall() * 100f));
     }
 
+    public Binarization binarization() {
+        return binarization;
+    }
+
     public static void main(final String[] args) {
         run(args);
     }
 
     protected static class Model implements Serializable {
 
-        private static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = 2L;
 
         private final Tagger posTagger;
         final String featureTemplates;
         final FloatVector avgWeights;
         final float bias;
-        final boolean fullPosSet;
+        final Binarization binarization;
 
         protected Model(final Tagger posTagger, final String featureTemplates, final FloatVector avgWeights,
-                final float bias, final boolean fullPosSet) {
+                final float bias, final Binarization binarization) {
             this.posTagger = posTagger;
             this.featureTemplates = featureTemplates;
             this.avgWeights = avgWeights;
             this.bias = bias;
-            this.fullPosSet = fullPosSet;
+            this.binarization = binarization;
         }
     }
 

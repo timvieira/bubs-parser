@@ -27,7 +27,7 @@ import java.io.IOException;
 import java.util.logging.Level;
 
 import cltool4j.BaseLogger;
-import edu.ohsu.cslu.grammar.Grammar;
+import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.cellselector.CellSelector.ChainableCellSelector;
@@ -60,16 +60,15 @@ public class CompleteClosureModel extends ChainableCellSelectorModel implements 
      * Standard constructor
      * 
      * @param classifierModel
-     * @param grammar
      * @param childModel
      * @throws IOException
      * @throws ClassNotFoundException
      */
-    public CompleteClosureModel(final File classifierModel, final Grammar grammar, final CellSelectorModel childModel)
-            throws IOException, ClassNotFoundException {
+    public CompleteClosureModel(final File classifierModel, final CellSelectorModel childModel) throws IOException,
+            ClassNotFoundException {
 
         super(childModel);
-        this.classifier = new CompleteClosureClassifier(grammar);
+        this.classifier = new CompleteClosureClassifier();
         classifier.readModel(new FileInputStream(classifierModel));
         this.posTagger = classifier.posTagger;
     }
@@ -87,6 +86,10 @@ public class CompleteClosureModel extends ChainableCellSelectorModel implements 
 
     public CellSelector createCellSelector() {
         return new CompleteClosureSelector(childModel != null ? childModel.createCellSelector() : null);
+    }
+
+    public Binarization binarization() {
+        return classifier.binarization();
     }
 
     public class CompleteClosureSelector extends ChainableCellSelector {

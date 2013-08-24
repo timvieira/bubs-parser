@@ -64,7 +64,8 @@ public class Tagger extends ClassifierTool<MulticlassTagSequence> {
 
     private static final long serialVersionUID = 1L;
 
-    @Option(name = "-xv", metaVar = "folds", choiceGroup = "model", usage = "Perform k-fold cross-validation on the training set (dev-set will be ignored and no model file will be written)")
+    // Note: In cross-validation mode, we can't write a model, so this option is in the same choice group with '-m'
+    @Option(name = "-xv", metaVar = "folds", optionalChoiceGroup = "model", usage = "Perform k-fold cross-validation on the training set (dev-set will be ignored and no model file will be written)")
     protected int crossValidationFolds;
 
     /**

@@ -402,7 +402,7 @@ public class AdaptiveBeamClassifier extends ClassifierTool<BeamWidthSequence> {
                 grammar.coarsePosSymbolSet());
         posTagger.trainingIterations = posTaggerTrainingIterations;
 
-        this.ccClassifier = new CompleteClosureClassifier(grammar);
+        this.ccClassifier = new CompleteClosureClassifier();
         ccClassifier.posTagger = posTagger;
         ccClassifier.trainingIterations = ccClassifierTrainingIterations;
         // For the moment, at least, we'll use the same negative training bias and target negative recall for the

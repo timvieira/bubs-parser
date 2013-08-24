@@ -34,7 +34,6 @@ import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.perceptron.BinaryClassifier.BinaryClassifierResult;
@@ -71,8 +70,8 @@ public class TestCompleteClosure {
 
         trainingCorpusSequences = new ArrayList<CompleteClosureSequence>();
         for (final String line : trainingCorpus.split("\n")) {
-            trainingCorpusSequences.add(new CompleteClosureSequence(line, Binarization.RIGHT,
-                    GrammarFormatType.Berkeley, lexicon, unkClassSet, vocabulary));
+            trainingCorpusSequences.add(new CompleteClosureSequence(line, Binarization.LEFT, lexicon, unkClassSet,
+                    vocabulary));
         }
 
         nullTag = vocabulary.getIndex(Grammar.nullSymbolStr);
@@ -225,11 +224,8 @@ public class TestCompleteClosure {
         final String tree = "(ROOT (S (NP (DT The) (NN fish) (NN market)) (VP (VB stands) (RB last))))";
         final CompleteClosureClassifier classifier = new CompleteClosureClassifier("lw_rw");
         classifier.trainingIterations = 2;
-        classifier.binarization = Binarization.RIGHT;
-        classifier.grammarFormat = GrammarFormatType.Berkeley;
         classifier.lexicon = new SymbolSet<String>();
         classifier.decisionTreeUnkClassSet = new SymbolSet<String>();
-        classifier.nonterminalVocabulary = new SymbolSet<String>();
         classifier.train(new BufferedReader(new StringReader(tree)));
 
         final BinaryClassifierResult result = classifier.classify(new BufferedReader(new StringReader(tree)));
@@ -242,16 +238,13 @@ public class TestCompleteClosure {
         final String file = "corpora/wsj/wsj_24.mrgEC.20";
         final CompleteClosureClassifier classifier = new CompleteClosureClassifier();
         classifier.trainingIterations = 25;
-        classifier.binarization = Binarization.RIGHT;
-        classifier.grammarFormat = GrammarFormatType.Berkeley;
         classifier.lexicon = new SymbolSet<String>();
         classifier.decisionTreeUnkClassSet = new SymbolSet<String>();
-        classifier.nonterminalVocabulary = new SymbolSet<String>();
 
         classifier.train(new BufferedReader(JUnit.unitTestDataAsReader(file)));
         final BinaryClassifierResult result = classifier.classify(new BufferedReader(JUnit.unitTestDataAsReader(file)));
         // We expect to (nearly) memorize the training set
-        assertTrue("Expected at least 97.8%, but was " + result.precision(), result.precision() > .978f);
+        assertTrue("Expected at least 97.7%, but was " + result.precision(), result.precision() > .977f);
     }
 
 }

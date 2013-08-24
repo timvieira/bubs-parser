@@ -63,7 +63,9 @@ public abstract class ClassifierTool<S extends Sequence> extends BaseCommandline
     @Option(name = "-d", requires = "-ti", metaVar = "file", usage = "Development set. If specified, test results are output after each training iteration.")
     protected File devSet;
 
-    @Option(name = "-m", choiceGroup = "model", metaVar = "file", usage = "Model file (Java serialized object). If testing, the model will be read from this file; if training, the final model will be written to this file.")
+    // Note: Some subclasses support a cross-validation mode, in which case we can't write a model, so those options
+    // share the same choice group with '-m'
+    @Option(name = "-m", optionalChoiceGroup = "model", metaVar = "file", usage = "Model file (Java serialized object). If testing, the model will be read from this file; if training, the final model will be written to this file.")
     protected File modelFile;
 
     /**

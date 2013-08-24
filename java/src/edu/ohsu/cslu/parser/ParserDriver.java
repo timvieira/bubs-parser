@@ -147,6 +147,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     @Option(name = "-parseFromInputTags", hidden = true, usage = "Parse from input POS tags given by tagged or tree input.  Replaces 1-best tags from BoundaryInOut FOM if also specified.")
     public static boolean parseFromInputTags = false;
 
+    // TODO Remove along with BSCPBeamPredictTrain, now that we have integrated adaptive-beam training in
+    // AdaptiveBeamClassifier
     @Option(name = "-inputTreeBeamRank", hidden = true, usage = "Print rank of input tree constituents during beam-search parsing.")
     public static boolean inputTreeBeamRank = false;
 
@@ -394,9 +396,13 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
             }
 
             if (completeClosureClassifierFile != null) {
-                cellSelectorModel = defaultCellSelector ? new CompleteClosureModel(completeClosureClassifierFile,
-                        grammar, null) : new CompleteClosureModel(completeClosureClassifierFile, grammar,
-                        cellSelectorModel);
+                cellSelectorModel = defaultCellSelector ? new CompleteClosureModel(completeClosureClassifierFile, null)
+                        : new CompleteClosureModel(completeClosureClassifierFile, cellSelectorModel);
+                if (((CompleteClosureModel) cellSelectorModel).binarization() != grammar.binarization()) {
+                    throw new IllegalArgumentException("Binarization mismatch: Grammar binarization = "
+                            + grammar.binarization() + " and complete-closure model was trained for "
+                            + ((CompleteClosureModel) cellSelectorModel).binarization());
+                }
             }
         }
 

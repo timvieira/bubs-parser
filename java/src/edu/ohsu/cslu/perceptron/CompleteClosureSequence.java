@@ -68,17 +68,15 @@ public class CompleteClosureSequence extends ConstituentBoundarySequence impleme
      * 
      * @param parseTree
      * @param binarization
-     * @param grammarFormatType
      * @param lexicon
      * @param unkClassSet
-     * @param vocabulary
+     * @param posTagSet
      */
     public CompleteClosureSequence(final String parseTree, final Binarization binarization,
-            final GrammarFormatType grammarFormatType, final SymbolSet<String> lexicon,
-            final SymbolSet<String> unkClassSet, final SymbolSet<String> vocabulary) {
+            final SymbolSet<String> lexicon, final SymbolSet<String> unkClassSet, final SymbolSet<String> posTagSet) {
 
-        this(NaryTree.read(parseTree.trim(), String.class).binarize(grammarFormatType, binarization), lexicon,
-                unkClassSet, vocabulary);
+        this(NaryTree.read(parseTree.trim(), String.class).binarize(GrammarFormatType.Berkeley, binarization), lexicon,
+                unkClassSet, posTagSet);
     }
 
     /**
@@ -89,7 +87,7 @@ public class CompleteClosureSequence extends ConstituentBoundarySequence impleme
      * @param classifier
      */
     public CompleteClosureSequence(final BinaryTree<String> parseTree, final CompleteClosureClassifier classifier) {
-        this(parseTree, classifier.lexicon, classifier.decisionTreeUnkClassSet, classifier.nonterminalVocabulary);
+        this(parseTree, classifier.lexicon, classifier.decisionTreeUnkClassSet, classifier.posTagger.tagSet);
     }
 
     /**
@@ -99,12 +97,12 @@ public class CompleteClosureSequence extends ConstituentBoundarySequence impleme
      * @param parseTree
      * @param lexicon
      * @param unkClassSet
-     * @param vocabulary
+     * @param posSet
      */
     private CompleteClosureSequence(final BinaryTree<String> parseTree, final SymbolSet<String> lexicon,
-            final SymbolSet<String> unkClassSet, final SymbolSet<String> vocabulary) {
+            final SymbolSet<String> unkClassSet, final SymbolSet<String> posSet) {
 
-        super(parseTree, lexicon, unkClassSet, vocabulary);
+        super(parseTree, lexicon, unkClassSet, posSet);
 
         this.classes = new boolean[length];
         this.predictedClasses = new boolean[length];
@@ -118,10 +116,10 @@ public class CompleteClosureSequence extends ConstituentBoundarySequence impleme
         for (final BinaryTree<String> node : parseTree.preOrderTraversal()) {
 
             if (node.isLeaf()) {
-                if (vocabulary.isFinalized()) {
-                    posTags[start] = (short) vocabulary.getIndex(node.parentLabel());
+                if (posSet.isFinalized()) {
+                    posTags[start] = (short) posSet.getIndex(node.parentLabel());
                 } else {
-                    posTags[start] = (short) vocabulary.addSymbol(node.parentLabel());
+                    posTags[start] = (short) posSet.addSymbol(node.parentLabel());
                 }
                 // Increment the start index every time we process a leaf
                 start++;
@@ -155,9 +153,11 @@ public class CompleteClosureSequence extends ConstituentBoundarySequence impleme
     public String toString() {
         final StringBuilder sb = new StringBuilder(256);
         for (int i = 0; i < sentenceLength; i++) {
-            sb.append(lexicon.getSymbol(mappedTokens[i]));
+            sb.append('(');
+            // sb.append(posSet.getSymbol(posTags[i]));
+            sb.append(posTags[i]);
             sb.append(' ');
-            sb.append(classes[i]);
+            sb.append(lexicon.getSymbol(mappedTokens[i]));
             sb.append(')');
 
             if (i < (length - 1)) {
