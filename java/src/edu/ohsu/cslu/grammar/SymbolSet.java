@@ -20,6 +20,7 @@ package edu.ohsu.cslu.grammar;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntCollection;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntSortedMap;
 import it.unimi.dsi.fastutil.objects.ObjectSortedSet;
@@ -32,6 +33,10 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Map;
 
+/**
+ * Maps objects to integer indices and vice-versa. Wraps an {@link Object2IntMap}, with convenience methods to add
+ * mappings and the ability to {@link #finalize()} a map after all symbols have been added.
+ */
 public class SymbolSet<E> implements Object2IntSortedMap<E>, Iterable<E>, Serializable {
 
     private static final long serialVersionUID = 1L;
