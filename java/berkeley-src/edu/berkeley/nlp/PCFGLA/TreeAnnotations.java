@@ -72,7 +72,7 @@ public class TreeAnnotations implements java.io.Serializable {
         return new Tree<String>(transformedLabel, transformedChildren);
     }
 
-    static Tree<String> leftBinarizeTree(final Tree<String> tree) {
+    static Tree<String> rightBinarizeTree(final Tree<String> tree) {
         final String label = tree.label();
         final ArrayList<Tree<String>> children = tree.children();
         if (tree.isLeaf()) {
@@ -81,60 +81,60 @@ public class TreeAnnotations implements java.io.Serializable {
 
         if (children.size() == 1) {
             final ArrayList<Tree<String>> newChildren = new ArrayList<Tree<String>>(1);
-            newChildren.add(leftBinarizeTree(children.get(0)));
-            return new Tree<String>(label, newChildren);
-        }
-        // otherwise, it's a binary-or-more local tree, so decompose it into a
-        // sequence of binary and unary trees.
-        final String intermediateLabel = "@" + label + "->";
-        final Tree<String> intermediateTree = leftBinarizeTreeHelper(tree, 0, intermediateLabel);
-        return new Tree<String>(label, intermediateTree.children());
-    }
-
-    private static Tree<String> leftBinarizeTreeHelper(final Tree<String> tree, final int numChildrenGenerated,
-            final String intermediateLabel) {
-        final Tree<String> leftTree = tree.children().get(numChildrenGenerated);
-        final ArrayList<Tree<String>> children = new ArrayList<Tree<String>>(2);
-        children.add(leftBinarizeTree(leftTree));
-        if (numChildrenGenerated == tree.children().size() - 2) {
-            children.add(leftBinarizeTree(tree.children().get(numChildrenGenerated + 1)));
-        } else if (numChildrenGenerated < tree.children().size() - 2) {
-            final Tree<String> rightTree = leftBinarizeTreeHelper(tree, numChildrenGenerated + 1, intermediateLabel
-                    + "_" + leftTree.label());
-            children.add(rightTree);
-        }
-        return new Tree<String>(intermediateLabel, children);
-    }
-
-    static Tree<String> rightBinarizeTree(final Tree<String> tree) {
-        final String label = tree.label();
-        final ArrayList<Tree<String>> children = tree.children();
-        if (tree.isLeaf())
-            return new Tree<String>(label);
-        else if (children.size() == 1) {
-            final ArrayList<Tree<String>> newChildren = new ArrayList<Tree<String>>(1);
             newChildren.add(rightBinarizeTree(children.get(0)));
             return new Tree<String>(label, newChildren);
         }
         // otherwise, it's a binary-or-more local tree, so decompose it into a
         // sequence of binary and unary trees.
         final String intermediateLabel = "@" + label + "->";
-        final Tree<String> intermediateTree = rightBinarizeTreeHelper(tree, children.size() - 1, intermediateLabel);
+        final Tree<String> intermediateTree = rightBinarizeTreeHelper(tree, 0, intermediateLabel);
         return new Tree<String>(label, intermediateTree.children());
     }
 
-    private static Tree<String> rightBinarizeTreeHelper(final Tree<String> tree, final int numChildrenLeft,
+    private static Tree<String> rightBinarizeTreeHelper(final Tree<String> tree, final int numChildrenGenerated,
+            final String intermediateLabel) {
+        final Tree<String> leftTree = tree.children().get(numChildrenGenerated);
+        final ArrayList<Tree<String>> children = new ArrayList<Tree<String>>(2);
+        children.add(rightBinarizeTree(leftTree));
+        if (numChildrenGenerated == tree.children().size() - 2) {
+            children.add(rightBinarizeTree(tree.children().get(numChildrenGenerated + 1)));
+        } else if (numChildrenGenerated < tree.children().size() - 2) {
+            final Tree<String> rightTree = rightBinarizeTreeHelper(tree, numChildrenGenerated + 1, intermediateLabel
+                    + "_" + leftTree.label());
+            children.add(rightTree);
+        }
+        return new Tree<String>(intermediateLabel, children);
+    }
+
+    static Tree<String> leftBinarizeTree(final Tree<String> tree) {
+        final String label = tree.label();
+        final ArrayList<Tree<String>> children = tree.children();
+        if (tree.isLeaf())
+            return new Tree<String>(label);
+        else if (children.size() == 1) {
+            final ArrayList<Tree<String>> newChildren = new ArrayList<Tree<String>>(1);
+            newChildren.add(leftBinarizeTree(children.get(0)));
+            return new Tree<String>(label, newChildren);
+        }
+        // otherwise, it's a binary-or-more local tree, so decompose it into a
+        // sequence of binary and unary trees.
+        final String intermediateLabel = "@" + label + "->";
+        final Tree<String> intermediateTree = leftBinarizeTreeHelper(tree, children.size() - 1, intermediateLabel);
+        return new Tree<String>(label, intermediateTree.children());
+    }
+
+    private static Tree<String> leftBinarizeTreeHelper(final Tree<String> tree, final int numChildrenLeft,
             final String intermediateLabel) {
         final Tree<String> rightTree = tree.children().get(numChildrenLeft);
         final ArrayList<Tree<String>> children = new ArrayList<Tree<String>>(2);
         if (numChildrenLeft == 1) {
-            children.add(rightBinarizeTree(tree.children().get(numChildrenLeft - 1)));
+            children.add(leftBinarizeTree(tree.children().get(numChildrenLeft - 1)));
         } else if (numChildrenLeft > 1) {
-            final Tree<String> leftTree = rightBinarizeTreeHelper(tree, numChildrenLeft - 1, intermediateLabel + "_"
+            final Tree<String> leftTree = leftBinarizeTreeHelper(tree, numChildrenLeft - 1, intermediateLabel + "_"
                     + rightTree.label());
             children.add(leftTree);
         }
-        children.add(rightBinarizeTree(rightTree));
+        children.add(leftBinarizeTree(rightTree));
         return new Tree<String>(intermediateLabel, children);
     }
 }
