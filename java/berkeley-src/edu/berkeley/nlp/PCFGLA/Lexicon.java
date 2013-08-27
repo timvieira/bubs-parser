@@ -25,8 +25,8 @@ public class Lexicon implements java.io.Serializable {
     private static final long serialVersionUID = 2L;
 
     /** A count of strings with tags. Indexed by state, word, and substate. */
-    HashMap<String, double[]>[] wordToTagCounters = null;
-    HashMap<String, double[]>[] unseenWordToTagCounters = null;
+    final HashMap<String, double[]>[] wordToTagCounters;
+    final HashMap<String, double[]>[] unseenWordToTagCounters;
     double totalTokens = 0.0;
     double totalUnseenTokens = 0.0;
     double totalWords = 0.0;
@@ -41,47 +41,39 @@ public class Lexicon implements java.io.Serializable {
     /** The number of substates for each state */
     short[] numSubStates;
 
-    /** Word-tag pairs that occur less are smoothed. */
-    int smoothingCutoff;
+    // /** Word-tag pairs that occur less are smoothed. */
+    // int smoothingCutoff;
 
-    /** The default smoothing cutoff. */
-    public static int DEFAULT_SMOOTHING_CUTOFF = 10;
+    private Smoother smoother;
+    final double threshold;
 
-    /** Add X smoothing for P(word) */
-    double addXSmoothing = 1.0;
-
-    Smoother smoother;
-    double threshold;
-
-    Numberer wordNumberer;
-
-    // additions from the stanford parser which are needed for a better
-    // unknown word model...
     /**
      * Cache unknown-word signatures - we'll always return the same signature for a word; the signature for a word
      * differs in sentence-initial position, so we maintain 2 caches
      */
     protected transient HashMap<String, String> cachedSignatures = new HashMap<String, String>();
     protected transient HashMap<String, String> cachedSentenceInitialSignatures = new HashMap<String, String>();
+    // TODO We can probably remove this option - it's never changed
     private int unknownLevel = 5; // different modes for unknown words, 5 is
                                   // english specific
 
-    /**
-     * Unique word count threshold for open-class preterminals. If a preterminal (POS) is observed with more than
-     * {@link #openClassTypesThreshold} unique words, it will be considered open-class. Unknown words will be assgined
-     * to open-class preterminals.
-     */
-    public static int openClassTypesThreshold = 50;
+    // /**
+    // * Unique word count threshold for open-class preterminals. If a preterminal (POS) is observed with more than
+    // * {@link #openClassTypesThreshold} unique words, it will be considered open-class. Unknown words will be assgined
+    // * to open-class preterminals.
+    // */
+    // public static int openClassTypesThreshold = 50;
 
+    // TODO Does this threshold ever vary?
     double smoothInUnknownsThreshold = 100;
-    double[] smooth = null;
+
+    final double[] smoothingParams;
 
     /**
      * Create a blank Lexicon object. Fill it by calling tallyStateSetTree for each training tree, then calling
      * optimize().
      * 
      * @param numSubStates
-     * @param smoothingCutoff
      * @param smoothParam
      * @param smoother
      * @param learnUnknownWordRules If true, the lexicon will accumulate pseudo-counts for unknown word signatures,
@@ -90,25 +82,27 @@ public class Lexicon implements java.io.Serializable {
      * @param threshold
      */
     @SuppressWarnings("unchecked")
-    public Lexicon(final short[] numSubStates, final int smoothingCutoff, final double[] smoothParam,
-            final Smoother smoother, final boolean learnUnknownWordRules, final double threshold) {
+    public Lexicon(final short[] numSubStates, final double[] smoothParam, final Smoother smoother,
+            final boolean learnUnknownWordRules, final double threshold) {
         this.numSubStates = numSubStates;
-        this.smoothingCutoff = smoothingCutoff;
-        this.smooth = smoothParam;
+        this.smoothingParams = smoothParam;
         this.smoother = smoother;
-        wordToTagCounters = new HashMap[numSubStates.length];
+        this.wordToTagCounters = new HashMap[numSubStates.length];
+
         if (learnUnknownWordRules) {
-            unseenWordToTagCounters = new HashMap[numSubStates.length];
+            this.unseenWordToTagCounters = new HashMap[numSubStates.length];
+        } else {
+            this.unseenWordToTagCounters = null;
         }
-        tagCounter = new double[numSubStates.length][];
-        unseenTagCounter = new double[numSubStates.length][];
+
+        this.tagCounter = new double[numSubStates.length][];
+        this.unseenTagCounter = new double[numSubStates.length][];
 
         for (int i = 0; i < numSubStates.length; i++) {
             tagCounter[i] = new double[numSubStates[i]];
             unseenTagCounter[i] = new double[numSubStates[i]];
         }
         this.threshold = threshold;
-        this.wordNumberer = Numberer.getGlobalNumberer("words");
     }
 
     /** Get the nonterminal tags */
@@ -125,7 +119,6 @@ public class Lexicon implements java.io.Serializable {
      * @param moreSubstatesThanCounts
      * @return A new lexicon, with all states split in 2
      */
-    @SuppressWarnings("unchecked")
     public Lexicon splitAllStates(final int[] counts, final boolean moreSubstatesThanCounts) {
 
         final short[] newNumSubStates = new short[numSubStates.length];
@@ -134,23 +127,22 @@ public class Lexicon implements java.io.Serializable {
             newNumSubStates[i] = (short) (numSubStates[i] * 2);
         }
 
-        final Lexicon lexicon = new Lexicon(newNumSubStates, this.smoothingCutoff, smooth, smoother,
+        final Lexicon newLexicon = new Lexicon(newNumSubStates, smoothingParams, smoother,
                 this.unseenWordToTagCounters != null, this.threshold);
 
         // copy and alter all data structures
-        lexicon.wordToTagCounters = new HashMap[numSubStates.length];
         for (int tag = 0; tag < wordToTagCounters.length; tag++) {
             if (wordToTagCounters[tag] != null) {
-                lexicon.wordToTagCounters[tag] = new HashMap<String, double[]>();
+                newLexicon.wordToTagCounters[tag] = new HashMap<String, double[]>();
                 for (final String word : wordToTagCounters[tag].keySet()) {
-                    lexicon.wordToTagCounters[tag].put(word, new double[newNumSubStates[tag]]);
+                    newLexicon.wordToTagCounters[tag].put(word, new double[newNumSubStates[tag]]);
                     for (int substate = 0; substate < wordToTagCounters[tag].get(word).length; substate++) {
                         int splitFactor = 2;
                         if (newNumSubStates[tag] == numSubStates[tag]) {
                             splitFactor = 1;
                         }
                         for (int i = 0; i < splitFactor; i++) {
-                            lexicon.wordToTagCounters[tag].get(word)[substate * splitFactor + i] = (1.f / splitFactor)
+                            newLexicon.wordToTagCounters[tag].get(word)[substate * splitFactor + i] = (1.f / splitFactor)
                                     * wordToTagCounters[tag].get(word)[substate];
                         }
                     }
@@ -160,19 +152,18 @@ public class Lexicon implements java.io.Serializable {
 
         // Split unknown word
         if (unseenWordToTagCounters != null) {
-            lexicon.unseenWordToTagCounters = new HashMap[numSubStates.length];
             for (int tag = 0; tag < unseenWordToTagCounters.length; tag++) {
                 if (unseenWordToTagCounters[tag] != null) {
-                    lexicon.unseenWordToTagCounters[tag] = new HashMap<String, double[]>();
+                    newLexicon.unseenWordToTagCounters[tag] = new HashMap<String, double[]>();
                     for (final String word : unseenWordToTagCounters[tag].keySet()) {
-                        lexicon.unseenWordToTagCounters[tag].put(word, new double[newNumSubStates[tag]]);
+                        newLexicon.unseenWordToTagCounters[tag].put(word, new double[newNumSubStates[tag]]);
                         for (int substate = 0; substate < unseenWordToTagCounters[tag].get(word).length; substate++) {
                             int splitFactor = 2;
                             if (newNumSubStates[tag] == numSubStates[tag]) {
                                 splitFactor = 1;
                             }
                             for (int i = 0; i < splitFactor; i++) {
-                                lexicon.unseenWordToTagCounters[tag].get(word)[substate * splitFactor + i] = (1.f / splitFactor)
+                                newLexicon.unseenWordToTagCounters[tag].get(word)[substate * splitFactor + i] = (1.f / splitFactor)
                                         * unseenWordToTagCounters[tag].get(word)[substate];
                             }
                         }
@@ -181,16 +172,16 @@ public class Lexicon implements java.io.Serializable {
             }
         }
 
-        lexicon.totalTokens = totalTokens;
-        lexicon.totalUnseenTokens = totalUnseenTokens;
-        lexicon.totalWords = totalWords;
-        lexicon.smoother = smoother;
-        lexicon.tagCounter = new double[tagCounter.length][];
-        lexicon.unseenTagCounter = new double[unseenTagCounter.length][];
+        newLexicon.totalTokens = totalTokens;
+        newLexicon.totalUnseenTokens = totalUnseenTokens;
+        newLexicon.totalWords = totalWords;
+        newLexicon.smoother = smoother;
+        newLexicon.tagCounter = new double[tagCounter.length][];
+        newLexicon.unseenTagCounter = new double[unseenTagCounter.length][];
 
         for (int tag = 0; tag < tagCounter.length; tag++) {
-            lexicon.tagCounter[tag] = new double[newNumSubStates[tag]];
-            lexicon.unseenTagCounter[tag] = new double[newNumSubStates[tag]];
+            newLexicon.tagCounter[tag] = new double[newNumSubStates[tag]];
+            newLexicon.unseenTagCounter[tag] = new double[newNumSubStates[tag]];
 
             for (int substate = 0; substate < tagCounter[tag].length; substate++) {
                 int splitFactor = 2;
@@ -201,26 +192,26 @@ public class Lexicon implements java.io.Serializable {
                 for (int i = 0; i < splitFactor; i++) {
                     // lexicon.typeTagCounter[tag][substate * splitFactor + i] = (1.f / splitFactor)
                     // * typeTagCounter[tag][substate];
-                    lexicon.tagCounter[tag][substate * splitFactor + i] = (1.f / splitFactor)
+                    newLexicon.tagCounter[tag][substate * splitFactor + i] = (1.f / splitFactor)
                             * tagCounter[tag][substate];
-                    lexicon.unseenTagCounter[tag][substate * splitFactor + i] = (1.f / splitFactor)
+                    newLexicon.unseenTagCounter[tag][substate * splitFactor + i] = (1.f / splitFactor)
                             * unseenTagCounter[tag][substate];
                 }
             }
         }
 
-        lexicon.wordCounter = new Object2DoubleOpenHashMap<String>();
+        newLexicon.wordCounter = new Object2DoubleOpenHashMap<String>();
 
         for (final String word : wordCounter.keySet()) {
-            lexicon.wordCounter.put(word, wordCounter.getDouble(word));
+            newLexicon.wordCounter.put(word, wordCounter.getDouble(word));
         }
 
-        lexicon.smoothingCutoff = smoothingCutoff;
-        lexicon.addXSmoothing = addXSmoothing;
-        lexicon.smoothInUnknownsThreshold = smoothInUnknownsThreshold;
-        lexicon.wordNumberer = wordNumberer;
+        // lexicon.smoothingCutoff = smoothingCutoff;
+        // lexicon.addXSmoothing = addXSmoothing;
+        newLexicon.smoothInUnknownsThreshold = smoothInUnknownsThreshold;
+        // lexicon.wordNumberer = wordNumberer;
 
-        return lexicon;
+        return newLexicon;
     }
 
     /**
@@ -623,7 +614,7 @@ public class Lexicon implements java.io.Serializable {
                 }
             } else {
                 // we haven't seen the word enough times to have confidence in its tagging
-                pb_T_W = (c_TW + smooth[1] * p_T_U) / (c_W + smooth[1]);
+                pb_T_W = (c_TW + smoothingParams[1] * p_T_U) / (c_W + smoothingParams[1]);
             }
 
             // Sometimes we run up against unknown tags. This should only happen when we're calculating the
@@ -672,7 +663,7 @@ public class Lexicon implements java.io.Serializable {
             // System.out.println(" sig " + sig
             // +" c_TS "+c_TS+" p_T_U "+p_T_U+" c_S "+c_S);
             // smooth[0]=10;
-            final double pb_T_S = (c_TS + smooth[0] * p_T_U) / (c_S + smooth[0]);
+            final double pb_T_S = (c_TS + smoothingParams[0] * p_T_U) / (c_S + smoothingParams[0]);
 
             final double p_T = (c_Tseen / total);
             final double p_W = 1.0 / total;
@@ -947,7 +938,7 @@ public class Lexicon implements java.io.Serializable {
     }
 
     public double[] getSmoothingParams() {
-        return smooth;
+        return smoothingParams;
     }
 
     public double getPruningThreshold() {
