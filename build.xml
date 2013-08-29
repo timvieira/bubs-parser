@@ -74,16 +74,18 @@
         <jar file="${dir.dist}/cslu-common.jar">
             <fileset dir="${dir.build}" includes="edu/ohsu/cslu/counters/**/*.class" />
             <fileset dir="${dir.build}" includes="edu/ohsu/cslu/datastructs/**/*.class" />
-            <fileset dir="${dir.build}" includes="edu/ohsu/cslu/grammar/*GrammarFormatType*.class" />
+            <fileset dir="${dir.build}" includes="edu/ohsu/cslu/grammar/**/*.class" />
             <fileset dir="${dir.build}" includes="edu/ohsu/cslu/hash/**/*.class" />
             <fileset dir="${dir.build}" includes="edu/ohsu/cslu/util/**/*.class" />
+            <fileset dir="${dir.build}" includes="edu/ohsu/cslu/perceptron/**/*.class" />
         </jar>
         <jar file="${dir.dist}/cslu-common-src.jar">
             <fileset dir="${dir.src}" includes="edu/ohsu/cslu/counters/**/*.java" />
             <fileset dir="${dir.src}" includes="edu/ohsu/cslu/datastructs/**/*.java" />
-            <fileset dir="${dir.src}" includes="edu/ohsu/cslu/grammar/*GrammarFormatType*.java" />
+            <fileset dir="${dir.src}" includes="edu/ohsu/cslu/grammar/**/*.java" />
             <fileset dir="${dir.src}" includes="edu/ohsu/cslu/hash/**/*.java" />
             <fileset dir="${dir.src}" includes="edu/ohsu/cslu/util/**/*.java" />
+            <fileset dir="${dir.src}" includes="edu/ohsu/cslu/perceptron/**/*.java" />
         </jar>
     </target>
 
