@@ -23,8 +23,7 @@ import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
  */
 public class Corpus {
 
-    ArrayList<Tree<String>> trainTrees = new ArrayList<Tree<String>>();
-    ArrayList<Tree<String>> devSetTrees = new ArrayList<Tree<String>>();
+    private final ArrayList<Tree<String>> trees = new ArrayList<Tree<String>>();
 
     /**
      * Load the a parsed corpus from the specified <code>inputStream</code>. Assumes UTF-8 encoding
@@ -39,10 +38,10 @@ public class Corpus {
 
             final Trees.TreeTransformer<String> treeTransformer = new Trees.StandardTreeNormalizer();
             while (treeReader.hasNext()) {
-                trainTrees.add(treeTransformer.transformTree(treeReader.next()));
+                trees.add(treeTransformer.transformTree(treeReader.next()));
             }
 
-            if (trainTrees.size() == 0) {
+            if (trees.size() == 0) {
                 throw new IllegalArgumentException("Empty training corpus");
             }
 
@@ -68,17 +67,10 @@ public class Corpus {
     }
 
     /**
-     * @return training trees
+     * @return trees
      */
-    public List<Tree<String>> getTrainTrees() {
-        return trainTrees;
-    }
-
-    /**
-     * @return validation-set trees
-     */
-    public List<Tree<String>> getDevSetTrees() {
-        return devSetTrees;
+    public List<Tree<String>> trees() {
+        return trees;
     }
 
     public static void lowercaseWords(final List<Tree<String>> trainTrees) {

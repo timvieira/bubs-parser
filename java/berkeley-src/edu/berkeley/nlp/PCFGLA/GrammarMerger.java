@@ -4,10 +4,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.logging.Level;
 
 import cltool4j.BaseLogger;
 import cltool4j.GlobalConfigProperties;
+import edu.berkeley.nlp.PCFGLA.GrammarMerger.MergeRanking.MergeObjectiveFunction;
 import edu.berkeley.nlp.syntax.StateSet;
 import edu.berkeley.nlp.syntax.Tree;
 import edu.berkeley.nlp.util.Numberer;
@@ -189,29 +189,32 @@ public class GrammarMerger {
     }
 
     /**
-     * Ranks merge candidates by a {@link MergeRankingFunction} and selects the bottom n to be merged. For the moment,
-     * the return type is still a <code>boolean</code> array, to match other historical code, although returning a
+     * Ranks merge candidates by a {@link MergeRanking} and selects the bottom n to be merged. For the moment, the
+     * return type is still a <code>boolean</code> array, to match other historical code, although returning a
      * {@link List} of {@link MergeCandidate}s might be more intuitive.
      * 
+     * @param grammar
+     * @param lexicon
+     * @param substateConditionalProbabilities TODO
      * @param mergeLikelihoodDeltas Merge likelihood deltas (i.e. log-likelihood gain or loss) for each merge candidate
      *            (substate pair). Indexed by state, substate 1, substate 2. As computed by
      *            {@link GrammarMerger#computeMergeLikelihoodDeltas(Grammar, Lexicon, double[][], StateSetTreeList)}.
+     * @param ruleCountDeltas Change in total rule-count for each merge candidate. Indexed by state, substate 1,
+     *            substate 2. As computed by {@link Grammar#estimateMergeRuleCountDeltas(Lexicon)}.
      * @param mergingPercentage
-     * @param grammar
-     * @param lexicon
      * @param rankingFunction
+     * @param cycle The current training cycle (1-based)
      * 
      * @return Boolean array indexed by state, substate 1, substate 2; pairs to be merged indicated by <code>true</code>
      *         values.
      */
-    public static boolean[][][] selectMergePairs(final float[][][] mergeLikelihoodDeltas,
-            final double mergingPercentage, final Grammar grammar, final Lexicon lexicon,
-            final MergeRankingFunction rankingFunction) {
+    public static boolean[][][] selectMergePairs(final Grammar grammar, final Lexicon lexicon,
+            final double[][] substateConditionalProbabilities, final float[][][] mergeLikelihoodDeltas,
+            final int[][][] ruleCountDeltas, final double mergingPercentage, final MergeRanking rankingFunction,
+            final int cycle) {
 
         final boolean[][][] mergeThesePairs = new boolean[grammar.numSubStates.length][][];
         final short[] numSubStatesArray = grammar.numSubStates;
-
-        final int[][][] ruleCountDeltas = grammar.estimateMergeRuleCountDelta(lexicon);
 
         final ArrayList<MergeCandidate> mergeCandidates = new ArrayList<GrammarMerger.MergeCandidate>();
 
@@ -228,39 +231,32 @@ public class GrammarMerger {
         }
 
         // Compute all merge costs, per the ranking function
-        computeMergeCostsAndRankings(mergeCandidates, rankingFunction);
+        computeMergeCostsAndRankings(grammar, lexicon, substateConditionalProbabilities, mergeCandidates,
+                rankingFunction, cycle);
 
         // Order the merge candidates and select a threshold
         Collections.sort(mergeCandidates, rankingFunction.comparator());
         final int thresholdCandidate = (int) (mergeCandidates.size() * mergingPercentage);
 
-        final float threshold = mergeCandidates.get(thresholdCandidate).mergeCost;
+        final float threshold = rankingFunction.objectiveFunction.mergeCost(mergeCandidates.get(thresholdCandidate));
         BaseLogger.singleton().info("Merge threshold: " + threshold);
 
         // Select the bottom portion of the ranked list as the candidates to be merged
-        final List<MergeCandidate> mergePairs = mergeCandidates.subList(0, thresholdCandidate + 1);
+        final List<MergeCandidate> selectedMergeCandidates = mergeCandidates.subList(0, thresholdCandidate + 1);
 
         for (int state = 0; state < mergeThesePairs.length; state++) {
             mergeThesePairs[state] = new boolean[numSubStatesArray[state]][numSubStatesArray[state]];
         }
-        for (final MergeCandidate c : mergePairs) {
+
+        BaseLogger.singleton().info("Merging " + selectedMergeCandidates.size() + " siblings.");
+        for (final MergeCandidate c : selectedMergeCandidates) {
             mergeThesePairs[c.state][c.substate1][c.substate2] = true;
-        }
 
-        // Output merge pairs
-        if (BaseLogger.singleton().isLoggable(Level.INFO)) {
-            BaseLogger.singleton().info("Merging " + mergePairs.size() + " siblings.");
-
-            for (short state = 0; state < mergeLikelihoodDeltas.length; state++) {
-                for (int i = 0; i < numSubStatesArray[state]; i++) {
-                    for (int j = i + 1; j < numSubStatesArray[state]; j++) {
-                        if (mergeThesePairs[state][i][j])
-                            BaseLogger.singleton().info(
-                                    String.format("Merging %s_%d and %s_%d Cost : %f", tagNumberer.symbol(state), i,
-                                            tagNumberer.symbol(state), j, mergeLikelihoodDeltas[state][i][j]));
-                    }
-                }
-            }
+            // Output merge pairs
+            final float mergeCost = rankingFunction.objectiveFunction.mergeCost(c);
+            BaseLogger.singleton().info(
+                    String.format("Merging %s_%d and %s_%d Cost : %f", tagNumberer.symbol(c.state), c.substate1,
+                            tagNumberer.symbol(c.state), c.substate2, mergeCost));
         }
 
         return mergeThesePairs;
@@ -271,34 +267,67 @@ public class GrammarMerger {
      * loss, rule count savings, etc.), then computes total merge cost for each non-terminal pair
      * 
      * @param grammar
+     * @param substateConditionalProbabilities TODO
      * @param mergeCandidates An unordered list of estimated merge costs. Note that this list will be reordered.
      * @param rankingFunction A merge-cost ranking function
+     * @param cycle The current training cycle (1-based)
      */
-    private static void computeMergeCostsAndRankings(final ArrayList<MergeCandidate> mergeCandidates,
-            final MergeRankingFunction rankingFunction) {
+    private static void computeMergeCostsAndRankings(final Grammar grammar, final Lexicon lexicon,
+            final double[][] substateConditionalProbabilities, final ArrayList<MergeCandidate> mergeCandidates,
+            final MergeRanking rankingFunction, final int cycle) {
 
-        // Estimated likelihood loss
-        Collections.sort(mergeCandidates, MergeRankingFunction.Likelihood.comparator());
+        final long t0 = System.currentTimeMillis();
+
+        //
+        // Rank by estimated likelihood loss and by change in total rule-count (these estimates are cheap, so we always
+        // perform them even though they aren't used in some objective functions)
+        //
+
+        Collections.sort(mergeCandidates, MergeRanking.Likelihood.comparator());
         for (int i = 0; i < mergeCandidates.size(); i++) {
             mergeCandidates.get(i).likelihoodLossRanking = i;
         }
 
         // Total rule count delta
-        Collections.sort(mergeCandidates, MergeRankingFunction.TotalRuleCount.comparator());
+        Collections.sort(mergeCandidates, MergeRanking.TotalRuleCount.comparator());
         for (int i = 0; i < mergeCandidates.size(); i++) {
             mergeCandidates.get(i).totalRuleCountRanking = i;
         }
 
-        for (final MergeCandidate mc : mergeCandidates) {
-            mc.mergeCost = rankingFunction.objectiveFunction.mergeCost(mc);
+        final MergeObjectiveFunction objectiveFunction = rankingFunction.objectiveFunction();
+        if (rankingFunction == MergeRanking.Discriminative) {
+
+            final DiscriminativeMergeObjectiveFunction df = (DiscriminativeMergeObjectiveFunction) objectiveFunction;
+            df.init(grammar, lexicon, cycle);
+
+            for (final MergeCandidate mc : mergeCandidates) {
+                df.parseDevSet(mc, mergeCandidates.size(), substateConditionalProbabilities);
+            }
+
+            // Sort and assign ordinal rankings by F1 and inference speed
+            Collections.sort(mergeCandidates, DiscriminativeMergeObjectiveFunction.inferenceF1Comparator());
+            for (int i = 0; i < mergeCandidates.size(); i++) {
+                mergeCandidates.get(i).inferenceF1Ranking = i;
+            }
+
+            Collections.sort(mergeCandidates, DiscriminativeMergeObjectiveFunction.inferenceSpeedComparator());
+            for (int i = 0; i < mergeCandidates.size(); i++) {
+                mergeCandidates.get(i).inferenceSpeedRanking = i;
+            }
+
         }
+
+        BaseLogger.singleton().info(
+                String.format("Examined %d merge candidates in %.3f seconds", mergeCandidates.size(),
+                        (System.currentTimeMillis() - t0) / 1000f));
+
     }
 
-    private static class MergeCandidate {
+    static class MergeCandidate {
 
-        private final short state;
-        private final short substate1;
-        private final short substate2;
+        final short state;
+        final short substate1;
+        final short substate2;
         private final float estimatedLikelihoodDelta;
         private final int binaryRuleCountDelta;
         private final int unaryRuleCountDelta;
@@ -318,8 +347,23 @@ public class GrammarMerger {
          */
         private int totalRuleCountRanking;
 
-        /** Combined merge cost, as assigned by a {@link MergeObjectiveFunction} */
-        private float mergeCost;
+        /** Parsing accuracy as measured using pruned inference */
+        float inferenceF1;
+
+        /**
+         * The ordinal ranking of this non-terminal pair within the list of {@link MergeCandidate}s if sorted by
+         * {@link #inferenceF1}.
+         */
+        int inferenceF1Ranking;
+
+        /** Parsing speed (in words/second) as measured using pruned inference */
+        float inferenceSpeed;
+
+        /**
+         * The ordinal ranking of this non-terminal pair within the list of {@link MergeCandidate}s if sorted by
+         * {@link #inferenceSpeed}.
+         */
+        int inferenceSpeedRanking;
 
         /**
          * @param state
@@ -351,11 +395,19 @@ public class GrammarMerger {
             this.totalRuleCountDelta = binaryRuleCountDelta + unaryRuleCountDelta + lexicalRuleCountDelta;
         }
 
+        public int likelihoodLossRanking() {
+            return likelihoodLossRanking;
+        }
+
         @Override
         public String toString() {
-            return String.format("%d  %d  %d  %14.6f  %6d  %6d  %6d  %6d  %6d  %6d  %7.2f", state, substate1,
-                    substate2, estimatedLikelihoodDelta, likelihoodLossRanking, binaryRuleCountDelta,
-                    unaryRuleCountDelta, lexicalRuleCountDelta, totalRuleCountDelta, totalRuleCountRanking, mergeCost);
+            final Numberer numberer = Numberer.getGlobalNumberer("tags");
+            return String
+                    .format("%6s_%d / %6s_%d  LL=%14.6f  LL_rank=%6d  Bin=%6d  Un=%6d  Lex=%6d  Tot=%6d  RC_rank=%6d  F1=%.3f  F1_rank=%d  Speed=%.3f  Sp_rank=%d",
+                            numberer.symbol(state), substate1, numberer.symbol(state), substate2,
+                            estimatedLikelihoodDelta, likelihoodLossRanking, binaryRuleCountDelta, unaryRuleCountDelta,
+                            lexicalRuleCountDelta, totalRuleCountDelta, totalRuleCountRanking, inferenceF1,
+                            inferenceF1Ranking, inferenceSpeed, inferenceSpeedRanking);
         }
     }
 
@@ -363,26 +415,28 @@ public class GrammarMerger {
      * Objective functions for non-terminal merge ranking. Each enumeration option constructs and exposes an anonymous
      * {@link Comparator} to re-rank merge candidates.
      */
-    public static enum MergeRankingFunction {
+    public static enum MergeRanking {
 
         Likelihood(new MergeObjectiveFunction() {
             @Override
-            public float mergeCost(final MergeCandidate mergeCost) {
-                return mergeCost.estimatedLikelihoodDelta;
+            public float mergeCost(final MergeCandidate mergeCandidate) {
+                return mergeCandidate.estimatedLikelihoodDelta;
             }
+
         }),
 
         TotalRuleCount(new MergeObjectiveFunction() {
             @Override
-            public float mergeCost(final MergeCandidate mergeCost) {
-                return mergeCost.totalRuleCountDelta;
+            public float mergeCost(final MergeCandidate mergeCandidate) {
+                return mergeCandidate.totalRuleCountDelta;
             }
+
         }),
 
         /**
          * Note: Likelihood and rule-count rankings must be computed, as in
-         * {@link GrammarMerger#computeMergeCostsAndRankings(ArrayList, MergeRankingFunction)} before applying this
-         * function.
+         * {@link GrammarMerger#computeMergeCostsAndRankings(Grammar, Lexicon, double[][], ArrayList, MergeRanking, int)}
+         * before applying this function.
          * 
          * Controlled by the configuration parameter "ruleCountLambda", ranging from 0-1. At lambda=0, merges are
          * controlled entirely by likelihood (as in {@link #Likelihood}) and at \lambda = 1, entirely by rule-count (as
@@ -393,30 +447,48 @@ public class GrammarMerger {
             final float ruleCountLambda = GlobalConfigProperties.singleton().getFloatProperty("ruleCountLambda", 0);
 
             @Override
-            public float mergeCost(final MergeCandidate mergeCost) {
-                return mergeCost.likelihoodLossRanking * (1 - ruleCountLambda) + mergeCost.totalRuleCountRanking
-                        * ruleCountLambda;
+            public float mergeCost(final MergeCandidate mergeCandidate) {
+                return mergeCandidate.likelihoodLossRanking * (1 - ruleCountLambda)
+                        + mergeCandidate.totalRuleCountRanking * ruleCountLambda;
             }
-        });
 
-        /** Comparator for the specified objective function */
-        public final MergeObjectiveFunction objectiveFunction;
+        }),
 
-        private MergeRankingFunction(final MergeObjectiveFunction objectiveFunction) {
+        Discriminative(new DiscriminativeMergeObjectiveFunction());
+
+        /**
+         * Comparator for the specified objective function. Most {@link MergeRanking} implementations instantiate this
+         * at creation time. However, some implementations (notably {@link DiscriminativeMergeObjectiveFunction}) need
+         * additional information not available at that time, so must override {@link #objectiveFunction()}.
+         */
+        private final MergeObjectiveFunction objectiveFunction;
+
+        private MergeRanking(final MergeObjectiveFunction objectiveFunction) {
             this.objectiveFunction = objectiveFunction;
         }
 
+        public MergeObjectiveFunction objectiveFunction() {
+            return objectiveFunction;
+        }
+
+        /**
+         * Ranks the candidates by merge cost (lowest-cost first)
+         * 
+         * @return A comparator which ranks {@link MergeCandidate}s by cost, lowest-cost merges first.
+         */
         public Comparator<MergeCandidate> comparator() {
+
             return new Comparator<MergeCandidate>() {
                 @Override
                 public int compare(final MergeCandidate o1, final MergeCandidate o2) {
                     return Float.compare(objectiveFunction.mergeCost(o1), objectiveFunction.mergeCost(o2));
                 }
             };
+
         }
 
-        private static abstract class MergeObjectiveFunction {
-            public abstract float mergeCost(MergeCandidate mergeCost);
+        static abstract class MergeObjectiveFunction {
+            public abstract float mergeCost(MergeCandidate mergeCandidate);
         }
     }
 }

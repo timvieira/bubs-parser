@@ -2,9 +2,7 @@ package edu.berkeley.nlp.PCFGLA;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
-import java.io.PrintWriter;
 import java.io.Serializable;
-import java.io.Writer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,6 +11,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Random;
 
+import edu.berkeley.nlp.PCFGLA.GrammarMerger.MergeCandidate;
 import edu.berkeley.nlp.PCFGLA.smoothing.Smoother;
 import edu.berkeley.nlp.syntax.StateSet;
 import edu.berkeley.nlp.syntax.Tree;
@@ -261,30 +260,6 @@ public class Grammar implements Serializable, Cloneable {
         }
     }
 
-    /**
-     * TODO Only used in {@link WriteGrammarToTextFile}. Remove when we remove that.
-     * 
-     * @param w
-     */
-    public void writeData(final Writer w) {
-
-        final PrintWriter out = new PrintWriter(w);
-        for (int state = 0; state < numStates; state++) {
-            final BinaryRule[] parentRules = this.splitRulesWithP(state);
-            for (int i = 0; i < parentRules.length; i++) {
-                final BinaryRule r = parentRules[i];
-                out.print(r.toString());
-            }
-        }
-
-        for (int state = 0; state < numStates; state++) {
-            for (final UnaryRule r : closedViterbiRulesWithParent[state]) {
-                out.print(r.toString());
-            }
-        }
-        out.flush();
-    }
-
     public void setSmoother(final Smoother smoother) {
         this.smoother = smoother;
     }
@@ -324,60 +299,6 @@ public class Grammar implements Serializable, Cloneable {
             addUnary(r);
         }
         computePairsOfUnaries();
-    }
-
-    /**
-     * TODO Only used in {@link WriteGrammarToTextFile}. Remove when we remove that.
-     * 
-     * @param thresh
-     * @param power
-     */
-    public void removeUnlikelyRules(final double thresh, final double power) {
-        // System.out.print("Removing everything below "+thresh+" and rasiing rules to the "
-        // +power+"th power... ");
-        for (int state = 0; state < numStates; state++) {
-            for (int r = 0; r < splitRulesWithP[state].length; r++) {
-                final BinaryRule rule = splitRulesWithP[state][r];
-                for (int lC = 0; lC < rule.scores.length; lC++) {
-                    for (int rC = 0; rC < rule.scores[lC].length; rC++) {
-                        if (rule.scores[lC][rC] == null)
-                            continue;
-                        boolean isNull = true;
-                        for (int p = 0; p < rule.scores[lC][rC].length; p++) {
-                            if (rule.scores[lC][rC][p] < thresh) {
-                                // System.out.print(".");
-                                rule.scores[lC][rC][p] = 0;
-                            } else {
-                                if (power != 1)
-                                    rule.scores[lC][rC][p] = Math.pow(rule.scores[lC][rC][p], power);
-                                isNull = false;
-                            }
-                        }
-                        if (isNull)
-                            rule.scores[lC][rC] = null;
-                    }
-                }
-                splitRulesWithP[state][r] = rule;
-            }
-            for (final UnaryRule rule : unaryRulesWithParent[state]) {
-                for (int c = 0; c < rule.scores.length; c++) {
-                    if (rule.scores[c] == null)
-                        continue;
-                    boolean isNull = true;
-                    for (int p = 0; p < rule.scores[c].length; p++) {
-                        if (rule.scores[c][p] <= thresh) {
-                            rule.scores[c][p] = 0;
-                        } else {
-                            if (power != 1)
-                                rule.scores[c][p] = Math.pow(rule.scores[c][p], power);
-                            isNull = false;
-                        }
-                    }
-                    if (isNull)
-                        rule.scores[c] = null;
-                }
-            }
-        }
     }
 
     /**
@@ -593,7 +514,7 @@ public class Grammar implements Serializable, Cloneable {
      * <p>
      * <i>This method must be called before the grammar is used, either after training or deserializing grammar.</i>
      * 
-     * TODO Only used in {@link #splitRulesWithP(int)} and {@link WriteGrammarToTextFile}. Consolidate.
+     * TODO Only used in {@link #splitRulesWithP(int)}. Consolidate.
      */
     public void splitRules() {
 
@@ -979,8 +900,8 @@ public class Grammar implements Serializable, Cloneable {
     }
 
     /**
-     * @param mergeThesePairs
      * @param partners
+     * @param mapping
      */
     private void pruneSplitTree(final short[][][] partners, final short[][] mapping) {
         for (int tag = 0; tag < splitTrees.length; tag++) {
@@ -1001,6 +922,235 @@ public class Grammar implements Serializable, Cloneable {
                 preTerminal.setChildren(newChildren);
             }
         }
+    }
+
+    /**
+     * Merges a single pair of state splits. Does not update {@link #splitTrees}, since these merges are temporary (used
+     * to compare {@link MergeCandidate}s during training).
+     * 
+     * @param mergeCandidate
+     * @return A new {@link Grammar}, merging the state-split of the specified {@link MergeCandidate} and including
+     *         counts derived from this {@link Grammar}
+     */
+    public Grammar merge(final MergeCandidate mergeCandidate, final double[][] substateConditionalProbabilities) {
+        final short[] newNumSubStates = numSubStates.clone();
+        newNumSubStates[mergeCandidate.state]--;
+
+        // create the new grammar
+        final Grammar newGrammar = new Grammar(this, newNumSubStates);
+
+        for (final int binaryKey : packedBinaryRuleMap.keySet()) {
+            final PackedBinaryRule packedRule = packedBinaryRuleMap.get(binaryKey);
+            if (unsplitBinaryParent(binaryKey) != mergeCandidate.state
+                    && unsplitLeftChild(binaryKey) != mergeCandidate.state
+                    && unsplitRightChild(binaryKey) != mergeCandidate.state) {
+                // If the merge candidate doesn't match this rule, we can just reuse the existing rule
+                newGrammar.packedBinaryRuleMap.put(binaryKey, packedRule);
+
+            } else {
+                //
+                // Un-pack the rule, sum probabilities for the merged substates, and re-pack into the new grammar
+                //
+
+                final BinaryRule unpackedRule = new BinaryRule(packedRule, numSubStates);
+
+                // Compute the number of post-merge splits of left and right children and parent (2 of the 3 will be the
+                // same as pre-merge, and the 3rd will be one fewer)
+                final int mergedLeftChildSubstates = mergeCandidate.state == unpackedRule.leftChildState ? numSubStates[unpackedRule.leftChildState] - 1
+                        : numSubStates[unpackedRule.leftChildState];
+                final int mergedRightChildSubstates = mergeCandidate.state == unpackedRule.rightChildState ? numSubStates[unpackedRule.rightChildState] - 1
+                        : numSubStates[unpackedRule.rightChildState];
+                final int mergedParentSubstates = mergeCandidate.state == unpackedRule.parentState ? numSubStates[unpackedRule.parentState] - 1
+                        : numSubStates[unpackedRule.parentState];
+
+                final double[][][] mergedScores = new double[mergedLeftChildSubstates][][];
+
+                // Populate the rule scores
+                for (int oldLeftChildSubstate = 0; oldLeftChildSubstate < unpackedRule.scores.length; oldLeftChildSubstate++) {
+
+                    if (unpackedRule.scores[oldLeftChildSubstate] == null) {
+                        continue;
+                    }
+
+                    final int mergedLeftChildSubstate = mergeCandidate.state == unpackedRule.leftChildState
+                            && oldLeftChildSubstate > mergeCandidate.substate1 ? oldLeftChildSubstate - 1
+                            : oldLeftChildSubstate;
+
+                    if (mergedScores[mergedLeftChildSubstate] == null) {
+                        mergedScores[mergedLeftChildSubstate] = new double[mergedRightChildSubstates][];
+                    }
+
+                    for (int oldRightChildSubstate = 0; oldRightChildSubstate < unpackedRule.scores[oldLeftChildSubstate].length; oldRightChildSubstate++) {
+
+                        if (unpackedRule.scores[oldLeftChildSubstate][oldRightChildSubstate] == null) {
+                            continue;
+                        }
+
+                        final int mergedRightChildSubstate = mergeCandidate.state == unpackedRule.rightChildState
+                                && oldRightChildSubstate > mergeCandidate.substate1 ? oldRightChildSubstate - 1
+                                : oldRightChildSubstate;
+
+                        if (mergedScores[mergedLeftChildSubstate][mergedRightChildSubstate] == null) {
+                            mergedScores[mergedLeftChildSubstate][mergedRightChildSubstate] = new double[mergedParentSubstates];
+                        }
+
+                        for (int oldParentSubstate = 0; oldParentSubstate < unpackedRule.scores[oldLeftChildSubstate][oldRightChildSubstate].length; oldParentSubstate++) {
+
+                            final int mergedParentSubstate = mergeCandidate.state == unpackedRule.parentState
+                                    && oldParentSubstate > mergeCandidate.substate1 ? oldParentSubstate - 1
+                                    : oldParentSubstate;
+
+                            if (mergeCandidate.state == unpackedRule.leftChildState
+                                    && mergedLeftChildSubstate == mergeCandidate.substate1) {
+
+                                // Merging a child state is easy - just sum the two probabilities
+                                mergedScores[mergedLeftChildSubstate][mergedRightChildSubstate][mergedParentSubstate] = 0;
+
+                                if (unpackedRule.scores[mergeCandidate.substate1] != null
+                                        && unpackedRule.scores[mergeCandidate.substate1][oldRightChildSubstate] != null) {
+                                    mergedScores[mergedLeftChildSubstate][mergedRightChildSubstate][mergedParentSubstate] += unpackedRule.scores[mergeCandidate.substate1][oldRightChildSubstate][oldParentSubstate];
+                                }
+
+                                if (unpackedRule.scores[mergeCandidate.substate2] != null
+                                        && unpackedRule.scores[mergeCandidate.substate2][oldRightChildSubstate] != null) {
+                                    mergedScores[mergedLeftChildSubstate][mergedRightChildSubstate][mergedParentSubstate] += unpackedRule.scores[mergeCandidate.substate2][oldRightChildSubstate][oldParentSubstate];
+                                }
+
+                            } else if (mergeCandidate.state == unpackedRule.rightChildState
+                                    && mergedRightChildSubstate == mergeCandidate.substate1) {
+
+                                mergedScores[mergedLeftChildSubstate][mergedRightChildSubstate][mergedParentSubstate] = 0;
+                                if (unpackedRule.scores[oldLeftChildSubstate][mergeCandidate.substate1] != null) {
+                                    mergedScores[mergedLeftChildSubstate][mergedRightChildSubstate][mergedParentSubstate] += unpackedRule.scores[oldLeftChildSubstate][mergeCandidate.substate1][oldParentSubstate];
+                                }
+
+                                if (unpackedRule.scores[oldLeftChildSubstate][mergeCandidate.substate2] != null) {
+                                    mergedScores[mergedLeftChildSubstate][mergedRightChildSubstate][mergedParentSubstate] += unpackedRule.scores[oldLeftChildSubstate][mergeCandidate.substate2][oldParentSubstate];
+                                }
+
+                            } else if (mergeCandidate.state == unpackedRule.parentState
+                                    && mergedParentSubstate == mergeCandidate.substate1) {
+
+                                // Merging a parent state is a little more complex
+                                //
+                                // P(parent_1|parent) * P(children|parent_1) + P(parent_2|parent) * P(children|parent_2)
+                                // / (P(parent_1|parent) + P(parent_2|parent))
+                                //
+                                mergedScores[mergedLeftChildSubstate][mergedRightChildSubstate][mergedParentSubstate] = (substateConditionalProbabilities[mergeCandidate.state][mergeCandidate.substate1] // P(parent_1|parent)
+                                        * unpackedRule.scores[oldLeftChildSubstate][oldRightChildSubstate][mergeCandidate.substate1] + // P(children|parent_1)
+                                +substateConditionalProbabilities[mergeCandidate.state][mergeCandidate.substate2] // P(parent_2|parent)
+                                        * unpackedRule.scores[oldLeftChildSubstate][oldRightChildSubstate][mergeCandidate.substate2]) // P(children|parent_2)
+                                        / (substateConditionalProbabilities[mergeCandidate.state][mergeCandidate.substate1] // P(parent_1|parent)
+                                        + substateConditionalProbabilities[mergeCandidate.state][mergeCandidate.substate2]); // P(parent_2|parent)
+
+                            } else {
+                                // Copy the old score
+                                mergedScores[mergedLeftChildSubstate][mergedRightChildSubstate][mergedParentSubstate] = unpackedRule.scores[oldLeftChildSubstate][oldRightChildSubstate][oldParentSubstate];
+                            }
+
+                            assert mergedScores[mergedLeftChildSubstate][mergedRightChildSubstate][mergedParentSubstate] <= 1;
+                        }
+                    }
+                }
+                newGrammar.packedBinaryRuleMap.put(binaryKey, new PackedBinaryRule(packedRule.unsplitParent,
+                        packedRule.unsplitLeftChild, packedRule.unsplitRightChild, mergedScores, newNumSubStates));
+            }
+        }
+
+        for (final int unaryKey : packedUnaryRuleMap.keySet()) {
+            final PackedUnaryRule packedRule = packedUnaryRuleMap.get(unaryKey);
+            if (unsplitUnaryParent(unaryKey) != mergeCandidate.state
+                    && unsplitLeftChild(unaryKey) != mergeCandidate.state
+                    && unsplitRightChild(unaryKey) != mergeCandidate.state) {
+                // If the merge candidate doesn't match this rule, we can just reuse the existing rule
+                newGrammar.packedUnaryRuleMap.put(unaryKey, packedRule);
+
+            } else {
+                //
+                // Un-pack the rule, sum probabilities for the merged substates, and re-pack into the new grammar
+                //
+                final UnaryRule unpackedRule = new UnaryRule(packedRule, numSubStates);
+
+                // Compute the number of post-merge splits of child and parent (1 will be the same as pre-merge, and the
+                // other will be one fewer)
+                final int mergedChildSubstates = mergeCandidate.state == unpackedRule.childState ? numSubStates[unpackedRule.childState] - 1
+                        : numSubStates[unpackedRule.childState];
+                final int mergedParentSubstates = mergeCandidate.state == unpackedRule.parentState ? numSubStates[unpackedRule.parentState] - 1
+                        : numSubStates[unpackedRule.parentState];
+
+                final double[][] mergedScores = new double[mergedChildSubstates][];
+
+                // Populate the rule scores
+                for (int oldChildSubstate = 0; oldChildSubstate < unpackedRule.scores.length; oldChildSubstate++) {
+
+                    if (unpackedRule.scores[oldChildSubstate] == null) {
+                        continue;
+                    }
+
+                    final int mergedChildSubstate = mergeCandidate.state == unpackedRule.childState
+                            && oldChildSubstate > mergeCandidate.substate1 ? oldChildSubstate - 1 : oldChildSubstate;
+
+                    if (mergedScores[mergedChildSubstate] == null) {
+                        mergedScores[mergedChildSubstate] = new double[mergedParentSubstates];
+                    }
+
+                    for (int oldParentSubstate = 0; oldParentSubstate < unpackedRule.scores[oldChildSubstate].length; oldParentSubstate++) {
+
+                        final int mergedParentSubstate = mergeCandidate.state == unpackedRule.parentState
+                                && oldParentSubstate > mergeCandidate.substate1 ? oldParentSubstate - 1
+                                : oldParentSubstate;
+
+                        if (mergeCandidate.state == unpackedRule.childState
+                                && mergedChildSubstate == mergeCandidate.substate1) {
+
+                            // Merging a child state is easy - just sum the two probabilities
+                            mergedScores[mergedChildSubstate][mergedParentSubstate] = 0;
+
+                            if (unpackedRule.scores[mergeCandidate.substate1] != null) {
+                                mergedScores[mergedChildSubstate][mergedParentSubstate] += unpackedRule.scores[mergeCandidate.substate1][oldParentSubstate];
+                            }
+
+                            if (unpackedRule.scores[mergeCandidate.substate2] != null) {
+                                mergedScores[mergedChildSubstate][mergedParentSubstate] += unpackedRule.scores[mergeCandidate.substate2][oldParentSubstate];
+                            }
+
+                        } else if (mergeCandidate.state == unpackedRule.parentState
+                                && mergedParentSubstate == mergeCandidate.substate1) {
+
+                            // Merging a parent state is a little more complex
+                            //
+                            // P(parent_1|parent) * P(child|parent_1) + P(parent_2|parent) * P(child|parent_2) /
+                            // (P(parent_1|parent) + P(parent_2|parent))
+                            //
+                            mergedScores[mergedChildSubstate][mergedParentSubstate] = (substateConditionalProbabilities[mergeCandidate.state][mergeCandidate.substate1]
+                                    * // P(parent_1|parent)
+                                    unpackedRule.scores[oldChildSubstate][mergeCandidate.substate1] + // P(child|parent_1)
+                            +substateConditionalProbabilities[mergeCandidate.state][mergeCandidate.substate2] * // P(parent_2|parent)
+                                    unpackedRule.scores[oldChildSubstate][mergeCandidate.substate2]) // P(child|parent_2)
+                                    / (substateConditionalProbabilities[mergeCandidate.state][mergeCandidate.substate1] // P(parent_1|parent)
+                                    + substateConditionalProbabilities[mergeCandidate.state][mergeCandidate.substate2]); // P(parent_2|parent)
+
+                        } else {
+                            // Copy the old score
+                            mergedScores[mergedChildSubstate][mergedParentSubstate] = unpackedRule.scores[oldChildSubstate][oldParentSubstate];
+                        }
+
+                        assert mergedScores[mergedChildSubstate][mergedParentSubstate] <= 1;
+                    }
+                }
+                newGrammar.packedUnaryRuleMap.put(unaryKey, new PackedUnaryRule(packedRule.unsplitParent,
+                        packedRule.unsplitChild, mergedScores));
+            }
+        }
+
+        // Add unaries to rule-by-parent and rule-by-child arrays for computePairsOfUnaries
+        for (final int unaryKey : newGrammar.packedUnaryRuleMap.keySet()) {
+            final UnaryRule r = new UnaryRule(newGrammar.packedUnaryRuleMap.get(unaryKey), numSubStates);
+            newGrammar.addUnary(r);
+        }
+        newGrammar.computePairsOfUnaries();
+
+        return newGrammar;
     }
 
     // // Unused, but might be useful
@@ -1136,21 +1286,6 @@ public class Grammar implements Serializable, Cloneable {
     }
 
     /**
-     * @param w TODO Only used in {@link WriteGrammarToTextFile}. Remove when we remove that.
-     */
-    public void writeSplitTrees(final Writer w) {
-        final PrintWriter out = new PrintWriter(w);
-        for (int state = 1; state < numStates; state++) {
-            String tag = tagNumberer.symbol(state);
-            if (tag.endsWith("^g"))
-                tag = tag.substring(0, tag.length() - 2);
-            out.write(tag + "\t" + splitTrees[state].toString() + "\n");
-        }
-        out.flush();
-        out.close();
-    }
-
-    /**
      * Returns true if the argument is a "dangerous" double to have around, namely one that is infinite, NaN or zero.
      */
     private static boolean isDangerous(final double d) {
@@ -1237,7 +1372,7 @@ public class Grammar implements Serializable, Cloneable {
      * @return Array of rule-count savings, indexed by state, substate, and finally by 0, 1, 2 (binary, unary, and
      *         lexical)
      */
-    public int[][][] estimateMergeRuleCountDelta(final Lexicon lexicon) {
+    public int[][][] estimateMergeRuleCountDeltas(final Lexicon lexicon) {
         final int[][][] ruleCountDelta = new int[numStates][][];
         for (int state = 0; state < numStates; state++) {
             ruleCountDelta[state] = new int[numSubStates[state]][3];

@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import edu.berkeley.nlp.PCFGLA.GrammarMerger.MergeCandidate;
 import edu.berkeley.nlp.PCFGLA.smoothing.Smoother;
 import edu.berkeley.nlp.syntax.StateSet;
 import edu.berkeley.nlp.syntax.Tree;
@@ -24,9 +25,18 @@ public class Lexicon implements java.io.Serializable {
 
     private static final long serialVersionUID = 2L;
 
-    /** A count of strings with tags. Indexed by state, word, and substate. */
-    final HashMap<String, double[]>[] wordToTagCounters;
-    final HashMap<String, double[]>[] unseenWordToTagCounters;
+    /**
+     * Fractional occurrence counts for each observed token/tag combination. Indexed by state. {@link HashMap}s map
+     * token to an array of counts for each substate.
+     */
+    final HashMap<String, double[]>[] observedTokenFractionalCounts;
+
+    /**
+     * Fractional occurrence counts for UNK-class/tag combination. Indexed by state. {@link HashMap}s map token to an
+     * array of counts for each substate.
+     */
+    final HashMap<String, double[]>[] unkFractionalCounts;
+
     double totalTokens = 0.0;
     double totalUnseenTokens = 0.0;
     double totalWords = 0.0;
@@ -87,12 +97,12 @@ public class Lexicon implements java.io.Serializable {
         this.numSubStates = numSubStates;
         this.smoothingParams = smoothParam;
         this.smoother = smoother;
-        this.wordToTagCounters = new HashMap[numSubStates.length];
+        this.observedTokenFractionalCounts = new HashMap[numSubStates.length];
 
         if (learnUnknownWordRules) {
-            this.unseenWordToTagCounters = new HashMap[numSubStates.length];
+            this.unkFractionalCounts = new HashMap[numSubStates.length];
         } else {
-            this.unseenWordToTagCounters = null;
+            this.unkFractionalCounts = null;
         }
 
         this.tagCounter = new double[numSubStates.length][];
@@ -128,22 +138,22 @@ public class Lexicon implements java.io.Serializable {
         }
 
         final Lexicon newLexicon = new Lexicon(newNumSubStates, smoothingParams, smoother,
-                this.unseenWordToTagCounters != null, this.threshold);
+                this.unkFractionalCounts != null, this.threshold);
 
         // copy and alter all data structures
-        for (int tag = 0; tag < wordToTagCounters.length; tag++) {
-            if (wordToTagCounters[tag] != null) {
-                newLexicon.wordToTagCounters[tag] = new HashMap<String, double[]>();
-                for (final String word : wordToTagCounters[tag].keySet()) {
-                    newLexicon.wordToTagCounters[tag].put(word, new double[newNumSubStates[tag]]);
-                    for (int substate = 0; substate < wordToTagCounters[tag].get(word).length; substate++) {
+        for (int tag = 0; tag < observedTokenFractionalCounts.length; tag++) {
+            if (observedTokenFractionalCounts[tag] != null) {
+                newLexicon.observedTokenFractionalCounts[tag] = new HashMap<String, double[]>();
+                for (final String word : observedTokenFractionalCounts[tag].keySet()) {
+                    newLexicon.observedTokenFractionalCounts[tag].put(word, new double[newNumSubStates[tag]]);
+                    for (int substate = 0; substate < observedTokenFractionalCounts[tag].get(word).length; substate++) {
                         int splitFactor = 2;
                         if (newNumSubStates[tag] == numSubStates[tag]) {
                             splitFactor = 1;
                         }
                         for (int i = 0; i < splitFactor; i++) {
-                            newLexicon.wordToTagCounters[tag].get(word)[substate * splitFactor + i] = (1.f / splitFactor)
-                                    * wordToTagCounters[tag].get(word)[substate];
+                            newLexicon.observedTokenFractionalCounts[tag].get(word)[substate * splitFactor + i] = (1.f / splitFactor)
+                                    * observedTokenFractionalCounts[tag].get(word)[substate];
                         }
                     }
                 }
@@ -151,20 +161,20 @@ public class Lexicon implements java.io.Serializable {
         }
 
         // Split unknown word
-        if (unseenWordToTagCounters != null) {
-            for (int tag = 0; tag < unseenWordToTagCounters.length; tag++) {
-                if (unseenWordToTagCounters[tag] != null) {
-                    newLexicon.unseenWordToTagCounters[tag] = new HashMap<String, double[]>();
-                    for (final String word : unseenWordToTagCounters[tag].keySet()) {
-                        newLexicon.unseenWordToTagCounters[tag].put(word, new double[newNumSubStates[tag]]);
-                        for (int substate = 0; substate < unseenWordToTagCounters[tag].get(word).length; substate++) {
+        if (unkFractionalCounts != null) {
+            for (int tag = 0; tag < unkFractionalCounts.length; tag++) {
+                if (unkFractionalCounts[tag] != null) {
+                    newLexicon.unkFractionalCounts[tag] = new HashMap<String, double[]>();
+                    for (final String word : unkFractionalCounts[tag].keySet()) {
+                        newLexicon.unkFractionalCounts[tag].put(word, new double[newNumSubStates[tag]]);
+                        for (int substate = 0; substate < unkFractionalCounts[tag].get(word).length; substate++) {
                             int splitFactor = 2;
                             if (newNumSubStates[tag] == numSubStates[tag]) {
                                 splitFactor = 1;
                             }
                             for (int i = 0; i < splitFactor; i++) {
-                                newLexicon.unseenWordToTagCounters[tag].get(word)[substate * splitFactor + i] = (1.f / splitFactor)
-                                        * unseenWordToTagCounters[tag].get(word)[substate];
+                                newLexicon.unkFractionalCounts[tag].get(word)[substate * splitFactor + i] = (1.f / splitFactor)
+                                        * unkFractionalCounts[tag].get(word)[substate];
                             }
                         }
                     }
@@ -206,10 +216,7 @@ public class Lexicon implements java.io.Serializable {
             newLexicon.wordCounter.put(word, wordCounter.getDouble(word));
         }
 
-        // lexicon.smoothingCutoff = smoothingCutoff;
-        // lexicon.addXSmoothing = addXSmoothing;
         newLexicon.smoothInUnknownsThreshold = smoothInUnknownsThreshold;
-        // lexicon.wordNumberer = wordNumberer;
 
         return newLexicon;
     }
@@ -556,7 +563,7 @@ public class Lexicon implements java.io.Serializable {
 
         final double[] tagStateCounter = tagCounter[tag];
         final double[] unseenTagStateCounter = unseenTagCounter[tag];
-        final HashMap<String, double[]> wordTagCounter = wordToTagCounters[tag];
+        final HashMap<String, double[]> wordTagCounter = observedTokenFractionalCounts[tag];
 
         double[] pb_W_T;
         if (!isSignature && (seen || noSmoothing)) {
@@ -643,8 +650,8 @@ public class Lexicon implements java.io.Serializable {
             // iTW.word = sig;
             // double c_TS = unSeenCounter.getCount(iTW);
             double c_TS = 0;
-            if (unseenWordToTagCounters[tag] != null && unseenWordToTagCounters[tag].get(sig) != null) {
-                c_TS = unseenWordToTagCounters[tag].get(sig)[substate];
+            if (unkFractionalCounts[tag] != null && unkFractionalCounts[tag].get(sig) != null) {
+                c_TS = unkFractionalCounts[tag].get(sig)[substate];
             }
             // if (c_TS == 0) continue;
 
@@ -690,7 +697,7 @@ public class Lexicon implements java.io.Serializable {
             }
             // wordToTagCounters = 1-d array of maps, indexed by base NT. Each map maps word -> 1-d array of counts,
             // indexed by split index
-            for (final Map.Entry<String, double[]> wordToTagEntry : wordToTagCounters[ni].entrySet()) {
+            for (final Map.Entry<String, double[]> wordToTagEntry : observedTokenFractionalCounts[ni].entrySet()) {
                 final String word = wordToTagEntry.getKey();
                 final double[] substateCounter = wordToTagEntry.getValue();
                 if (wordCounter.getDouble(word) < rareWordThreshold + 0.5) {
@@ -738,26 +745,26 @@ public class Lexicon implements java.io.Serializable {
 
             final String sig = getCachedSignature(word, position);
 
-            if (unseenWordToTagCounters != null) {
-                if (unseenWordToTagCounters[state] == null) {
-                    unseenWordToTagCounters[state] = new HashMap<String, double[]>();
+            if (unkFractionalCounts != null) {
+                if (unkFractionalCounts[state] == null) {
+                    unkFractionalCounts[state] = new HashMap<String, double[]>();
                 }
-                if (!unseenWordToTagCounters[state].containsKey(sig)) {
-                    unseenWordToTagCounters[state].put(sig, new double[numSubStates[state]]);
+                if (!unkFractionalCounts[state].containsKey(sig)) {
+                    unkFractionalCounts[state].put(sig, new double[numSubStates[state]]);
                 }
             }
-            final double[] unseenWordSubstateCounter = unseenWordToTagCounters != null ? unseenWordToTagCounters[state]
+            final double[] unseenWordSubstateCounter = unkFractionalCounts != null ? unkFractionalCounts[state]
                     .get(sig) : null;
 
             // guarantee that the wordToTagCounter element exists so we can
             // tally the combination
-            if (wordToTagCounters[state] == null) {
-                wordToTagCounters[state] = new HashMap<String, double[]>();
+            if (observedTokenFractionalCounts[state] == null) {
+                observedTokenFractionalCounts[state] = new HashMap<String, double[]>();
             }
-            double[] substateCounter = wordToTagCounters[state].get(word);
+            double[] substateCounter = observedTokenFractionalCounts[state].get(word);
             if (substateCounter == null) {
                 substateCounter = new double[numSubStates[state]];
-                wordToTagCounters[state].put(word, substateCounter);
+                observedTokenFractionalCounts[state].put(word, substateCounter);
             }
 
             double[] oldLexiconScores = null;
@@ -851,9 +858,9 @@ public class Lexicon implements java.io.Serializable {
 
         for (int tag = 0; tag < mergeThesePairs.length; tag++) {
             // update wordToTagCounters
-            if (wordToTagCounters[tag] != null) {
-                for (final String word : wordToTagCounters[tag].keySet()) {
-                    final double[] scores = wordToTagCounters[tag].get(word);
+            if (observedTokenFractionalCounts[tag] != null) {
+                for (final String word : observedTokenFractionalCounts[tag].keySet()) {
+                    final double[] scores = observedTokenFractionalCounts[tag].get(word);
                     final double[] newScores = new double[newNumSubStates[tag]];
                     for (int i = 0; i < numSubStates[tag]; i++) {
                         final short nSplit = (short) partners[tag][i].length;
@@ -863,7 +870,7 @@ public class Lexicon implements java.io.Serializable {
                             newScores[mapping[tag][i]] = scores[i];
                         }
                     }
-                    wordToTagCounters[tag].put(word, newScores);
+                    observedTokenFractionalCounts[tag].put(word, newScores);
                 }
             }
             // update tag counter
@@ -882,13 +889,112 @@ public class Lexicon implements java.io.Serializable {
         numSubStates = newNumSubStates;
     }
 
+    /**
+     * Merges a single pair of state splits
+     * 
+     * @param mergeCandidate
+     * @return A new {@link Lexicon}, merging the state-split of the specified {@link MergeCandidate} and including
+     *         counts derived from this {@link Lexicon}
+     */
+    public Lexicon merge(final MergeCandidate mergeCandidate) {
+
+        final short[] newNumSubStates = numSubStates.clone();
+        newNumSubStates[mergeCandidate.state]--;
+
+        final Lexicon newLexicon = new Lexicon(newNumSubStates, smoothingParams, smoother,
+                this.unkFractionalCounts != null, this.threshold);
+        newLexicon.totalTokens = totalTokens;
+        newLexicon.totalUnseenTokens = totalUnseenTokens;
+        newLexicon.totalWords = totalWords;
+        newLexicon.smoother = smoother;
+        newLexicon.tagCounter = new double[tagCounter.length][];
+        newLexicon.unseenTagCounter = new double[unseenTagCounter.length][];
+        newLexicon.wordCounter = wordCounter.clone();
+        newLexicon.smoothInUnknownsThreshold = smoothInUnknownsThreshold;
+
+        // Copy word-to-tag counters and sum counts from the merge candidate
+
+        for (int state = 0; state < observedTokenFractionalCounts.length; state++) {
+            if (observedTokenFractionalCounts[state] == null) {
+                continue;
+            }
+
+            newLexicon.observedTokenFractionalCounts[state] = new HashMap<String, double[]>();
+
+            for (final String word : observedTokenFractionalCounts[state].keySet()) {
+
+                if (state != mergeCandidate.state) {
+                    // Just clone the existing count array
+                    newLexicon.observedTokenFractionalCounts[state].put(word,
+                            observedTokenFractionalCounts[state].get(word).clone());
+                } else {
+                    // Special-case for merging the substates of the MergeCandidate
+                    newLexicon.observedTokenFractionalCounts[state].put(word,
+                            mergeCounts(observedTokenFractionalCounts[state].get(word), mergeCandidate));
+                }
+            }
+        }
+
+        // Copy unseen-word counters (again summing counts for the merge candidate)
+
+        if (unkFractionalCounts != null) {
+            for (int state = 0; state < unkFractionalCounts.length; state++) {
+                if (unkFractionalCounts[state] == null) {
+                    continue;
+                }
+
+                newLexicon.unkFractionalCounts[state] = new HashMap<String, double[]>();
+
+                for (final String word : unkFractionalCounts[state].keySet()) {
+
+                    if (state != mergeCandidate.state) {
+                        // Just clone the existing count array
+                        newLexicon.unkFractionalCounts[state].put(word, unkFractionalCounts[state].get(word).clone());
+
+                    } else {
+                        // Special-case for merging the substates of the MergeCandidate
+                        newLexicon.unkFractionalCounts[state].put(word,
+                                mergeCounts(unkFractionalCounts[state].get(word), mergeCandidate));
+                    }
+                }
+            }
+        }
+
+        // Merge tag counts
+        for (int state = 0; state < tagCounter.length; state++) {
+            if (state != mergeCandidate.state) {
+                // Just clone the existing count arrays
+                newLexicon.tagCounter[state] = tagCounter[state].clone();
+                newLexicon.unseenTagCounter[state] = unseenTagCounter[state].clone();
+            } else {
+                newLexicon.tagCounter[state] = mergeCounts(tagCounter[state], mergeCandidate);
+                newLexicon.unseenTagCounter[state] = mergeCounts(unseenTagCounter[state], mergeCandidate);
+            }
+        }
+
+        return newLexicon;
+    }
+
+    private double[] mergeCounts(final double[] oldCounts, final MergeCandidate mergeCandidate) {
+        final double[] mergedCounts = new double[oldCounts.length - 1];
+
+        // Copy entries from the old count array into the merged count array
+        System.arraycopy(oldCounts, 0, mergedCounts, 0, mergeCandidate.substate2);
+        System.arraycopy(oldCounts, mergeCandidate.substate2 + 1, mergedCounts, mergeCandidate.substate2,
+                mergedCounts.length - mergeCandidate.substate2);
+        // And add counts from the 2nd merged substate to those for the 1st
+        mergedCounts[mergeCandidate.substate1] += oldCounts[mergeCandidate.substate2];
+
+        return mergedCounts;
+    }
+
     public void removeUnlikelyTags(final double filteringThreshold, final double exponent) {
 
         for (int tag = 0; tag < numSubStates.length; tag++) {
             double[] c_TW;
-            if (wordToTagCounters[tag] != null) {
-                for (final String word : wordToTagCounters[tag].keySet()) {
-                    c_TW = wordToTagCounters[tag].get(word);
+            if (observedTokenFractionalCounts[tag] != null) {
+                for (final String word : observedTokenFractionalCounts[tag].keySet()) {
+                    c_TW = observedTokenFractionalCounts[tag].get(word);
                     for (int substate = 0; substate < numSubStates[tag]; substate++) {
                         if (c_TW[substate] < filteringThreshold) {
                             c_TW[substate] = 0;
@@ -902,9 +1008,9 @@ public class Lexicon implements java.io.Serializable {
     public int totalRules(final double minimumRuleProbability) {
         int count = 0;
 
-        for (int tag = 0; tag < wordToTagCounters.length; tag++) {
-            if (wordToTagCounters[tag] != null) {
-                for (final String word : wordToTagCounters[tag].keySet()) {
+        for (int tag = 0; tag < observedTokenFractionalCounts.length; tag++) {
+            if (observedTokenFractionalCounts[tag] != null) {
+                for (final String word : observedTokenFractionalCounts[tag].keySet()) {
                     final double[] scores = score(word, (short) tag, 0, false, false);
                     for (int split = 0; split < scores.length; split++) {
                         if (scores[split] > minimumRuleProbability) {
@@ -914,8 +1020,8 @@ public class Lexicon implements java.io.Serializable {
                 }
             }
 
-            if (unseenWordToTagCounters != null && unseenWordToTagCounters[tag] != null) {
-                for (final String word : unseenWordToTagCounters[tag].keySet()) {
+            if (unkFractionalCounts != null && unkFractionalCounts[tag] != null) {
+                for (final String word : unkFractionalCounts[tag].keySet()) {
 
                     final double[] scores = score(word, (short) tag, 0, false, true);
                     for (int split = 0; split < scores.length; split++) {
@@ -965,10 +1071,10 @@ public class Lexicon implements java.io.Serializable {
         }
 
         // Lots of copy-and-paste from toString()
-        for (int tag = 0; tag < wordToTagCounters.length; tag++) {
+        for (int tag = 0; tag < observedTokenFractionalCounts.length; tag++) {
 
-            if (wordToTagCounters[tag] != null) {
-                for (final String word : wordToTagCounters[tag].keySet()) {
+            if (observedTokenFractionalCounts[tag] != null) {
+                for (final String word : observedTokenFractionalCounts[tag].keySet()) {
 
                     final double[] scores = score(word, (short) tag, 0, false, false);
                     for (int split = 1; split < scores.length; split += 2) {
@@ -979,8 +1085,8 @@ public class Lexicon implements java.io.Serializable {
                 }
             }
 
-            if (unseenWordToTagCounters != null && unseenWordToTagCounters[tag] != null) {
-                for (final String word : unseenWordToTagCounters[tag].keySet()) {
+            if (unkFractionalCounts != null && unkFractionalCounts[tag] != null) {
+                for (final String word : unkFractionalCounts[tag].keySet()) {
 
                     final double[] scores = score(word, (short) tag, 0, false, true);
                     for (int split = 1; split < scores.length; split += 2) {
@@ -1000,11 +1106,11 @@ public class Lexicon implements java.io.Serializable {
         final Numberer n = Numberer.getGlobalNumberer("tags");
         final StringBuilder sb = new StringBuilder(1024 * 1024);
 
-        for (int tag = 0; tag < wordToTagCounters.length; tag++) {
+        for (int tag = 0; tag < observedTokenFractionalCounts.length; tag++) {
             final String tagState = n.symbol(tag);
 
-            if (wordToTagCounters[tag] != null) {
-                for (final String word : wordToTagCounters[tag].keySet()) {
+            if (observedTokenFractionalCounts[tag] != null) {
+                for (final String word : observedTokenFractionalCounts[tag].keySet()) {
 
                     final double[] scores = score(word, (short) tag, 0, false, false);
                     for (int split = 0; split < scores.length; split++) {
@@ -1016,8 +1122,8 @@ public class Lexicon implements java.io.Serializable {
                 }
             }
 
-            if (unseenWordToTagCounters != null && unseenWordToTagCounters[tag] != null) {
-                for (final String word : unseenWordToTagCounters[tag].keySet()) {
+            if (unkFractionalCounts != null && unkFractionalCounts[tag] != null) {
+                for (final String word : unkFractionalCounts[tag].keySet()) {
 
                     final double[] scores = score(word, (short) tag, 0, false, true);
                     for (int split = 0; split < scores.length; split++) {
