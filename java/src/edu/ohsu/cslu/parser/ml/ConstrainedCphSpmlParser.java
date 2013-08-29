@@ -278,7 +278,7 @@ public class ConstrainedCphSpmlParser extends SparseMatrixLoopParser<LeftCscSpar
                     // Our chart structure can't handle unary self-loops, so don't reinsert a parent that is already a
                     // unary for this cell
                     if (jointProbability > tmpCell.insideProbabilities[parent]
-                            && (foundMatchingProd || tmpCell.midpoints[parent] != end)) {
+                            && (!foundMatchingProd || tmpCell.midpoints[parent] != end)) {
                         tmpCell.insideProbabilities[parent] = jointProbability;
                         tmpCell.packedChildren[parent] = packingFunction.packUnary(child);
                         tmpCell.midpoints[parent] = end;
