@@ -192,16 +192,43 @@ public final class BoundaryPosModel extends FigureOfMeritModel {
      * 
      * TODO Make training consistent between FigureOfMeritModel implementations - static or not?
      * 
-     * @param inStream
-     * @param outStream
      * @param grammarFile
+     * @param binaryParses Constrained binary parses of the training corpus using <code>grammar</code>. Gold-constrained
+     *            and Viterbi 1-best parses work nearly equally.
+     * @param modelWriter Output stream for the trained model
      * @param smoothingCount
      * @param writeCounts
      * @param posNgramOrder
-     * @throws Exception
+     * 
+     * @throws IOException
      */
-    public static void train(final BufferedReader inStream, final BufferedWriter outStream, final String grammarFile,
-            final double smoothingCount, final boolean writeCounts, final int posNgramOrder) throws Exception {
+    public static void train(final String grammarFile, final BufferedReader binaryParses,
+            final BufferedWriter modelWriter, final double smoothingCount, final boolean writeCounts,
+            final int posNgramOrder) throws IOException {
+
+        final Grammar grammar = readGrammar(grammarFile, ResearchParserType.ECPCellCrossList, null);
+        train(grammar, binaryParses, modelWriter, smoothingCount, writeCounts, posNgramOrder);
+    }
+
+    /**
+     * Trains a boundary FOM, from a set of (binarized) training trees including all subcategories
+     * 
+     * TODO Make training consistent between FigureOfMeritModel implementations - static or not?
+     * 
+     * @param grammar
+     * @param binaryParses Constrained binary parses of the training corpus using <code>grammar</code>. Gold-constrained
+     *            and Viterbi 1-best parses work nearly equally.
+     * @param modelWriter Output stream for the trained model
+     * @param smoothingCount
+     * @param writeCounts
+     * @param posNgramOrder
+     * 
+     * @throws IOException
+     */
+    public static void train(final Grammar grammar, final BufferedReader binaryParses,
+            final BufferedWriter modelWriter, final double smoothingCount, final boolean writeCounts,
+            final int posNgramOrder) throws IOException {
+
         String line, historyStr;
         final String joinString = " ";
         ParseTree tree;
@@ -209,18 +236,9 @@ public final class BoundaryPosModel extends FigureOfMeritModel {
         final SimpleCounterSet<String> rightBoundaryCount = new SimpleCounterSet<String>();
         final SimpleCounterSet<String> posTransitionCount = new SimpleCounterSet<String>();
 
-        // To train a BoundaryInOut FOM model we need a grammar and
-        // binarized gold input trees with NTs from same grammar
-        final Grammar grammar = readGrammar(grammarFile, ResearchParserType.ECPCellCrossList, null);
-
-        // TODO: note that we have to have the same training grammar as decoding grammar here
-        // so the input needs to be binarized. If we are parsing with the Berkeley latent-variable
-        // grammar then we can't work with Gold trees. As an approximation we will take the
-        // 1-best from the Berkeley parser output (although constraining the coarse labels to match
-        // the true gold tree would probably be a little better)
         // See Caraballo/Charniak 1998 for (what I think is) their inside/outside solution
         // to the same (or a similar) problem.
-        while ((line = inStream.readLine()) != null) {
+        while ((line = binaryParses.readLine()) != null) {
             try {
                 tree = ParseTree.readBracketFormat(line);
             } catch (final RuntimeException e) {
@@ -289,7 +307,7 @@ public final class BoundaryPosModel extends FigureOfMeritModel {
 
         // Write model to file
         float score;
-        outStream.write("# model=FOM type=BoundaryInOut boundaryNgramOrder=2 posNgramOrder=" + posNgramOrder
+        modelWriter.write("# model=FOM type=BoundaryInOut boundaryNgramOrder=2 posNgramOrder=" + posNgramOrder
                 + " smooth=" + smoothingCount + "\n");
 
         // left boundary = P(NT | POS-1)
@@ -304,7 +322,7 @@ public final class BoundaryPosModel extends FigureOfMeritModel {
                     score = (float) Math.log(leftBoundaryCount.getProb(ntStr, posStr));
                 }
                 if (score > Float.NEGATIVE_INFINITY) {
-                    outStream.write("LB " + ntStr + " | " + posStr + " " + score + "\n");
+                    modelWriter.write("LB " + ntStr + " | " + posStr + " " + score + "\n");
                 }
             }
         }
@@ -321,7 +339,7 @@ public final class BoundaryPosModel extends FigureOfMeritModel {
                     score = (float) Math.log(rightBoundaryCount.getProb(posStr, ntStr));
                 }
                 if (score > Float.NEGATIVE_INFINITY) {
-                    outStream.write("RB " + posStr + " | " + ntStr + " " + score + "\n");
+                    modelWriter.write("RB " + posStr + " | " + ntStr + " " + score + "\n");
                 }
             }
         }
@@ -338,11 +356,11 @@ public final class BoundaryPosModel extends FigureOfMeritModel {
                     score = (float) Math.log(posTransitionCount.getProb(posStr, histPosStr));
                 }
                 if (score > Float.NEGATIVE_INFINITY) {
-                    outStream.write("PN " + posStr + " | " + histPosStr + " " + score + "\n");
+                    modelWriter.write("PN " + posStr + " | " + histPosStr + " " + score + "\n");
                 }
             }
         }
-        outStream.close();
+        modelWriter.close();
     }
 
     private static String convertNull(final String nonTerm, final String replacementStr) {

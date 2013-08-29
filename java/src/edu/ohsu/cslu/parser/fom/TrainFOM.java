@@ -70,7 +70,7 @@ public class TrainFOM extends BaseCommandlineTool {
         switch (fomType) {
 
         case BoundaryPOS:
-            BoundaryPosModel.train(inputStream, outputStream, grammarFile, smoothingCount, writeCounts, posNgramOrder);
+            BoundaryPosModel.train(grammarFile, inputStream, outputStream, smoothingCount, writeCounts, posNgramOrder);
             break;
 
         case BoundaryLex:
