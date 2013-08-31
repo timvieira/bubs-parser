@@ -51,13 +51,16 @@ public class ConstrainedCellSelector extends CellSelector {
     @Override
     public void initSentence(final ChartParser<?, ?> p, final ParseTask task) {
         super.initSentence(p, task);
-        final short[][] constrainingChartOpenCells = ((ConstrainedChartParser) p).constrainingChart().openCells;
-        this.cellIndices = new short[constrainingChartOpenCells.length * 2];
-        for (short i = 0; i < constrainingChartOpenCells.length; i++) {
+
+        final ConstrainingChart constrainingChart = ((ConstrainedChartParser) p).constrainingChart();
+        final short[][] constrainingChartOpenCells = constrainingChart.openCells;
+
+        this.openCells = constrainingChart.size() * 2 - 1;
+        this.cellIndices = new short[openCells * 2];
+        for (short i = 0; i < cellIndices.length / 2; i++) {
             this.cellIndices[i * 2] = constrainingChartOpenCells[i][0];
             this.cellIndices[i * 2 + 1] = constrainingChartOpenCells[i][1];
         }
-        this.openCells = constrainingChartOpenCells.length;
     }
 
     @Override

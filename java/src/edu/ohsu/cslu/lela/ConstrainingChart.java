@@ -60,21 +60,30 @@ public class ConstrainingChart extends PackedArrayChart {
      * then be used to constrain parses with a split grammar.
      * 
      * @param goldTree
-     * @param sparseMatrixGrammar
+     * @param baseGrammar
      */
-    public ConstrainingChart(final BinaryTree<String> goldTree, final SparseMatrixGrammar sparseMatrixGrammar) {
+    public ConstrainingChart(final BinaryTree<String> goldTree, final SparseMatrixGrammar baseGrammar) {
 
         super(goldTree.leaves(), ConstrainedChart.chartArraySize(goldTree.leaves(), goldTree.maxUnaryChainLength()),
-                sparseMatrixGrammar);
+                baseGrammar);
 
+        this.unaryChainLength = new byte[size * (size + 1) / 2];
+        reset(goldTree, baseGrammar);
+    }
+
+    public void reset(final BinaryTree<String> goldTree, final SparseMatrixGrammar baseGrammar) {
+
+        this.size = goldTree.leaves();
         this.parentCellIndices = new short[cells];
         Arrays.fill(parentCellIndices, (short) -1);
         this.siblingCellIndices = new short[cells];
         Arrays.fill(siblingCellIndices, (short) -1);
 
+        Arrays.fill(nonTerminalIndices, Short.MIN_VALUE);
+        Arrays.fill(unaryChainLength, (byte) 0);
+
         this.maxUnaryChainLength = goldTree.maxUnaryChainLength() + 1;
         this.beamWidth = this.lexicalRowBeamWidth = 1;
-        this.unaryChainLength = new byte[size * (size + 1) / 2];
         final IntArrayList tokenList = new IntArrayList();
 
         short start = 0;
@@ -87,7 +96,7 @@ public class ConstrainingChart extends PackedArrayChart {
             }
 
             final int end = start + node.leaves();
-            final short parent = (short) sparseMatrixGrammar.nonTermSet.getInt(node.label());
+            final short parent = (short) baseGrammar.nonTermSet.getInt(node.label());
             final short cellIndex = (short) cellIndex(start, end);
             final int unaryChainHeight = node.unaryChainHeight();
             if (unaryChainLength[cellIndex] == 0) {
@@ -107,19 +116,19 @@ public class ConstrainingChart extends PackedArrayChart {
                 if (node.leftChild().isLeaf()) {
                     // Lexical production
                     midpoints[cellIndex] = (short) (start + 1);
-                    final int child = sparseMatrixGrammar.lexSet.getIndex(node.leftChild().label());
-                    packedChildren[i] = sparseMatrixGrammar.packingFunction.packLexical(child);
+                    final int child = baseGrammar.lexSet.getIndex(node.leftChild().label());
+                    packedChildren[i] = baseGrammar.packingFunction.packLexical(child);
                     tokenList.add(child);
                 } else {
                     // Unary production
-                    final short child = (short) sparseMatrixGrammar.nonTermSet.getIndex(node.leftChild().label());
-                    packedChildren[i] = sparseMatrixGrammar.packingFunction.packUnary(child);
+                    final short child = (short) baseGrammar.nonTermSet.getIndex(node.leftChild().label());
+                    packedChildren[i] = baseGrammar.packingFunction.packUnary(child);
                 }
             } else {
                 // Binary production
-                final short leftChild = (short) sparseMatrixGrammar.nonTermSet.getIndex(node.leftChild().label());
-                final short rightChild = (short) sparseMatrixGrammar.nonTermSet.getIndex(node.rightChild().label());
-                packedChildren[i] = sparseMatrixGrammar.packingFunction.pack(leftChild, rightChild);
+                final short leftChild = (short) baseGrammar.nonTermSet.getIndex(node.leftChild().label());
+                final short rightChild = (short) baseGrammar.nonTermSet.getIndex(node.rightChild().label());
+                packedChildren[i] = baseGrammar.packingFunction.pack(leftChild, rightChild);
                 final short midpoint = (short) (start + node.leftChild().leaves());
                 midpoints[cellIndex] = midpoint;
 

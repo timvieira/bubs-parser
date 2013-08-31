@@ -85,7 +85,7 @@ public abstract class ParallelArrayChart extends Chart {
 
         cells = size * (size + 1) / 2;
 
-        this.chartArraySize = chartArraySize(this.size, this.beamWidth, this.lexicalRowBeamWidth);
+        this.chartArraySize = ParallelArrayChart.chartArraySize(this.size, this.beamWidth, this.lexicalRowBeamWidth);
         this.insideProbabilities = new float[chartArraySize];
         Arrays.fill(insideProbabilities, Float.NEGATIVE_INFINITY);
         this.packedChildren = new int[chartArraySize];
@@ -168,8 +168,9 @@ public abstract class ParallelArrayChart extends Chart {
         return chartArraySize;
     }
 
-    public int chartArraySize(final int newSize, final int newBeamWidth, final int newLexicalRowBeamWidth) {
-        return newSize * newLexicalRowBeamWidth + (cells - size) * newBeamWidth;
+    public static int chartArraySize(final int newSize, final int newBeamWidth, final int newLexicalRowBeamWidth) {
+        final int newCells = newSize * (newSize + 1) / 2;
+        return newSize * newLexicalRowBeamWidth + (newCells - newSize) * newBeamWidth;
     }
 
     public int beamWidth() {

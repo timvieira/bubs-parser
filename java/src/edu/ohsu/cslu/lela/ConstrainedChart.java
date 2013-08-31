@@ -99,7 +99,7 @@ public class ConstrainedChart extends ConstrainingChart {
         return (size * (size + 1) / 2) * (maxUnaryChainLength + 1) * splits;
     }
 
-    static int chartArraySize(final int size, final int maxUnaryChainLength) {
+    public static int chartArraySize(final int size, final int maxUnaryChainLength) {
         return splitChartArraySize(size, maxUnaryChainLength, 2);
     }
 

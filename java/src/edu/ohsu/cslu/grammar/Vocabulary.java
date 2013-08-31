@@ -1,6 +1,5 @@
 package edu.ohsu.cslu.grammar;
 
-import it.unimi.dsi.fastutil.shorts.Short2ShortOpenHashMap;
 import it.unimi.dsi.fastutil.shorts.ShortOpenHashSet;
 
 import java.util.Collection;
@@ -23,7 +22,7 @@ public class Vocabulary extends SymbolSet<String> {
      * Indices of unsplit categories in the base Markov-order-0 grammar, indexed by non-terminal indices. Only populated
      * when {@link #baseVocabulary} is populated.
      */
-    protected Short2ShortOpenHashMap baseNonTerminalIndices = new Short2ShortOpenHashMap();
+    protected short[] baseNonTerminalIndices;
 
     private final GrammarFormatType grammarFormat;
 
@@ -66,11 +65,11 @@ public class Vocabulary extends SymbolSet<String> {
     public int addSymbol(final String symbol) {
         // TODO Check before re-adding and profile
         final short index = (short) super.addSymbol(symbol);
-        short baseIndex = 0;
-        if (baseVocabulary != null) {
-            baseIndex = (short) baseVocabulary.addSymbol(grammarFormat.getBaseNT(symbol, false));
-            baseNonTerminalIndices.put(index, baseIndex);
-        }
+        // short baseIndex = 0;
+        // if (baseVocabulary != null) {
+        // baseIndex = (short) baseVocabulary.addSymbol(grammarFormat.getBaseNT(symbol, false));
+        // baseNonTerminalIndices.put(index, baseIndex);
+        // }
 
         // Added by Aaron for (reasonably) fast access to factored non-terminals
         if (grammarFormat != null && grammarFormat.isFactored(symbol)) {
@@ -82,7 +81,7 @@ public class Vocabulary extends SymbolSet<String> {
     public final void setStartSymbol(final short nonTerminal) {
         this.startSymbol = nonTerminal;
         if (baseVocabulary != null) {
-            baseVocabulary.setStartSymbol(baseNonTerminalIndices.get(nonTerminal));
+            baseVocabulary.setStartSymbol(baseNonTerminalIndices[nonTerminal]);
         }
     }
 
@@ -92,7 +91,7 @@ public class Vocabulary extends SymbolSet<String> {
     }
 
     public final short getBaseIndex(final short nonTerminal) {
-        return baseNonTerminalIndices.get(nonTerminal);
+        return baseNonTerminalIndices[nonTerminal];
     }
 
     public final short startSymbol() {
@@ -102,10 +101,12 @@ public class Vocabulary extends SymbolSet<String> {
     public final synchronized Vocabulary baseVocabulary() {
         if (baseVocabulary == null) {
             baseVocabulary = new Vocabulary(grammarFormat);
+            baseNonTerminalIndices = new short[size()];
             for (short nt = 0; nt < list.size(); nt++) {
                 final short baseNt = (short) baseVocabulary.addSymbol(grammarFormat.getBaseNT(list.get(nt), false));
-                baseNonTerminalIndices.put(nt, baseNt);
+                baseNonTerminalIndices[nt] = baseNt;
             }
+
         }
         return baseVocabulary;
     }

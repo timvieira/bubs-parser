@@ -22,9 +22,11 @@ package edu.ohsu.cslu.parser.ml;
 import it.unimi.dsi.fastutil.shorts.Short2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.shorts.ShortArrayList;
 import it.unimi.dsi.fastutil.shorts.ShortList;
+import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
+import edu.ohsu.cslu.lela.ConstrainedChart;
 import edu.ohsu.cslu.lela.ConstrainingChart;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.ParserDriver;
@@ -80,9 +82,19 @@ public class ConstrainedCphSpmlParser extends SparseMatrixLoopParser<LeftCscSpar
 
     @Override
     protected void initSentence(final ParseTask parseTask) {
+
         super.initSentence(parseTask);
-        constrainingChart = new ConstrainingChart(parseTask.inputTree.binarize(grammar.grammarFormat,
-                grammar.binarization()), baseGrammar);
+        final BinaryTree<String> binaryTree = parseTask.inputTree.binarize(grammar.grammarFormat,
+                grammar.binarization());
+
+        if (constrainingChart != null
+                && constrainingChart.size() >= parseTask.sentenceLength()
+                && constrainingChart.chartArraySize() >= ConstrainedChart.chartArraySize(parseTask.sentenceLength(),
+                        binaryTree.maxUnaryChainLength())) {
+            constrainingChart.reset(binaryTree, baseGrammar);
+        } else {
+            constrainingChart = new ConstrainingChart(binaryTree, baseGrammar);
+        }
     }
 
     @Override
