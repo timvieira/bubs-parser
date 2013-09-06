@@ -28,6 +28,21 @@ import org.junit.Test;
 public class TestMath {
 
     @Test
+    public void testMean() {
+        assertEquals(0f, Math.mean(), .0001f);
+        assertEquals(0f, Math.mean(new int[0]), .0001f);
+        assertEquals(.25f, Math.mean(new int[] { -2, -1, 0, 4 }), .0001f);
+    }
+
+    @Test
+    public void testMedian() {
+        assertEquals(0f, Math.median(), .0001f);
+        assertEquals(0f, Math.median(new int[0]), .0001f);
+        assertEquals(1f, Math.median(new int[] { -2, -1, 1, 2, 4 }), .0001f);
+        assertEquals(-.5f, Math.median(new int[] { -2, -1, 0, 4 }), .0001f);
+    }
+
+    @Test
     public void testMin() {
         assertEquals('a', Math.min(new char[] { 'b', 'c', 'z', 'a' }));
         assertEquals(-2, Math.min(new int[] { -2, -1, 0, 4 }));

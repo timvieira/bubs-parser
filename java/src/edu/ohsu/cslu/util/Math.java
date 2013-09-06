@@ -41,6 +41,48 @@ public class Math {
     private final static float LOG_SUM_DEFAULT_DELTA = 16f;
 
     /**
+     * Returns the mean of the arguments supplied
+     * 
+     * @param arguments
+     * @return mean of the arguments supplied, or 0 if no arguments are supplied
+     */
+    public static float mean(final int... arguments) {
+        if (arguments.length == 0) {
+            return 0;
+        }
+
+        float sum = 0;
+        for (final int x : arguments) {
+            sum += x;
+        }
+        return sum / arguments.length;
+    }
+
+    /**
+     * Returns the median of the arguments supplied.
+     * 
+     * Note: We could probably do this more efficiently with the quickselect algorithm (variant of quicksort), but this
+     * is simple and correct.
+     * 
+     * @param arguments
+     * @return median of the arguments supplied, or 0 if no arguments are supplied
+     */
+    public static float median(final int... arguments) {
+        if (arguments.length == 0) {
+            return 0;
+        }
+
+        final int[] sorted = arguments.clone();
+        java.util.Arrays.sort(sorted);
+
+        if ((sorted.length % 2) == 1) {
+            return sorted[sorted.length / 2];
+        }
+
+        return (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2f;
+    }
+
+    /**
      * Returns the maximum of the arguments supplied
      * 
      * @param arguments
