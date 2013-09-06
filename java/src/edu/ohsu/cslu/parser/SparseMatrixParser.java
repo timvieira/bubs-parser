@@ -29,6 +29,7 @@ import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
+import edu.ohsu.cslu.parser.Parser.ReparseStrategy.Stage;
 import edu.ohsu.cslu.parser.chart.BoundedPriorityQueue;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
@@ -38,6 +39,7 @@ import edu.ohsu.cslu.parser.chart.PackedArrayChart.TemporaryChartCell;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart;
 import edu.ohsu.cslu.parser.chart.ParallelArrayChart.ParallelArrayChartCell;
 import edu.ohsu.cslu.parser.ml.ConstrainedCphSpmlParser;
+import edu.ohsu.cslu.parser.spmv.GrammarParallelCscSpmvParser;
 
 /**
  * Base class for all chart parsers which represent the chart as a parallel array and operate on matrix-encoded
@@ -131,7 +133,9 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
         initChart(parseTask);
         parseTask.reparseStages = -1;
 
-        for (final Parser.ReparseStrategy.Stage stage : opts.reparseStrategy.stages()) {
+        final Stage[] reparseStages = exhaustiveSearch ? new Stage[] { Stage.EXHAUSTIVE } : opts.reparseStrategy
+                .stages();
+        for (final Parser.ReparseStrategy.Stage stage : reparseStages) {
 
             final long stageStartTime = System.currentTimeMillis();
             parseTask.reparseStages++;
@@ -142,7 +146,7 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
                 break;
 
             case FIXED_BEAM:
-                initSentence(parseTask, beamWidth, lexicalRowBeamWidth, lexicalRowUnaries, maxLocalDelta, 0);
+                initSentence(parseTask, beamWidth, lexicalRowBeamWidth, lexicalRowUnaries, maxLocalDelta);
                 cellSelector.reset(false);
                 break;
 
@@ -153,13 +157,13 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
                     continue;
                 }
                 initSentence(parseTask, beamWidth << 1, lexicalRowBeamWidth << 1, lexicalRowUnaries << 1, maxLocalDelta
-                        * MAX_LOCAL_DELTA_MULTIPLIER, 0);
+                        * MAX_LOCAL_DELTA_MULTIPLIER);
                 cellSelector.reset(false);
                 break;
 
             case EXHAUSTIVE:
                 initSentence(parseTask, grammar.nonTermSet.size(), grammar.nonTermSet.size(),
-                        grammar.nonTermSet.size(), Float.MAX_VALUE, 0);
+                        grammar.nonTermSet.size(), Float.MAX_VALUE);
                 cellSelector.reset(false);
                 break;
             }
@@ -186,11 +190,11 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
 
     @Override
     protected void initSentence(final ParseTask parseTask) {
-        initSentence(parseTask, beamWidth, lexicalRowBeamWidth, lexicalRowUnaries, maxLocalDelta, 0);
+        initSentence(parseTask, beamWidth, lexicalRowBeamWidth, lexicalRowUnaries, maxLocalDelta);
     }
 
     protected void initSentence(final ParseTask parseTask, final int newBeamWidth, final int newLexicalRowBeamWidth,
-            final int newLexicalRowUnaries, final float newMaxLocalDelta, final int leftChildSegments) {
+            final int newLexicalRowUnaries, final float newMaxLocalDelta) {
 
         // Set beam width parameters
         if (newBeamWidth >= grammar.nonTermSet.size()) {
@@ -228,7 +232,7 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
                                     new Class[] { ParseTask.class, SparseMatrixGrammar.class, int.class, int.class,
                                             int.class }).newInstance(
                                     new Object[] { parseTask, grammar, beamWidth, lexicalRowBeamWidth,
-                                            leftChildSegments });
+                                            leftChildSegments() });
 
                 } catch (final NoSuchMethodException e) {
                     try {
@@ -535,5 +539,13 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
      */
     protected boolean implicitPruning() {
         return false;
+    }
+
+    /**
+     * @return the number of left-child segments to allocate space for (defaults to 0 and overridden by
+     *         {@link GrammarParallelCscSpmvParser})
+     */
+    public int leftChildSegments() {
+        return 0;
     }
 }

@@ -114,7 +114,12 @@ public final class GrammarParallelCscSpmvParser extends CscSpmvParser {
 
     @Override
     protected void initSentence(final ParseTask parseTask) {
-        initSentence(parseTask, beamWidth, lexicalRowBeamWidth, lexicalRowUnaries, maxLocalDelta, cpvSegments);
+        initSentence(parseTask, beamWidth, lexicalRowBeamWidth, lexicalRowUnaries, maxLocalDelta);
+    }
+
+    @Override
+    public int leftChildSegments() {
+        return cpvSegments;
     }
 
     /**
