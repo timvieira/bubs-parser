@@ -271,6 +271,11 @@ public final class LargeSparseBitVector extends BaseVector implements LargeBitVe
     }
 
     @Override
+    public int l0Norm() {
+        return elements.length;
+    }
+
+    @Override
     public int[] values() {
         throw new UnsupportedOperationException();
     }

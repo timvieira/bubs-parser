@@ -203,6 +203,11 @@ public final class MutableSparseBitVector extends BaseVector implements BitVecto
     }
 
     @Override
+    public int l0Norm() {
+        return bitSet.size();
+    }
+
+    @Override
     public float negativeInfinity() {
         return 0;
     }

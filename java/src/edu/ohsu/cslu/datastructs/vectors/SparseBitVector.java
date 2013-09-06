@@ -190,7 +190,7 @@ public final class SparseBitVector extends BaseVector implements BitVector, Spar
         return 1;
     }
 
-    public int populatedElements() {
+    public int l0Norm() {
         return elements.length;
     }
 

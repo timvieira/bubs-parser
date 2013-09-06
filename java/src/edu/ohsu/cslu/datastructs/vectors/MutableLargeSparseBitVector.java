@@ -389,6 +389,11 @@ public final class MutableLargeSparseBitVector extends BaseVector implements Lar
     }
 
     @Override
+    public int l0Norm() {
+        return bitSet.size();
+    }
+
+    @Override
     public int[] values() {
         throw new UnsupportedOperationException();
     }

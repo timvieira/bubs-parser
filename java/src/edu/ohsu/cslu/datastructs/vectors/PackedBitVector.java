@@ -320,6 +320,11 @@ public final class PackedBitVector extends BaseVector implements BitVector, Seri
     }
 
     @Override
+    public int l0Norm() {
+        throw new UnsupportedOperationException("Not currently supported by PackedBitVector");
+    }
+
+    @Override
     public int[] values() {
         // Not very efficient, but we don't expect to use this method often
         return valueIterator().toIntArray();

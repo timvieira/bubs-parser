@@ -110,6 +110,11 @@ public interface BitVector extends Vector {
     public long length();
 
     /**
+     * @return The number of non-0 dimensions
+     */
+    public int l0Norm();
+
+    /**
      * @return an array containing the indices of all elements contained in this {@link BitVector}. Note that depending
      *         on the specific implementation, {@link #valueIterator()} may be more efficient.
      */
