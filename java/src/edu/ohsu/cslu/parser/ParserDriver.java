@@ -142,7 +142,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     public RecoveryStrategy recoveryStrategy = null;
 
     @Option(name = "-reparse", metaVar = "strategy or count", hidden = true, usage = "If no solution, loosen constraints and reparse using the specified strategy or double-beam-width n times")
-    public ReparseStrategy reparseStrategy = ReparseStrategy.None;
+    public ReparseStrategy reparseStrategy = ReparseStrategy.Escalate;
 
     @Option(name = "-parseFromInputTags", hidden = true, usage = "Parse from input POS tags given by tagged or tree input.  Replaces 1-best tags from BoundaryInOut FOM if also specified.")
     public static boolean parseFromInputTags = false;
