@@ -18,32 +18,40 @@
  */
 package edu.ohsu.cslu.grammar;
 
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-import it.unimi.dsi.fastutil.ints.IntSet;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
+import java.io.BufferedReader;
 import java.util.HashSet;
-import java.util.Set;
-import java.util.zip.GZIPInputStream;
 
 import cltool4j.BaseCommandlineTool;
-import cltool4j.args4j.Argument;
-import cltool4j.args4j.EnumAliasMap;
-import cltool4j.args4j.Option;
+import edu.ohsu.cslu.util.Math;
+import edu.ohsu.cslu.util.Strings;
 
+/**
+ * Reads a BUBS-format grammar and outputs the following statistics:
+ * 
+ * <pre>
+ *  vpos            : POS (preterminal) count
+ *  vphrase         : Phrase-level non-terminal count
+ *  meanlexchild    : Mean of the lexical children of a preterminal
+ *  medlexchild     : Median of the lexical-child count of the preterminals
+ *  medrowdensity   : Median row-density of the binary grammar matrix
+ *                    (number of binary productions for a parent NT)
+ *  medcoldensity   : Median column-density of the binary grammar matrix
+ *                    (number of parents of a child pair)
+ * </pre>
+ * 
+ * Note: The phrase-level parent set and the preterminal set are assumed to be disjoint, even though this is not a
+ * requirement of a formal PCFG. A grammar violating this assumption should not result in an error, but the summary
+ * counts are not guaranteed for such a grammar.
+ * 
+ * Similarly, grammar productions are assumed to occur only once in the source grammar. If a production occurs more than
+ * once (e.g. 'S -> NP VP -.693' followed later in the file by 'S -> NP VP -1.38'), the production will be
+ * double-counted.
+ * 
+ * @author Aaron Dunlop
+ */
 public class SummarizeGrammar extends BaseCommandlineTool {
-
-    @Argument(index = 0, metaVar = "grammar", usage = "Grammar file (text, gzipped text, or binary serialized")
-    private String grammarFile;
-
-    @Option(name = "-m", metaVar = "mode", usage = "Output mode")
-    private Mode mode = Mode.SUMMARY;
-
-    @Option(name = "-t", usage = "Time summary")
-    private boolean time;
 
     public static void main(final String[] args) {
         run(args);
@@ -52,110 +60,88 @@ public class SummarizeGrammar extends BaseCommandlineTool {
     @Override
     protected void run() throws Exception {
 
-        final long startTime = System.currentTimeMillis();
+        final BufferedReader br = inputAsBufferedReader();
+        // Read and discard the summary line
+        br.readLine();
 
-        // Handle gzipped and non-gzipped grammar files
-        final InputStream grammarInputStream = grammarFile.endsWith(".gz") ? new GZIPInputStream(new FileInputStream(
-                grammarFile)) : new FileInputStream(grammarFile);
+        final SymbolSet<String> vocabulary = new SymbolSet<String>();
+        final HashSet<String> posSet = new HashSet<String>();
+        final HashSet<String> phraseSet = new HashSet<String>();
 
-        // Read the generic grammar in either text or binary-serialized format.
-        final SummaryGrammar g = new SummaryGrammar(new InputStreamReader(grammarInputStream));
+        // Maps <child 1>_<child_2> to a count of observed parents
+        final Object2IntOpenHashMap<String> grammarColumnEntries = new Object2IntOpenHashMap<String>();
 
-        switch (mode) {
-        case SUMMARY:
-            System.out.println(g.getStats());
-            break;
-        case NTS:
-            for (final String nt : g.nonTermSet) {
-                System.out.println(nt);
+        // Maps parent to a count of observed children
+        final Object2IntOpenHashMap<String> grammarRowEntries = new Object2IntOpenHashMap<String>();
+
+        for (String line = br.readLine(); !line.equals(Grammar.LEXICON_DELIMITER); line = br.readLine()) {
+            final String[] tokens = Strings.splitOnSpace(line);
+
+            // Skip blank lines
+            if (line.trim().equals("")) {
+                continue;
             }
-            break;
-        case PARENTS:
-            System.out.print(g.parents());
-            break;
-        case PRE_TERMINALS:
-            System.out.print(g.preTerminals());
-            break;
+
+            if (tokens.length == 4) {
+                // We don't compute any unary statistics. Just record the non-terminals
+                final String parent = tokens[0];
+                final String child1 = tokens[2];
+
+                vocabulary.addSymbol(parent);
+                vocabulary.addSymbol(child1);
+                phraseSet.add(parent);
+
+            } else if (tokens.length == 5) {
+                // Binary production: expecting: A -> B C prob
+                final String parent = tokens[0];
+                final String child1 = tokens[2];
+                final String child2 = tokens[3];
+
+                vocabulary.addSymbol(parent);
+                vocabulary.addSymbol(child1);
+                vocabulary.addSymbol(child2);
+                phraseSet.add(parent);
+
+                grammarColumnEntries.add(child1 + '_' + child2, 1);
+                grammarRowEntries.add(parent, 1);
+            } else {
+                throw new IllegalArgumentException("Unexpected line in grammar PCFG\n\t" + line);
+            }
         }
 
-        if (time) {
-            System.out.format("Summary Time: %d\n", System.currentTimeMillis() - startTime);
+        final Object2IntOpenHashMap<String> posLexicalChildren = new Object2IntOpenHashMap<String>();
+
+        // Read Lexicon after finding DELIMITER
+        for (String line = br.readLine(); line != null; line = br.readLine()) {
+            final String[] tokens = Strings.splitOnSpace(line);
+
+            // Skip blank lines
+            if (line.trim().equals("")) {
+                continue;
+            }
+
+            if (tokens.length != 4) {
+                throw new IllegalArgumentException("Unexpected line in grammar lexicon\n\t" + line);
+            }
+
+            final String pos = tokens[0];
+            vocabulary.addSymbol(pos);
+            posSet.add(pos);
+            posLexicalChildren.add(pos, 1);
         }
+
+        // Size of POS and phrase-level non-terminal sets
+        System.out.format("vpos : %d\n", posSet.size());
+        System.out.format("vphrase : %d\n", phraseSet.size());
+
+        // Mean and median of the lexical-child count of each POS
+        final int[] posLexicalChildrenCounts = posLexicalChildren.values().toIntArray();
+        System.out.format("meanlexchild : %.3f\n", Math.mean(posLexicalChildrenCounts));
+        System.out.format("medlexchild : %.1f\n", Math.median(posLexicalChildrenCounts));
+
+        // Median row and column density of the binary grammar matrix
+        System.out.format("medrowdensity : %.3f\n", Math.median(grammarRowEntries.values().toIntArray()));
+        System.out.format("medcoldensity : %.3f\n", Math.median(grammarColumnEntries.values().toIntArray()));
     }
 
-    private class SummaryGrammar extends ListGrammar {
-
-        private static final long serialVersionUID = 1L;
-
-        private int V_l, V_r;
-
-        private final Set<String> parents = new HashSet<String>();
-        private final Set<String> preTerminals = new HashSet<String>();
-
-        public SummaryGrammar(final Reader grammarFile) throws Exception {
-            super(grammarFile, new DecisionTreeTokenClassifier());
-            init();
-        }
-
-        public SummaryGrammar(final Grammar g) {
-            super(g);
-            init();
-        }
-
-        private void init() {
-            final IntSet vlSet = new IntOpenHashSet();
-            final IntSet vrSet = new IntOpenHashSet();
-            for (final Production p : binaryProductions) {
-                vlSet.add(p.leftChild);
-                vrSet.add(p.rightChild);
-                parents.add(p.parentToString());
-            }
-            for (final Production p : unaryProductions) {
-                parents.add(p.parentToString());
-            }
-
-            for (final Production p : lexicalProductions) {
-                preTerminals.add(p.parentToString());
-            }
-
-            parents.removeAll(preTerminals);
-
-            V_l = vlSet.size();
-            V_r = vrSet.size();
-        }
-
-        public String parents() {
-            final StringBuilder sb = new StringBuilder(2048);
-            for (final String parent : parents) {
-                sb.append(parent);
-                sb.append('\n');
-            }
-            sb.deleteCharAt(sb.length() - 1);
-            return sb.toString();
-        }
-
-        public String preTerminals() {
-            final StringBuilder sb = new StringBuilder(2048);
-            for (final String preTerminal : preTerminals) {
-                sb.append(preTerminal);
-                sb.append('\n');
-            }
-            sb.deleteCharAt(sb.length() - 1);
-            return sb.toString();
-        }
-
-        @Override
-        public String getStats() {
-            return super.getStats() + "V_l: " + V_l + ' ' + "V_r: " + V_r;
-        }
-
-    }
-
-    private enum Mode {
-        SUMMARY("s"), NTS("n"), PARENTS("p"), PRE_TERMINALS("pt");
-
-        private Mode(final String alias) {
-            EnumAliasMap.singleton().addAliases(this, alias);
-        }
-    }
 }
