@@ -127,6 +127,6 @@ public class CsrSpmvParser extends PackedArraySpmvParser<CsrSparseMatrixGrammar>
     public String getStats() {
         return super.getStats()
                 + (collectDetailedStatistics ? String.format(" avgXprod=%.1f", sentenceCartesianProductSize * 1.0f
-                        / chart.cells) : "");
+                        / chart.cells()) : "");
     }
 }

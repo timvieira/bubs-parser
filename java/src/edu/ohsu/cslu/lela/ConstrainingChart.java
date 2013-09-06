@@ -74,9 +74,9 @@ public class ConstrainingChart extends PackedArrayChart {
     public void reset(final BinaryTree<String> goldTree, final SparseMatrixGrammar baseGrammar) {
 
         this.size = goldTree.leaves();
-        this.parentCellIndices = new short[cells];
+        this.parentCellIndices = new short[maxCells];
         Arrays.fill(parentCellIndices, (short) -1);
-        this.siblingCellIndices = new short[cells];
+        this.siblingCellIndices = new short[maxCells];
         Arrays.fill(siblingCellIndices, (short) -1);
 
         Arrays.fill(nonTerminalIndices, Short.MIN_VALUE);

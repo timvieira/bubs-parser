@@ -55,8 +55,8 @@ public abstract class ParallelArrayChart extends Chart {
      */
     public final int[] cellOffsets;
 
-    /** The number of cells in this chart */
-    public final int cells;
+    /** The maximum number of cells this chart can contain (some may not be in use if the current sentence is shorter than the maximum) */
+    public final int maxCells;
 
     protected final int chartArraySize;
 
@@ -83,7 +83,7 @@ public abstract class ParallelArrayChart extends Chart {
         this.beamWidth = Math.min(beamWidth, sparseMatrixGrammar.numNonTerms());
         this.lexicalRowBeamWidth = Math.min(lexicalRowBeamWidth, sparseMatrixGrammar.numNonTerms());
 
-        cells = size * (size + 1) / 2;
+        maxCells = size * (size + 1) / 2;
 
         this.chartArraySize = ParallelArrayChart.chartArraySize(this.size, this.beamWidth, this.lexicalRowBeamWidth);
         this.insideProbabilities = new float[chartArraySize];
@@ -91,7 +91,7 @@ public abstract class ParallelArrayChart extends Chart {
         this.packedChildren = new int[chartArraySize];
         this.midpoints = new short[chartArraySize];
 
-        this.cellOffsets = new int[cells];
+        this.cellOffsets = new int[maxCells];
 
         // Calculate all cell offsets, etc
         for (int start = 0; start < size; start++) {
@@ -124,12 +124,12 @@ public abstract class ParallelArrayChart extends Chart {
         this.size = size;
         this.chartArraySize = chartArraySize;
 
-        this.cells = size * (size + 1) / 2;
-        this.cellOffsets = new int[cells];
+        this.maxCells = size * (size + 1) / 2;
+        this.cellOffsets = new int[maxCells];
 
         this.insideProbabilities = new float[chartArraySize];
         this.packedChildren = new int[chartArraySize];
-        this.midpoints = new short[cells];
+        this.midpoints = new short[maxCells];
     }
 
     @Override

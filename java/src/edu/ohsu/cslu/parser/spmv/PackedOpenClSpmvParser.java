@@ -74,7 +74,7 @@ public class PackedOpenClSpmvParser extends OpenClSpmvParser<PackedArrayChart> {
         final int sentLength = parseTask.sentenceLength();
         if (chart == null || chart.size() < sentLength) {
             chart = new PackedArrayChart(parseTask, grammar);
-            clChartNumNonTerminals = context.createIntBuffer(CLMem.Usage.InputOutput, chart.cells);
+            clChartNumNonTerminals = context.createIntBuffer(CLMem.Usage.InputOutput, chart.cells());
         } else {
             chart.reset(parseTask);
         }

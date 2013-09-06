@@ -212,7 +212,8 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
 
         if (chart != null
                 && chart.chartArraySize() >= ParallelArrayChart.chartArraySize(parseTask.sentenceLength(),
-                        this.beamWidth, this.lexicalRowBeamWidth)) {
+                        this.beamWidth, this.lexicalRowBeamWidth)
+                && chart.maxCells >= parseTask.sentenceLength() * (parseTask.sentenceLength() + 1) / 1) {
             chart.reset(parseTask, this.beamWidth, this.lexicalRowBeamWidth);
         } else {
             // Construct a chart of the appropriate type

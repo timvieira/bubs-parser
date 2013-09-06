@@ -174,17 +174,17 @@ public class PackedArrayChart extends ParallelArrayChart {
         super(parseTask, sparseMatrixGrammar, Math.min(beamWidth, sparseMatrixGrammar.numNonTerms()), Math.min(
                 lexicalRowBeamWidth, sparseMatrixGrammar.numNonTerms()));
 
-        numNonTerminals = new int[cells];
-        minLeftChildIndex = new int[cells];
-        maxLeftChildIndex = new int[cells];
-        minRightChildIndex = new int[cells];
-        maxRightChildIndex = new int[cells];
+        numNonTerminals = new int[maxCells];
+        minLeftChildIndex = new int[maxCells];
+        maxLeftChildIndex = new int[maxCells];
+        minRightChildIndex = new int[maxCells];
+        maxRightChildIndex = new int[maxCells];
 
         nonTerminalIndices = new short[chartArraySize];
 
         this.leftChildSegments = leftChildSegments;
         if (leftChildSegments > 0) {
-            leftChildSegmentStartIndices = new int[(cells * (leftChildSegments + 1)) + 1];
+            leftChildSegmentStartIndices = new int[(maxCells * (leftChildSegments + 1)) + 1];
         } else {
             leftChildSegmentStartIndices = null;
         }
@@ -219,10 +219,10 @@ public class PackedArrayChart extends ParallelArrayChart {
             break;
 
         case MaxRuleProd:
-            this.maxQ = new float[cells][maxcVocabulary.size()];
-            this.maxQMidpoints = new short[cells][maxcVocabulary.size()];
-            this.maxQLeftChildren = new short[cells][maxcVocabulary.size()];
-            this.maxQRightChildren = new short[cells][maxcVocabulary.size()];
+            this.maxQ = new float[maxCells][maxcVocabulary.size()];
+            this.maxQMidpoints = new short[maxCells][maxcVocabulary.size()];
+            this.maxQLeftChildren = new short[maxCells][maxcVocabulary.size()];
+            this.maxQRightChildren = new short[maxCells][maxcVocabulary.size()];
 
             this.maxcEntries = null;
             this.maxcScores = null;
@@ -284,7 +284,7 @@ public class PackedArrayChart extends ParallelArrayChart {
         Arrays.fill(nonTerminalIndices, Short.MIN_VALUE);
 
         this.threadLocalTemporaryCells = null;
-        this.numNonTerminals = new int[cells];
+        this.numNonTerminals = new int[maxCells];
         this.minLeftChildIndex = null;
         this.minRightChildIndex = null;
         this.maxLeftChildIndex = null;
