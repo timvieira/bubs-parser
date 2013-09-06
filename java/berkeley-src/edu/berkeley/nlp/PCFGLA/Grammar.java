@@ -1,6 +1,8 @@
 package edu.berkeley.nlp.PCFGLA;
 
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.shorts.Short2IntOpenHashMap;
 
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
@@ -1153,6 +1155,54 @@ public class Grammar implements Serializable, Cloneable {
         return newGrammar;
     }
 
+    public float[] medianRowAndColumnDensities() {
+
+        // Assign each substate a unique index
+        final short[][] indices = new short[numStates][];
+        for (short state = 0; state < numStates; state++) {
+            indices[state] = new short[numSubStates[state]];
+        }
+
+        for (short i = 0, state = 0; state < numStates; state++) {
+            for (int substate = 0; substate < numSubStates[state]; substate++) {
+                indices[state][substate] = i++;
+            }
+        }
+
+        // Maps child pairs (as [child 1] << 16 | [child 2]) to a count of observed parents
+        final Int2IntOpenHashMap columnEntries = new Int2IntOpenHashMap();
+
+        // Maps each parent to a count of observed child pairs
+        final Short2IntOpenHashMap rowEntries = new Short2IntOpenHashMap();
+
+        for (final int binaryKey : packedBinaryRuleMap.keySet()) {
+
+            final short unsplitLeftChild = unsplitLeftChild(binaryKey);
+            final short unsplitRightChild = unsplitRightChild(binaryKey);
+            final short unsplitParent = unsplitBinaryParent(binaryKey);
+
+            final Grammar.PackedBinaryRule packedBinaryRule = getPackedBinaryScores(unsplitParent, unsplitLeftChild,
+                    unsplitRightChild);
+
+            for (int i = 0, j = 0; i < packedBinaryRule.ruleScores.length; i++, j += 3) {
+                final short leftChildSplit = packedBinaryRule.substates[j];
+                final short rightChildSplit = packedBinaryRule.substates[j + 1];
+                final short parentSplit = packedBinaryRule.substates[j + 2];
+
+                final short leftChildIndex = indices[unsplitLeftChild][leftChildSplit];
+                final short rightChildIndex = indices[unsplitRightChild][rightChildSplit];
+                final short parentIndex = indices[unsplitParent][parentSplit];
+
+                final int childPair = leftChildIndex << 16 | rightChildIndex;
+                columnEntries.add(childPair, 1);
+                rowEntries.add(parentIndex, 1);
+            }
+        }
+
+        return new float[] { edu.ohsu.cslu.util.Math.median(rowEntries.values().toIntArray()),
+                edu.ohsu.cslu.util.Math.median(columnEntries.values().toIntArray()) };
+    }
+
     // // Unused, but might be useful
     // public static void checkNormalization(final Grammar grammar) {
     // final double[][] psum = new double[grammar.numSubStates.length][];
@@ -1473,6 +1523,29 @@ public class Grammar implements Serializable, Cloneable {
             }
         }
         return ruleCountDelta;
+    }
+
+    /**
+     * Returns true if <code>state</code> is a preterminal. Note that the formal definition of a PCFG makes no
+     * distinction between preterminals and other non-terminals, but in most training corpora the two sets are disjoint.
+     * 
+     * @param state
+     * @return True if <code>state</code> is a preterminal
+     */
+    public boolean isPos(final short state) {
+        return !isPhraseLevel(state);
+    }
+
+    /**
+     * Returns true if <code>state</code> is a phrase-level nonterminal. Note that the formal definition of a PCFG makes
+     * no distinction between preterminals and other non-terminals, but in most training corpora the two sets are
+     * disjoint.
+     * 
+     * @param state
+     * @return True if <code>state</code> is a phrase-level nonterminal
+     */
+    public boolean isPhraseLevel(final short state) {
+        return Numberer.getGlobalNumberer("tags").symbol(state).endsWith("^p");
     }
 
     private static abstract class BasePackedBinaryRule implements Serializable {

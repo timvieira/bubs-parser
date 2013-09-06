@@ -26,7 +26,7 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.Collections;
 import java.util.List;
 
 import cltool4j.BaseLogger;
@@ -53,6 +53,10 @@ import edu.ohsu.cslu.parser.ml.ConstrainedCphSpmlParser;
 import edu.ohsu.cslu.util.Evalb.BracketEvaluator;
 
 /**
+ * Performs pruned inference on a development set using each {@link MergeCandidate}, and ranks the candidates by a
+ * combination of those two factors (Note that in this case, {@link MergeCandidate#estimatedAccuracyRanking()} and
+ * {@link MergeCandidate#estimatedSpeedRanking()} are determined empirically and not in fact estimates).
+ * 
  * @author Aaron Dunlop
  */
 public class DiscriminativeMergeObjectiveFunction extends MergeObjectiveFunction {
@@ -84,15 +88,6 @@ public class DiscriminativeMergeObjectiveFunction extends MergeObjectiveFunction
     private final static float PARSE_FRACTION = GlobalConfigProperties.singleton().getFloatProperty(
             PROPERTY_PARSE_FRACTION, DEFAULT_PARSE_FRACTION);
 
-    private final static float PARSING_SPEED_LAMBDA = GlobalConfigProperties.singleton().getFloatProperty(
-            "parsingSpeedLambda", 0);
-
-    // Inputs:
-    // F1 of inference with fully-split grammar
-    // Complete-closure model
-    // Training corpus
-    // Development set
-
     @SuppressWarnings("hiding")
     public void init(final CompleteClosureModel ccModel, final List<String> trainingCorpus,
             final List<String> developmentSet, final float minRuleProbability) {
@@ -111,7 +106,15 @@ public class DiscriminativeMergeObjectiveFunction extends MergeObjectiveFunction
         }
     }
 
-    public void init(final Grammar grammar, final Lexicon lexicon, final int cycle) {
+    /**
+     * Performs any initialization required prior to computing
+     * 
+     * @param grammar
+     * @param lexicon
+     * @param cycle
+     */
+    @Override
+    public void initMergeCycle(final Grammar grammar, final Lexicon lexicon, final int cycle) {
 
         this.splitGrammar = grammar;
         this.splitLexicon = lexicon;
@@ -130,6 +133,77 @@ public class DiscriminativeMergeObjectiveFunction extends MergeObjectiveFunction
         splitF1 = parseResult[0];
         splitSpeed = parseResult[1];
         BaseLogger.singleton().info(String.format("F1 = %.3f  Speed = %.3f", splitF1 * 100, splitSpeed));
+    }
+
+    @Override
+    public void initMergeCandidates(final List<MergeCandidate> mergeCandidates,
+            final double[][] substateConditionalProbabilities) {
+
+        final int totalMergeCandidates = mergeCandidates.size();
+
+        // Assign estimated speed rankings to be the same as estimated accuracy rankings (already populated by log
+        // likelihood)
+        for (final MergeCandidate mc : mergeCandidates) {
+            mc.setEstimatedSpeedRanking(mc.estimatedAccuracyRanking());
+        }
+
+        for (final MergeCandidate mergeCandidate : mergeCandidates) {
+            // Skip inference for a portion of the merge candidates by estimated likelihood-loss. Return infinite merge
+            // cost for those with the greatest likelihood loss and negative-infinite cost for those with the least.
+            if (PARSE_FRACTION < 1) {
+                final int toParse = Math.round(totalMergeCandidates * PARSE_FRACTION);
+
+                if (mergeCandidate.estimatedAccuracyRanking() < totalMergeCandidates / 2 - toParse / 2) {
+                    mergeCandidate.estimatedAccuracyDelta = Float.NEGATIVE_INFINITY;
+                    mergeCandidate.estimatedInferenceSpeedDelta = Float.NEGATIVE_INFINITY;
+                    continue;
+
+                } else if (mergeCandidate.estimatedAccuracyRanking() > totalMergeCandidates / 2 + toParse / 2) {
+                    mergeCandidate.estimatedAccuracyDelta = Float.POSITIVE_INFINITY;
+                    mergeCandidate.estimatedInferenceSpeedDelta = Float.POSITIVE_INFINITY;
+                    continue;
+                }
+            }
+
+            final String sState = NUMBERER.symbol(mergeCandidate.state);
+
+            // Merge the candidate substates
+            final Grammar mergedGrammar = splitGrammar.merge(mergeCandidate, substateConditionalProbabilities);
+            final Lexicon mergedLexicon = splitLexicon.merge(mergeCandidate);
+
+            // Convert the grammar to BUBS sparse-matrix format and train a Boundary POS FOM
+            final long t0 = System.currentTimeMillis();
+            final LeftCscSparseMatrixGrammar sparseMatrixGrammar = convertGrammarToSparseMatrix(mergedGrammar,
+                    mergedLexicon);
+            final BoundaryPosModel posFom = trainPosFom(sparseMatrixGrammar);
+
+            final long trainingTime = System.currentTimeMillis() - t0;
+
+            // Parse the development set using the complete-closure model and lexical FOM
+            final float[] parseResult = parseDevSet(sparseMatrixGrammar, posFom, beamWidth);
+
+            mergeCandidate.estimatedAccuracyDelta = parseResult[0] - splitF1;
+            mergeCandidate.estimatedInferenceSpeedDelta = parseResult[1] - splitSpeed;
+
+            BaseLogger
+                    .singleton()
+                    .info(String
+                            .format("Testing merge of %s_%d and %s_%d : Training time: %d ms  F1 = %.3f (%.3f)  Speed = %.3f (%.3f)",
+                                    sState, mergeCandidate.substate1, sState, mergeCandidate.substate2, trainingTime,
+                                    parseResult[0] * 100, mergeCandidate.estimatedAccuracyDelta * 100, parseResult[1],
+                                    mergeCandidate.estimatedInferenceSpeedDelta));
+        }
+
+        // Sort and assign ordinal rankings by F1 and inference speed
+        Collections.sort(mergeCandidates, MergeCandidate.estimatedAccuracyComparator());
+        for (int i = 0; i < mergeCandidates.size(); i++) {
+            mergeCandidates.get(i).setEstimatedAccuracyRanking(i);
+        }
+
+        Collections.sort(mergeCandidates, MergeCandidate.estimatedSpeedComparator());
+        for (int i = 0; i < mergeCandidates.size(); i++) {
+            mergeCandidates.get(i).setEstimatedSpeedRanking(i);
+        }
     }
 
     /**
@@ -235,78 +309,5 @@ public class DiscriminativeMergeObjectiveFunction extends MergeObjectiveFunction
             // StringWriter and StringReader should never IOException
             throw new RuntimeException(e);
         }
-    }
-
-    public void parseDevSet(final MergeCandidate mergeCandidate, final int totalMergeCandidates,
-            final double[][] substateConditionalProbabilities) {
-
-        // Skip inference for a portion of the merge candidates by estimated likelihood-loss. Return infinite merge cost
-        // for those with the greatest likelihood loss and negative-infinite cost for those with the least.
-        if (PARSE_FRACTION < 1) {
-            final int toParse = Math.round(totalMergeCandidates * PARSE_FRACTION);
-
-            if (mergeCandidate.likelihoodLossRanking() < totalMergeCandidates / 2 - toParse / 2) {
-                mergeCandidate.inferenceF1 = Float.NEGATIVE_INFINITY;
-                mergeCandidate.inferenceSpeed = Float.NEGATIVE_INFINITY;
-                return;
-
-            } else if (mergeCandidate.likelihoodLossRanking() > totalMergeCandidates / 2 + toParse / 2) {
-                mergeCandidate.inferenceF1 = Float.POSITIVE_INFINITY;
-                mergeCandidate.inferenceSpeed = Float.POSITIVE_INFINITY;
-                return;
-            }
-        }
-
-        final String sState = NUMBERER.symbol(mergeCandidate.state);
-
-        // Merge the candidate substates
-        final Grammar mergedGrammar = splitGrammar.merge(mergeCandidate, substateConditionalProbabilities);
-        final Lexicon mergedLexicon = splitLexicon.merge(mergeCandidate);
-
-        // Convert the grammar to BUBS sparse-matrix format and train a Boundary POS FOM
-        final long t0 = System.currentTimeMillis();
-        final LeftCscSparseMatrixGrammar sparseMatrixGrammar = convertGrammarToSparseMatrix(mergedGrammar,
-                mergedLexicon);
-        final BoundaryPosModel posFom = trainPosFom(sparseMatrixGrammar);
-
-        final long trainingTime = System.currentTimeMillis() - t0;
-
-        // Parse the development set using the complete-closure model and lexical FOM
-        final float[] parseResult = parseDevSet(sparseMatrixGrammar, posFom, beamWidth);
-
-        mergeCandidate.inferenceF1 = parseResult[0];
-        mergeCandidate.inferenceSpeed = parseResult[1];
-
-        BaseLogger
-                .singleton()
-                .info(String
-                        .format("Testing merge of %s_%d and %s_%d : Training time: %d ms  F1 = %.3f (%.3f)  Speed = %.3f (%.3f)",
-                                sState, mergeCandidate.substate1, sState, mergeCandidate.substate2, trainingTime,
-                                mergeCandidate.inferenceF1 * 100, (mergeCandidate.inferenceF1 - splitF1) * 100,
-                                mergeCandidate.inferenceSpeed, mergeCandidate.inferenceSpeed - splitSpeed));
-    }
-
-    public static Comparator<MergeCandidate> inferenceF1Comparator() {
-        return new Comparator<MergeCandidate>() {
-            @Override
-            public int compare(final MergeCandidate o1, final MergeCandidate o2) {
-                return Float.compare(o1.inferenceF1, o2.inferenceF1);
-            }
-        };
-    }
-
-    public static Comparator<MergeCandidate> inferenceSpeedComparator() {
-        return new Comparator<MergeCandidate>() {
-            @Override
-            public int compare(final MergeCandidate o1, final MergeCandidate o2) {
-                return Float.compare(o1.inferenceSpeed, o2.inferenceSpeed);
-            }
-        };
-    }
-
-    @Override
-    public float mergeCost(final MergeCandidate mergeCandidate) {
-        return mergeCandidate.inferenceF1Ranking * (1 - PARSING_SPEED_LAMBDA) + mergeCandidate.inferenceSpeedRanking
-                * PARSING_SPEED_LAMBDA;
     }
 }

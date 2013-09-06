@@ -150,7 +150,7 @@ public class GrammarTrainer extends BaseCommandlineTool {
                     maxSentenceLength, binarization);
         }
 
-        // Initialize discriminative ranking function
+        // Special-case to initialize discriminative ranking function
         if (mergeRankingFunction == MergeRanking.Discriminative) {
             if (devSet == null) {
                 throw new IllegalArgumentException(

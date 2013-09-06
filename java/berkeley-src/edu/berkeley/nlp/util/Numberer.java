@@ -6,7 +6,6 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Set;
 
 /**
@@ -16,6 +15,9 @@ import java.util.Set;
  * across numberings within that space. At any rate, it's widely used in some existing packages.
  * 
  * TODO Use shorts instead of ints?
+ * 
+ * TODO This class could be replaced with a singleton, since the only {@link Numberer} currently in use is the 'tags'
+ * numberer
  * 
  * @author Dan Klein
  */
@@ -28,7 +30,6 @@ public class Numberer implements Serializable {
     private int total;
     private Int2ObjectOpenHashMap<String> intToObject;
     private Object2IntOpenHashMap<String> objectToInt;
-    private boolean locked = false;
 
     public Numberer() {
         total = 0;
@@ -58,53 +59,17 @@ public class Numberer implements Serializable {
         return n;
     }
 
-    /**
-     * Get a number for an object in namespace type. This looks up the Numberer for <code>type</code> in the global
-     * namespace map (creating it if none previously existed), and then returns the appropriate number for the key.
-     */
-    public static int number(final String type, final String o) {
-        return getGlobalNumberer(type).number(o);
-    }
-
-    public static Object object(final String type, final int n) {
-        return getGlobalNumberer(type).symbol(n);
-    }
-
-    /**
-     * For an Object <i>o</i> that occurs in Numberers of type <i>sourceType</i> and <i>targetType</i>, translates the
-     * serial number <i>n</i> of <i>o</i> in the <i>sourceType</i> Numberer to the serial number in the
-     * <i>targetType</i> Numberer.
-     */
-    public static int translate(final String sourceType, final String targetType, final int n) {
-        return getGlobalNumberer(targetType).number(getGlobalNumberer(sourceType).symbol(n));
-    }
-
     public int total() {
         return total;
-    }
-
-    public void lock() {
-        locked = true;
-    }
-
-    public boolean hasSeen(final Object o) {
-        return objectToInt.keySet().contains(o);
     }
 
     public Set<String> objects() {
         return objectToInt.keySet();
     }
 
-    public int size() {
-        return objectToInt.size();
-    }
-
     public int number(final String o) {
         int i = objectToInt.getInt(o);
         if (i < 0) {
-            if (locked) {
-                throw new NoSuchElementException("no object: " + o);
-            }
             i = total;
             total++;
             objectToInt.put(o, i);

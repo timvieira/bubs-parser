@@ -115,11 +115,6 @@ public class Lexicon implements java.io.Serializable {
         this.threshold = threshold;
     }
 
-    /** Get the nonterminal tags */
-    private boolean isKnown(final String word) {
-        return wordCounter.keySet().contains(word);
-    }
-
     /**
      * Split all substates in two, producing a new lexicon. The new Lexicon gives the same scores to words under both
      * split versions of the tag. (Leon says: It may not be okay to use the same scores, but I think that symmetry is
@@ -278,7 +273,7 @@ public class Lexicon implements java.io.Serializable {
             if (Character.isUpperCase(ch0) || Character.isTitleCase(ch0)) {
                 if (sentenceInitial && numCaps == 1) {
                     sb.append("-INITC");
-                    if (isKnown(lowered)) {
+                    if (wordCounter.keySet().contains(lowered)) {
                         sb.append("-KNOWNLC");
                     }
                 } else {

@@ -20,6 +20,8 @@ public class GrammarMerger {
 
     protected final static Numberer tagNumberer = Numberer.getGlobalNumberer("tags");
 
+    final static float EFFICIENCY_LAMBDA = GlobalConfigProperties.singleton().getFloatProperty("efficiencyLambda", 0);
+
     /**
      * This function was written to have the ability to also merge non-sibling pairs, however this functionality is not
      * used anymore since it seemed tricky to determine an appropriate threshold for merging non-siblings. The function
@@ -224,8 +226,8 @@ public class GrammarMerger {
 
                 // Always merge 'down' from substate 2 into substate 1 (sub1 % 2 == 0)
                 if (sub1 % 2 == 0 && mergeLikelihoodDeltas[state][sub1][sub1 + 1] != 0) {
-                    mergeCandidates.add(new MergeCandidate(state, sub1, (short) (sub1 + 1),
-                            mergeLikelihoodDeltas[state][sub1][sub1 + 1], ruleCountDeltas[state][sub1 + 1]));
+                    mergeCandidates.add(new MergeCandidate(state, sub1, (short) (sub1 + 1), grammar.isPos(state),
+                            -mergeLikelihoodDeltas[state][sub1][sub1 + 1], ruleCountDeltas[state][sub1 + 1]));
                 }
             }
         }
@@ -278,44 +280,17 @@ public class GrammarMerger {
 
         final long t0 = System.currentTimeMillis();
 
-        //
-        // Rank by estimated likelihood loss and by change in total rule-count (these estimates are cheap, so we always
-        // perform them even though they aren't used in some objective functions)
-        //
-
-        Collections.sort(mergeCandidates, MergeRanking.Likelihood.comparator());
+        // Estimated likelihood loss is an inexpensive calculation and is prepopulated in the MergeCandidates. This
+        // ranking is used as an input by several MergeObjectiveFunctions, so we populate it before computing other
+        // rankings
+        Collections.sort(mergeCandidates, MergeCandidate.estimatedLikelihoodComparator());
         for (int i = 0; i < mergeCandidates.size(); i++) {
-            mergeCandidates.get(i).likelihoodLossRanking = i;
-        }
-
-        // Total rule count delta
-        Collections.sort(mergeCandidates, MergeRanking.TotalRuleCount.comparator());
-        for (int i = 0; i < mergeCandidates.size(); i++) {
-            mergeCandidates.get(i).totalRuleCountRanking = i;
+            mergeCandidates.get(i).estimatedAccuracyRanking = i;
         }
 
         final MergeObjectiveFunction objectiveFunction = rankingFunction.objectiveFunction();
-        if (rankingFunction == MergeRanking.Discriminative) {
-
-            final DiscriminativeMergeObjectiveFunction df = (DiscriminativeMergeObjectiveFunction) objectiveFunction;
-            df.init(grammar, lexicon, cycle);
-
-            for (final MergeCandidate mc : mergeCandidates) {
-                df.parseDevSet(mc, mergeCandidates.size(), substateConditionalProbabilities);
-            }
-
-            // Sort and assign ordinal rankings by F1 and inference speed
-            Collections.sort(mergeCandidates, DiscriminativeMergeObjectiveFunction.inferenceF1Comparator());
-            for (int i = 0; i < mergeCandidates.size(); i++) {
-                mergeCandidates.get(i).inferenceF1Ranking = i;
-            }
-
-            Collections.sort(mergeCandidates, DiscriminativeMergeObjectiveFunction.inferenceSpeedComparator());
-            for (int i = 0; i < mergeCandidates.size(); i++) {
-                mergeCandidates.get(i).inferenceSpeedRanking = i;
-            }
-
-        }
+        objectiveFunction.initMergeCycle(grammar, lexicon, cycle);
+        objectiveFunction.initMergeCandidates(mergeCandidates, substateConditionalProbabilities);
 
         BaseLogger.singleton().info(
                 String.format("Examined %d merge candidates in %.3f seconds", mergeCandidates.size(),
@@ -329,41 +304,36 @@ public class GrammarMerger {
         final short substate1;
         final short substate2;
         private final float estimatedLikelihoodDelta;
-        private final int binaryRuleCountDelta;
-        private final int unaryRuleCountDelta;
-        private final int lexicalRuleCountDelta;
+
+        final int binaryRuleCountDelta;
+        final int unaryRuleCountDelta;
+        final int lexicalRuleCountDelta;
 
         private final int totalRuleCountDelta;
 
-        /**
-         * The ordinal ranking of this non-terminal pair within the list of {@link MergeCandidate}s if sorted by
-         * {@link #estimatedLikelihoodDelta}.
-         */
-        private int likelihoodLossRanking;
+        final int vPosDelta, vPhraseDelta;
+        float medRowDensityDelta, medColDensityDelta;
 
         /**
-         * The ordinal ranking of this non-terminal pair within the list of {@link MergeCandidate}s if sorted by
-         * {@link #totalRuleCountDelta}.
+         * The ordinal ranking of this non-terminal pair within the list of {@link MergeCandidate}s if sorted by (an
+         * estimate of) accuracy. e.g., {@link #estimatedLikelihoodDelta} or {@link #estimatedAccuracyDelta}.
          */
-        private int totalRuleCountRanking;
-
-        /** Parsing accuracy as measured using pruned inference */
-        float inferenceF1;
+        private int estimatedAccuracyRanking;
 
         /**
-         * The ordinal ranking of this non-terminal pair within the list of {@link MergeCandidate}s if sorted by
-         * {@link #inferenceF1}.
+         * The ordinal ranking of this non-terminal pair within the list of {@link MergeCandidate}s if sorted by (an
+         * estimate of) inference speed. e.g., {@link #totalRuleCountDelta} or {@link #estimatedInferenceSpeedDelta}
          */
-        int inferenceF1Ranking;
+        private int estimatedSpeedRanking;
 
-        /** Parsing speed (in words/second) as measured using pruned inference */
-        float inferenceSpeed;
+        /** Estimated accuracy change (e.g. -{@link #estimatedLikelihoodDelta} or actual measured F1) */
+        float estimatedAccuracyDelta;
 
         /**
-         * The ordinal ranking of this non-terminal pair within the list of {@link MergeCandidate}s if sorted by
-         * {@link #inferenceSpeed}.
+         * Estimated parsing speed change (e.g. {@link #totalRuleCountDelta} a modeled prediction of w/s, or actual
+         * measured speed)
          */
-        int inferenceSpeedRanking;
+        float estimatedInferenceSpeedDelta;
 
         /**
          * @param state
@@ -373,7 +343,7 @@ public class GrammarMerger {
          * @param ruleCountDelta Estimated rule-count savings if this pair is merged. 3-tuple of binary, unary, and
          *            lexical counts.
          */
-        public MergeCandidate(final short state, final short substate1, final short substate2,
+        public MergeCandidate(final short state, final short substate1, final short substate2, final boolean isPos,
                 final float estimatedLikelihoodDelta, final int[] ruleCountDelta) {
 
             this.state = state;
@@ -392,22 +362,69 @@ public class GrammarMerger {
                 this.lexicalRuleCountDelta = 0;
             }
 
+            if (isPos) {
+                vPosDelta = -1;
+                vPhraseDelta = 0;
+            } else {
+                vPhraseDelta = -1;
+                vPosDelta = 0;
+            }
+
             this.totalRuleCountDelta = binaryRuleCountDelta + unaryRuleCountDelta + lexicalRuleCountDelta;
         }
 
-        public int likelihoodLossRanking() {
-            return likelihoodLossRanking;
+        public int estimatedAccuracyRanking() {
+            return estimatedAccuracyRanking;
+        }
+
+        public void setEstimatedAccuracyRanking(final int estimatedAccuracyRanking) {
+            this.estimatedAccuracyRanking = estimatedAccuracyRanking;
+        }
+
+        public int estimatedSpeedRanking() {
+            return estimatedSpeedRanking;
+        }
+
+        public void setEstimatedSpeedRanking(final int estimatedSpeedRanking) {
+            this.estimatedSpeedRanking = estimatedSpeedRanking;
         }
 
         @Override
         public String toString() {
             final Numberer numberer = Numberer.getGlobalNumberer("tags");
             return String
-                    .format("%6s_%d / %6s_%d  LL=%14.6f  LL_rank=%6d  Bin=%6d  Un=%6d  Lex=%6d  Tot=%6d  RC_rank=%6d  F1=%.3f  F1_rank=%d  Speed=%.3f  Sp_rank=%d",
-                            numberer.symbol(state), substate1, numberer.symbol(state), substate2,
-                            estimatedLikelihoodDelta, likelihoodLossRanking, binaryRuleCountDelta, unaryRuleCountDelta,
-                            lexicalRuleCountDelta, totalRuleCountDelta, totalRuleCountRanking, inferenceF1,
-                            inferenceF1Ranking, inferenceSpeed, inferenceSpeedRanking);
+                    .format("%19s  LL=%-14.6f  Bin=%-6d  Un=%-6d  Lex=%-6d  Tot=%-6d  Acc=%-9.3f  Acc_rank=%-6d  Speed=%-9.3f  Sp_rank=%d",
+                            String.format("%s_%d / %s_%d", numberer.symbol(state), substate1, numberer.symbol(state),
+                                    substate2), estimatedLikelihoodDelta, binaryRuleCountDelta, unaryRuleCountDelta,
+                            lexicalRuleCountDelta, totalRuleCountDelta, estimatedAccuracyDelta,
+                            estimatedAccuracyRanking, estimatedInferenceSpeedDelta, estimatedSpeedRanking);
+        }
+
+        public static Comparator<MergeCandidate> estimatedLikelihoodComparator() {
+            return new Comparator<MergeCandidate>() {
+                @Override
+                public int compare(final MergeCandidate o1, final MergeCandidate o2) {
+                    return -Float.compare(o1.estimatedLikelihoodDelta, o2.estimatedLikelihoodDelta);
+                }
+            };
+        }
+
+        public static Comparator<MergeCandidate> estimatedAccuracyComparator() {
+            return new Comparator<MergeCandidate>() {
+                @Override
+                public int compare(final MergeCandidate o1, final MergeCandidate o2) {
+                    return Float.compare(o1.estimatedAccuracyDelta, o2.estimatedAccuracyDelta);
+                }
+            };
+        }
+
+        public static Comparator<MergeCandidate> estimatedSpeedComparator() {
+            return new Comparator<MergeCandidate>() {
+                @Override
+                public int compare(final MergeCandidate o1, final MergeCandidate o2) {
+                    return Float.compare(o1.estimatedInferenceSpeedDelta, o2.estimatedInferenceSpeedDelta);
+                }
+            };
         }
     }
 
@@ -417,49 +434,63 @@ public class GrammarMerger {
      */
     public static enum MergeRanking {
 
+        /**
+         * Ignores {@link GrammarMerger#EFFICIENCY_LAMBDA} and ranks by estimated likelihood loss
+         */
         Likelihood(new MergeObjectiveFunction() {
             @Override
             public float mergeCost(final MergeCandidate mergeCandidate) {
-                return mergeCandidate.estimatedLikelihoodDelta;
+                return -mergeCandidate.estimatedLikelihoodDelta;
             }
 
-        }),
-
-        TotalRuleCount(new MergeObjectiveFunction() {
             @Override
-            public float mergeCost(final MergeCandidate mergeCandidate) {
-                return mergeCandidate.totalRuleCountDelta;
-            }
+            public void initMergeCandidates(final List<MergeCandidate> mergeCandidates,
+                    final double[][] substateConditionalProbabilities) {
 
+                // We always populate and rank by estimated likelihood loss, so there's nothing else to do here
+            }
         }),
 
         /**
-         * Note: Likelihood and rule-count rankings must be computed, as in
-         * {@link GrammarMerger#computeMergeCostsAndRankings(Grammar, Lexicon, double[][], ArrayList, MergeRanking, int)}
-         * before applying this function.
+         * Incorporates |P| as an estimate of inference speed and likelihood loss as an estimate of accuracy into the
+         * objective function.
          * 
          * Controlled by the configuration parameter "ruleCountLambda", ranging from 0-1. At lambda=0, merges are
          * controlled entirely by likelihood (as in {@link #Likelihood}) and at \lambda = 1, entirely by rule-count (as
          * in {@link #TotalRuleCount}).
          */
-        SparsePrior(new MergeObjectiveFunction() {
-
-            final float ruleCountLambda = GlobalConfigProperties.singleton().getFloatProperty("ruleCountLambda", 0);
+        TotalRuleCount(new MergeObjectiveFunction() {
 
             @Override
-            public float mergeCost(final MergeCandidate mergeCandidate) {
-                return mergeCandidate.likelihoodLossRanking * (1 - ruleCountLambda)
-                        + mergeCandidate.totalRuleCountRanking * ruleCountLambda;
-            }
+            public void initMergeCandidates(final List<MergeCandidate> mergeCandidates,
+                    final double[][] substateConditionalProbabilities) {
 
+                // Note: estimated likelihood loss rankings are already populated
+
+                // Rank by total rule count delta
+                Collections.sort(mergeCandidates, MergeRanking.TotalRuleCount.comparator());
+                for (int i = 0; i < mergeCandidates.size(); i++) {
+                    mergeCandidates.get(i).estimatedSpeedRanking = i;
+                }
+            }
         }),
 
+        /**
+         * Ranks by a modeled merge objective function (per a linear model fit on previous trials).
+         * 
+         * Controlled by the configuration parameter "efficiencyLambda", ranging from 0-1. At lambda=0, merges are
+         * controlled entirely by likelihood (as in {@link #Likelihood}) and at \lambda = 1, entirely by rule-count (as
+         * in {@link #TotalRuleCount}).
+         */
+        Modeled(new ModeledMergeObjectiveFunction()),
+
+        /**
+         * Ranks by actual inference accuracy and speed
+         */
         Discriminative(new DiscriminativeMergeObjectiveFunction());
 
         /**
-         * Comparator for the specified objective function. Most {@link MergeRanking} implementations instantiate this
-         * at creation time. However, some implementations (notably {@link DiscriminativeMergeObjectiveFunction}) need
-         * additional information not available at that time, so must override {@link #objectiveFunction()}.
+         * Objective function for the chosen objective.
          */
         private final MergeObjectiveFunction objectiveFunction;
 
@@ -467,7 +498,7 @@ public class GrammarMerger {
             this.objectiveFunction = objectiveFunction;
         }
 
-        public MergeObjectiveFunction objectiveFunction() {
+        public final MergeObjectiveFunction objectiveFunction() {
             return objectiveFunction;
         }
 
@@ -488,7 +519,36 @@ public class GrammarMerger {
         }
 
         static abstract class MergeObjectiveFunction {
-            public abstract float mergeCost(MergeCandidate mergeCandidate);
+
+            public float mergeCost(final MergeCandidate mergeCandidate) {
+                return mergeCandidate.estimatedAccuracyRanking * (1 - EFFICIENCY_LAMBDA)
+                        + mergeCandidate.estimatedSpeedRanking * EFFICIENCY_LAMBDA;
+            }
+
+            /**
+             * Computes and populates {@link MergeCandidate} rankings, using
+             * {@link MergeCandidate#setEstimatedAccuracyRanking(int)} and
+             * {@link MergeCandidate#setEstimatedSpeedRanking(int)}. Subclasses may implement this with simple heuristic
+             * estimates (as per the likelihood-loss estimate of {@link MergeRanking#Likelihood}, or with more
+             * sophisticated methods as in {@link MergeRanking#Modeled} or {@link MergeRanking#Discriminative}.
+             * 
+             * @param mergeCandidates
+             * @param substateConditionalProbabilities
+             */
+            public void initMergeCandidates(final List<MergeCandidate> mergeCandidates,
+                    final double[][] substateConditionalProbabilities) {
+            }
+
+            /**
+             * Subclasses should override this method to perform any initialization required before
+             * {@link #initMergeCandidates(List, double[][])} (e.g., analyzing the fully-split grammar).
+             * 
+             * @param grammar
+             * @param lexicon
+             * @param cycle
+             */
+            public void initMergeCycle(final Grammar grammar, final Lexicon lexicon, final int cycle) {
+            }
         }
     }
 }
