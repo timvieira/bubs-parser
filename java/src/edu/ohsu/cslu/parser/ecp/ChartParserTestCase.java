@@ -35,6 +35,7 @@ import edu.ohsu.cslu.grammar.GrammarTestCase;
 import edu.ohsu.cslu.grammar.TokenClassifier;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.Parser;
+import edu.ohsu.cslu.parser.Parser.InputFormat;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
 import edu.ohsu.cslu.parser.chart.Chart;
@@ -129,6 +130,7 @@ public abstract class ChartParserTestCase<P extends ChartParser<? extends Gramma
     protected ParserDriver parserOptions() throws Exception {
         final ParserDriver options = new ParserDriver();
         options.binaryTreeOutput = true;
+        options.inputFormat = InputFormat.Token;
         options.fomModel = new InsideProb();
         return options;
     }
