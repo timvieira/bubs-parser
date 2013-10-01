@@ -53,6 +53,7 @@ import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
 import edu.ohsu.cslu.grammar.ListGrammar;
 import edu.ohsu.cslu.grammar.RightCscSparseMatrixGrammar;
+import edu.ohsu.cslu.grammar.SerializeModel;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.Int2IntHashPackingFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
@@ -84,8 +85,95 @@ import edu.ohsu.cslu.util.Evalb.BracketEvaluator;
 import edu.ohsu.cslu.util.Evalb.EvalbResult;
 
 /**
- * Driver class for all parser implementations. Based on the cltool4j command-line tool infrastructure
- * (http://code.google.com/p/cltool4j/).
+ * BUBS Parser
+ * 
+ * Parses input text and returns constituency parses
+ * 
+ * Input: one sentence per line, plain text or parenthesis-bracketed trees. BUBS will tokenize input text using the
+ * standard treebank-tokenization mappings. It will attempt to detect input in bracketed tree format. Input trees are
+ * assumed to be gold trees, and verbose output will include bracket evaluation against those gold trees (using a
+ * reimplementation of PARSEVAL / evalb). Finally, for pre-tokenized text, see the '-if' option.
+ * 
+ * Output: parse trees, one tree per line. At higher verbosity levels (see '-v'), other information will be interspersed
+ * between parse output lines.
+ * 
+ * ===================================
+ * 
+ * BUBS is a grammar-agnostic context-free constituency parser. Using a high-accuracy grammar (such as the Berkeley
+ * latent-variable grammar), it achieves high accuracy and throughput superior to other state-of-the-art parsers.
+ * 
+ * Some parser implementations accept or require configuration options. All configuration is specified with the '-O'
+ * option, using either '-O key=value' or '-O <properties file>' form. Multiple -O options are allowed. key=value
+ * options override those found in property files. So, for example, you might use a property file containing most
+ * configuration and override a single option with:
+ * 
+ * parse -O parser.properties -O foo=bar
+ * 
+ * The default options are:
+ * 
+ * <pre>
+ * cellThreads : 1 
+ * grammarThreads : 1 (see below for details on threading)
+ * maxBeamWidth : 30
+ * lexicalRowBeamWidth : 60
+ * lexicalRowUnaries : 20
+ * </pre>
+ * 
+ * These beam limits assume a boundary FOM and Beam Confidence Model (see below). maxBeamWidth applies to cells of span
+ * > 1. For span-1 cells, we allow a larger beam width, and reserve some space for unary productions. These default
+ * options are tuned on a WSJ development set. Parsing out-of-domain text may require wider beam widths.
+ * 
+ * 
+ * == Multithreading ==
+ * 
+ * The BUBS parser supports threading at several levels. Sentence-level threading assigns each sentence of the input to
+ * a separate thread as one becomes available). The number of threads is controlled by the '-xt <count>' option. In
+ * general, if threading only at the sentence level, you want to use the same number of threads as CPU cores (or
+ * slightly lower, to reserve some CPU capacity for OS or other simultaneous tasks).
+ * 
+ * Cell-level and grammar-level threading are also supported. Cell-level threading assigns the processing of individual
+ * chart cells to threads (again, as threads become available in the thread pool).
+ * 
+ * Grammar-level threading subdivides the grammar intersection operation within an individual cell and splits those
+ * tasks across threads.
+ * 
+ * Cell-level and grammar-level threading are specified with the 'cellThreads' and 'grammarThreads' options. e.g.:
+ * 
+ * parse -O cellThreads=4 -O grammarThreads=2
+ * 
+ * The three levels of threading can interact safely (i.e., you can use -xt, cellThreads, and grammarThreads
+ * simultaneously), and we have shown that cell-level and grammar-level threading can provide additive benefits, but we
+ * make no claims about the efficiency impact of combining sentence-level threading with other parallelization methods.
+ * 
+ * 
+ * == Research Parser Implementations ==
+ * 
+ * In addition to the standard implementations described above, many other parsing algorithms are available using the
+ * -researchParserType option. The general classes are:
+ * 
+ * <pre>
+ * --Other exhaustive implementations (ECPxyz). All exhaustive implementations produce identical parses, but use various
+ * grammar intersection methods and differ considerably in efficiency.
+ * --Agenda parsers (APxyz).
+ * --Beam Search parsers (BSCPxyz). Various methods of beam pruning.
+ * --SpMV parsers (xyzSpmv). Sparse Matrix x Vector grammar intersection methods.
+ * --Matrix Loop parsers (xyzMl). Exhaustive parsers using a matrix grammar representation and implement various methods
+ * of iterating over the matrix during grammar intersection. These methods vary greatly in efficiency, from around 4-5
+ * seconds up to several minutes per sentence.
+ * </pre>
+ * 
+ * Implementation Note: {@link ParserDriver} is based on the cltool4j command-line tool infrastructure
+ * (http://code.google.com/p/cltool4j/), which provides command-line handling, threading support, and input/output
+ * infrastructure.
+ * 
+ * == Citing ==
+ * 
+ * If you use the BUBS parser in research, please cite:
+ * 
+ * Adaptive Beam-Width Prediction for Efficient CYK Parsing Nathan Bodenstab, Aaron Dunlop, Keith Hall, and Brian Roark
+ * - ACL/HLT 2011, pages 440-449.
+ * 
+ * Further documentation is available at https://code.google.com/p/bubs-parser/
  * 
  * @author Nathan Bodenstab
  * @author Aaron Dunlop
@@ -101,27 +189,36 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     Grammar grammar;
 
     // == Parser options ==
-    @Option(name = "-p", metaVar = "PARSER", usage = "Parser implementation (cyk|beam|agenda|matrix)")
+    @Option(name = "-p", metaVar = "parser type", usage = "Parser implementation (cyk|beam|agenda|matrix)")
     private ParserType parserType = ParserType.Matrix;
 
-    @Option(name = "-rp", hidden = true, metaVar = "PARSER", usage = "Research Parser implementation")
+    /**
+     * Exposes all possible parser implementations. The most useful parser implementations for end-users are exposed via
+     * the '-p' option. This option exposes other implementations (most of which are intended for specific experiments).
+     */
+    @Option(name = "-rp", hidden = true, metaVar = "parser type", usage = "Research Parser implementation")
     public ResearchParserType researchParserType = null;
 
     // == Grammar options ==
-    @Option(name = "-g", metaVar = "FILE", usage = "Grammar file (text, gzipped text, or binary serialized)")
+    @Option(name = "-g", metaVar = "grammar file", usage = "Grammar file (text, gzipped text, or binary serialized)")
     private String grammarFile = null;
 
-    @Option(name = "-coarseGrammar", hidden = true, metaVar = "FILE", usage = "Coarse grammar file (text, gzipped text, or binary serialized)")
+    /**
+     * Required by some prioritization (FOM) models. Primarily for experimental usage - to this point, a coarse FOM has
+     * not proven widely useful.
+     */
+    @Option(name = "-coarseGrammar", hidden = true, metaVar = "model file", usage = "Coarse grammar file (text, gzipped text, or binary serialized)")
     private String coarseGrammarFile = null;
 
-    @Option(name = "-m", metaVar = "FILE", usage = "Model file (binary serialized)")
+    /** A single model, serialized with {@link SerializeModel} */
+    @Option(name = "-m", metaVar = "model file", usage = "Combined model file, combining grammar and pruning models (binary serialized)")
     private File modelFile = null;
 
     // == Input options ==
-    @Option(name = "-if", metaVar = "FORMAT", usage = "Input format type.  Choosing 'text' will tokenize the input before parsing.")
-    public InputFormat inputFormat = InputFormat.Token;
+    @Option(name = "-if", metaVar = "format type", usage = "Input format type.  Choosing 'text' will tokenize the input before parsing.")
+    public InputFormat inputFormat = InputFormat.Text;
 
-    @Option(name = "-maxLength", metaVar = "LEN", usage = "Skip sentences longer than LEN")
+    @Option(name = "-maxLength", metaVar = "length", usage = "Skip sentences longer than length")
     int maxLength = 200;
 
     // == Output options ==
@@ -131,43 +228,56 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     @Option(name = "-addUNK", usage = "Add the UNK replacement class to any unknown words (in the form 'UNK-class|token'")
     boolean addUnkLabels = false;
 
+    /**
+     * Used primarily in model training (e.g., to produce gold-constrained parses). Note: outputting binary tree
+     * structures requires that factored labels are retained as well.
+     */
     @Option(name = "-binary", usage = "Leave parse tree output in binary-branching form")
     public boolean binaryTreeOutput = false;
 
     // == Processing options ==
-    @Option(name = "-decode", metaVar = "TYPE", hidden = true, usage = "Method to extract best tree from forest")
+    /**
+     * Most alternate decoding methods depend on inside-outside inference. See the '-p IO' option.
+     */
+    @Option(name = "-decode", metaVar = "method", hidden = true, usage = "Method to extract best tree from forest")
     public DecodeMethod decodeMethod = DecodeMethod.ViterbiMax;
 
+    /**
+     * Provides a fallback in case of parse failures. Currently, the only implemented strategy is biased for
+     * right-branching languages, and combines all completed subtrees at the right periphery.
+     */
     @Option(name = "-recovery", metaVar = "strategy", hidden = true, usage = "Recovery strategy in case of parse failure")
     public RecoveryStrategy recoveryStrategy = null;
 
-    @Option(name = "-reparse", metaVar = "strategy or count", hidden = true, usage = "If no solution, loosen constraints and reparse using the specified strategy or double-beam-width n times")
+    /**
+     * Most parsing consumers use approximate inference. In some cases, severe pruning can lead to parse failures that
+     * would be avoided with looser pruning constraints. By default, we escalate through several levels of pruning
+     * before finally performing exhaustive inference. Note: re-parsing runs can be expensive, particularly if
+     * exhaustive inference is required. Applications with hard latency constraints may prefer to fail (or fall back to
+     * a recovery mode, as in the '-recovery' option) rather than incurring this expense.
+     */
+    @Option(name = "-reparse", metaVar = "strategy", hidden = true, usage = "If no solution, loosen constraints and reparse using the specified strategy or double-beam-width n times")
     public ReparseStrategy reparseStrategy = ReparseStrategy.Escalate;
 
     @Option(name = "-parseFromInputTags", hidden = true, usage = "Parse from input POS tags given by tagged or tree input.  Replaces 1-best tags from BoundaryInOut FOM if also specified.")
     public static boolean parseFromInputTags = false;
 
-    // TODO Remove along with BSCPBeamPredictTrain, now that we have integrated adaptive-beam training in
-    // AdaptiveBeamClassifier
-    @Option(name = "-inputTreeBeamRank", hidden = true, usage = "Print rank of input tree constituents during beam-search parsing.")
-    public static boolean inputTreeBeamRank = false;
-
-    @Option(name = "-fom", metaVar = "FOM", usage = "Figure-of-Merit edge scoring function (name or model file)")
+    @Option(name = "-fom", metaVar = "model or type", usage = "Figure-of-Merit edge scoring function ('Inside', 'InsideWithFwdBkwd' or model file)")
     private String fomTypeOrModel = "Inside";
 
     @Option(name = "-pf", hidden = true, metaVar = "function", usage = "Packing function (only used for SpMV parsers)")
     private PackingFunctionType packingFunctionType = PackingFunctionType.PerfectHash;
 
-    @Option(name = "-beamModel", metaVar = "FILE", usage = "Beam-width prediction model (Bodenstab et al., 2011)")
+    @Option(name = "-beamModel", metaVar = "model file", usage = "Beam-width prediction model (Bodenstab et al., 2011)")
     private String beamModelFileName = null;
 
-    @Option(name = "-ccModel", hidden = true, metaVar = "FILE", usage = "CSLU Chart Constraints model (Roark and Hollingshead, 2008)")
+    @Option(name = "-ccModel", hidden = true, metaVar = "model file", usage = "CSLU Chart Constraints model (Roark and Hollingshead, 2008)")
     private String chartConstraintsModel = null;
 
-    @Option(name = "-ccClassifier", hidden = true, metaVar = "FILE", usage = "Complete closure classifier model (Java Serialized)")
+    @Option(name = "-ccClassifier", hidden = true, metaVar = "model file", usage = "Complete closure classifier model (Java Serialized)")
     private File completeClosureClassifierFile = null;
 
-    @Option(name = "-abModel", hidden = true, metaVar = "FILE", usage = "Adaptive-beam model (Java Serialized)")
+    @Option(name = "-abModel", hidden = true, metaVar = "model file", usage = "Adaptive-beam model (Java Serialized)")
     private File adaptiveBeamModelFile = null;
 
     // Leaving this around for a bit, in case we get back to limited-span parsing, but it doesn't work currently
@@ -175,26 +285,32 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     // metaVar = "FILE", usage = "CSLU Chart Constraints model (Roark and Hollingshead, 2008)")
     // private String limitedSpanChartConstraintsModel = null;
 
-    @Option(name = "-pm", aliases = { "-pruningmodel" }, hidden = true, metaVar = "FILE", usage = "Cell selector model file")
+    @Option(name = "-pm", hidden = true, metaVar = "model file", usage = "Cell selector model file")
     private File[] pruningModels = null;
 
-    @Option(name = "-tcModel", aliases = { "--token-classifier-model" }, hidden = true, metaVar = "FILE", usage = "Token classifier model file")
+    @Option(name = "-tcModel", hidden = true, metaVar = "model file", usage = "Token classifier model file")
     private File tokenClassifierModel = null;
 
+    /**
+     * Parses with a 'hedge' grammar, limiting the span of subconstituents (and combining those limited-span parses
+     * using a heuristic approximation)
+     */
     @Option(name = "-maxSubtreeSpan", hidden = true, metaVar = "span", usage = "Maximum subtree span for limited-depth parsing")
     private int maxSubtreeSpan;
 
-    @Option(name = "-head-rules", hidden = true, metaVar = "ruleset or file", usage = "Enables head-finding using a Charniak-style head-finding ruleset. Specify ruleset as 'charniak' or a rule file. Ignored if -binary is specified.")
+    @Option(name = "-head-rules", hidden = true, metaVar = "ruleset", usage = "Enables head-finding using a Charniak-style head-finding ruleset. Specify ruleset as 'charniak' or a rule file. Ignored if -binary is specified.")
     private String headRules = null;
     private HeadPercolationRuleset headPercolationRuleset = null;
 
+    // TODO Remove - this option is obsolete
     @Option(name = "-ccPrint", hidden = true, usage = "Print Cell Constraints for each input sentence and exit (no parsing done)")
     public static boolean chartConstraintsPrint = false;
 
+    // TODO Remove after we have a working JavaDoc-based documentation tool
     @Option(name = "-help-long", usage = "List all research parsers and options")
     public boolean longHelp = false;
 
-    @Option(name = "-debug", hidden = true, usage = "Exit on error with trace")
+    @Option(name = "-debug", hidden = true, usage = "Exit on error with trace (by default, a parse error outputs '()' and continues)")
     public boolean debug = false;
 
     // @Option(name = "-printFeatMap", hidden = true, usage =
@@ -504,8 +620,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
         case BSCPExpDecay:
         case BSCPPerceptronCell:
         case BSCPFomDecode:
-        case BSCPBeamConfTrain:
-            // case BSCPBeamConf:
         case CoarseCellAgenda:
         case CoarseCellAgendaCSLUT:
             return new LeftHashGrammar(grammarFile, tokenClassifier);

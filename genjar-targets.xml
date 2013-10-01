@@ -44,7 +44,9 @@
          * readme-file (optional) Location of a README file for the tool. If 
              the file exists, it will be packaged as META-INF/README.txt 
          * license-file (optional) Location of a license file for the tool. If
-             the file exists, it will be packaged as META-INF/LICENSE.txt 
+             the file exists, it will be packaged as META-INF/LICENSE.txt
+         * javadoc-help (optional) If true, process the root class JavaDoc to generate 
+             a help file
          * default-options (optional) Location of a properties file specifying default 
              options for the tool. If the file exists, it will be packaged as 
              META-INF/defaults.properties
@@ -151,6 +153,35 @@
             <available file="${default-options}" />
             <then>
                 <copy file="${default-options}" tofile="package-jar-tmp/META-INF/defaults.properties" failonerror="false" />
+            </then>
+        </if>
+
+        <if>
+            <isset property="javadoc-help" />
+            <then>
+                <path id="path.javadoc.bin">
+                    <fileset dir="." includes="java/**/*.jar" excludes="*-src.jar" />
+                </path>
+
+                <propertyregex property="root-class-src"
+                              input="${root-class}"
+                              regexp="\."
+                              replace="/"
+                              global="true" />
+                
+                <javadoc 
+                    classpathref="path.javadoc.bin" 
+                    sourcepath="java/src" 
+                    docletpath="${dir.bsd.lib}/cltool4j.jar:${dir.build}"
+                    doclet="cltool4j.UsageDoclet"
+                    access="private"
+                    sourcefiles="${dir.src}/${root-class-src}.java">
+                    
+                    <arg value="-out" />
+                    <arg value="package-jar-tmp/META-INF/HELP.txt" />
+                    <arg value="-runtimecp" />
+                    <arg value="package-jar-tmp/META-INF" />
+                </javadoc>
             </then>
         </if>
 

@@ -107,8 +107,8 @@
             <param name="reference-lgpl-libs" value="true" />
             <param name="additional-file-root" value="${dir.src}" />
             <param name="additional-file-includes" value="**/*.cl" />
+            <param name="javadoc-help" value="true" />
             <param name="license-file" value="java/tools/license.txt" />
-            <param name="readme-file" value="java/tools/README.txt" />
             <param name="default-options" value="java/tools/parser-defaults.properties" />
             <param name="srcjar" value="true" />
         </antcall>
