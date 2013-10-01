@@ -31,7 +31,6 @@ import edu.ohsu.cslu.parser.agenda.APGhostEdges;
 import edu.ohsu.cslu.parser.agenda.APWithMemory;
 import edu.ohsu.cslu.parser.agenda.AgendaParser;
 import edu.ohsu.cslu.parser.agenda.CoarseCellAgendaParser;
-import edu.ohsu.cslu.parser.beam.BSCPBeamPredictTrain;
 import edu.ohsu.cslu.parser.beam.BSCPBoundedHeap;
 import edu.ohsu.cslu.parser.beam.BSCPExpDecay;
 import edu.ohsu.cslu.parser.beam.BSCPFomDecode;
@@ -221,7 +220,8 @@ public abstract class Parser<G extends Grammar> {
     static public enum ParserType {
 
         CYK(ResearchParserType.LeftChildMl), Agenda(ResearchParserType.APWithMemory), Beam(
-                ResearchParserType.BeamSearchChartParser), Matrix(ResearchParserType.CartesianProductHashMl);
+                ResearchParserType.BeamSearchChartParser), Matrix(ResearchParserType.CartesianProductHashMl), IO(
+                ResearchParserType.RealInsideOutsideCartesianProductHash);
 
         public ResearchParserType researchParserType;
 
@@ -251,7 +251,6 @@ public abstract class Parser<G extends Grammar> {
         BSCPExpDecay(BSCPExpDecay.class.getName(), "beamed"),
         BSCPPerceptronCell(BSCPFomDecode.class.getName(), "beampc"),
         BSCPFomDecode(BSCPFomDecode.class.getName(), "beamfom"),
-        BSCPBeamConfTrain(BSCPBeamPredictTrain.class.getName(), "beamconftrain"),
         CoarseCellAgenda(CoarseCellAgendaParser.class.getName(), "cc"),
         CoarseCellAgendaCSLUT(null, "cccslut"), // Not currently supported
 
@@ -368,8 +367,8 @@ public abstract class Parser<G extends Grammar> {
      * will likely be the normal strategy when reparsing is required.
      */
     static public enum ReparseStrategy {
-        /** Normal parsing */
-        None("default", Stage.NORMAL),
+        /** One pass only - no reparsing */
+        None("none", Stage.NORMAL),
 
         /** 1 doubling */
         DoubleBeam1x("1", Stage.NORMAL, Stage.DOUBLE),
