@@ -68,7 +68,7 @@ public class SelectFeatures extends LinewiseCommandlineTool<String> {
     @Option(name = "-h", aliases = { "--head-verb" }, usage = "Include _head_verb feature")
     private boolean headVerb;
 
-    @Option(name = "-fv", aliases = { "--first-verb" }, multiValued = true, separator = ",", metaVar = "Parts-of-speech", usage = "Include _first_verb feature")
+    @Option(name = "-fv", aliases = { "--first-verb" }, separator = ",", metaVar = "Parts-of-speech", usage = "Include _first_verb feature")
     private Set<String> firstVerbPos;
 
     @Option(name = "-bh", aliases = { "--before-head" }, usage = "Include _before_head_verb feature")
