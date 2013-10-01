@@ -763,7 +763,7 @@ public class Lexicon implements java.io.Serializable {
             }
 
             double[] oldLexiconScores = null;
-            if (randomness == -1) {
+            if (randomness == -1 && oldLexicon != null) {
                 oldLexiconScores = oldLexicon.score(word, state, position, noSmoothing, false);
             }
 
