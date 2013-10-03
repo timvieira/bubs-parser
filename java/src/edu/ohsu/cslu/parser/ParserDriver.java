@@ -182,25 +182,25 @@ import edu.ohsu.cslu.util.Evalb.EvalbResult;
 @Threadable(defaultThreads = 1)
 public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask> {
 
-    // Global vars to create parser
+    //
+    // Global parser configuration
+    //
     public CellSelectorModel cellSelectorModel = LeftRightBottomTopTraversal.MODEL;
-
     public FigureOfMeritModel fomModel = null;
-    Grammar grammar;
 
     // == Parser options ==
-    @Option(name = "-p", metaVar = "parser type", usage = "Parser implementation (cyk|beam|agenda|matrix)")
+    @Option(name = "-p", metaVar = "parser type", optionalChoiceGroup = "parserType", usage = "Parser implementation")
     private ParserType parserType = ParserType.Matrix;
 
     /**
      * Exposes all possible parser implementations. The most useful parser implementations for end-users are exposed via
      * the '-p' option. This option exposes other implementations (most of which are intended for specific experiments).
      */
-    @Option(name = "-rp", hidden = true, metaVar = "parser type", usage = "Research Parser implementation")
+    @Option(name = "-rp", hidden = true, optionalChoiceGroup = "parserType", metaVar = "parser type", usage = "Research Parser implementation")
     public ResearchParserType researchParserType = null;
 
     // == Grammar options ==
-    @Option(name = "-g", metaVar = "grammar file", usage = "Grammar file (text, gzipped text, or binary serialized)")
+    @Option(name = "-g", metaVar = "grammar file", choiceGroup = "grammar", usage = "Grammar file (text, gzipped text, or binary serialized)")
     private String grammarFile = null;
 
     /**
@@ -211,7 +211,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     private String coarseGrammarFile = null;
 
     /** A single model, serialized with {@link SerializeModel} */
-    @Option(name = "-m", metaVar = "model file", usage = "Combined model file, combining grammar and pruning models (binary serialized)")
+    @Option(name = "-m", metaVar = "model file", choiceGroup = "grammar", usage = "Combined model file, combining grammar and pruning models (binary serialized)")
     private File modelFile = null;
 
     // == Input options ==
@@ -222,10 +222,10 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     int maxLength = 200;
 
     // == Output options ==
-    @Option(name = "-printUNK", usage = "Print unknown words as their UNK replacement class")
+    @Option(name = "-printUNK", optionalChoiceGroup = "UNK", usage = "Print unknown words as their UNK replacement class")
     boolean printUnkLabels = false;
 
-    @Option(name = "-addUNK", usage = "Add the UNK replacement class to any unknown words (in the form 'UNK-class|token'")
+    @Option(name = "-addUNK", optionalChoiceGroup = "UNK", usage = "Add the UNK replacement class to any unknown words (in the form 'UNK-class|token'")
     boolean addUnkLabels = false;
 
     /**
@@ -268,6 +268,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     @Option(name = "-pf", hidden = true, metaVar = "function", usage = "Packing function (only used for SpMV parsers)")
     private PackingFunctionType packingFunctionType = PackingFunctionType.PerfectHash;
 
+    // TODO Remove - obsoleted by -abModel
     @Option(name = "-beamModel", metaVar = "model file", usage = "Beam-width prediction model (Bodenstab et al., 2011)")
     private String beamModelFileName = null;
 
@@ -285,6 +286,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     // metaVar = "FILE", usage = "CSLU Chart Constraints model (Roark and Hollingshead, 2008)")
     // private String limitedSpanChartConstraintsModel = null;
 
+    // TODO Document, and remove other options as appropriate. Make -ccClassifier, -abModel aliases, handle multiple
+    // models properly
     @Option(name = "-pm", hidden = true, metaVar = "model file", usage = "Cell selector model file")
     private File[] pruningModels = null;
 
@@ -306,23 +309,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     @Option(name = "-ccPrint", hidden = true, usage = "Print Cell Constraints for each input sentence and exit (no parsing done)")
     public static boolean chartConstraintsPrint = false;
 
-    // TODO Remove after we have a working JavaDoc-based documentation tool
-    @Option(name = "-help-long", usage = "List all research parsers and options")
-    public boolean longHelp = false;
-
     @Option(name = "-debug", hidden = true, usage = "Exit on error with trace (by default, a parse error outputs '()' and continues)")
     public boolean debug = false;
-
-    // @Option(name = "-printFeatMap", hidden = true, usage =
-    // "Write lex/pos/nt feature strings and indicies for beam-width prediction and disc FOM to stdout.  Note this mapping must be identical for training and testing.")
-    // public boolean printFeatMap = false;
-
-    // corpus stats
-    private long parseStartTime;
-    private volatile int sentencesParsed = 0, wordsParsed = 0, failedParses = 0, reparsedSentences = 0,
-            totalReparses = 0;
-    private LinkedList<Parser<?>> parserInstances = new LinkedList<Parser<?>>();
-    private final BracketEvaluator evaluator = new BracketEvaluator();
 
     /**
      * Configuration property key for the number of cell-level threads requested by the user. We handle threading at
@@ -379,15 +367,22 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
      */
     public final static String OPT_LOG_SUM_DELTA = "logSumDelta";
 
-    /** Use a quantized approximation of the exp function when performing log-sum operations. Boolean property. */
+    /**
+     * Use quantized approximations of the log and exp functions when performing log-sum operations. Approximations are
+     * based on the IEEE floating-point representation, as described in Scraudolph, 1999
+     * "A fast, compact approximation of the exponential function". Boolean property.
+     */
     public final static String OPT_APPROXIMATE_LOG_SUM = "approxLogSum";
 
-    /** Compute the inside score only. Decode assuming all outside probabilities are 1. Boolean property. */
+    /**
+     * Compute the inside score only. Decode assuming all outside probabilities are 1. Note - in preliminary trials,
+     * this method doesn't appear to work all that well. Boolean property.
+     */
     public final static String OPT_INSIDE_ONLY = "insideOnly";
 
     /**
-     * Use the prioritization / FOM model's estimate of outside probabilities (eliminating the outside pass). Boolean
-     * property
+     * Use the prioritization / FOM model's estimate of outside probabilities (eliminating the outside pass). Note - in
+     * preliminary trials, this method doesn't appear to work all that well. Boolean property
      */
     public final static String OPT_HEURISTIC_OUTSIDE = "heuristicOutside";
 
@@ -397,6 +392,20 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     /** Configuration property key to disable unary-constraint classification in {@link AdaptiveBeamModel}. */
     public final static String OPT_DISABLE_UNARY_CLASSIFIER = "disableUnaryClassifier";
 
+    //
+    // Corpus-wide statistics and timings
+    //
+    private long parseStartTime;
+    private volatile int sentencesParsed = 0, wordsParsed = 0, failedParses = 0, reparsedSentences = 0,
+            totalReparses = 0;
+
+    //
+    // ParserDriver state
+    //
+    private Grammar grammar;
+    private LinkedList<Parser<?>> parserInstances = new LinkedList<Parser<?>>();
+    private final BracketEvaluator evaluator = new BracketEvaluator();
+
     public static void main(final String[] args) {
         run(args);
     }
@@ -404,21 +413,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     @Override
     // run once at initialization regardless of number of threads
     public void setup() throws Exception {
-
-        if (this.longHelp) {
-
-            BaseLogger.singleton().info("\nPossible values for -rp PARSER:");
-            for (final ResearchParserType type : Parser.ResearchParserType.values()) {
-                BaseLogger.singleton().info("\t" + type.toString());
-            }
-            // NB: Is there a way to print the entire properties file, comments and all?
-            BaseLogger.singleton().info(
-                    "\nDefault options using -O <key>=<value>:\n\t"
-                            + GlobalConfigProperties.singleton().toString().replaceAll("\n", "\n\t"));
-            System.exit(0);
-        } else if (grammarFile == null && modelFile == null) {
-            throw new IllegalArgumentException("-g GRAMMAR or -m MODEL is required");
-        }
 
         // map simplified parser choices to the specific research version
         if (researchParserType == null) {
