@@ -236,7 +236,8 @@ public class GrammarMerger {
         computeMergeCostsAndRankings(grammar, lexicon, substateConditionalProbabilities, mergeCandidates,
                 rankingFunction, cycle);
 
-        // Order the merge candidates and select a threshold
+        // Order the merge candidates (least valuable, or most-mergeable, candidates first; most-valuable last) and
+        // select a threshold
         Collections.sort(mergeCandidates, rankingFunction.comparator());
         final int thresholdCandidate = (int) (mergeCandidates.size() * mergingPercentage);
 
@@ -393,11 +394,11 @@ public class GrammarMerger {
         public String toString() {
             final Numberer numberer = Numberer.getGlobalNumberer("tags");
             return String
-                    .format("%19s  LL=%-14.6f  Bin=%-6d  Un=%-6d  Lex=%-6d  Tot=%-6d  Acc=%-9.3f  Acc_rank=%-6d  Speed=%-9.3f  Sp_rank=%d",
+                    .format("%19s  LL=%-14.6f  Bin=%-6d  Un=%-6d  Lex=%-6d  Tot=%-6d  Acc_delta=%-9.3f  Acc_rank=%-6d  Speed_delta=%-9.3f  Sp_rank=%d",
                             String.format("%s_%d / %s_%d", numberer.symbol(state), substate1, numberer.symbol(state),
                                     substate2), estimatedLikelihoodDelta, binaryRuleCountDelta, unaryRuleCountDelta,
-                            lexicalRuleCountDelta, totalRuleCountDelta, estimatedAccuracyDelta,
-                            estimatedAccuracyRanking, estimatedInferenceSpeedDelta, estimatedSpeedRanking);
+                            lexicalRuleCountDelta, totalRuleCountDelta, -estimatedAccuracyDelta * 100f,
+                            estimatedAccuracyRanking, -estimatedInferenceSpeedDelta, estimatedSpeedRanking);
         }
 
         public static Comparator<MergeCandidate> estimatedLikelihoodComparator() {
@@ -429,8 +430,10 @@ public class GrammarMerger {
     }
 
     /**
-     * Objective functions for non-terminal merge ranking. Each enumeration option constructs and exposes an anonymous
-     * {@link Comparator} to re-rank merge candidates.
+     * Objective functions for non-terminal merge ranking. Each enumeration option provides a
+     * {@link MergeObjectiveFunction} to estimate the cost of re-merging a {@link MergeCandidate}. Simple ranking
+     * methods use anonymous implementations directly inline; more complex implementations reference separate classes
+     * (e.g. {@link ModeledMergeObjectiveFunction} and {@link DiscriminativeMergeObjectiveFunction}).
      */
     public static enum MergeRanking {
 

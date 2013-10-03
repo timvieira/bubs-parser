@@ -107,7 +107,7 @@ public class DiscriminativeMergeObjectiveFunction extends MergeObjectiveFunction
     }
 
     /**
-     * Performs any initialization required prior to computing
+     * Evaluates speed and accuracy with the baseline (fully-split) grammar
      * 
      * @param grammar
      * @param lexicon
@@ -183,16 +183,16 @@ public class DiscriminativeMergeObjectiveFunction extends MergeObjectiveFunction
             final float[] parseResult = parseDevSet(sparseMatrixGrammar, posFom, beamWidth);
             final long t2 = System.currentTimeMillis();
 
-            mergeCandidate.estimatedAccuracyDelta = parseResult[0] - splitF1;
-            mergeCandidate.estimatedInferenceSpeedDelta = parseResult[1] - splitSpeed;
+            mergeCandidate.estimatedAccuracyDelta = splitF1 - parseResult[0];
+            mergeCandidate.estimatedInferenceSpeedDelta = splitSpeed - parseResult[1];
 
             BaseLogger
                     .singleton()
                     .info(String
                             .format("Testing merge of %s_%d and %s_%d : Training time: %d ms  F1 = %.3f (%.3f)  Speed = %.3f (%.3f)  Parse time: %d ms",
                                     sState, mergeCandidate.substate1, sState, mergeCandidate.substate2, t1 - t0,
-                                    parseResult[0] * 100, mergeCandidate.estimatedAccuracyDelta * 100, parseResult[1],
-                                    mergeCandidate.estimatedInferenceSpeedDelta, t2 - t1));
+                                    parseResult[0] * 100, mergeCandidate.estimatedAccuracyDelta * -100, parseResult[1],
+                                    -mergeCandidate.estimatedInferenceSpeedDelta, t2 - t1));
         }
 
         // Sort and assign ordinal rankings by F1 and inference speed
