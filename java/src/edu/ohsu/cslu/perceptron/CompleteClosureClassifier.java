@@ -94,16 +94,32 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
     }
 
     /**
-     * Default constructor
+     * Empty constructor (generally used when reading a persisted model)
      */
     public CompleteClosureClassifier() {
     }
 
     /**
-     * For unit testing
+     * Constructs from an existing grammar
      */
-    public CompleteClosureClassifier(final String featureTemplates) {
+    public CompleteClosureClassifier(final Grammar grammar, final Tagger posTagger, final String featureTemplates) {
+        if (grammar != null) {
+            this.lexicon = grammar.lexSet;
+            this.nonterminalVocabulary = grammar.nonTermSet;
+            this.decisionTreeUnkClassSet = grammar.unkClassSet();
+        } else {
+            this.lexicon = new SymbolSet<String>();
+            this.nonterminalVocabulary = new SymbolSet<String>();
+            this.decisionTreeUnkClassSet = new SymbolSet<String>();
+        }
+
         this.featureTemplates = featureTemplates;
+
+        if (posTagger != null) {
+            this.posTagger = posTagger;
+            this.featureExtractor = new ConstituentBoundaryFeatureExtractor<CompleteClosureSequence>(featureTemplates,
+                    lexicon, decisionTreeUnkClassSet, posTagger.tagSet, true);
+        }
     }
 
     @Override

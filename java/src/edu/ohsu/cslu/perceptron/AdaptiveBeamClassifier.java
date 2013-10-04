@@ -155,8 +155,8 @@ public class AdaptiveBeamClassifier extends ClassifierTool<BeamWidthSequence> {
     @Option(name = "-ucft", requires = "-ucti", metaVar = "templates or file", usage = "Feature templates for unary classifier (comma-delimited or template file)")
     protected String unaryClassifierFeatureTemplates = Tagger.DEFAULT_FEATURE_TEMPLATES;
 
-    @Option(name = "-b", metaVar = "bias", usage = "Biased training penalty for underestimation of beam. To correct for imbalanced training data and downstream cost) - ratio 1:<bias>")
-    protected volatile float negativeTrainingBias = 1f;
+    @Option(name = "-b", metaVar = "bias", usage = "Biased training penalty for underestimation of beam. (To correct for imbalanced training data and downstream cost) - ratio 1:<bias>")
+    protected volatile float negativeTrainingBias = 250f;
 
     @Option(name = "-tnr", metaVar = "recall", requires = "-d", usage = "Target dev-set negative-classification recall")
     protected volatile float targetNegativeRecall = 0f;
@@ -231,7 +231,7 @@ public class AdaptiveBeamClassifier extends ClassifierTool<BeamWidthSequence> {
      * an essentially random memory-access pattern. Aligning all weights for a specific feature together allows a single
      * hashtable lookup (in {@link #parallelArrayOffsetMap}), followed by a linear scan of these parallel arrays.
      */
-    protected short[] parallelWeightArrayTags;
+    protected byte[] parallelWeightArrayTags;
     protected float[] parallelWeightArray;
 
     /**
@@ -402,13 +402,12 @@ public class AdaptiveBeamClassifier extends ClassifierTool<BeamWidthSequence> {
                 grammar.coarsePosSymbolSet());
         posTagger.trainingIterations = posTaggerTrainingIterations;
 
-        this.ccClassifier = new CompleteClosureClassifier();
-        ccClassifier.posTagger = posTagger;
+        this.ccClassifier = new CompleteClosureClassifier(grammar, posTagger, featureTemplates);
         ccClassifier.trainingIterations = ccClassifierTrainingIterations;
         // For the moment, at least, we'll use the same negative training bias and target negative recall for the
         // intermediate CC classifier as for the final beam-width model.
-        ccClassifier.targetNegativeRecall = targetNegativeRecall;
-        ccClassifier.negativeTrainingBias = negativeTrainingBias;
+        ccClassifier.targetNegativeRecall = .99f;
+        ccClassifier.negativeTrainingBias = 100f;
 
         BaseLogger.singleton().info("Reading and mapping the training corpus");
 
@@ -823,8 +822,13 @@ public class AdaptiveBeamClassifier extends ClassifierTool<BeamWidthSequence> {
      * populated.
      * 
      * @param sequence
+     * 
+     *            TODO @param classes Limits classification to specified classifiers (forcing negative classification
+     *            for classifiers > <code>classes</code>). Used during training.
+     * 
      * @param result
      */
+
     private void classify(final BeamWidthSequence sequence, final BeamWidthResult result) {
 
         sequence.allocatePredictionStorage();
@@ -909,7 +913,7 @@ public class AdaptiveBeamClassifier extends ClassifierTool<BeamWidthSequence> {
 
         this.parallelArrayOffsetMap = new Long2IntOpenHashMap();
         this.parallelArrayOffsetMap.defaultReturnValue(-1);
-        this.parallelWeightArrayTags = new short[arraySize];
+        this.parallelWeightArrayTags = new byte[arraySize];
         this.parallelWeightArray = new float[arraySize];
 
         Tagger.finalizeModel(allAvgWeights, observedWeightCounts, parallelArrayOffsetMap, parallelWeightArrayTags,
@@ -963,19 +967,19 @@ public class AdaptiveBeamClassifier extends ClassifierTool<BeamWidthSequence> {
             biases[goldClass] = lowBias;
             BeamWidthResult result = classify(devCorpusSequences);
             final float maxNegR = result.negativeRecall(goldClass);
-            boolean maxBiasSearch = false;
+            boolean minBiasSearch = false;
 
             if (maxNegR < targetNegativeRecall) {
                 BaseLogger.singleton().info(
-                        String.format("Cannot attain neg-R of %.3f; Searching for maximum bias at %.3f",
+                        String.format("Cannot attain neg-R of %.3f; Searching for minimum bias at %.3f",
                                 targetNegativeRecall * 100f, (maxNegR - .0001) * 100f));
-                maxBiasSearch = true;
+                minBiasSearch = true;
             }
 
             biases[goldClass] = 0;
             result = classify(devCorpusSequences);
             for (float r = result.negativeRecall(goldClass); r < targetNegativeRecall - epsilon
-                    || r > targetNegativeRecall + epsilon || Float.isNaN(r) || maxBiasSearch;) {
+                    || r > targetNegativeRecall + epsilon || Float.isNaN(r) || minBiasSearch;) {
 
                 final float prevBias = biases[goldClass];
                 biases[goldClass] = lowBias + (highBias - lowBias) / 2;
@@ -995,7 +999,7 @@ public class AdaptiveBeamClassifier extends ClassifierTool<BeamWidthSequence> {
                 r = result.negativeRecall(goldClass);
 
                 // Binary search for the target
-                if (r > targetNegativeRecall || (maxBiasSearch && r > (maxNegR - epsilon))) {
+                if (r > targetNegativeRecall || (minBiasSearch && r > (maxNegR - epsilon))) {
                     lowBias = biases[goldClass];
                 } else {
                     highBias = biases[goldClass];
@@ -1517,7 +1521,7 @@ public class AdaptiveBeamClassifier extends ClassifierTool<BeamWidthSequence> {
         private final short[] classBoundaryBeamWidths;
         private final String featureTemplates;
         private final Long2IntOpenHashMap parallelArrayOffsetMap;
-        private final short[] parallelWeightArrayTags;
+        private final byte[] parallelWeightArrayTags;
         private final float[] parallelWeightArray;
         private final float[] biases;
         private final int factoredOnlyOffset;
@@ -1525,7 +1529,7 @@ public class AdaptiveBeamClassifier extends ClassifierTool<BeamWidthSequence> {
         protected Model(final SymbolSet<String> vocabulary, final Tagger posTagger,
                 final UnaryConstraintClassifier unaryConstraintClassifier, final short[] classBoundaryBeamWidths,
                 final String featureTemplates, final Long2IntOpenHashMap parallelArrayOffsetMap,
-                final short[] parallelWeightArrayTags, final float[] parallelWeightArray, final float[] biases,
+                final byte[] parallelWeightArrayTags, final float[] parallelWeightArray, final float[] biases,
                 final int factoredOnlyOffset) {
 
             this.vocabulary = vocabulary;

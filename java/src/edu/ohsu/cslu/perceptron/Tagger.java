@@ -632,6 +632,46 @@ public class Tagger extends ClassifierTool<MulticlassTagSequence> {
         }
     }
 
+    /**
+     * Copy-and-paste from
+     * {@link #finalizeModel(FloatVector[], Long2ShortAVLTreeMap, Long2IntOpenHashMap, short[], float[])}, with a byte[]
+     * array for tags instead of short[].
+     * 
+     * @param avgWeights
+     * @param observedWeightCounts
+     * @param parallelArrayOffsetMap
+     * @param parallelWeightArrayTags
+     * @param parallelWeightArray
+     */
+    static void finalizeModel(final FloatVector[] avgWeights, final Long2ShortAVLTreeMap observedWeightCounts,
+            final Long2IntOpenHashMap parallelArrayOffsetMap, final byte[] parallelWeightArrayTags,
+            final float[] parallelWeightArray) {
+
+        // Iterate over populated features, probing each tag's perceptron model in turn.
+        int index = 0;
+
+        for (final long feature : observedWeightCounts.keySet()) {
+
+            // Start with the observed number of non-0 weights for this feature (leaving the matching entry in the
+            // weight array empty)
+            parallelWeightArrayTags[index] = (byte) observedWeightCounts.get(feature);
+            parallelArrayOffsetMap.put(feature, index++);
+
+            // Populate the associated weights for each class
+            for (byte c = 0; c < avgWeights.length; c++) {
+
+                final FloatVector modelWeights = avgWeights[c];
+                final float weight = (modelWeights instanceof LargeVector) ? ((LargeVector) modelWeights)
+                        .getFloat(feature) : modelWeights.getFloat((int) feature);
+
+                if (weight != 0) {
+                    parallelWeightArrayTags[index] = c;
+                    parallelWeightArray[index++] = weight;
+                }
+            }
+        }
+    }
+
     public SymbolSet<String> tagSet() {
         return tagSet;
     }

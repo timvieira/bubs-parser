@@ -222,7 +222,7 @@ public class TestCompleteClosure {
     @Test
     public void testOneSentenceTraining() throws IOException {
         final String tree = "(ROOT (S (NP (DT The) (NN fish) (NN market)) (VP (VB stands) (RB last))))";
-        final CompleteClosureClassifier classifier = new CompleteClosureClassifier("lw_rw");
+        final CompleteClosureClassifier classifier = new CompleteClosureClassifier(null, null, "lw_rw");
         classifier.trainingIterations = 2;
         classifier.lexicon = new SymbolSet<String>();
         classifier.decisionTreeUnkClassSet = new SymbolSet<String>();
