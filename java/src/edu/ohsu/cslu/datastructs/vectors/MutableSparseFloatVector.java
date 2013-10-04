@@ -18,7 +18,6 @@
  */
 package edu.ohsu.cslu.datastructs.vectors;
 
-import it.unimi.dsi.fastutil.ints.Int2FloatOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2FloatMap;
 import it.unimi.dsi.fastutil.longs.Long2FloatOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongRBTreeSet;
@@ -41,7 +40,7 @@ public final class MutableSparseFloatVector extends BaseNumericVector implements
 
     private static final long serialVersionUID = 1L;
 
-    private Int2FloatOpenHashMap map = new Int2FloatOpenHashMap();
+    private Long2FloatOpenHashMap map = new Long2FloatOpenHashMap();
 
     /**
      * Initializes all elements to a default value.
@@ -182,7 +181,7 @@ public final class MutableSparseFloatVector extends BaseNumericVector implements
     @Override
     public LongSet populatedDimensions() {
         final LongSet d = new LongRBTreeSet();
-        for (final int i : map.keySet()) {
+        for (final long i : map.keySet()) {
             if (map.get(i) != 0) {
                 d.add(i);
             }
@@ -199,8 +198,16 @@ public final class MutableSparseFloatVector extends BaseNumericVector implements
         }
 
         final MutableSparseFloatVector newVector = new MutableSparseFloatVector(length);
-        for (final int i : map.keySet()) {
-            newVector.set(i, getFloat(i) / v.getFloat(i));
+        if (v instanceof LargeVector) {
+            final LargeVector lv = (LargeVector) v;
+            for (final long i : map.keySet()) {
+                newVector.set(i, getFloat(i) / lv.getFloat(i));
+            }
+
+        } else {
+            for (final long i : map.keySet()) {
+                newVector.set(i, getFloat(i) / v.getFloat((int) i));
+            }
         }
 
         return newVector;
@@ -210,7 +217,7 @@ public final class MutableSparseFloatVector extends BaseNumericVector implements
     @Override
     public MutableSparseFloatVector elementwiseLog() {
         final MutableSparseFloatVector newVector = new MutableSparseFloatVector(length);
-        for (final int i : map.keySet()) {
+        for (final long i : map.keySet()) {
             newVector.set(i, (float) Math.log(getFloat(i)));
         }
 
@@ -364,11 +371,11 @@ public final class MutableSparseFloatVector extends BaseNumericVector implements
         }
 
         final MutableSparseFloatVector newVector = clone();
-        final Int2FloatOpenHashMap newMap = newVector.map;
-        final Int2FloatOpenHashMap otherMap = other.map;
+        final Long2FloatOpenHashMap newMap = newVector.map;
+        final Long2FloatOpenHashMap otherMap = other.map;
 
         newVector.length = Math.max(length, other.length);
-        for (final int key : otherMap.keySet()) {
+        for (final long key : otherMap.keySet()) {
             newMap.put(key, Math.max(map.get(key), otherMap.get(key)));
         }
         return newVector;
@@ -406,7 +413,7 @@ public final class MutableSparseFloatVector extends BaseNumericVector implements
     @Override
     public MutableSparseFloatVector clone() {
         final MutableSparseFloatVector clone = new MutableSparseFloatVector(length);
-        for (final int key : map.keySet()) {
+        for (final long key : map.keySet()) {
             clone.map.put(key, map.get(key));
         }
         return clone;

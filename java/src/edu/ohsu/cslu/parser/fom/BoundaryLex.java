@@ -491,31 +491,15 @@ public final class BoundaryLex extends FigureOfMeritModel {
         }
 
         private float outsideLeft(final int start, final int nt) {
-            int lex;
-            if (start <= 0) {
-                lex = grammar.nullToken();
-            } else {
-                lex = tokens[start - 1];
-            }
+            final int lex = start <= 0 ? grammar.nullToken() : tokens[start - 1];
             final float out = leftBoundaryLogProb[lex][nt];
-            if (out == Float.NEGATIVE_INFINITY) {
-                return unkLBLogProb[lex];
-            }
-            return out;
+            return out == Float.NEGATIVE_INFINITY ? unkLBLogProb[lex] : out;
         }
 
         private float outsideRight(final int end, final int nt) {
-            int lex;
-            if (end >= tokens.length) {
-                lex = grammar.nullToken();
-            } else {
-                lex = tokens[end];
-            }
+            final int lex = end >= tokens.length ? grammar.nullToken() : tokens[end];
             final float out = rightBoundaryLogProb[lex][nt];
-            if (out == Float.NEGATIVE_INFINITY) {
-                return unkRBLogProb[nt];
-            }
-            return out;
+            return out == Float.NEGATIVE_INFINITY ? unkRBLogProb[nt] : out;
         }
 
         @Override

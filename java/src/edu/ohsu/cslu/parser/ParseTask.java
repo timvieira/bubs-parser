@@ -284,7 +284,7 @@ public class ParseTask {
             // The binary parse already contains the UNK labels, so if we're printing just those, we don't need to do
             // anything
             if (addTokens) {
-                final String[] originalTokens = sentence.split("\\s+");
+                final String[] originalTokens = Strings.splitOnSpace(sentence);
 
                 int i = 0;
                 for (final Iterator<BinaryTree<String>> leafIterator = binaryParse.leafTraversal().iterator(); leafIterator
@@ -297,7 +297,8 @@ public class ParseTask {
             }
         } else {
             // The normal case is that we want to replace UNK labels with the original sentence tokens
-            binaryParse.replaceLeafLabels(sentence.split("\\s+"));
+            // TODO We could save a little time here by storing the input tokens as Strings
+            binaryParse.replaceLeafLabels(Strings.splitOnSpace(sentence));
         }
         if (binaryTree) {
             return binaryParse.toString();
