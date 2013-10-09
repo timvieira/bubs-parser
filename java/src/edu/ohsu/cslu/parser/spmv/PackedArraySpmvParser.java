@@ -66,7 +66,7 @@ public abstract class PackedArraySpmvParser<G extends SparseMatrixGrammar> exten
 
             final int threads = rowThreads * cellThreads;
 
-            GlobalConfigProperties.singleton().setProperty(ParserDriver.OPT_CONFIGURED_THREAD_COUNT,
+            GlobalConfigProperties.singleton().setProperty(ParserDriver.RUNTIME_CONFIGURED_THREAD_COUNT,
                     Integer.toString(threads));
 
             // Configure thread pool and current-task list

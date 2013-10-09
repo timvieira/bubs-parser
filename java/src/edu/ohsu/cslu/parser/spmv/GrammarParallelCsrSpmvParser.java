@@ -74,7 +74,7 @@ public final class GrammarParallelCsrSpmvParser extends CsrSpmvParser {
         segments[i] = grammar.csrBinaryRowOffsets.length - 1;
 
         this.threads = i;
-        GlobalConfigProperties.singleton().setProperty(ParserDriver.OPT_CONFIGURED_THREAD_COUNT,
+        GlobalConfigProperties.singleton().setProperty(ParserDriver.RUNTIME_CONFIGURED_THREAD_COUNT,
                 Integer.toString(threads));
         this.binaryRowSegments = new int[i + 1];
         System.arraycopy(segments, 0, binaryRowSegments, 0, binaryRowSegments.length);

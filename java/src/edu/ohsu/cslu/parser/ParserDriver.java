@@ -81,6 +81,8 @@ import edu.ohsu.cslu.parser.fom.InsideProb;
 import edu.ohsu.cslu.parser.real.RealInsideOutsideCscSparseMatrixGrammar;
 import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser;
 import edu.ohsu.cslu.parser.spmv.SparseMatrixVectorParser.PackingFunctionType;
+import edu.ohsu.cslu.perceptron.AdaptiveBeamClassifier;
+import edu.ohsu.cslu.perceptron.CompleteClosureClassifier;
 import edu.ohsu.cslu.util.Evalb.BracketEvaluator;
 import edu.ohsu.cslu.util.Evalb.EvalbResult;
 
@@ -232,7 +234,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
      * Used primarily in model training (e.g., to produce gold-constrained parses). Note: outputting binary tree
      * structures requires that factored labels are retained as well.
      */
-    @Option(name = "-binary", usage = "Leave parse tree output in binary-branching form")
+    @Option(name = "-binary", optionalChoiceGroup = "binary", usage = "Leave parse tree output in binary-branching form")
     public boolean binaryTreeOutput = false;
 
     // == Processing options ==
@@ -272,12 +274,23 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     @Option(name = "-beamModel", metaVar = "model file", usage = "Beam-width prediction model (Bodenstab et al., 2011)")
     private String beamModelFileName = null;
 
+    /** This option is largely obsoleted by '-ccClassifier' and '-abModel' */
     @Option(name = "-ccModel", hidden = true, metaVar = "model file", usage = "CSLU Chart Constraints model (Roark and Hollingshead, 2008)")
     private String chartConstraintsModel = null;
 
+    /**
+     * Complete closure classifier (as described in Bodenstab et al., 2011,
+     * "Beam-Width Prediction for Efficient Context-Free Parsing"). These models are trained using
+     * {@link CompleteClosureClassifier}.
+     */
     @Option(name = "-ccClassifier", hidden = true, metaVar = "model file", usage = "Complete closure classifier model (Java Serialized)")
     private File completeClosureClassifierFile = null;
 
+    /**
+     * Adaptive beam-width model (as described in Bodenstab et al., 2011,
+     * "Beam-Width Prediction for Efficient Context-Free Parsing"). These models are trained using
+     * {@link AdaptiveBeamClassifier}.
+     */
     @Option(name = "-abModel", hidden = true, metaVar = "model file", usage = "Adaptive-beam model (Java Serialized)")
     private File adaptiveBeamModelFile = null;
 
@@ -291,6 +304,10 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     @Option(name = "-pm", hidden = true, metaVar = "model file", usage = "Cell selector model file")
     private File[] pruningModels = null;
 
+    /**
+     * Classifies unknown or rare tokens. Used primarily for research, as the token clustering approaches don't seem to
+     * work all that well
+     */
     @Option(name = "-tcModel", hidden = true, metaVar = "model file", usage = "Token classifier model file")
     private File tokenClassifierModel = null;
 
@@ -301,7 +318,11 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     @Option(name = "-maxSubtreeSpan", hidden = true, metaVar = "span", usage = "Maximum subtree span for limited-depth parsing")
     private int maxSubtreeSpan;
 
-    @Option(name = "-head-rules", hidden = true, metaVar = "ruleset", usage = "Enables head-finding using a Charniak-style head-finding ruleset. Specify ruleset as 'charniak' or a rule file. Ignored if -binary is specified.")
+    /**
+     * Specifies a ruleset and performs head-finding (thus labeling dependency structure as well as constituency). This
+     * head-finding approach is fairly simplistic, but much faster than the more accurate Stanford parser approach.
+     */
+    @Option(name = "-head-rules", hidden = true, optionalChoiceGroup = "binary", metaVar = "ruleset", usage = "Enables head-finding using a Charniak-style head-finding ruleset. Specify ruleset as 'charniak' or a rule file.")
     private String headRules = null;
     private HeadPercolationRuleset headPercolationRuleset = null;
 
@@ -313,51 +334,47 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     public boolean debug = false;
 
     /**
-     * Configuration property key for the number of cell-level threads requested by the user. We handle threading at
-     * three levels; threading per-sentence is handled by the command-line tool infrastructure and specified with the
-     * standard '-xt' parameter. Cell-level and grammar-level threading are handled by the parser instance and specified
-     * with this option and with {@link #OPT_GRAMMAR_THREAD_COUNT}.
+     * Specifies the number of cell-level threads. We handle threading at three levels; threading per-sentence is
+     * handled by the command-line tool infrastructure and specified with the standard '-xt' parameter. Cell-level and
+     * grammar-level threading are handled by the parser instance and specified with this option and with
+     * {@link #OPT_GRAMMAR_THREAD_COUNT}.
      */
     public final static String OPT_CELL_THREAD_COUNT = "cellThreads";
 
     /**
-     * Configuration property key for the number of grammar-level threads requested by the user. We handle threading at
-     * three levels; threading per-sentence is handled by the command-line tool infrastructure and specified with the
-     * standard '-xt' parameter. Cell-level and grammar-level threading are handled by the parser instance and specified
-     * with this option and with {@link #OPT_CELL_THREAD_COUNT}.
+     * Specifies the number of grammar-level threads. We handle threading at three levels; threading per-sentence is
+     * handled by the command-line tool infrastructure and specified with the standard '-xt' parameter. Cell-level and
+     * grammar-level threading are handled by the parser instance and specified with this option and with
+     * {@link #OPT_CELL_THREAD_COUNT}.
      */
     public final static String OPT_GRAMMAR_THREAD_COUNT = "grammarThreads";
 
     /**
-     * Configuration property key for the number of row-level or cell-level threads actually used. In some cases the
-     * number of threads requested is impractical (e.g., if it is greater than the maximum number of cells in a row or
-     * greater than the number of grammar rows). {@link Parser} instances which make use of
-     * {@link #OPT_GRAMMAR_THREAD_COUNT} should populate this property to indicate the number of threads actually used.
-     * Among other potential uses, this allows {@link #cleanup()} to report accurate timing information.
+     * The number of row-level or cell-level threads actually used. In some cases the number of threads requested is
+     * impractical (e.g., if it is greater than the maximum number of cells in a row or greater than the number of
+     * grammar rows). {@link Parser} instances which make use of {@link #OPT_GRAMMAR_THREAD_COUNT} should populate this
+     * property to indicate the number of threads actually used. Among other potential uses, this allows
+     * {@link #cleanup()} to report accurate timing information.
      */
-    public final static String OPT_CONFIGURED_THREAD_COUNT = "actualThreads";
+    public final static String RUNTIME_CONFIGURED_THREAD_COUNT = "actualThreads";
 
     /**
-     * Configuration property key for the comparator class used to order non-terminals. Implementations are in
-     * {@link SparseMatrixGrammar}. The default is "PosEmbeddedComparator". Other valid values are "PosFirstComparator",
-     * "LexicographicComparator".
+     * Specifies the comparator class used to order non-terminals. Implementations are in {@link SparseMatrixGrammar}.
+     * The default is "PosEmbeddedComparator". Other valid values are "PosFirstComparator", "LexicographicComparator".
      */
     public final static String OPT_NT_COMPARATOR_CLASS = "ntComparatorClass";
 
     /**
-     * Configuration property key enabling complete categories above the span limit (when limiting span-length with
-     * -maxSubtreeSpan). By default, only incomplete (factored) categories are allowed when L < span < n.
+     * Enables complete categories above the span limit (when limiting span-length with -maxSubtreeSpan). By default,
+     * only incomplete (factored) categories are allowed when L < span < n.
      */
     public final static String OPT_ALLOW_COMPLETE_ABOVE_SPAN_LIMIT = "allowCompleteAboveSpanLimit";
 
-    /** Configuration property key for discriminative training feature templates. */
-    public final static String OPT_DISC_FEATURE_TEMPLATES = "featureTemplates";
-
     /**
-     * Configuration property key enabling bracket evaluation of parse failures (i.e., penalizing recall in the event of
-     * a parse failure). We default to ignoring empty parses (and reporting them separately), to match the behavior of
-     * Collins' standard <code>evalb</code> tool. But in some cases, including those failures directly in the F1 measure
-     * is useful. Note: This option is ignored when parsing from input other than gold trees.
+     * Enables bracket evaluation of parse failures (i.e., penalizing recall in the event of a parse failure). We
+     * default to ignoring empty parses (and reporting them separately), to match the behavior of Collins' standard
+     * <code>evalb</code> tool. But in some cases, including those failures directly in the F1 measure is useful. Note:
+     * This option is ignored when parsing from input other than gold trees.
      */
     public final static String OPT_EVAL_PARSE_FAILURES = "evalParseFailures";
 
@@ -382,14 +399,14 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
 
     /**
      * Use the prioritization / FOM model's estimate of outside probabilities (eliminating the outside pass). Note - in
-     * preliminary trials, this method doesn't appear to work all that well. Boolean property
+     * preliminary trials, this method doesn't appear to work all that well. Boolean property.
      */
     public final static String OPT_HEURISTIC_OUTSIDE = "heuristicOutside";
 
-    /** Configuration property key to disable factored-only classification in {@link AdaptiveBeamModel}. */
+    /** Disables factored-only classification in {@link AdaptiveBeamModel}. Boolean property. */
     public final static String OPT_DISABLE_FACTORED_ONLY_CLASSIFIER = "disableFactoredOnlyClassifier";
 
-    /** Configuration property key to disable unary-constraint classification in {@link AdaptiveBeamModel}. */
+    /** Disables unary-constraint classification in {@link AdaptiveBeamModel}. Boolean property. */
     public final static String OPT_DISABLE_UNARY_CLASSIFIER = "disableUnaryClassifier";
 
     //
@@ -747,13 +764,16 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
 
             try {
                 parseTask.evaluate(evaluator);
-                output.append(parseTask.statsString());
             } catch (final Exception e) {
                 if (BaseLogger.singleton().isLoggable(Level.SEVERE)) {
                     output.append("\nERROR: Evaluation failed: " + e.toString());
                 }
+            }
+
+            if (BaseLogger.singleton().isLoggable(Level.FINE)) {
                 output.append(parseTask.statsString());
             }
+
             System.out.println(output.toString());
             wordsParsed += parseTask.sentenceLength();
             if (parseTask.parseFailed()) {
@@ -762,6 +782,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
                 reparsedSentences++;
             }
             totalReparses += parseTask.reparseStages;
+
         } else {
             failedParses++;
             System.out.println("()");
@@ -774,8 +795,8 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
 
         // If the individual parser configured a thread count (e.g. CellParallelCsrSpmvParser), compute
         // CPU-time using that thread count; otherwise, assume maxThreads is correct
-        final int threads = GlobalConfigProperties.singleton().containsKey(OPT_CONFIGURED_THREAD_COUNT) ? GlobalConfigProperties
-                .singleton().getIntProperty(OPT_CONFIGURED_THREAD_COUNT) : maxThreads;
+        final int threads = GlobalConfigProperties.singleton().containsKey(RUNTIME_CONFIGURED_THREAD_COUNT) ? GlobalConfigProperties
+                .singleton().getIntProperty(RUNTIME_CONFIGURED_THREAD_COUNT) : maxThreads;
 
         // Note that this CPU-time computation does not include GC time
         final float cpuTime = parseTime * threads;
