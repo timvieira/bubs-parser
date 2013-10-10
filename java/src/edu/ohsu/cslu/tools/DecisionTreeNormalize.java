@@ -29,7 +29,7 @@ public class DecisionTreeNormalize extends BaseTextNormalizationTool {
         br.reset();
 
         for (final String line : inputLines(br)) {
-            final NaryTree<String> tree = NaryTree.read(line, String.class);
+            final NaryTree<String> tree = NaryTree.read(line.trim(), String.class);
 
             for (final NaryTree<String> node : tree.inOrderTraversal()) {
 
