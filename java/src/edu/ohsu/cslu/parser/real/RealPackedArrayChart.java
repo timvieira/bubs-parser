@@ -806,6 +806,8 @@ public class RealPackedArrayChart extends Chart {
         final double startSymbolInsideProbability = startSymbolInsideProbability();
         final int startSymbolScalingStep = insideScalingSteps[cellIndex(0, size)];
 
+        final double[] rightChildInsideProbabilities = new double[cscGrammar.numNonTerms()];
+
         for (short span = 1; span <= size; span++) {
             for (short start = 0; start < size - span + 1; start++) {
 
@@ -860,9 +862,7 @@ public class RealPackedArrayChart extends Chart {
                     final int leftStart = minLeftChildIndex(leftCellIndex);
                     final int leftEnd = maxLeftChildIndex(leftCellIndex);
 
-                    final RealPackedArrayChartCell rightChildCell = getCell(midpoint, end);
-                    rightChildCell.allocateTemporaryStorage();
-                    final double[] rightChildInsideProbabilities = rightChildCell.tmpCell.insideProbabilities;
+                    getCell(midpoint, end).copyInsideProbabilities(rightChildInsideProbabilities);
 
                     // Iterate over parents
                     for (int i = parentStart; i < parentEnd; i++) {
@@ -1607,6 +1607,13 @@ public class RealPackedArrayChart extends Chart {
 
         public void allocateTemporaryStorage() {
             allocateTemporaryStorage(false, false);
+        }
+
+        public void copyInsideProbabilities(final double[] denseInsideProbabilities) {
+            Arrays.fill(denseInsideProbabilities, 0);
+            for (int i = offset; i < offset + numNonTerminals[cellIndex]; i++) {
+                denseInsideProbabilities[nonTerminalIndices[i]] = insideProbabilities[i];
+            }
         }
 
         public void allocateTemporaryStorage(final boolean allocateOutsideProbabilities,
