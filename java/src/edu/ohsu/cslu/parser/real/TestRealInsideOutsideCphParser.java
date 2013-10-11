@@ -38,6 +38,7 @@ import org.junit.runner.RunWith;
 
 import cltool4j.ConfigProperties;
 import cltool4j.GlobalConfigProperties;
+import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.Parser.DecodeMethod;
@@ -82,7 +83,8 @@ public class TestRealInsideOutsideCphParser {
 
     @Before
     public void setUp() throws Exception {
-        grammar = new RealInsideOutsideCscSparseMatrixGrammar(JUnit.unitTestDataAsReader("grammars/eng.R2.gr.gz"));
+        grammar = new RealInsideOutsideCscSparseMatrixGrammar(JUnit.unitTestDataAsReader("grammars/eng.R2.gr.gz"),
+                new DecisionTreeTokenClassifier());
 
         final ConfigProperties props = GlobalConfigProperties.singleton();
         props.put(Parser.PROPERTY_MAX_BEAM_WIDTH, "30");
@@ -148,13 +150,15 @@ public class TestRealInsideOutsideCphParser {
 
         // Max-recall decoding
         GlobalConfigProperties.singleton().setProperty(Parser.PROPERTY_MAXC_LAMBDA, "0");
-        parser = new RealInsideOutsideCphParser(opts, new RealInsideOutsideCscSparseMatrixGrammar(simpleGrammar2()));
+        parser = new RealInsideOutsideCphParser(opts, new RealInsideOutsideCscSparseMatrixGrammar(simpleGrammar2(),
+                new DecisionTreeTokenClassifier()));
         assertEquals("(ROOT (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))", parser
                 .parseSentence(sentence).parseBracketString(false));
 
         // Max-precision decoding
         GlobalConfigProperties.singleton().setProperty(Parser.PROPERTY_MAXC_LAMBDA, "1");
-        parser = new RealInsideOutsideCphParser(opts, new RealInsideOutsideCscSparseMatrixGrammar(simpleGrammar2()));
+        parser = new RealInsideOutsideCphParser(opts, new RealInsideOutsideCscSparseMatrixGrammar(simpleGrammar2(),
+                new DecisionTreeTokenClassifier()));
         assertEquals("(ROOT (S (NP (DT The) (NN fish) (NN market)) (VP (VB stands) (RB last))))",
                 parser.parseSentence(sentence).parseBracketString(false));
     }
@@ -172,13 +176,15 @@ public class TestRealInsideOutsideCphParser {
 
         // Max-recall decoding
         GlobalConfigProperties.singleton().setProperty(Parser.PROPERTY_MAXC_LAMBDA, "0");
-        parser = new RealInsideOutsideCphParser(opts, new RealInsideOutsideCscSparseMatrixGrammar(simpleGrammar2()));
+        parser = new RealInsideOutsideCphParser(opts, new RealInsideOutsideCscSparseMatrixGrammar(simpleGrammar2(),
+                new DecisionTreeTokenClassifier()));
         assertEquals("(ROOT (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))", parser
                 .parseSentence(sentence).parseBracketString(false));
 
         // Max-precision decoding
         GlobalConfigProperties.singleton().setProperty(Parser.PROPERTY_MAXC_LAMBDA, "1");
-        parser = new RealInsideOutsideCphParser(opts, new RealInsideOutsideCscSparseMatrixGrammar(simpleGrammar2()));
+        parser = new RealInsideOutsideCphParser(opts, new RealInsideOutsideCscSparseMatrixGrammar(simpleGrammar2(),
+                new DecisionTreeTokenClassifier()));
         assertEquals("(ROOT (S (DT The) (NN fish) (NN market) (VB stands) (RB last)))", parser.parseSentence(sentence)
                 .parseBracketString(false));
     }
@@ -191,7 +197,8 @@ public class TestRealInsideOutsideCphParser {
         opts.fomModel = new InsideProb();
         final String sentence = "The fish market stands last";
 
-        parser = new RealInsideOutsideCphParser(opts, new RealInsideOutsideCscSparseMatrixGrammar(simpleGrammar2()));
+        parser = new RealInsideOutsideCphParser(opts, new RealInsideOutsideCscSparseMatrixGrammar(simpleGrammar2(),
+                new DecisionTreeTokenClassifier()));
         assertEquals("(ROOT (S (NP (DT The) (NP (NN fish) (NN market))) (VP (VB stands) (RB last))))", parser
                 .parseSentence(sentence).parseBracketString(false));
     }
@@ -334,7 +341,7 @@ public class TestRealInsideOutsideCphParser {
 
         GlobalConfigProperties.singleton().setProperty(Parser.PROPERTY_MAXC_LAMBDA, "0");
         parser = new RealInsideOutsideCphParser(opts, new RealInsideOutsideCscSparseMatrixGrammar(
-                JUnit.unitTestDataAsReader("grammars/eng.R0.gr.gz")));
+                JUnit.unitTestDataAsReader("grammars/eng.R0.gr.gz"), new DecisionTreeTokenClassifier()));
         for (int i = 0; i < input.length; i++) {
             assertEquals("Failed on sentence " + i, expected[i],
                     parser.parseSentence(input[i]).parseBracketString(false));

@@ -693,7 +693,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
             return new LeftCscSparseMatrixGrammar(grammarFile, tokenClassifier, LeftShiftFunction.class);
 
         case RealInsideOutsideCartesianProductHash:
-            return new RealInsideOutsideCscSparseMatrixGrammar(grammarFile);
+            return new RealInsideOutsideCscSparseMatrixGrammar(grammarFile, tokenClassifier);
 
         default:
             throw new IllegalArgumentException("Unsupported parser type: " + parserType);

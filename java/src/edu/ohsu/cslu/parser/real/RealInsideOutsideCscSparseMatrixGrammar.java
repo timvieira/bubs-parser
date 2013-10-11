@@ -62,6 +62,7 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar.StringNonTerminal;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.StringNonTerminalComparator;
 import edu.ohsu.cslu.grammar.StringProduction;
 import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.grammar.TokenClassifier;
 import edu.ohsu.cslu.grammar.Vocabulary;
 import edu.ohsu.cslu.lela.FractionalCountGrammar;
 import edu.ohsu.cslu.parser.ParserDriver;
@@ -278,12 +279,17 @@ public class RealInsideOutsideCscSparseMatrixGrammar extends Grammar {
      * Reads the grammar into memory and sorts non-terminals (V) according to their occurrence in binary rules. This can
      * allow more efficient iteration in grammar intersection (e.g., skipping NTs only valid as left children in the
      * right cell) and more efficient chart storage (e.g., omitting storage for POS NTs in chart rows >= 2).
+     * 
+     * @param grammarFile
+     * @param tokenClassifier
      */
-    public RealInsideOutsideCscSparseMatrixGrammar(final Reader grammarFile) throws IOException {
+    public RealInsideOutsideCscSparseMatrixGrammar(final Reader grammarFile, final TokenClassifier tokenClassifier)
+            throws IOException {
 
         final List<StringProduction> pcfgRules = new LinkedList<StringProduction>();
         final List<StringProduction> lexicalRules = new LinkedList<StringProduction>();
 
+        this.tokenClassifier = tokenClassifier;
         BaseLogger.singleton().finer("INFO: Reading grammar ... ");
         this.tmpStringPool = new StringPool();
         this.grammarFormat = readPcfgAndLexicon(grammarFile, pcfgRules, lexicalRules);
