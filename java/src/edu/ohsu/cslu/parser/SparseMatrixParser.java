@@ -133,8 +133,8 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
         initChart(parseTask);
         parseTask.reparseStages = -1;
 
-        final Stage[] reparseStages = exhaustiveSearch ? new Stage[] { Stage.EXHAUSTIVE } : opts.reparseStrategy
-                .stages();
+        final Stage[] reparseStages = GlobalConfigProperties.singleton().getIntProperty(PROPERTY_MAX_BEAM_WIDTH,
+                Integer.MAX_VALUE) == 0 ? new Stage[] { Stage.EXHAUSTIVE } : opts.reparseStrategy.stages();
         for (final Parser.ReparseStrategy.Stage stage : reparseStages) {
 
             final long stageStartTime = System.currentTimeMillis();
