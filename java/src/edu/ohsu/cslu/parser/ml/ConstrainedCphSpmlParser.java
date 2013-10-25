@@ -287,6 +287,7 @@ public class ConstrainedCphSpmlParser extends SparseMatrixLoopParser<LeftCscSpar
                     }
 
                     final float jointProbability = grammarProbability + tmpCell.insideProbabilities[child];
+
                     // Our chart structure can't handle unary self-loops, so don't reinsert a parent that is already a
                     // unary for this cell
                     if (jointProbability > tmpCell.insideProbabilities[parent]
@@ -348,7 +349,7 @@ public class ConstrainedCphSpmlParser extends SparseMatrixLoopParser<LeftCscSpar
                             && grammar.nonTermSet.getBaseIndex(nt) == constrainingParent) {
                         observedParentSplits.add(nt);
 
-                        if (tmpCell.insideProbabilities[nt] < minParentInsideProbability) {
+                        if (nt != maxChild && tmpCell.insideProbabilities[nt] < minParentInsideProbability) {
                             minParentSplit = nt;
                         }
                     }
