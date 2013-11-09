@@ -180,7 +180,7 @@
                     <arg value="-out" />
                     <arg value="package-jar-tmp/META-INF/HELP.txt" />
                     <arg value="-runtimecp" />
-                    <arg value="package-jar-tmp/META-INF" />
+                    <arg value="package-jar-tmp" />
                 </javadoc>
             </then>
         </if>
