@@ -41,6 +41,7 @@ import edu.ohsu.cslu.perceptron.AdaptiveBeamClassifier.UnaryConstraintSequence;
 import edu.ohsu.cslu.perceptron.BeamWidthSequence;
 import edu.ohsu.cslu.perceptron.MulticlassTagSequence;
 import edu.ohsu.cslu.perceptron.Tagger;
+import edu.ohsu.cslu.perceptron.UnaryConstraintClassifier;
 
 /**
  * Implements 'Adaptive-beam' modeling, using a series of discriminative models to classify the beam width of each cell
@@ -122,8 +123,9 @@ public class AdaptiveBeamModel extends ChainableCellSelectorModel implements Cel
             this.beamWidths = new short[cells];
             this.factoredOnly = new PackedBitVector(cells);
 
-            final AdaptiveBeamClassifier.UnaryConstraintClassifier unaryConstraintClassifier = UNARY_CONSTRAINTS_DISABLED ? null
-                    : classifier.unaryConstraintClassifier();
+            final UnaryConstraintClassifier unaryConstraintClassifier = UNARY_CONSTRAINTS_DISABLED ? null : classifier
+                    .unaryConstraintClassifier();
+            // TODO We really only need to allocate a unary classification for each span-1 cell
             this.unariesDisallowed = unaryConstraintClassifier != null ? new PackedBitVector(cells) : null;
 
             // POS-tag the sentence with a discriminative tagger
@@ -161,6 +163,7 @@ public class AdaptiveBeamModel extends ChainableCellSelectorModel implements Cel
 
                     // Classify unaries in span-1 cells
                     if (span == 1 && unaryConstraintClassifier != null) {
+                        // TODO Index by start instead of cell index
                         unariesDisallowed.set(cellIndex,
                                 unaryConstraintClassifier.classify(unaryConstraintSequence, start));
                     }
