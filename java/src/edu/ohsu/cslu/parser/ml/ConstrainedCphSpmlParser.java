@@ -241,6 +241,14 @@ public class ConstrainedCphSpmlParser extends SparseMatrixLoopParser<LeftCscSpar
         targetCell.finalizeCell();
     }
 
+    private short bottomConstrainingParent(final short start, final short end) {
+
+        final int constrainingCellIndex = constrainingChart.cellIndex(start, end);
+        final int constrainingEntryIndex = constrainingChart.offset(constrainingCellIndex)
+                + constrainingChart.unaryChainLength[constrainingCellIndex] - 1;
+        return constrainingChart.nonTerminalIndices[constrainingEntryIndex];
+    }
+
     /**
      * Multiplies the unary grammar matrix (stored sparsely) by the contents of this cell (stored densely), and
      * populates this chart cell. Used to populate unary rules.
@@ -340,6 +348,8 @@ public class ConstrainedCphSpmlParser extends SparseMatrixLoopParser<LeftCscSpar
                     }
                 }
 
+                // Find all the observed splits of the constraining parent, and the minimum-probability split which is
+                // not already participating in the unary chain
                 final ShortList observedParentSplits = new ShortArrayList();
                 final float minParentInsideProbability = Float.POSITIVE_INFINITY;
                 short minParentSplit = -1;
@@ -349,10 +359,18 @@ public class ConstrainedCphSpmlParser extends SparseMatrixLoopParser<LeftCscSpar
                             && grammar.nonTermSet.getBaseIndex(nt) == constrainingParent) {
                         observedParentSplits.add(nt);
 
-                        if (nt != maxChild && tmpCell.insideProbabilities[nt] < minParentInsideProbability) {
+                        if (nt != maxChild && tmpCell.insideProbabilities[nt] < minParentInsideProbability
+                                && !inUnaryChain(maxChild, nt, tmpCell, end)) {
                             minParentSplit = nt;
                         }
                     }
+                }
+
+                if (minParentSplit == -1) {
+                    // There isn't much we can do in this case - we already populated all splits of the non-terminal in
+                    // the unary chain. We'll have to give up and drop entries from the
+                    // chain.
+                    break;
                 }
 
                 ShortList chosenParentSplits = null;
@@ -385,12 +403,18 @@ public class ConstrainedCphSpmlParser extends SparseMatrixLoopParser<LeftCscSpar
         }
     }
 
-    private short bottomConstrainingParent(final short start, final short end) {
+    private boolean inUnaryChain(final short parent, final short possibleChild, final TemporaryChartCell tmpCell,
+            final short end) {
 
-        final int constrainingCellIndex = constrainingChart.cellIndex(start, end);
-        final int constrainingEntryIndex = constrainingChart.offset(constrainingCellIndex)
-                + constrainingChart.unaryChainLength[constrainingCellIndex] - 1;
-        return constrainingChart.nonTerminalIndices[constrainingEntryIndex];
+        for (short nt = parent; grammar.packingFunction.unpackRightChild(tmpCell.packedChildren[nt]) == Production.UNARY_PRODUCTION;) {
+
+            nt = (short) grammar.packingFunction.unpackLeftChild(tmpCell.packedChildren[nt]);
+
+            if (nt == possibleChild) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
