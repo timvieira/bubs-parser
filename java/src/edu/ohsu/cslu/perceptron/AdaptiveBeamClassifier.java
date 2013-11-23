@@ -264,7 +264,7 @@ public class AdaptiveBeamClassifier extends ClassifierTool<BeamWidthSequence> {
      * rs1,rs2,rs4,rs6,rs8,rs10
      * </pre>
      */
-    private final static String DEFAULT_FEATURE_TEMPLATES = "ltm2,ltm1,lt,ltp1,rtm1,rt,rtp1,ltp1,lwm1,lw,rw,rwp1,lum1,lu,ru,rup1,ltm1_lt,rt_rtp1,lwm1_lw,rw_rwp1,lum1_lu,ru_rup1,s1,s2,s3,s4,s5,s10,s20,s30,s40,s50,rs2,rs4,rs6,rs8,rs10";
+    final static String DEFAULT_FEATURE_TEMPLATES = "ltm2,ltm1,lt,ltp1,rtm1,rt,rtp1,ltp1,lwm1,lw,rw,rwp1,lum1,lu,ru,rup1,ltm1_lt,rt_rtp1,lwm1_lw,rw_rwp1,lum1_lu,ru_rup1,s1,s2,s3,s4,s5,s10,s20,s30,s40,s50,rs2,rs4,rs6,rs8,rs10";
 
     @Override
     protected final String DEFAULT_FEATURE_TEMPLATES() {
@@ -293,9 +293,8 @@ public class AdaptiveBeamClassifier extends ClassifierTool<BeamWidthSequence> {
         this.featureTemplates = featureTemplates;
     }
 
-    @Override
     void init(final Grammar g) {
-        super.init(g);
+        super.init(g.lexSet, g.unkClassSet());
         this.grammar = g;
         this.binarization = g.binarization();
         this.grammarFormat = g.grammarFormat;
@@ -506,7 +505,7 @@ public class AdaptiveBeamClassifier extends ClassifierTool<BeamWidthSequence> {
         }
 
         //
-        // Iterate over training corpus, training the factored-only model
+        // Train the factored-only and unary constraint models
         //
         if (factoredOnlyClassifierTrainingIterations > 0) {
             BaseLogger.singleton()
@@ -642,7 +641,7 @@ public class AdaptiveBeamClassifier extends ClassifierTool<BeamWidthSequence> {
         finalizeMaps();
         final long ms = System.currentTimeMillis() - t0;
         BaseLogger.singleton().info(
-                String.format("Parsed %d of %d %s sentences in %d ms  (%d failures, %.1f w/s)", trainingSetSentences
+                String.format("\nParsed %d of %d %s sentences in %d ms  (%d failures, %.1f w/s)", trainingSetSentences
                         - trainingSetParseFailures, trainingSetSentences, corpus, ms, trainingSetParseFailures,
                         trainingSetWords * 1000f / ms));
     }
@@ -964,7 +963,7 @@ public class AdaptiveBeamClassifier extends ClassifierTool<BeamWidthSequence> {
             float highBias = avgWeights[goldClass].max() * fe.templateCount();
 
             // Check whether we can attain the requested recall, and reset the target accordingly
-            biases[goldClass] = lowBias;
+            biases[goldClass] = lowBias - .01f;
             BeamWidthResult result = classify(devCorpusSequences);
             final float maxNegR = result.negativeRecall(goldClass);
             boolean minBiasSearch = false;
@@ -1308,172 +1307,6 @@ public class AdaptiveBeamClassifier extends ClassifierTool<BeamWidthSequence> {
     }
 
     /**
-     * Unary constraint classifier, as described in Roark et al., 2012
-     * "Finite-State Chart Constraints for Reduced Complexity Context-Free Parsing Pipelines". This implementation
-     * trains and tests unary-constraint models only for span-1 cells (consistent with the approach in Roark et al.). We
-     * experimented with classifying every open cell in the chart, but it appears that it's very difficult to correctly
-     * classify cells spanning more than one word, reducing precision of positive classifications (and thus incorrectly
-     * closing some cells to unaries).
-     * 
-     * Implementation note: we consider a 'true' binary classification to be a closed cell, so we generally target
-     * negative recall (i.e., the number of open cells correctly classified as such). To limit inference failures, that
-     * negative-recall target ({@link BinaryClassifier#targetNegativeRecall}) should be very high - e.g., .99-.999.
-     */
-    public class UnaryConstraintClassifier extends BinaryClassifier<BinaryTagSequence> {
-
-        private static final long serialVersionUID = 1L;
-
-        SymbolSet<String> unigramSuffixSet;
-        SymbolSet<String> bigramSuffixSet;
-
-        /**
-         * @param featureTemplates
-         * @param grammar
-         */
-        public UnaryConstraintClassifier(final String featureTemplates, final Grammar grammar) {
-            super(featureTemplates, grammar);
-            final SymbolSet<String> tagSet = new SymbolSet<String>();
-            tagSet.addSymbol("F");
-            tagSet.addSymbol("T");
-            tagSet.defaultReturnValue(tagSet.addSymbol(Grammar.nullSymbolStr));
-
-            this.unigramSuffixSet = new SymbolSet<String>();
-            this.unigramSuffixSet.defaultReturnValue(Grammar.nullSymbolStr);
-
-            this.bigramSuffixSet = new SymbolSet<String>();
-            this.bigramSuffixSet.defaultReturnValue(Grammar.nullSymbolStr);
-
-            this.featureExtractor = new BinaryTaggerFeatureExtractor(featureTemplates, lexicon, grammar.unkClassSet(),
-                    nonterminalVocabulary, tagSet);
-        }
-
-        /**
-         * @param trainingCorpusSequences
-         * @param devCorpusSequences
-         */
-        public final void train(final ArrayList<BinaryTagSequence> trainingCorpusSequences,
-                final ArrayList<BinaryTagSequence> devCorpusSequences) {
-            //
-            // Iterate over training corpus, training the model
-            //
-            for (int i = 1, j = 0; i <= trainingIterations; i++, j = 0) {
-
-                for (final BinaryTagSequence sequence : trainingCorpusSequences) {
-                    // Train on all span-1 cells
-                    for (short start = 0; start < sequence.length; start++) {
-                        train(sequence.goldClass(start), featureExtractor.featureVector(sequence, start));
-                    }
-
-                    progressBar(100, 5000, j++);
-                }
-
-                // Evaluate on the dev-set
-                if (!devCorpusSequences.isEmpty()) {
-                    System.out.println();
-                    final edu.ohsu.cslu.perceptron.BinaryClassifier.BinaryClassifierResult result = classify(devCorpusSequences);
-                    BaseLogger
-                            .singleton()
-                            .info(String
-                                    .format("Iteration=%d Devset Accuracy=%.2f  P=%.3f  R=%.3f  neg-P=%.3f  neg-R=%.3f  Time=%d\n",
-                                            i, result.accuracy() * 100f, result.precision() * 100f,
-                                            result.recall() * 100f, result.negativePrecision() * 100f,
-                                            result.negativeRecall() * 100f, result.time));
-                }
-            }
-
-            //
-            // Search for a bias that satisfies the requested precision or recall
-            //
-            if (targetPrecision != 0) {
-                precisionBiasSearch(devCorpusSequences, featureExtractor);
-            } else if (targetNegativeRecall != 0) {
-                super.negativeRecallBiasSearch(devCorpusSequences, featureExtractor);
-                evaluateDevset(devCorpusSequences);
-            }
-        }
-
-        /**
-         * Overrides the superclass implementation to classify only open cells
-         * 
-         * @param sequences
-         * @return results of classifying the input sequences (if they contain gold classifications)
-         */
-        @Override
-        protected BinaryClassifierResult classify(final ArrayList<BinaryTagSequence> sequences) {
-
-            final long t0 = System.currentTimeMillis();
-            final BinaryClassifierResult result = new BinaryClassifierResult();
-
-            for (final BinaryTagSequence sequence : sequences) {
-                result.totalSequences++;
-
-                sequence.allocatePredictionStorage();
-                // Classify all span-1 cells
-                for (short start = 0; start < sequence.length; start++) {
-                    classify(sequence, start, result);
-                }
-                sequence.clearPredictionStorage();
-            }
-            result.time = System.currentTimeMillis() - t0;
-            return result;
-        }
-
-        final void evaluateDevset(final ArrayList<BinaryTagSequence> devCorpusSequences) {
-            final long t0 = System.currentTimeMillis();
-            final BinaryClassifierResult result = new BinaryClassifierResult();
-
-            int sentencesWithMisclassifiedNegative = 0;
-
-            for (final BinaryTagSequence sequence : devCorpusSequences) {
-                result.totalSequences++;
-                sequence.allocatePredictionStorage();
-                boolean misclassifiedNegative = false;
-
-                // Classify all span-1 cells
-                for (short start = 0; start < sequence.length; start++) {
-                    classify(sequence, start, result);
-                    if (sequence.goldClass(start) == false && sequence.predictedClass(start) == true) {
-                        misclassifiedNegative = true;
-                    }
-                }
-
-                if (misclassifiedNegative) {
-                    sentencesWithMisclassifiedNegative++;
-                }
-                sequence.clearPredictionStorage();
-            }
-            result.time = System.currentTimeMillis() - t0;
-
-            // Compute and report final classification statistics on the development set
-            final float sentenceNegativeRecall = (devCorpusSequences.size() - sentencesWithMisclassifiedNegative) * 1f
-                    / devCorpusSequences.size();
-
-            BaseLogger.singleton().info(
-                    String.format("Cells classified positive (including span-1): %d/%d  %d correct (%.3f%% )",
-                            result.classifiedPositive, result.positiveExamples, result.correctPositive,
-                            result.correctPositive * 100f / result.positiveExamples));
-            BaseLogger.singleton().info(
-                    String.format("Sentence-level recall (fraction with all open cells classified correctly): %.3f%%",
-                            sentenceNegativeRecall * 100f));
-        }
-
-        @Override
-        protected String DEFAULT_FEATURE_TEMPLATES() {
-            return DEFAULT_FEATURE_TEMPLATES;
-        }
-
-        @Override
-        protected final void train(final BufferedReader input) throws IOException {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        protected final void run() throws Exception {
-            throw new UnsupportedOperationException();
-        }
-    }
-
-    /**
      * Represents presence or absence of unary productions in span-1 cells in a parse tree.
      */
     public static class UnaryConstraintSequence extends BinaryTagSequence {
@@ -1486,6 +1319,20 @@ public class AdaptiveBeamClassifier extends ClassifierTool<BeamWidthSequence> {
          */
         public UnaryConstraintSequence(final BinaryTree<String> tree, final UnaryConstraintClassifier classifier) {
             super(tree, classifier, classifier.nonterminalVocabulary, classifier.unigramSuffixSet,
+                    classifier.bigramSuffixSet);
+        }
+
+        /**
+         * Constructor for use in training
+         * 
+         * @param parseTree
+         * @param binarization
+         * @param classifier
+         */
+        public UnaryConstraintSequence(final String parseTree, final Binarization binarization,
+                final UnaryConstraintClassifier classifier) {
+            super(NaryTree.read(parseTree.trim(), String.class).binarize(GrammarFormatType.Berkeley, binarization),
+                    classifier, classifier.nonterminalVocabulary, classifier.unigramSuffixSet,
                     classifier.bigramSuffixSet);
         }
 

@@ -234,6 +234,10 @@ public class MulticlassTagSequence extends BaseSequence implements MulticlassSeq
         }
     }
 
+    public int[] mappedTokens() {
+        return mappedTokens;
+    }
+
     @Override
     public short goldClass(final int position) {
         return goldClasses[position];

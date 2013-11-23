@@ -35,6 +35,7 @@ import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.datastructs.vectors.FloatVector;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.perceptron.AdaptiveBeamClassifier.UnaryConstraintSequence;
 
 /**
  * Complete-closure classifier, as described in Bodenstab et al., 2011,
@@ -51,7 +52,7 @@ import edu.ohsu.cslu.grammar.SymbolSet;
  */
 public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureSequence> {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
 
     @Option(name = "-bin", metaVar = "direction", usage = "Binarization direction")
     protected Binarization binarization = Binarization.LEFT;
@@ -62,7 +63,20 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
     @Option(name = "-ptft", metaVar = "templates or file", usage = "POS-tagger feature templates (comma-delimited), or template file")
     private String posTaggerFeatureTemplates = new Tagger().DEFAULT_FEATURE_TEMPLATES();
 
+    @Option(name = "-ucti", metaVar = "iterations", usage = "Train a unary-constraint binary classifier for n iterations.")
+    private int unaryConstraintClassifierTrainingIterations;
+
+    @Option(name = "-ucft", requires = "-ucti", metaVar = "templates or file", usage = "Feature templates for unary classifier (comma-delimited or template file)")
+    protected String unaryClassifierFeatureTemplates = Tagger.DEFAULT_FEATURE_TEMPLATES;
+
+    /** Part-of-speech tagger, executed prior to cell classification to provide POS features to the beam-width model */
     public Tagger posTagger = null;
+
+    /**
+     * Unary constraint binary classifier - used only during training. Following training, {@link #finalizeModel()}
+     * packs the learned parameters into {@link #parallelWeightArrayTags} and {@link #parallelWeightArray}.
+     */
+    private UnaryConstraintClassifier unaryConstraintClassifier;
 
     /**
      * Default Feature Templates:
@@ -132,6 +146,7 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
         this.avgWeights = tmp.avgWeights;
         this.bias = tmp.bias;
         this.posTagger = tmp.posTagger;
+        this.unaryConstraintClassifier = tmp.unaryConstraintClassifier;
         this.binarization = tmp.binarization;
 
         this.decisionTreeUnkClassSet = posTagger.decisionTreeUnkClassSet;
@@ -202,6 +217,10 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
         final ArrayList<MulticlassTagSequence> taggerTrainingCorpusSequences = new ArrayList<MulticlassTagSequence>();
         final ArrayList<MulticlassTagSequence> taggerDevCorpusSequences = new ArrayList<MulticlassTagSequence>();
 
+        if (unaryConstraintClassifierTrainingIterations > 0) {
+            input.mark(30 * 1024 * 1024);
+        }
+
         //
         // Read in the training corpus and map each token. For some classifiers, we also pre-compute all features, but
         // for cell classification, the number of instances is quadratic, and the memory consumption is problematic.
@@ -214,6 +233,7 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
                 trainingCorpusSequences.add(new CompleteClosureSequence(line, binarization, lexicon,
                         decisionTreeUnkClassSet, posTagSet));
                 taggerTrainingCorpusSequences.add(new MulticlassTagSequence(line, posTagger));
+
             } catch (final IllegalArgumentException ignore) {
                 // Skip malformed trees (e.g. INFO lines from parser output)
             }
@@ -221,8 +241,8 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
         finalizeMaps();
 
         //
-        // If specified, train a POS-tagger. We'll use output from that tagger instead of gold POS-tags when
-        // training the cell classifier, and output both models together
+        // Train a POS-tagger. We'll use output from that tagger instead of gold POS-tags when training the cell
+        // classifier, and output both models together
         //
         BaseLogger.singleton().info("Training POS tagger for " + posTaggerTrainingIterations + " iterations");
         posTagger.train(taggerTrainingCorpusSequences, taggerDevCorpusSequences, posTaggerTrainingIterations);
@@ -231,13 +251,33 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
                 posTagger.lexicon, posTagger.decisionTreeUnkClassSet, posTagger.tagSet, true);
 
         //
-        // Tag the training sequences with the trained POS tagger
+        // Tag the training sequences with the trained POS tagger (the resulting tags will be more accurate than
+        // test-time tagging, but somewhat less than just using gold tags)
         //
         if (posTagger != null) {
             BaseLogger.singleton().info("Tagging training corpus with the new POS tagger model");
             for (int i = 0; i < trainingCorpusSequences.size(); i++) {
                 final CompleteClosureSequence ccs = trainingCorpusSequences.get(i);
                 ccs.posTags = posTagger.classify(taggerTrainingCorpusSequences.get(i));
+            }
+        }
+
+        ArrayList<BinaryTagSequence> unaryConstraintTrainingCorpusSequences = null;
+        ArrayList<BinaryTagSequence> unaryConstraintDevCorpusSequences = null;
+        if (unaryConstraintClassifierTrainingIterations > 0) {
+            this.unaryConstraintClassifier = new UnaryConstraintClassifier(unaryClassifierFeatureTemplates, lexicon,
+                    decisionTreeUnkClassSet);
+            unaryConstraintTrainingCorpusSequences = new ArrayList<BinaryTagSequence>();
+            unaryConstraintDevCorpusSequences = new ArrayList<BinaryTagSequence>();
+
+            input.reset();
+
+            for (final String line : inputLines(input)) {
+                final UnaryConstraintSequence unaryConstraintSequence = new UnaryConstraintSequence(line, binarization,
+                        unaryConstraintClassifier);
+                unaryConstraintSequence.mappedPosSymbols = posTagger
+                        .classify(new MulticlassTagSequence(line, posTagger));
+                unaryConstraintTrainingCorpusSequences.add(unaryConstraintSequence);
             }
         }
 
@@ -249,21 +289,40 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
                         posTagger.decisionTreeUnkClassSet, posTagger.tagSet);
                 devCorpusSequences.add(ccs);
                 ccs.posTags = posTagger.classify(new MulticlassTagSequence(line, posTagger));
+
+                if (unaryConstraintDevCorpusSequences != null) {
+                    final UnaryConstraintSequence unaryConstraintSequence = new UnaryConstraintSequence(line,
+                            binarization, unaryConstraintClassifier);
+                    unaryConstraintSequence.mappedPosSymbols = ccs.posTags;
+                    unaryConstraintDevCorpusSequences.add(unaryConstraintSequence);
+                }
             }
         }
 
         //
-        // Train the model
+        // Train the complete closure model
         //
         train(trainingCorpusSequences, devCorpusSequences);
+
+        // And the unary constraint model
+        if (unaryConstraintClassifierTrainingIterations > 0) {
+            BaseLogger.singleton().info(
+                    "Training the unary constraint model for " + unaryConstraintClassifierTrainingIterations
+                            + " iterations.");
+
+            unaryConstraintClassifier.trainingIterations = unaryConstraintClassifierTrainingIterations;
+            unaryConstraintClassifier.negativeTrainingBias = negativeTrainingBias;
+            unaryConstraintClassifier.targetNegativeRecall = targetNegativeRecall;
+            unaryConstraintClassifier.train(unaryConstraintTrainingCorpusSequences, unaryConstraintDevCorpusSequences);
+        }
 
         //
         // Write out the model file to disk
         //
         if (modelFile != null) {
             final FileOutputStream fos = new FileOutputStream(modelFile);
-            new ObjectOutputStream(fos).writeObject(new Model(posTagger, featureTemplates, avgWeights, bias,
-                    binarization));
+            new ObjectOutputStream(fos).writeObject(new Model(posTagger, unaryConstraintClassifier, featureTemplates,
+                    avgWeights, bias, binarization));
             fos.close();
         }
 
@@ -367,23 +426,31 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
         return binarization;
     }
 
+    public UnaryConstraintClassifier unaryConstraintClassifier() {
+        return unaryConstraintClassifier;
+    }
+
     public static void main(final String[] args) {
         run(args);
     }
 
     protected static class Model implements Serializable {
 
-        private static final long serialVersionUID = 2L;
+        private static final long serialVersionUID = 3L;
 
         private final Tagger posTagger;
+        private final UnaryConstraintClassifier unaryConstraintClassifier;
         final String featureTemplates;
         final FloatVector avgWeights;
         final float bias;
         final Binarization binarization;
 
-        protected Model(final Tagger posTagger, final String featureTemplates, final FloatVector avgWeights,
-                final float bias, final Binarization binarization) {
+        protected Model(final Tagger posTagger, final UnaryConstraintClassifier unaryConstraintClassifier,
+                final String featureTemplates, final FloatVector avgWeights, final float bias,
+                final Binarization binarization) {
+
             this.posTagger = posTagger;
+            this.unaryConstraintClassifier = unaryConstraintClassifier;
             this.featureTemplates = featureTemplates;
             this.avgWeights = avgWeights;
             this.bias = bias;

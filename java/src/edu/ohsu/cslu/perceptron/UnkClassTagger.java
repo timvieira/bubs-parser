@@ -103,7 +103,7 @@ public class UnkClassTagger extends Tagger {
             BaseLogger.singleton().info("Reading grammar file...");
             final Grammar g = new LeftCscSparseMatrixGrammar(fileAsBufferedReader(grammarFile),
                     new DecisionTreeTokenClassifier(), PerfectIntPairHashPackingFunction.class);
-            init(g);
+            init(g.lexSet, g.unkClassSet());
         }
     }
 

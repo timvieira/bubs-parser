@@ -92,15 +92,15 @@ public abstract class BinaryClassifier<S extends BinarySequence> extends Classif
 
     /**
      * Constructor for use in embedded training (e.g. when jointly training a POS tagger and unary constraint classifier
-     * in {@link AdaptiveBeamClassifier}).
+     * in {@link AdaptiveBeamClassifier} or {@link CompleteClosureClassifier}).
      */
-    protected BinaryClassifier(final String featureTemplates, final Grammar grammar) {
-        init(grammar);
+    protected BinaryClassifier(final SymbolSet<String> lexicon, final SymbolSet<String> unkClassSet) {
+        init(lexicon, unkClassSet);
     }
 
     void init(final Grammar grammar, final boolean fullNonterminalVocabulary) {
         if (grammar != null) {
-            super.init(grammar);
+            super.init(grammar.lexSet, grammar.unkClassSet());
             this.nonterminalVocabulary = fullNonterminalVocabulary ? grammar.posSymbolSet() : grammar
                     .coarsePosSymbolSet();
             this.nonterminalVocabulary.finalize();

@@ -111,12 +111,13 @@ public abstract class ClassifierTool<S extends Sequence> extends BaseCommandline
      * Initializes internal data structures (e.g. {@link ClassifierTool#lexicon} and
      * {@link ClassifierTool#decisionTreeUnkClassSet}) from a {@link Grammar} instance.
      * 
-     * @param grammar
+     * @param newLexicon
+     * @param newUnkClassSet
      */
-    void init(final Grammar grammar) {
-        this.lexicon = grammar.lexSet;
+    void init(final SymbolSet<String> newLexicon, final SymbolSet<String> newUnkClassSet) {
+        this.lexicon = newLexicon;
         this.lexicon.finalize();
-        this.decisionTreeUnkClassSet = grammar.unkClassSet();
+        this.decisionTreeUnkClassSet = newUnkClassSet;
         this.decisionTreeUnkClassSet.finalize();
     }
 

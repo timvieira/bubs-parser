@@ -441,8 +441,11 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
                     }
                 }
             }
+
             // Now that all lexical productions are on the queue, expand it a bit to allow space for unary productions
-            q.setMaxSize(lexicalRowBeamWidth);
+            if (allowUnaries) {
+                q.setMaxSize(lexicalRowBeamWidth);
+            }
 
         } else { // Span >= 2
             for (short nt = 0; nt < grammar.numNonTerms(); nt++) {

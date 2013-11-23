@@ -27,16 +27,22 @@ import java.io.IOException;
 import java.util.logging.Level;
 
 import cltool4j.BaseLogger;
+import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
+import edu.ohsu.cslu.datastructs.vectors.BitVector;
+import edu.ohsu.cslu.datastructs.vectors.PackedBitVector;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParseTask;
+import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.cellselector.CellSelector.ChainableCellSelector;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.perceptron.AdaptiveBeamClassifier;
+import edu.ohsu.cslu.perceptron.AdaptiveBeamClassifier.UnaryConstraintSequence;
 import edu.ohsu.cslu.perceptron.CompleteClosureClassifier;
 import edu.ohsu.cslu.perceptron.CompleteClosureSequence;
 import edu.ohsu.cslu.perceptron.MulticlassTagSequence;
 import edu.ohsu.cslu.perceptron.Tagger;
+import edu.ohsu.cslu.perceptron.UnaryConstraintClassifier;
 
 /**
  * Implements 'Complete Closure', using a discriminative model to classify each cell as open or closed. The method is
@@ -52,6 +58,9 @@ import edu.ohsu.cslu.perceptron.Tagger;
 public class CompleteClosureModel extends ChainableCellSelectorModel implements CellSelectorModel {
 
     private static final long serialVersionUID = 1L;
+
+    private final static boolean UNARY_CONSTRAINTS_DISABLED = GlobalConfigProperties.singleton().getBooleanProperty(
+            ParserDriver.OPT_DISABLE_UNARY_CLASSIFIER, false);
 
     private CompleteClosureClassifier classifier;
     private Tagger posTagger;
@@ -94,6 +103,8 @@ public class CompleteClosureModel extends ChainableCellSelectorModel implements 
 
     public class CompleteClosureSelector extends ChainableCellSelector {
 
+        private BitVector unariesDisallowed;
+
         public CompleteClosureSelector(final CellSelector child) {
             super(child);
         }
@@ -102,6 +113,10 @@ public class CompleteClosureModel extends ChainableCellSelectorModel implements 
         public void initSentence(final ChartParser<?, ?> p, final ParseTask task) {
             super.initSentence(p, task);
             final short sentenceLength = (short) p.chart.size();
+
+            final UnaryConstraintClassifier unaryConstraintClassifier = UNARY_CONSTRAINTS_DISABLED ? null : classifier
+                    .unaryConstraintClassifier();
+            this.unariesDisallowed = unaryConstraintClassifier != null ? new PackedBitVector(sentenceLength) : null;
 
             // POS-tag the sentence with a discriminative tagger
             // TODO Use the same lexicon, tagSet, etc. We already have a mapped int[] representation of the sentence, we
@@ -118,6 +133,19 @@ public class CompleteClosureModel extends ChainableCellSelectorModel implements 
                 tmpCellIndices.add((short) (start + 1));
             }
 
+            // Classify span-1 cells for unary constraints
+            if (unaryConstraintClassifier != null) {
+                // The unary constraint classifier shares the POS-tagger's lexicon, so we'll use the token mappings from
+                // the tagger sequence
+                final AdaptiveBeamClassifier.UnaryConstraintSequence unaryConstraintSequence = new UnaryConstraintSequence(
+                        tagSequence.mappedTokens(), unaryConstraintClassifier);
+
+                for (short start = 0; start < sentenceLength; start++) {
+                    unariesDisallowed.set(start, unaryConstraintClassifier.classify(unaryConstraintSequence, start));
+                }
+            }
+
+            // Classify all span>1 cells as open or closed
             final CompleteClosureSequence sequence = task.inputTree != null ? new CompleteClosureSequence(
                     task.inputTree.binarize(task.grammar.grammarFormat, task.grammar.binarization()), classifier)
                     : new CompleteClosureSequence(task.tokens, task.posTags, classifier);
@@ -144,6 +172,12 @@ public class CompleteClosureModel extends ChainableCellSelectorModel implements 
                         String.format("Sentence length: %d. Total cells: %d  Open cells: %d", sentenceLength,
                                 sentenceLength * (sentenceLength + 1) / 2, tmpCellIndices.size() / 2));
             }
+        }
+
+        @Override
+        public boolean isUnaryOpen(final short start, final short end) {
+            return UNARY_CONSTRAINTS_DISABLED || !constraintsEnabled || (end - start > 1) || unariesDisallowed == null
+                    || !unariesDisallowed.getBoolean(start);
         }
     }
 }
