@@ -140,16 +140,6 @@
     </target>
 
     
-    <target name="lela" depends="compile">
-        <antcall target="package-tool">
-            <param name="root-class" value="edu.ohsu.cslu.lela.TrainGrammar" />
-            <param name="tool-name" value="train-grammar" />
-            <param name="heap-size" value="1500m" />
-            <param name="package-gpl-libs" value="true" />
-        </antcall>
-    </target>
-
-
     <target name="train-grammar" depends="compile">
         <antcall target="package-tool">
             <param name="root-class" value="edu.berkeley.nlp.PCFGLA.GrammarTrainer" />
