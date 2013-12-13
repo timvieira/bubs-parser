@@ -471,7 +471,14 @@ public class GrammarMerger {
                 // Note: estimated likelihood loss rankings are already populated
 
                 // Rank by total rule count delta
-                Collections.sort(mergeCandidates, MergeRanking.TotalRuleCount.comparator());
+                Collections.sort(mergeCandidates, new Comparator<MergeCandidate>() {
+
+                    @Override
+                    public int compare(final MergeCandidate o1, final MergeCandidate o2) {
+                        return Integer.compare(o1.totalRuleCountDelta, o2.totalRuleCountDelta);
+                    }
+                });
+
                 for (int i = 0; i < mergeCandidates.size(); i++) {
                     mergeCandidates.get(i).estimatedSpeedRanking = i;
                 }
