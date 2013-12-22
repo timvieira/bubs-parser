@@ -41,14 +41,19 @@ import edu.ohsu.cslu.datastructs.vectors.LargeVector;
 import edu.ohsu.cslu.datastructs.vectors.Vector;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.grammar.Tokenizer;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.fom.FigureOfMeritModel.FigureOfMerit;
+import edu.ohsu.cslu.util.Strings;
 
 /**
- * An efficient implementation of multiclass classification. Tested primarily as a POS-tagger, but applicable to other
- * tagging tasks as well, Training uses standard {@link Vector} data structures. When training is complete, those
- * structures are copied into a more compact and cache-efficient format for use during inference (see
- * {@link #parallelArrayOffsetMap}, {@link #parallelWeightArray}, and {@link #parallelWeightArrayTags}).
+ * An efficient implementation of multiclass classification using an averaged perceptron classifier. Tested primarily as
+ * a POS tagger, but applicable to other tagging tasks as well. Performs POS tagging at over 200k words/second using the
+ * ~35 tags of the WSJ tag-set.
+ * 
+ * Training uses standard {@link Vector} data structures. When training is complete, those structures are copied into a
+ * more compact and cache-efficient format for use during inference (see {@link #parallelArrayOffsetMap},
+ * {@link #parallelWeightArray}, and {@link #parallelWeightArrayTags}).
  * 
  * Training input: Gold Trees in standard bracketed format or tagged tokens, one sentence per line (format: '(tag token)
  * (tag token) ...').
@@ -64,7 +69,10 @@ public class Tagger extends ClassifierTool<MulticlassTagSequence> {
 
     private static final long serialVersionUID = 1L;
 
-    // Note: In cross-validation mode, we can't write a model, so this option is in the same choice group with '-m'
+    /**
+     * Perform cross-validation training and output accuracy over all folds. Note that when performing cross-validation,
+     * we can't output a single model, so this option cannot be used in conjunction with '-m'
+     */
     @Option(name = "-xv", metaVar = "folds", optionalChoiceGroup = "model", usage = "Perform k-fold cross-validation on the training set (dev-set will be ignored and no model file will be written)")
     protected int crossValidationFolds;
 
@@ -161,17 +169,50 @@ public class Tagger extends ClassifierTool<MulticlassTagSequence> {
 
     @Override
     protected void run() throws Exception {
+
+        final BufferedReader input = inputAsBufferedReader();
+
         if (trainingIterations > 0) {
+
+            // Cross-validation (which doesn't output a model) or regular training
             if (crossValidationFolds > 0) {
-                crossValidate(inputAsBufferedReader());
+                crossValidate(input);
             } else {
-                train(inputAsBufferedReader());
+                train(input);
             }
+
         } else {
             readModel(new FileInputStream(modelFile));
-            final MulticlassClassifierResult result = classify(inputAsBufferedReader());
-            BaseLogger.singleton().info(
-                    String.format("Accuracy=%.2f  Time=%d\n", result.accuracy() * 100f, result.time));
+
+            input.mark(8);
+            final char firstChar = (char) input.read();
+
+            // If the first input character is a '(', assume the input includes gold tags and evaluate accuracy only.
+            if (firstChar == '(') {
+                input.reset();
+                final MulticlassClassifierResult result = testAccuracy(input);
+                BaseLogger.singleton().info(
+                        String.format("Accuracy=%.2f  Time=%d\n", result.accuracy() * 100f, result.time));
+            } else {
+                // Output tagged text.
+                for (final String sentence : inputLines(input)) {
+                    final String tokenizedSentence = Tokenizer.treebankTokenize(sentence);
+
+                    // TODO This is a little inefficient, as MulticlassTagSequence duplicates the string splitting we do
+                    // here
+                    final MulticlassTagSequence sequence = createSequence(tokenizedSentence);
+                    final String[] tokens = Strings.splitOnSpace(tokenizedSentence);
+                    final short[] tags = classify(sequence);
+
+                    final StringBuilder sb = new StringBuilder(sentence.length() * 2);
+                    for (int i = 0; i < tokens.length; i++) {
+                        sb.append('(').append(tagSet.getSymbol(tags[i])).append(' ').append(tokens[i]).append(')')
+                                .append(' ');
+                    }
+                    sb.deleteCharAt(sb.length() - 1);
+                    System.out.println(sb.toString());
+                }
+            }
         }
     }
 
@@ -202,14 +243,16 @@ public class Tagger extends ClassifierTool<MulticlassTagSequence> {
     }
 
     /**
-     * Tags the input sequences read from <code>input</code>
+     * Tags the input sequences read from <code>input</code>, which is assumed to include gold tags. The result includes
+     * accuracy evaluation.
      * 
-     * @param input
-     * @return an array containing: sentences, words, and correct tags (if the input sequences include gold tags)
+     * @param input Input text including gold tags, one sentence per line.
+     * @return a {@link MulticlassClassifierResult} containing: sentences, words, and correct tags (if the input
+     *         sequences include gold tags)
      * 
      * @throws IOException if a read fails
      */
-    protected MulticlassClassifierResult classify(final BufferedReader input) throws IOException {
+    protected MulticlassClassifierResult testAccuracy(final BufferedReader input) throws IOException {
 
         final MulticlassTaggerFeatureExtractor fe = featureExtractor();
         int sentences = 0, words = 0, correct = 0;

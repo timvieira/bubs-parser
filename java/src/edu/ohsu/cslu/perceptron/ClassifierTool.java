@@ -60,7 +60,7 @@ public abstract class ClassifierTool<S extends Sequence> extends BaseCommandline
     @Option(name = "-ft", requires = "-ti", metaVar = "templates or file", usage = "Feature templates (comma-delimited), or template file")
     protected String featureTemplates = DEFAULT_FEATURE_TEMPLATES();
 
-    @Option(name = "-d", requires = "-ti", metaVar = "file", usage = "Development set. If specified, test results are output after each training iteration.")
+    @Option(name = "-d", requires = "-ti", metaVar = "file", usage = "Development set. If specified, dev-set accuracy is reported after each training iteration.")
     protected File devSet;
 
     // Note: Some subclasses support a cross-validation mode, in which case we can't write a model, so those options

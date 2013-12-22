@@ -197,7 +197,7 @@ public class TestTagger {
         final Tagger tagger = new Tagger();
         tagger.trainingIterations = 100;
         tagger.train(new BufferedReader(JUnit.unitTestDataAsReader(file)));
-        final MulticlassClassifierResult result = tagger.classify(new BufferedReader(JUnit.unitTestDataAsReader(file)));
+        final MulticlassClassifierResult result = tagger.testAccuracy(new BufferedReader(JUnit.unitTestDataAsReader(file)));
         // We expect to memorize the training set
         assertEquals(1.0f, result.accuracy(), .01f);
     }
