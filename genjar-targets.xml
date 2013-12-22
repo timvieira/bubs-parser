@@ -168,14 +168,16 @@
                               regexp="\."
                               replace="/"
                               global="true" />
-                
+            	
+                <!-- Note: adding individual jars to 'docletpath' is brittle, but working thus far --> 
                 <javadoc 
                     classpathref="path.javadoc.bin" 
                     sourcepath="java/src" 
-                    docletpath="${dir.bsd.lib}/cltool4j.jar:${dir.build}"
+                    docletpath="${dir.bsd.lib}/cltool4j.jar:${dir.build}:${dir.bsd.lib}/fastutil.jar"
                     doclet="cltool4j.UsageDoclet"
                     access="private"
-                    sourcefiles="${dir.src}/${root-class-src}.java">
+                    sourcefiles="${dir.src}/${root-class-src}.java" 
+                	failonerror="true">
                     
                     <arg value="-out" />
                     <arg value="package-jar-tmp/META-INF/HELP.txt" />

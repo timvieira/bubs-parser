@@ -36,6 +36,7 @@
         <delete dir="build-dist" />
     </target>
 
+
     <!--
     ========================================================================
         Compile all Java code
@@ -45,11 +46,12 @@
         <!-- If the build directory doesn't already exist, create it -->
         <mkdir dir="${dir.build}" />
         <javac includes="**/*.java" destdir="${dir.build}" debug="true" includeantruntime="false">
-            <src path="${dir.src}"/>
-            <src path="java/berkeley-src"/>
+            <src path="${dir.src}" />
+            <src path="java/berkeley-src" />
             <classpath refid="classpath.libs" />
         </javac>
     </target>
+
 
     <!-- 
     ========================================================================
@@ -59,11 +61,12 @@
     <target name="javadoc">
         <javadoc destdir="${dir.build.doc}/javadoc">
             <fileset includes="**/*.java" excludes="edu/ohsu/cslu/lela/**,**/Test*.java,**/Profile*.java,**/All*Tests.java,**/*TestCase.java" />
-            <src path="${dir.src}"/>
-            <src path="java/berkeley-src"/>
+            <src path="${dir.src}" />
+            <src path="java/berkeley-src" />
             <classpath refid="classpath.libs" />
         </javadoc>
     </target>
+
 
     <!-- 
     ========================================================================
@@ -88,6 +91,7 @@
             <fileset dir="${dir.src}" includes="edu/ohsu/cslu/perceptron/**/*.java" />
         </jar>
     </target>
+
 
     <!-- 
     ========================================================================
@@ -114,7 +118,7 @@
         </antcall>
     </target>
 
-    
+
     <!-- Stripped-down parser target. Builds BUBS without any external GPL or LGPL libraries. Excludes support for GPU parsing (since the OpenCL4J library is LPGL). -->
     <target name="parse-bsdlibs" depends="compile">
         <antcall target="package-tool">
@@ -122,10 +126,21 @@
             <param name="additional-root-classes" value="edu.ohsu.cslu.parser.cellselector.DepGraphCellSelectorModel,edu.ohsu.cslu.parser.cellselector.OHSUCellConstraintsModel,edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthModel" />
             <param name="tool-name" value="parse-bsdlibs" />
             <param name="heap-size" value="1500m" />
+            <param name="javadoc-help" value="true" />
             <param name="license-file" value="java/tools/license.txt" />
-            <param name="readme-file" value="java/tools/README.txt" />
             <param name="default-options" value="java/tools/parser-defaults.properties" />
             <param name="srcjar" value="true" />
+        </antcall>
+    </target>
+
+
+    <target name="train-grammar" depends="compile">
+        <antcall target="package-tool">
+            <param name="root-class" value="edu.berkeley.nlp.PCFGLA.GrammarTrainer" />
+            <param name="tool-name" value="train-grammar" />
+            <param name="heap-size" value="2g" />
+            <!-- TODO Remove this after we drop assertions from Grammar.java -->
+            <param name="package-gpl-libs" value="true" />
         </antcall>
     </target>
 
@@ -139,29 +154,7 @@
         </antcall>
     </target>
 
-    
-    <target name="train-grammar" depends="compile">
-        <antcall target="package-tool">
-            <param name="root-class" value="edu.berkeley.nlp.PCFGLA.GrammarTrainer" />
-            <param name="tool-name" value="train-grammar" />
-            <param name="heap-size" value="2g" />
-            <!-- TODO Remove this after we drop assertions from Grammar.java -->
-            <param name="package-gpl-libs" value="true" />
-        </antcall>
-    </target>
 
-
-    <!-- TODO Remove once we're done with Java-serialized grammars -->
-    <target name="write-grammar-to-text" depends="compile">
-        <antcall target="package-tool">
-            <param name="root-class" value="edu.berkeley.nlp.PCFGLA.WriteGrammarToTextFile" />
-            <param name="tool-name" value="write-grammar-to-text" />
-            <param name="heap-size" value="1g" />
-            <param name="package-gpl-libs" value="true" />
-        </antcall>
-    </target>
-
-            
     <target name="induce-count-grammar" depends="compile">
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.lela.InduceCountGrammar" />
@@ -171,7 +164,7 @@
         </antcall>
     </target>
 
-
+    <!-- TODO Remove some of the count-based grammar tools -->
     <target name="merge-count-file" depends="compile">
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.lela.MergeCountFile" />
@@ -192,6 +185,9 @@
     </target>
 
 
+    <!-- -->
+    <!-- Tree-processing tools  -->
+    <!-- -->
     <target name="unfactor" depends="compile">
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.tools.Unfactor" />
@@ -202,9 +198,6 @@
     </target>
 
 
-    <!-- -->
-    <!-- Tree-processing tools  --> 
-    <!-- -->
     <target name="replace-unks" depends="compile">
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.grammar.ReplaceUnks" />
@@ -222,7 +215,7 @@
         </antcall>
     </target>
 
-    
+
     <target name="treegrep" depends="compile">
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.tools.TreeGrep" />
@@ -230,10 +223,10 @@
             <param name="package-gpl-libs" value="true" />
         </antcall>
     </target>
-    
+
 
     <!-- -->
-    <!-- Pruning and prioritization model training tools --> 
+    <!-- Pruning and prioritization model training tools -->
     <!-- -->
     <target name="train-perceptron" depends="compile">
         <antcall target="package-tool">
@@ -265,7 +258,7 @@
         </antcall>
     </target>
 
-    
+
     <target name="train-ab" depends="compile">
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.perceptron.AdaptiveBeamClassifier" />
@@ -274,10 +267,10 @@
             <param name="package-gpl-libs" value="true" />
         </antcall>
     </target>
-    
+
 
     <!-- -->
-    <!-- Text normalization and lexical clustering tools --> 
+    <!-- Text normalization and lexical clustering tools -->
     <!-- -->
     <target name="decision-tree-normalize" depends="compile">
         <antcall target="package-tool">
@@ -304,15 +297,15 @@
             <param name="heap-size" value="1024m" />
         </antcall>
     </target>
-    
-    
+
+
     <target name="countunks" depends="compile">
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.tools.CountUnks" />
             <param name="tool-name" value="countunks" />
         </antcall>
     </target>
-    
+
 
     <target name="extract-weka-features" depends="compile">
         <antcall target="package-tool">
@@ -322,7 +315,21 @@
             <param name="package-gpl-libs" value="true" />
         </antcall>
     </target>
-    
+
+
+    <!-- -->
+    <!-- Tagging -->
+    <!-- -->
+    <target name="tag" depends="compile">
+        <antcall target="package-tool">
+            <param name="root-class" value="edu.ohsu.cslu.perceptron.Tagger" />
+            <param name="tool-name" value="tag" />
+            <param name="heap-size" value="1500m" />
+            <param name="javadoc-help" value="true" />
+            <param name="license-file" value="java/tools/license.txt" />
+        </antcall>
+    </target>
+
 
     <!-- -->
     <!-- Dependency parsing tools -->
@@ -336,7 +343,7 @@
         </antcall>
     </target>
 
-    
+
     <target name="eval-dep-classifiers" depends="compile">
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.dep.EvalDepClassifiers" />
@@ -346,7 +353,7 @@
         </antcall>
     </target>
 
-    
+
     <target name="nivre-dep-parser" depends="compile">
         <antcall target="package-tool">
             <param name="root-class" value="edu.ohsu.cslu.dep.NivreDepParser" />
@@ -376,7 +383,7 @@
         </antcall>
     </target>
 
-    
+
     <!-- 
     ========================================================================
        Package all training tools and utilities
