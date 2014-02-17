@@ -238,7 +238,7 @@ public class GrammarMerger {
 
         // Order the merge candidates (least valuable, or most-mergeable, candidates first; most-valuable last) and
         // select a threshold
-        Collections.sort(mergeCandidates, rankingFunction.comparator());
+        Collections.sort(mergeCandidates, rankingFunction);
         final int thresholdCandidate = (int) (mergeCandidates.size() * mergingPercentage);
 
         final float threshold = rankingFunction.objectiveFunction.mergeCost(mergeCandidates.get(thresholdCandidate));
@@ -437,7 +437,7 @@ public class GrammarMerger {
      * methods use anonymous implementations directly inline; more complex implementations reference separate classes
      * (e.g. {@link ModeledMergeObjectiveFunction} and {@link DiscriminativeMergeObjectiveFunction}).
      */
-    public static enum MergeRanking {
+    public static enum MergeRanking implements Comparator<MergeCandidate> {
 
         /**
          * Ignores {@link GrammarMerger#EFFICIENCY_LAMBDA} and ranks by estimated likelihood loss
@@ -499,7 +499,16 @@ public class GrammarMerger {
         /**
          * Ranks by actual inference accuracy and speed
          */
-        Discriminative(new DiscriminativeMergeObjectiveFunction());
+        Discriminative(new DiscriminativeMergeObjectiveFunction()),
+
+        /**
+         * Samples sets of merge candidates and performs inference with the resulting grammars. Similar to
+         * {@link #Discriminative}, but considerably more expensive, since many samples are usually required. Note that
+         * this method does not populate {@link #objectiveFunction}, so it must be handed as a special case in
+         * {@link GrammarMerger#selectMergePairs(Grammar, Lexicon, double[][], float[][][], int[][][], double, MergeRanking, int, float)}
+         * .
+         */
+        Sampled(null);
 
         /**
          * Objective function for the chosen objective.
@@ -516,18 +525,9 @@ public class GrammarMerger {
 
         /**
          * Ranks the candidates by merge cost (lowest-cost first)
-         * 
-         * @return A comparator which ranks {@link MergeCandidate}s by cost, lowest-cost merges first.
          */
-        public Comparator<MergeCandidate> comparator() {
-
-            return new Comparator<MergeCandidate>() {
-                @Override
-                public int compare(final MergeCandidate o1, final MergeCandidate o2) {
-                    return Float.compare(objectiveFunction.mergeCost(o1), objectiveFunction.mergeCost(o2));
-                }
-            };
-
+        public int compare(final MergeCandidate o1, final MergeCandidate o2) {
+            return Float.compare(objectiveFunction.mergeCost(o1), objectiveFunction.mergeCost(o2));
         }
 
         static abstract class MergeObjectiveFunction {
@@ -554,7 +554,7 @@ public class GrammarMerger {
 
             /**
              * Subclasses should override this method to perform any initialization required before
-             * {@link #initMergeCandidates(List, double[][])} (e.g., analyzing the fully-split grammar).
+             * {@link #initMergeCandidates(List, double[][], float)} (e.g., analyzing the fully-split grammar).
              * 
              * @param grammar
              * @param lexicon
