@@ -139,8 +139,7 @@
             <param name="root-class" value="edu.berkeley.nlp.PCFGLA.GrammarTrainer" />
             <param name="tool-name" value="train-grammar" />
             <param name="heap-size" value="2g" />
-            <!-- TODO Remove this after we drop assertions from Grammar.java -->
-            <param name="package-gpl-libs" value="true" />
+            <param name="javadoc-help" value="true" />
         </antcall>
     </target>
 

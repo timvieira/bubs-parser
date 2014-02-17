@@ -169,14 +169,25 @@
                               replace="/"
                               global="true" />
             	
+                <!-- Is the target file in 'java/berkeley-src' or 'java/src' ? -->
+                <if>
+                    <available file="java/berkeley-src/${root-class-src}.java" />
+                    <then>
+                        <property name="sourcefile" value="java/berkeley-src/${root-class-src}.java" />
+                    </then>
+                    <else>
+                        <property name="sourcefile" value="java/src/${root-class-src}.java" />
+                    </else>
+                </if>
+                    
                 <!-- Note: adding individual jars to 'docletpath' is brittle, but working thus far --> 
                 <javadoc 
                     classpathref="path.javadoc.bin" 
-                    sourcepath="java/src" 
+                    sourcepath="java/src:java/berkeley-src" 
                     docletpath="${dir.bsd.lib}/cltool4j.jar:${dir.build}:${dir.bsd.lib}/fastutil.jar"
                     doclet="cltool4j.UsageDoclet"
                     access="private"
-                    sourcefiles="${dir.src}/${root-class-src}.java" 
+                    sourcefiles="${sourcefile}" 
                 	failonerror="true">
                     
                     <arg value="-out" />
