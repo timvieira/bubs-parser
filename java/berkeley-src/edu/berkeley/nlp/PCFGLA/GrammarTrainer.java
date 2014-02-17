@@ -30,9 +30,36 @@ import edu.ohsu.cslu.parser.cellselector.CompleteClosureModel;
 import edu.ohsu.cslu.util.IEEEDoubleScaling;
 
 /**
- * Reads in the Penn Treebank and generates N_GRAMMARS different grammars.
+ * Performs split-merge grammar training.
+ * 
+ * Input: gold trees, one sentence per line.
+ * 
+ * Output: grammar training progress. At higher verbosity levels (see '-v'), detailed training information will be
+ * included as well.
+ * 
+ * Note: grammar training is a lengthy process - generally several hours, even on current CPU architectures. Best
+ * practice is to run training in the background, using tools such as 'nohup' or 'screen'.
+ * 
+ * 
+ * Implementation Note: {@link GrammarTrainer} is based on the cltool4j command-line tool infrastructure
+ * (http://code.google.com/p/cltool4j/), which provides command-line handling, threading support, and input/output
+ * infrastructure.
+ * 
+ * == Citing ==
+ * 
+ * If you use the BUBS grammar trainer in research, please cite:
+ * 
+ * Slav Petrov, Leon Barrett, Romain Thibaux, and Dan Klein, 2006. Learning accurate, compact, and interpretable tree
+ * annotation. ACL, pages 433-440.
+ * 
+ * and/or
+ * 
+ * Dunlop, 2014. Efficient Latent-variable Grammars; Learning and Inference. Ph.D. Dissertation, OHSU.
+ * 
+ * Further documentation is available at https://code.google.com/p/bubs-parser/
  * 
  * @author Slav Petrov
+ * @author Aaron Dunlop
  */
 public class GrammarTrainer extends BaseCommandlineTool {
 
@@ -314,7 +341,7 @@ public class GrammarTrainer extends BaseCommandlineTool {
 
                 final boolean[][][] mergeThesePairs = GrammarMerger.selectMergePairs(maxGrammar, maxLexicon,
                         substateProbabilities, mergeLikelihoodDeltas, mergeRuleCountDeltas, mergeFraction,
-                        mergeRankingFunction, splitIndex / 3 + 1);
+                        mergeRankingFunction, splitIndex / 3 + 1, minRuleProbability);
 
                 grammar = GrammarMerger.merge(maxGrammar, maxLexicon, mergeThesePairs, substateProbabilities);
 

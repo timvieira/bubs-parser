@@ -35,21 +35,28 @@ public class ModeledMergeObjectiveFunction extends MergeObjectiveFunction {
     /** Linear model coefficients for factors affecting efficiency */
     private final static float BINARY_RULE_COUNT_COEFFICIENT = GlobalConfigProperties.singleton().getFloatProperty(
             "binaryRuleCoefficient", 0);
+    private final static float UNARY_RULE_COUNT_COEFFICIENT = GlobalConfigProperties.singleton().getFloatProperty(
+            "unaryRuleCoefficient", 0);
     private final static float V_POS_COEFFICIENT = GlobalConfigProperties.singleton().getFloatProperty(
             "vPosCoefficient", 0);
     private final static float V_PHRASE_COEFFICIENT = GlobalConfigProperties.singleton().getFloatProperty(
             "vPhraseCoefficient", 0);
+    private final static float MEAN_POS_LEXICAL_CHILDREN_COEFFICIENT = GlobalConfigProperties.singleton()
+            .getFloatProperty("meanPosLexicalChildrenCoefficient", 0);
     private final static float MED_ROW_DENSITY_COEFFICIENT = GlobalConfigProperties.singleton().getFloatProperty(
             "medRowDensityCoefficient", 0);
     private final static float MED_COLUMN_DENSITY_COEFFICIENT = GlobalConfigProperties.singleton().getFloatProperty(
             "medColDensityCoefficient", 0);
 
     private Grammar splitGrammar;
+    private Lexicon splitLexicon;
+
     private float splitGrammarMedianRowDensity, splitGrammarMedianColumnDensity;
 
     @Override
     public void initMergeCycle(final Grammar grammar, final Lexicon lexicon, final int cycle) {
         this.splitGrammar = grammar;
+        this.splitLexicon = lexicon;
 
         final float[] rowAndColumnDensities = grammar.medianRowAndColumnDensities();
         this.splitGrammarMedianRowDensity = rowAndColumnDensities[0];
@@ -58,7 +65,7 @@ public class ModeledMergeObjectiveFunction extends MergeObjectiveFunction {
 
     @Override
     public void initMergeCandidates(final List<MergeCandidate> mergeCandidates,
-            final double[][] substateConditionalProbabilities) {
+            final double[][] substateConditionalProbabilities, final float minimumRuleProbability) {
 
         for (final MergeCandidate mergeCandidate : mergeCandidates) {
 
@@ -66,11 +73,19 @@ public class ModeledMergeObjectiveFunction extends MergeObjectiveFunction {
             final Grammar mergedGrammar = splitGrammar.merge(mergeCandidate, substateConditionalProbabilities);
             final float[] medianRowAndColumnDensities = mergedGrammar.medianRowAndColumnDensities();
 
+            float posLexicalChildTerm = 0;
+            if (MEAN_POS_LEXICAL_CHILDREN_COEFFICIENT != 0) {
+                final Lexicon mergedLexicon = splitLexicon.merge(mergeCandidate);
+                posLexicalChildTerm = MEAN_POS_LEXICAL_CHILDREN_COEFFICIENT
+                        * mergedLexicon.meanPosLexicalChildren(minimumRuleProbability);
+            }
+
             mergeCandidate.estimatedInferenceSpeedDelta = BINARY_RULE_COUNT_COEFFICIENT
-                    * mergeCandidate.binaryRuleCountDelta + V_POS_COEFFICIENT * mergeCandidate.vPosDelta
+                    * mergeCandidate.binaryRuleCountDelta + UNARY_RULE_COUNT_COEFFICIENT
+                    * mergeCandidate.unaryRuleCountDelta + V_POS_COEFFICIENT * mergeCandidate.vPosDelta
                     + V_PHRASE_COEFFICIENT * mergeCandidate.vPhraseDelta + MED_ROW_DENSITY_COEFFICIENT
                     * (medianRowAndColumnDensities[0] - splitGrammarMedianRowDensity) + MED_COLUMN_DENSITY_COEFFICIENT
-                    * (medianRowAndColumnDensities[1] - splitGrammarMedianColumnDensity);
+                    * (medianRowAndColumnDensities[1] - splitGrammarMedianColumnDensity) + posLexicalChildTerm;
         }
 
         // Estimated accuracy ranking is already populated by likelihood loss. Populate estimated efficiency ranking by

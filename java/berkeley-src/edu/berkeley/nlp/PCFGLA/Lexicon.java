@@ -13,6 +13,7 @@ import edu.berkeley.nlp.syntax.StateSet;
 import edu.berkeley.nlp.syntax.Tree;
 import edu.berkeley.nlp.util.Numberer;
 import edu.ohsu.cslu.util.IEEEDoubleScaling;
+import edu.ohsu.cslu.util.Math;
 
 /**
  * Simple default implementation of a lexicon, which scores word, tag pairs with a smoothed estimate of
@@ -581,6 +582,19 @@ public class Lexicon implements java.io.Serializable {
         return pb_W_T;
     }
 
+    /**
+     * 
+     * @param word
+     * @param tag
+     * @param noSmoothing
+     * @param c_W
+     * @param tagStateCounter
+     * @param unseenTagStateCounter
+     * @param wordTagCounter
+     * 
+     * @return Probabilities of producing <code>word</code> for each substate of <code>tag</code>. Indexed by substate
+     *         indices.
+     */
     private double[] scoreObservedWord(final String word, final short tag, final boolean noSmoothing, final double c_W,
             final double[] tagStateCounter, final double[] unseenTagStateCounter,
             final HashMap<String, double[]> wordTagCounter) {
@@ -634,6 +648,16 @@ public class Lexicon implements java.io.Serializable {
         return pb_W_T;
     }
 
+    /**
+     * 
+     * @param word
+     * @param tag
+     * @param loc
+     * @param isSignature
+     * 
+     * @return Probabilities of producing <code>word</code> for each substate of <code>tag</code>. Indexed by substate
+     *         indices.
+     */
     private double[] scoreUnobservedWord(final String word, final short tag, final int loc, final boolean isSignature) {
         double pb_W_T;
         final double[] resultArray = new double[numSubStates[tag]];
@@ -1096,6 +1120,83 @@ public class Lexicon implements java.io.Serializable {
         return ruleCountDelta;
     }
 
+    /**
+     * @return The mean number of lexical children (tokens) headed by each preterminal
+     */
+    public float meanPosLexicalChildren(final double minimumRuleProbability) {
+        return Math.mean(posLexicalChildrenCounts(minimumRuleProbability));
+    }
+
+    /**
+     * @return The median number of lexical children (tokens) headed by each preterminal
+     */
+    public float medianPosLexicalChildren(final double minimumRuleProbability) {
+        return Math.median(posLexicalChildrenCounts(minimumRuleProbability));
+    }
+
+    private int[] posLexicalChildrenCounts(final double minimumRuleProbability) {
+
+        final int[][] substateLexicalChildren = new int[observedTokenFractionalCounts.length][];
+
+        for (int tag = 0; tag < observedTokenFractionalCounts.length; tag++) {
+
+            if (observedTokenFractionalCounts[tag] != null) {
+                for (final String word : observedTokenFractionalCounts[tag].keySet()) {
+
+                    final double[] scores = score(word, (short) tag, 0, false, false);
+                    if (substateLexicalChildren[tag] == null) {
+                        substateLexicalChildren[tag] = new int[scores.length];
+                    }
+                    for (int split = 0; split < scores.length; split++) {
+                        if (scores[split] > minimumRuleProbability) {
+                            substateLexicalChildren[tag][split]++;
+                        }
+                    }
+                }
+            }
+
+            if (unkFractionalCounts != null && unkFractionalCounts[tag] != null) {
+                for (final String word : unkFractionalCounts[tag].keySet()) {
+
+                    final double[] scores = score(word, (short) tag, 0, false, true);
+                    if (substateLexicalChildren[tag] == null) {
+                        substateLexicalChildren[tag] = new int[scores.length];
+                    }
+                    for (int split = 0; split < scores.length; split++) {
+                        if (scores[split] > minimumRuleProbability) {
+                            substateLexicalChildren[tag][split]++;
+                        }
+                    }
+                }
+            }
+        }
+
+        int nonZeroCounts = 0;
+        for (int i = 0; i < substateLexicalChildren.length; i++) {
+            if (substateLexicalChildren[i] == null) {
+                continue;
+            }
+            for (int j = 0; j < substateLexicalChildren[i].length; j++) {
+                if (substateLexicalChildren[i][j] > 0) {
+                    nonZeroCounts++;
+                }
+            }
+        }
+
+        final int[] posLexicalChildren = new int[nonZeroCounts];
+        for (int i = 0, k = 0; i < substateLexicalChildren.length; i++) {
+            if (substateLexicalChildren[i] == null) {
+                continue;
+            }
+            for (int j = 0; j < substateLexicalChildren[i].length; j++) {
+                if (substateLexicalChildren[i][j] > 0) {
+                    posLexicalChildren[k++] = substateLexicalChildren[i][j];
+                }
+            }
+        }
+        return posLexicalChildren;
+    }
+
     public String toString(final double minimumRuleProbability) {
 
         final Numberer n = Numberer.getGlobalNumberer("tags");
@@ -1111,7 +1212,7 @@ public class Lexicon implements java.io.Serializable {
                     for (int split = 0; split < scores.length; split++) {
                         if (scores[split] > minimumRuleProbability) {
                             sb.append(String.format("%s_%d -> %s %.10f\n", tagState, split, word,
-                                    Math.log(scores[split])));
+                                    java.lang.Math.log(scores[split])));
                         }
                     }
                 }
@@ -1124,20 +1225,12 @@ public class Lexicon implements java.io.Serializable {
                     for (int split = 0; split < scores.length; split++) {
                         if (scores[split] > minimumRuleProbability) {
                             sb.append(String.format("%s_%d -> %s %.10f\n", tagState, split, word,
-                                    Math.log(scores[split])));
+                                    java.lang.Math.log(scores[split])));
                         }
                     }
                 }
             }
         }
-
-        /*
-         * sb.append("--------------------------------------------------\n");
-         * sb.append("UNSEEN-TAG-AND-SIGNATURE-COUNTER (c_TW):\n"); for (int tag=0; tag<unseenWordToTagCounters.length;
-         * tag++){ if (unseenWordToTagCounters[tag]==null) continue; String tagState = (String)n.object(tag); for
-         * (String word : unseenWordToTagCounters[tag].keySet()){ sb.append(tagState+" "+word+" "
-         * +Arrays.toString(unseenWordToTagCounters[tag].get(word))+"\n"); } }
-         */
 
         return sb.toString();
     }

@@ -137,7 +137,7 @@ public class DiscriminativeMergeObjectiveFunction extends MergeObjectiveFunction
 
     @Override
     public void initMergeCandidates(final List<MergeCandidate> mergeCandidates,
-            final double[][] substateConditionalProbabilities) {
+            final double[][] substateConditionalProbabilities, final float minimumRuleProbability) {
 
         final int totalMergeCandidates = mergeCandidates.size();
 
