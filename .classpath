@@ -6,6 +6,7 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry exported="true" kind="lib" path="java/bsd-lib/fastutil.jar" sourcepath="java/bsd-lib/fastutil-src.jar"/>
 	<classpathentry exported="true" kind="lib" path="java/bsd-lib/jsr166y.jar" sourcepath="java/bsd-lib/jsr166y-src.jar"/>
+	<classpathentry exported="true" kind="lib" path="java/bsd-lib/servlet-api-2.5.jar" />
 	<classpathentry exported="true" kind="lib" path="java/lgpl-lib/javacl.jar"/>
 	<classpathentry exported="true" kind="lib" path="java/lgpl-lib/jnaerator.jar"/>
 	<classpathentry exported="true" kind="lib" path="java/lgpl-lib/opencl4java.jar"/>

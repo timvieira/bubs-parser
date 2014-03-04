@@ -198,11 +198,6 @@ public class RealPackedArrayChart extends Chart {
         this.insideScalingSteps = new int[cells];
         this.outsideScalingSteps = new int[cells];
 
-        // TODO Do we need to do this?
-        // Initialize outside probabilities to 1. If we're doing posterior inference, we'll populate them appropriately;
-        // otherwise, posterior decoding methods will reduce to inside probabilities only.
-        // Arrays.fill(outsideProbabilities, 1);
-
         // Calculate all cell offsets, etc
         for (int start = 0; start < size; start++) {
             for (int end = start + 1; end <= size; end++) {
@@ -800,14 +795,17 @@ public class RealPackedArrayChart extends Chart {
      */
     private BinaryTree<String> decodeMaxRuleProductParse(final RealInsideOutsideCscSparseMatrixGrammar cscGrammar) {
 
+        // We're summing over non-terminal splits, so the decoding vocabulary is the base (unsplit) vocabulary
         maxcVocabulary = cscGrammar.nonTermSet.baseVocabulary();
 
         // Start symbol inside-probability (P_in(root,0,n) in Petrov's notation)
         final double startSymbolInsideProbability = startSymbolInsideProbability();
         final int startSymbolScalingStep = insideScalingSteps[cellIndex(0, size)];
 
+        // Temporary storage for right-child probabilities, indexed by split non-terminals
         final double[] rightChildInsideProbabilities = new double[cscGrammar.numNonTerms()];
 
+        //
         for (short span = 1; span <= size; span++) {
             for (short start = 0; start < size - span + 1; start++) {
 
@@ -835,6 +833,7 @@ public class RealPackedArrayChart extends Chart {
                             maxQRightChildren[cellIndex][baseParent] = Production.LEXICAL_PRODUCTION;
                         }
                     }
+                    // Find the maximum base / unsplit parent non-terminal
                     for (int baseParent = 0; baseParent < maxcVocabulary.size(); baseParent++) {
                         if (r[baseParent] > 0) {
                             maxQ[cellIndex][baseParent] = IEEEDoubleScaling.unscale(r[baseParent]
@@ -852,35 +851,40 @@ public class RealPackedArrayChart extends Chart {
                     final int scalingStep = insideScalingSteps[cellIndex(start, midpoint)]
                             + insideScalingSteps[cellIndex(midpoint, end)] + outsideScalingSteps[cellIndex(start, end)];
 
-                    // Since Petrov's 'r' is a sum over unsplit categories, we compute a temporary r array for each
-                    // midpoint and then maximize over midpoints
-                    // currentMidpointR is indexed by base parent, base left child, base right child
+                    // Petrov's rule score 'r' is a sum over unsplit categories; we construct a temporary r array
+                    // for each midpoint and then maximize over midpoints
+                    //
+                    // r is indexed by base parent, base left child, base right child
                     final double[][][] r = new double[maxcVocabulary.size()][][];
 
                     final int leftCellIndex = cellIndex(start, midpoint);
-
                     final int leftStart = minLeftChildIndex(leftCellIndex);
                     final int leftEnd = maxLeftChildIndex(leftCellIndex);
 
+                    // Copy the inside probabilities from the right-child cell into 'dense' storage, so we can
+                    // short-circuit 0-probability non-terminals below
                     getCell(midpoint, end).copyInsideProbabilities(rightChildInsideProbabilities);
 
-                    // Iterate over parents
+                    // Iterate over parents ('Packed' probabilities in the compact chart; we only represent entries with
+                    // non-0 probability)
                     for (int i = parentStart; i < parentEnd; i++) {
-                        final short parent = nonTerminalIndices[i];
-                        final short baseParent = cscGrammar.nonTermSet.getBaseIndex(parent);
+                        final short splitParent = nonTerminalIndices[i];
+                        final short baseParent = cscGrammar.nonTermSet.getBaseIndex(splitParent);
                         final double parentOutside = outsideProbabilities[i];
-                        // And over children in the left child cell
+
+                        // And over children in the left child cell (again, 'packed' probabilities; we'll only use
+                        // un-packed storage for right children, below)
                         for (int j = leftStart; j <= leftEnd; j++) {
-                            final short leftChild = nonTerminalIndices[j];
-                            final short baseLeftChild = cscGrammar.nonTermSet.getBaseIndex(leftChild);
+                            final short splitLeftChild = nonTerminalIndices[j];
+                            final short baseLeftChild = cscGrammar.nonTermSet.getBaseIndex(splitLeftChild);
 
                             // // If we've already found a q for this parent greater than the left-child maxQ, we can
-                            // // short-circuit without computing r
+                            // // short-circuit without computing r (see TODO below)
                             // if (maxQ[leftCellIndex][baseLeftChild] < maxQ[cellIndex][baseParent]) {
                             // continue;
                             // }
 
-                            final int column = cscGrammar.rightChildPackingFunction.pack(parent, leftChild);
+                            final int column = cscGrammar.rightChildPackingFunction.pack(splitParent, splitLeftChild);
                             if (column == Integer.MIN_VALUE) {
                                 continue;
                             }
@@ -889,25 +893,35 @@ public class RealPackedArrayChart extends Chart {
 
                             // Iterate over grammar rules
                             for (int k = cscGrammar.rightChildCscBinaryColumnOffsets[column]; k < cscGrammar.rightChildCscBinaryColumnOffsets[column + 1]; k++) {
-                                final short rightChild = cscGrammar.rightChildCscBinaryRowIndices[k];
+                                final short splitRightChild = cscGrammar.rightChildCscBinaryRowIndices[k];
 
-                                final double rightChildInside = rightChildInsideProbabilities[rightChild];
+                                // Skip this production if we recorded 0 probability for the child
+                                final double rightChildInside = rightChildInsideProbabilities[splitRightChild];
                                 if (rightChildInside == 0.0) {
                                     continue;
                                 }
 
-                                final short baseRightChild = cscGrammar.nonTermSet.getBaseIndex(rightChild);
+                                final short baseRightChild = cscGrammar.nonTermSet.getBaseIndex(splitRightChild);
 
                                 // Allocate space in current-midpoint r array if needed
                                 allocateChildArray(r, baseParent, baseLeftChild);
 
+                                // Add this split rule's contribution to the unsplit rule score r.
+                                // P(A -> B C) * P_in(left child) * P_in(right child) * P_out(parent)
+                                //
+                                // Scaled with IEEEDoubleScaling with the scaling steps for the parent and child cells
                                 r[baseParent][baseLeftChild][baseRightChild] += IEEEDoubleScaling.unscale(
                                         cscGrammar.rightChildCscBinaryProbabilities[k] * leftChildInside
                                                 * rightChildInside * parentOutside, scalingStep);
 
+                                //
+                                // Compute q (just r divided by the start symbol inside probability)
+                                // Scale with the top cell's scaling step
+                                //
                                 // TODO True max-rule decoding should incorporate the child q's too. We (mistakenly)
                                 // haven't been doing that thus far. It seems to be working better this way, but we
                                 // would be able to prune the search space if we do 'real' max-rule.
+                                //
                                 final double q = IEEEDoubleScaling.unscale(r[baseParent][baseLeftChild][baseRightChild]
                                         / startSymbolInsideProbability, -startSymbolScalingStep);
                                 // TODO * maxQ[leftChildCellIndex][baseLeftChild] *
@@ -934,10 +948,12 @@ public class RealPackedArrayChart extends Chart {
                     if (parentUnaryR == null) {
                         continue;
                     }
+
                     for (short baseChild = 0; baseChild < parentUnaryR.length; baseChild++) {
                         // Preclude unary chains. Not great, but it's one way to prevent infinite unary loops
                         final double jointUnaryR = IEEEDoubleScaling.unscale(parentUnaryR[baseChild]
                                 / startSymbolInsideProbability, -startSymbolScalingStep);
+
                         if (jointUnaryR > maxQ[cellIndex][baseParent]
                                 && maxQRightChildren[cellIndex][baseChild] != Production.UNARY_PRODUCTION) {
 
@@ -1621,7 +1637,7 @@ public class RealPackedArrayChart extends Chart {
             // Allocate storage
             if (tmpCell == null) {
                 // TODO Use the thread-local version. This will require deciding at thread-local init time whether to
-                // allocate outside probability array
+                // allocate the outside probability array
                 // this.tmpCell = threadLocalTemporaryCells.get();
                 // this.tmpCell.clear();
                 this.tmpCell = new TemporaryChartCell(grammar, allocateOutsideProbabilities);

@@ -24,6 +24,7 @@ import it.unimi.dsi.fastutil.shorts.ShortArrayList;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.logging.Level;
 
 import cltool4j.BaseLogger;
@@ -76,9 +77,23 @@ public class CompleteClosureModel extends ChainableCellSelectorModel implements 
     public CompleteClosureModel(final File classifierModel, final CellSelectorModel childModel) throws IOException,
             ClassNotFoundException {
 
+        this(new FileInputStream(classifierModel), childModel);
+    }
+
+    /**
+     * Standard constructor
+     * 
+     * @param classifierModel
+     * @param childModel
+     * @throws IOException
+     * @throws ClassNotFoundException
+     */
+    public CompleteClosureModel(final InputStream classifierModel, final CellSelectorModel childModel)
+            throws IOException, ClassNotFoundException {
+
         super(childModel);
         this.classifier = new CompleteClosureClassifier();
-        classifier.readModel(new FileInputStream(classifierModel));
+        classifier.readModel(classifierModel);
         this.posTagger = classifier.posTagger;
     }
 

@@ -221,7 +221,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     public InputFormat inputFormat = InputFormat.Text;
 
     @Option(name = "-maxLength", metaVar = "length", usage = "Skip sentences longer than length")
-    int maxLength = 200;
+    int maxLength = 250;
 
     // == Output options ==
     @Option(name = "-printUNK", optionalChoiceGroup = "UNK", usage = "Print unknown words as their UNK replacement class")
