@@ -295,12 +295,7 @@ public class Grammar implements Serializable, Cloneable {
         smoother.smooth(packedUnaryCountMap, packedBinaryCountMap, numSubStates, observedParentCounts());
         normalizeCounts();
 
-        // Add unaries to rule-by-parent and rule-by-child arrays for computePairsOfUnaries
-        for (final int unaryKey : packedUnaryRuleMap.keySet()) {
-            final UnaryRule r = new UnaryRule(packedUnaryRuleMap.get(unaryKey), numSubStates);
-            addUnary(r);
-        }
-        computePairsOfUnaries();
+        computePairsOfUnaries(true);
     }
 
     /**
@@ -423,7 +418,15 @@ public class Grammar implements Serializable, Cloneable {
         }
     }
 
-    public void computePairsOfUnaries() {
+    public void computePairsOfUnaries(final boolean updateUnaryMaps) {
+
+        if (updateUnaryMaps) {
+            // Add unaries to rule-by-parent and rule-by-child arrays
+            for (final int unaryKey : packedUnaryRuleMap.keySet()) {
+                final UnaryRule r = new UnaryRule(packedUnaryRuleMap.get(unaryKey), numSubStates);
+                addUnary(r);
+            }
+        }
 
         for (short parentState = 0; parentState < numStates; parentState++) {
             for (short childState = 0; childState < numStates; childState++) {
@@ -601,7 +604,7 @@ public class Grammar implements Serializable, Cloneable {
         }
 
         newGrammar.extendSplitTrees(splitTrees, numSubStates);
-        newGrammar.computePairsOfUnaries();
+        newGrammar.computePairsOfUnaries(false);
 
         return newGrammar;
     }
@@ -1145,12 +1148,7 @@ public class Grammar implements Serializable, Cloneable {
             }
         }
 
-        // Add unaries to rule-by-parent and rule-by-child arrays for computePairsOfUnaries
-        for (final int unaryKey : newGrammar.packedUnaryRuleMap.keySet()) {
-            final UnaryRule r = new UnaryRule(newGrammar.packedUnaryRuleMap.get(unaryKey), numSubStates);
-            newGrammar.addUnary(r);
-        }
-        newGrammar.computePairsOfUnaries();
+        newGrammar.computePairsOfUnaries(true);
 
         return newGrammar;
     }

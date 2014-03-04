@@ -56,7 +56,7 @@ public class Lexicon implements java.io.Serializable {
     // int smoothingCutoff;
 
     private Smoother smoother;
-    final double threshold;
+    final double minRuleProbability;
 
     /**
      * Cache unknown-word signatures - we'll always return the same signature for a word; the signature for a word
@@ -85,26 +85,30 @@ public class Lexicon implements java.io.Serializable {
      * optimize().
      * 
      * @param numSubStates
-     * @param smoothParam
+     * @param smoothingParams
      * @param smoother
      * @param learnUnknownWordRules If true, the lexicon will accumulate pseudo-counts for unknown word signatures,
      *            based on observed counts of rare words. If the training corpus incorporates rare-word signatures
      *            directly, these counts are unnecessary.
-     * @param threshold
+     * @param minRuleProbability
      */
     @SuppressWarnings("unchecked")
-    public Lexicon(final short[] numSubStates, final double[] smoothParam, final Smoother smoother,
-            final boolean learnUnknownWordRules, final double threshold) {
+    public Lexicon(final short[] numSubStates, final double[] smoothingParams, final Smoother smoother,
+            final boolean learnUnknownWordRules, final double minRuleProbability) {
+        this(numSubStates, smoothingParams, smoother, learnUnknownWordRules ? new HashMap[numSubStates.length] : null,
+                minRuleProbability);
+    }
+
+    @SuppressWarnings({ "unchecked" })
+    private Lexicon(final short[] numSubStates, final double[] smoothingParams, final Smoother smoother,
+            final HashMap<String, double[]>[] unkFractionalCounts, final double minRuleProbability) {
+
         this.numSubStates = numSubStates;
-        this.smoothingParams = smoothParam;
+        this.smoothingParams = smoothingParams;
         this.smoother = smoother;
         this.observedTokenFractionalCounts = new HashMap[numSubStates.length];
 
-        if (learnUnknownWordRules) {
-            this.unkFractionalCounts = new HashMap[numSubStates.length];
-        } else {
-            this.unkFractionalCounts = null;
-        }
+        this.unkFractionalCounts = unkFractionalCounts;
 
         this.tagCounter = new double[numSubStates.length][];
         this.unseenTagCounter = new double[numSubStates.length][];
@@ -113,7 +117,7 @@ public class Lexicon implements java.io.Serializable {
             tagCounter[i] = new double[numSubStates[i]];
             unseenTagCounter[i] = new double[numSubStates[i]];
         }
-        this.threshold = threshold;
+        this.minRuleProbability = minRuleProbability;
     }
 
     /**
@@ -134,7 +138,7 @@ public class Lexicon implements java.io.Serializable {
         }
 
         final Lexicon newLexicon = new Lexicon(newNumSubStates, smoothingParams, smoother,
-                this.unkFractionalCounts != null, this.threshold);
+                this.unkFractionalCounts != null, this.minRuleProbability);
 
         // copy and alter all data structures
         for (int tag = 0; tag < observedTokenFractionalCounts.length; tag++) {
@@ -921,7 +925,7 @@ public class Lexicon implements java.io.Serializable {
         newNumSubStates[mergeCandidate.state]--;
 
         final Lexicon newLexicon = new Lexicon(newNumSubStates, smoothingParams, smoother,
-                this.unkFractionalCounts != null, this.threshold);
+                this.unkFractionalCounts != null, this.minRuleProbability);
         newLexicon.totalTokens = totalTokens;
         newLexicon.totalUnseenTokens = totalUnseenTokens;
         newLexicon.totalWords = totalWords;
@@ -1066,8 +1070,8 @@ public class Lexicon implements java.io.Serializable {
         return smoothingParams;
     }
 
-    public double getPruningThreshold() {
-        return threshold;
+    public double getMinRuleProbability() {
+        return minRuleProbability;
     }
 
     @Override
@@ -1195,6 +1199,46 @@ public class Lexicon implements java.io.Serializable {
             }
         }
         return posLexicalChildren;
+    }
+
+    /**
+     * Returns a clone of this {@link Lexicon}, duplicating {@link #observedTokenFractionalCounts},
+     * {@link #numSubStates}, and {@link #tagCounter}. Intended for use when passing a {@link Lexicon} to
+     * {@link GrammarMerger#merge(Grammar, Lexicon, boolean[][][], double[][])}, which mutates the {@link Lexicon} in
+     * place.
+     * 
+     * @return A clone of this {@link Lexicon}, duplicating {@link #observedTokenFractionalCounts},
+     *         {@link #numSubStates}, and {@link #tagCounter}.
+     */
+    public Lexicon shallowClone() {
+
+        // Deep-copy tagCounter and observedTokenFractionalCounts and duplicate references to all the other fields
+
+        final Lexicon newLexicon = new Lexicon(numSubStates.clone(), smoothingParams, smoother, unkFractionalCounts,
+                minRuleProbability);
+
+        for (int i = 0; i < tagCounter.length; i++) {
+            newLexicon.tagCounter[i] = tagCounter[i].clone();
+        }
+        for (int i = 0; i < numSubStates.length; i++) {
+            if (observedTokenFractionalCounts[i] != null) {
+                newLexicon.observedTokenFractionalCounts[i] = new HashMap<String, double[]>();
+                for (final String key : observedTokenFractionalCounts[i].keySet()) {
+                    newLexicon.observedTokenFractionalCounts[i].put(key, observedTokenFractionalCounts[i].get(key)
+                            .clone());
+                }
+            }
+        }
+
+        newLexicon.totalTokens = totalTokens;
+        newLexicon.totalUnseenTokens = totalUnseenTokens;
+        newLexicon.totalWords = totalWords;
+        newLexicon.unseenTagCounter = unseenTagCounter;
+        newLexicon.wordCounter = wordCounter;
+        newLexicon.cachedSignatures = cachedSignatures;
+        newLexicon.cachedSentenceInitialSignatures = cachedSentenceInitialSignatures;
+
+        return newLexicon;
     }
 
     public String toString(final double minimumRuleProbability) {

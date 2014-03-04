@@ -1,9 +1,11 @@
 package edu.berkeley.nlp.PCFGLA;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 
 import cltool4j.BaseLogger;
 import cltool4j.GlobalConfigProperties;
@@ -27,10 +29,12 @@ public class GrammarMerger {
      * used anymore since it seemed tricky to determine an appropriate threshold for merging non-siblings. The function
      * returns a new grammar object and changes the lexicon in place!
      * 
-     * @param grammar
-     * @param lexicon
+     * @param grammar Grammar to be merged
+     * @param lexicon Lexicon to be merged (updated in place)
      * @param mergeThesePairs
      * @param substateConditionalProbabilities
+     * 
+     * @return Merged grammar (note that <code>lexicon</code> is updated in place).
      */
     public static Grammar merge(Grammar grammar, final Lexicon lexicon, final boolean[][][] mergeThesePairs,
             final double[][] substateConditionalProbabilities) {
@@ -203,7 +207,7 @@ public class GrammarMerger {
      *            {@link GrammarMerger#computeMergeLikelihoodDeltas(Grammar, Lexicon, double[][], StateSetTreeList)}.
      * @param ruleCountDeltas Change in total rule-count for each merge candidate. Indexed by state, substate 1,
      *            substate 2. As computed by {@link Grammar#estimateMergeRuleCountDeltas(Lexicon)}.
-     * @param mergingPercentage
+     * @param mergeFraction
      * @param rankingFunction
      * @param cycle The current training cycle (1-based)
      * 
@@ -212,7 +216,7 @@ public class GrammarMerger {
      */
     public static boolean[][][] selectMergePairs(final Grammar grammar, final Lexicon lexicon,
             final double[][] substateConditionalProbabilities, final float[][][] mergeLikelihoodDeltas,
-            final int[][][] ruleCountDeltas, final double mergingPercentage, final MergeRanking rankingFunction,
+            final int[][][] ruleCountDeltas, final float mergeFraction, final MergeRanking rankingFunction,
             final int cycle, final float minimumRuleProbability) {
 
         final boolean[][][] mergeThesePairs = new boolean[grammar.numSubStates.length][][];
@@ -232,20 +236,52 @@ public class GrammarMerger {
             }
         }
 
-        // Compute all merge costs, per the ranking function
-        computeMergeCostsAndRankings(grammar, lexicon, substateConditionalProbabilities, mergeCandidates,
-                rankingFunction, cycle, minimumRuleProbability);
+        // Estimated likelihood loss is an inexpensive calculation and is prepopulated in the MergeCandidates. This
+        // ranking is used as an input by several MergeObjectiveFunctions, so we populate it before computing other
+        // rankings
+        Collections.sort(mergeCandidates, MergeCandidate.estimatedLikelihoodComparator());
+        for (int i = 0; i < mergeCandidates.size(); i++) {
+            final MergeCandidate c = mergeCandidates.get(i);
+            c.estimatedAccuracyDelta = c.estimatedLikelihoodDelta;
+            c.estimatedAccuracyRanking = i;
+        }
 
-        // Order the merge candidates (least valuable, or most-mergeable, candidates first; most-valuable last) and
-        // select a threshold
-        Collections.sort(mergeCandidates, rankingFunction);
-        final int thresholdCandidate = (int) (mergeCandidates.size() * mergingPercentage);
+        final long t0 = System.currentTimeMillis();
 
-        final float threshold = rankingFunction.objectiveFunction.mergeCost(mergeCandidates.get(thresholdCandidate));
-        BaseLogger.singleton().info("Merge threshold: " + threshold);
+        final MergeObjectiveFunction objectiveFunction = rankingFunction.objectiveFunction();
+        objectiveFunction.initMergeCycle(grammar, lexicon, cycle);
+        BaseLogger.singleton().info(
+                String.format("Initialized merge cycle in %.3f seconds", (System.currentTimeMillis() - t0) / 1000f));
 
-        // Select the bottom portion of the ranked list as the candidates to be merged
-        final List<MergeCandidate> selectedMergeCandidates = mergeCandidates.subList(0, thresholdCandidate + 1);
+        // Special-case here for SamplingMergeObjective
+        final List<MergeCandidate> selectedMergeCandidates;
+        if (rankingFunction == MergeRanking.Sampled) {
+            selectedMergeCandidates = ((SamplingMergeObjective) rankingFunction.objectiveFunction).sample(
+                    mergeCandidates, substateConditionalProbabilities, mergeFraction);
+
+        } else {
+
+            final long t1 = System.currentTimeMillis();
+
+            // Compute all merge costs, per the ranking function
+            objectiveFunction.initMergeCandidates(mergeCandidates, substateConditionalProbabilities,
+                    minimumRuleProbability);
+            BaseLogger.singleton().info(
+                    String.format("Examined %d merge candidates in %.3f seconds", mergeCandidates.size(),
+                            (System.currentTimeMillis() - t1) / 1000f));
+
+            // Order the merge candidates (least valuable, or most-mergeable, candidates first; most-valuable last) and
+            // select a threshold
+            Collections.sort(mergeCandidates, rankingFunction);
+            final int thresholdCandidate = (int) (mergeCandidates.size() * mergeFraction);
+
+            final float threshold = rankingFunction.objectiveFunction
+                    .mergeCost(mergeCandidates.get(thresholdCandidate));
+            BaseLogger.singleton().info("Merge threshold: " + threshold);
+
+            // Select the bottom portion of the ranked list as the candidates to be merged
+            selectedMergeCandidates = mergeCandidates.subList(0, thresholdCandidate + 1);
+        }
 
         for (int state = 0; state < mergeThesePairs.length; state++) {
             mergeThesePairs[state] = new boolean[numSubStatesArray[state]][numSubStatesArray[state]];
@@ -266,39 +302,26 @@ public class GrammarMerger {
     }
 
     /**
-     * Sorts the list of merge costs by various criteria and assigns ranking numbers for each (e.g. estimated likelihood
-     * loss, rule count savings, etc.), then computes total merge cost for each non-terminal pair
+     * Converts a sampled {@link Set} of {@link MergeCandidate}s to a boolean array, as expected by
+     * {@link GrammarMerger#merge(Grammar, Lexicon, boolean[][][], double[][])}.
      * 
-     * @param grammar
-     * @param substateConditionalProbabilities TODO
-     * @param mergeCandidates An unordered list of estimated merge costs. Note that this list will be reordered.
-     * @param rankingFunction A merge-cost ranking function
-     * @param cycle The current training cycle (1-based)
-     * @param minimumRuleProbability
+     * @param mergeCandidates
+     * @return Merge pairs as a boolean array
      */
-    private static void computeMergeCostsAndRankings(final Grammar grammar, final Lexicon lexicon,
-            final double[][] substateConditionalProbabilities, final ArrayList<MergeCandidate> mergeCandidates,
-            final MergeRanking rankingFunction, final int cycle, final float minimumRuleProbability) {
+    static boolean[][][] mergePairs(final Collection<MergeCandidate> mergeCandidates, final Grammar grammar) {
 
-        final long t0 = System.currentTimeMillis();
-
-        // Estimated likelihood loss is an inexpensive calculation and is prepopulated in the MergeCandidates. This
-        // ranking is used as an input by several MergeObjectiveFunctions, so we populate it before computing other
-        // rankings
-        Collections.sort(mergeCandidates, MergeCandidate.estimatedLikelihoodComparator());
-        for (int i = 0; i < mergeCandidates.size(); i++) {
-            mergeCandidates.get(i).estimatedAccuracyRanking = i;
+        final boolean[][][] mergePairs = new boolean[grammar.numStates][][];
+        for (int state = 0; state < mergePairs.length; state++) {
+            mergePairs[state] = new boolean[grammar.numSubStates[state]][grammar.numSubStates[state]];
         }
 
-        final MergeObjectiveFunction objectiveFunction = rankingFunction.objectiveFunction();
-        objectiveFunction.initMergeCycle(grammar, lexicon, cycle);
-        objectiveFunction
-                .initMergeCandidates(mergeCandidates, substateConditionalProbabilities, minimumRuleProbability);
-
-        BaseLogger.singleton().info(
-                String.format("Examined %d merge candidates in %.3f seconds", mergeCandidates.size(),
-                        (System.currentTimeMillis() - t0) / 1000f));
-
+        for (final MergeCandidate c : mergeCandidates) {
+            mergePairs[c.state][c.substate1][c.substate2] = true;
+            BaseLogger.singleton().fine(
+                    String.format("Merging %s_%d and %s_%d", tagNumberer.symbol(c.state), c.substate1,
+                            tagNumberer.symbol(c.state), c.substate2));
+        }
+        return mergePairs;
     }
 
     static class MergeCandidate {
@@ -504,11 +527,13 @@ public class GrammarMerger {
         /**
          * Samples sets of merge candidates and performs inference with the resulting grammars. Similar to
          * {@link #Discriminative}, but considerably more expensive, since many samples are usually required. Note that
-         * this method does not populate {@link #objectiveFunction}, so it must be handed as a special case in
+         * {@link SamplingMergeObjective} does not support
+         * {@link MergeObjectiveFunction#initMergeCandidates(List, double[][], float)}, so this objective must be handed
+         * as a special case in
          * {@link GrammarMerger#selectMergePairs(Grammar, Lexicon, double[][], float[][][], int[][][], double, MergeRanking, int, float)}
          * .
          */
-        Sampled(null);
+        Sampled(new SamplingMergeObjective());
 
         /**
          * Objective function for the chosen objective.

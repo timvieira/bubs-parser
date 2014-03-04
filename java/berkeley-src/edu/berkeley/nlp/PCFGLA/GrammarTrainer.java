@@ -1,10 +1,9 @@
 package edu.berkeley.nlp.PCFGLA;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.Charset;
@@ -68,6 +67,10 @@ public class GrammarTrainer extends BaseCommandlineTool {
 
     @Option(name = "-gd", aliases = { "--grammar-directory" }, required = true, metaVar = "directory", usage = "Output grammar directory. Each merged grammar will be output in .gz format")
     private File outputGrammarDirectory;
+    // Used for integration testing. If non-null, the output grammar(s) are written to these OutputStreams instead of to
+    // the regular output grammar directory
+    OutputStream[] outputGrammarStreams;
+    private int outputGrammarStreamIndex = 0;
 
     @Option(name = "-gp", aliases = { "--grammar-prefix" }, metaVar = "prefix", usage = "Output grammar file prefix (e.g. 'eng.' produces 'eng.sm1.gr.gz', 'eng.sm2.gr.gz', etc.")
     private String outputGrammarPrefix = "";
@@ -76,7 +79,7 @@ public class GrammarTrainer extends BaseCommandlineTool {
     private int splitMergeCycles = 6;
 
     @Option(name = "-mf", metaVar = "fraction", usage = "Fraction of new splits to re-merge in each split-merge cycle")
-    private double mergeFraction = 0.5;
+    private float mergeFraction = 0.5f;
 
     @Option(name = "-d", metaVar = "file", usage = "Development-set")
     private File devSet;
@@ -147,13 +150,13 @@ public class GrammarTrainer extends BaseCommandlineTool {
 
     @Override
     protected void setup() {
-        if (outputGrammarDirectory != null && !outputGrammarDirectory.exists()) {
+        if (outputGrammarDirectory != null && outputGrammarStreams == null && !outputGrammarDirectory.exists()) {
             outputGrammarDirectory.mkdir();
         }
     }
 
     @Override
-    public void run() throws FileNotFoundException {
+    public void run() throws IOException {
 
         BaseLogger.singleton().config(
                 String.format("Using %s binarization, randomness: %.3f  seed: %d", binarization.name(), randomization,
@@ -172,18 +175,18 @@ public class GrammarTrainer extends BaseCommandlineTool {
 
         List<Tree<String>> devSetTrees = new ArrayList<Tree<String>>();
         if (devSet != null) {
-            final Corpus devSetCorpus = new Corpus(new FileInputStream(devSet));
+            final Corpus devSetCorpus = new Corpus(fileAsInputStream(devSet));
             devSetTrees = Corpus.binarizeAndFilterTrees(devSetCorpus.trees(), horizontalMarkovization,
                     maxSentenceLength, binarization);
         }
 
-        // Special-case to initialize discriminative ranking function
-        if (mergeRankingFunction == MergeRanking.Discriminative) {
+        // Special-case to initialize inference-informed ranking functions
+        if (mergeRankingFunction == MergeRanking.Discriminative || mergeRankingFunction == MergeRanking.Sampled) {
             if (devSet == null) {
                 throw new IllegalArgumentException(
-                        "Discriminative merge ranking requires a development set (-d option)");
+                        "Inference-informed merge ranking functional require a development set (-d option)");
             }
-            final DiscriminativeMergeObjectiveFunction mergeObjectiveFunction = (DiscriminativeMergeObjectiveFunction) mergeRankingFunction
+            final InferenceInformedMergeObjectiveFunction mergeObjectiveFunction = (InferenceInformedMergeObjectiveFunction) mergeRankingFunction
                     .objectiveFunction();
 
             try {
@@ -272,7 +275,7 @@ public class GrammarTrainer extends BaseCommandlineTool {
             lexicon.tieRareWordStats(rareWordThreshold);
 
             // remove the unlikely tags
-            lexicon.removeUnlikelyTags(lexicon.threshold, -1.0);
+            lexicon.removeUnlikelyTags(lexicon.minRuleProbability, -1.0);
             grammar.optimize(randomization);
 
             maxGrammar = grammar;
@@ -350,11 +353,11 @@ public class GrammarTrainer extends BaseCommandlineTool {
 
                 // Retrain lexicon to finish the lexicon merge (updates the unknown-word model)
                 lexicon = new Lexicon(grammar.numSubStates, maxLexicon.getSmoothingParams(), maxLexicon.getSmoother(),
-                        !trainingCorpusIncludesUnks, maxLexicon.getPruningThreshold());
+                        !trainingCorpusIncludesUnks, maxLexicon.getMinRuleProbability());
                 final ArrayParser parser = new ArrayParser(grammar, maxLexicon);
                 emIteration(parser, grammar, maxLexicon, null, lexicon, trainStateSetTrees, rareWordThreshold);
                 // remove the unlikely tags
-                lexicon.removeUnlikelyTags(lexicon.threshold, -1.0);
+                lexicon.removeUnlikelyTags(lexicon.minRuleProbability, -1.0);
 
                 maxGrammar = grammar;
                 maxLexicon = lexicon;
@@ -389,8 +392,8 @@ public class GrammarTrainer extends BaseCommandlineTool {
             for (int iteration = 1, droppingIterations = 0; iteration <= emIterations
                     && droppingIterations < maxDroppingLLIterations; iteration++) {
 
-                final EmIterationResult result = emIteration(iteration, grammar, lexicon, trainStateSetTrees,
-                        devSetStateSetTrees, minRuleProbability);
+                final EmIterationResult result = emIteration(grammar, lexicon, trainStateSetTrees, devSetStateSetTrees,
+                        minRuleProbability);
 
                 grammar = result.grammar;
                 lexicon = result.lexicon;
@@ -408,7 +411,7 @@ public class GrammarTrainer extends BaseCommandlineTool {
                 BaseLogger.singleton().info(
                         String.format(
                                 "Iteration: %2d  Training set likelihood: %.4f  Time %d ms  nBinary=%d  nUnary=%d",
-                                iteration, result.trainingSetLikelihood, result.emTime,
+                                iteration, result.trainingCorpusLikelihood, result.emTime,
                                 result.grammar.binaryRuleCount(minRuleProbability),
                                 result.grammar.unaryRuleCount(minRuleProbability)));
             }
@@ -450,11 +453,12 @@ public class GrammarTrainer extends BaseCommandlineTool {
      * @param trainStateSetTrees
      * @param devSetStateSetTrees
      * @param minimumRuleProbability
+     * 
      * @return EM result, including the newly trained {@link FractionalCountGrammar}
      */
-    private EmIterationResult emIteration(final int iteration, final Grammar currentGrammar,
-            final Lexicon currentLexicon, final StateSetTreeList trainStateSetTrees,
-            final StateSetTreeList devSetStateSetTrees, final double minimumRuleProbability) {
+    EmIterationResult emIteration(final Grammar currentGrammar, final Lexicon currentLexicon,
+            final StateSetTreeList trainStateSetTrees, final StateSetTreeList devSetStateSetTrees,
+            final double minimumRuleProbability) {
 
         final long t0 = System.currentTimeMillis();
 
@@ -472,7 +476,7 @@ public class GrammarTrainer extends BaseCommandlineTool {
         //
         final Grammar newGrammar = new Grammar(currentGrammar, currentGrammar.numSubStates);
         final Lexicon newLexicon = new Lexicon(currentGrammar.numSubStates, currentLexicon.getSmoothingParams(),
-                currentLexicon.getSmoother(), !trainingCorpusIncludesUnks, currentLexicon.getPruningThreshold());
+                currentLexicon.getSmoother(), !trainingCorpusIncludesUnks, currentLexicon.getMinRuleProbability());
 
         final ArrayParser parser = new ArrayParser(currentGrammar, currentLexicon);
         final double trainingLikelihood = emIteration(parser, currentGrammar, currentLexicon, newGrammar, newLexicon,
@@ -482,7 +486,7 @@ public class GrammarTrainer extends BaseCommandlineTool {
         // Maximize (M-step)
         //
         // remove the unlikely tags
-        newLexicon.removeUnlikelyTags(newLexicon.threshold, -1.0);
+        newLexicon.removeUnlikelyTags(newLexicon.minRuleProbability, -1.0);
         newGrammar.optimize(0);
 
         return new EmIterationResult(newGrammar, newLexicon, trainingLikelihood, devSetLikelihood,
@@ -520,14 +524,21 @@ public class GrammarTrainer extends BaseCommandlineTool {
 
     void writeGrammar(final Grammar grammar, final Lexicon lexicon, final int cycle) {
 
-        final String prefix = outputGrammarDirectory + "/" + outputGrammarPrefix + "_" + cycle + ".gr";
-
         try {
             // BUBS format (gzipped-text, UTF-8 encoded)
-            final String gzFilename = prefix + ".gz";
-            System.out.println("Saving grammar to " + gzFilename + ".");
-            final Writer w = new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(gzFilename)),
-                    Charset.forName("UTF-8"));
+            final OutputStream os;
+            String prefix = null;
+
+            if (outputGrammarStreams != null) {
+                os = outputGrammarStreams[outputGrammarStreamIndex++];
+            } else {
+                prefix = outputGrammarDirectory + "/" + outputGrammarPrefix + "_" + cycle + ".gr";
+                final String gzFilename = prefix + ".gz";
+                BaseLogger.singleton().info("Saving grammar to " + gzFilename + ".");
+                os = new FileOutputStream(gzFilename);
+            }
+
+            final Writer w = new OutputStreamWriter(new GZIPOutputStream(os), Charset.forName("UTF-8"));
             w.write(grammar.toString(lexicon.totalRules(minRuleProbability), minRuleProbability, rareWordThreshold,
                     horizontalMarkovization));
             w.write("===== LEXICON =====\n");
@@ -624,10 +635,10 @@ public class GrammarTrainer extends BaseCommandlineTool {
         run(args);
     }
 
-    private static class EmIterationResult {
+    static class EmIterationResult {
         final Grammar grammar;
         final Lexicon lexicon;
-        final double trainingSetLikelihood;
+        final double trainingCorpusLikelihood;
         final double devSetLikelihood;
         final int emTime;
 
@@ -635,7 +646,7 @@ public class GrammarTrainer extends BaseCommandlineTool {
                 final double validationSetLikelihood, final int emTime) {
             this.grammar = grammar;
             this.lexicon = lexicon;
-            this.trainingSetLikelihood = trainingSetLikelihood;
+            this.trainingCorpusLikelihood = trainingSetLikelihood;
             this.devSetLikelihood = validationSetLikelihood;
             this.emTime = emTime;
         }
