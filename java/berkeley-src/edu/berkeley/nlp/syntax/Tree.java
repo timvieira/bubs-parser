@@ -86,7 +86,9 @@ public final class Tree<L> implements Serializable {
     }
 
     /**
-     * Clone the structure of the tree. Unfortunately, the new labels are copied by reference from the current tree.
+     * Clone the structure of the tree. Unfortunately, the new labels are copied by reference from the current tree. But
+     * in most usages, the labels are immutable anyway (e.g. {@link String} or {@link Short}), so this isn't usually a
+     * problem.
      * 
      * @return A shallow clone of the tree
      */
