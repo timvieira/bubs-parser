@@ -1212,7 +1212,8 @@ public class Lexicon implements java.io.Serializable {
      */
     public Lexicon shallowClone() {
 
-        // Deep-copy tagCounter and observedTokenFractionalCounts and duplicate references to all the other fields
+        // Deep-copy numSubStates, tagCounter and observedTokenFractionalCounts and duplicate references to all the
+        // other fields
 
         final Lexicon newLexicon = new Lexicon(numSubStates.clone(), smoothingParams, smoother, unkFractionalCounts,
                 minRuleProbability);
