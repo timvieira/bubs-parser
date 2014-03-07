@@ -54,7 +54,7 @@ import edu.ohsu.cslu.grammar.GrammarFormatType;
  * 
  *        $Id$
  */
-public class NaryTree<E> implements Tree<E>, Serializable {
+public class NaryTree<E> implements Tree<E>, Serializable, Cloneable {
 
     private final static long serialVersionUID = 369752896212698723L;
 
@@ -287,15 +287,6 @@ public class NaryTree<E> implements Tree<E>, Serializable {
         };
     }
 
-    private List<NaryTree<E>> preOrderList(final List<NaryTree<E>> list) {
-        list.add(this);
-        for (final NaryTree<E> child : childList) {
-            child.preOrderList(list);
-        }
-
-        return list;
-    }
-
     private List<E> preOrderLabelList(final List<E> list) {
         list.add(label);
         for (final NaryTree<E> child : childList) {
@@ -348,15 +339,6 @@ public class NaryTree<E> implements Tree<E>, Serializable {
                 return new PostOrderIterator(root);
             }
         };
-    }
-
-    private List<NaryTree<E>> postOrderList(final List<NaryTree<E>> list) {
-        for (final NaryTree<E> child : childList) {
-            child.postOrderList(list);
-        }
-        list.add(this);
-
-        return list;
     }
 
     private List<E> postOrderLabelList(final List<E> list) {

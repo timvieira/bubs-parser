@@ -43,7 +43,7 @@ import java.util.Set;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.LabelParser;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 
-public class BinaryTree<E> implements Tree<E>, Serializable {
+public class BinaryTree<E> implements Tree<E>, Serializable, Cloneable {
 
     private final static long serialVersionUID = 369752896212698723L;
 
