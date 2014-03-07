@@ -21,20 +21,17 @@ package edu.berkeley.nlp.PCFGLA;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
 
 import cltool4j.BaseLogger;
 import cltool4j.GlobalConfigProperties;
 import edu.berkeley.nlp.PCFGLA.GrammarMerger.MergeRanking;
 import edu.berkeley.nlp.PCFGLA.GrammarMerger.MergeRanking.MergeObjectiveFunction;
-import edu.berkeley.nlp.util.Numberer;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
@@ -61,8 +58,6 @@ import edu.ohsu.cslu.util.Evalb.BracketEvaluator;
  * @author Aaron Dunlop
  */
 public abstract class InferenceInformedMergeObjectiveFunction extends MergeObjectiveFunction {
-
-    protected final static Numberer NUMBERER = Numberer.getGlobalNumberer("tags");
 
     protected float splitF1;
     protected float splitSpeed;
@@ -133,7 +128,7 @@ public abstract class InferenceInformedMergeObjectiveFunction extends MergeObjec
         final float[] parseResult = parseDevSet(sparseMatrixGrammar, posFom, beamWidth);
         splitF1 = parseResult[0];
         splitSpeed = parseResult[1];
-        BaseLogger.singleton().info(String.format("F1 = %.3f  Speed = %.3f", splitF1 * 100, splitSpeed));
+        BaseLogger.singleton().info(String.format("F1 = %.3f  Speed = %.3f w/s", splitF1 * 100, splitSpeed));
     }
 
     /**
@@ -191,15 +186,16 @@ public abstract class InferenceInformedMergeObjectiveFunction extends MergeObjec
     protected LeftCscSparseMatrixGrammar convertGrammarToSparseMatrix(final Grammar grammar, final Lexicon lexicon) {
         try {
             final Writer w = new StringWriter(150 * 1024 * 1024);
-            // TODO We could use a PipedOutputStream / PipedInputStream combination (with 2 threads) to write and read
+            // Note We could use a PipedOutputStream / PipedInputStream combination (with 2 threads) to write and read
             // at the same time, and avoid using enough memory to serialize the entire grammar. But memory isn't a huge
-            // constraint during training, so this optimization can wait.
+            // constraint during training, and the threading would add complexity, so we'll skip that for now.
             w.write(grammar.toString(lexicon.totalRules(minRuleProbability), minRuleProbability, 0, 0));
             w.write("===== LEXICON =====\n");
             w.write(lexicon.toString(minRuleProbability));
             return new LeftCscSparseMatrixGrammar(new StringReader(w.toString()), new DecisionTreeTokenClassifier());
+
         } catch (final IOException e) {
-            // StringWriter should never IOException
+            // StringWriter and StringReader should never IOException
             throw new AssertionError(e);
         }
     }
@@ -234,6 +230,7 @@ public abstract class InferenceInformedMergeObjectiveFunction extends MergeObjec
 
             final BufferedReader fomModelReader = new BufferedReader(new StringReader(serializedFomModel.toString()));
             return new BoundaryPosModel(FOMType.BoundaryPOS, sparseMatrixGrammar, fomModelReader);
+
         } catch (final IOException e) {
             // StringWriter and StringReader should never IOException
             throw new AssertionError(e);

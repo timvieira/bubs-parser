@@ -63,6 +63,18 @@ public class Grammar implements Serializable, Cloneable {
     private int[][] closedViterbiPaths = null;
     private int[][] closedSumPaths = null;
 
+    /**
+     * Encodes the number of retained state splits for each non-terminal and the split-cycle derivation by which we
+     * arrived at that set of splits
+     * 
+     * E.g.:
+     * <ul>
+     * <li>In cycle 1, NN_0 -> NN_0, NN_1 is represented as (0 0 1)</li>
+     * <li>Retain both splits (so the tree is unchanged)</li>
+     * <li>In cycle 2, we again split both states and have (0 (0 0 1) (1 2 3))</li>
+     * <li>We re-merge the splits of NN_0 and have (0 (0 0) (1 1 2))
+     * </ul>
+     */
     public Tree<Short>[] splitTrees;
 
     /**
@@ -73,6 +85,7 @@ public class Grammar implements Serializable, Cloneable {
      * @param previousGrammar This is the previous grammar. We use this to copy the split trees that record how each
      *            state is split recursively.
      */
+    @SuppressWarnings("unchecked")
     public Grammar(final Grammar previousGrammar, final short[] numSubStates) {
         this.smoother = previousGrammar.smoother;
         this.minRuleProbability = previousGrammar.minRuleProbability;
@@ -80,7 +93,11 @@ public class Grammar implements Serializable, Cloneable {
         numStates = (short) numSubStates.length;
         this.numSubStates = numSubStates;
 
-        splitTrees = previousGrammar.splitTrees;
+        // Clone the split trees (the 'shallow' clone implemented by Tree is fine - the labels are immutable Shorts)
+        this.splitTrees = new Tree[previousGrammar.splitTrees.length];
+        for (int i = 0; i < splitTrees.length; i++) {
+            this.splitTrees[i] = previousGrammar.splitTrees[i].shallowClone();
+        }
 
         //
         // Create empty counters for all rules in the previous grammar
@@ -609,14 +626,26 @@ public class Grammar implements Serializable, Cloneable {
         return newGrammar;
     }
 
+    /**
+     * Creates new 'split trees'
+     * 
+     * @param previousSplitTrees
+     * @param previousNumSubStates
+     */
     @SuppressWarnings("unchecked")
-    private void extendSplitTrees(final Tree<Short>[] trees, final short[] oldNumSubStates) {
+    private void extendSplitTrees(final Tree<Short>[] previousSplitTrees, final short[] previousNumSubStates) {
+
         this.splitTrees = new Tree[numStates];
+
         for (int tag = 0; tag < splitTrees.length; tag++) {
-            final Tree<Short> splitTree = trees[tag].shallowClone();
+
+            final Tree<Short> splitTree = previousSplitTrees[tag].shallowClone();
+
             for (final Tree<Short> leaf : splitTree.leafList()) {
+
                 final List<Tree<Short>> children = leaf.children();
-                if (numSubStates[tag] > oldNumSubStates[tag]) {
+
+                if (numSubStates[tag] > previousNumSubStates[tag]) {
                     children.add(new Tree<Short>((short) (2 * leaf.label())));
                     children.add(new Tree<Short>((short) (2 * leaf.label() + 1)));
                 } else {
@@ -899,7 +928,7 @@ public class Grammar implements Serializable, Cloneable {
                     packedRule.unsplitChild, mergedRule.scores));
         }
 
-        mergedGrammar.pruneSplitTree(partners, mapping);
+        mergedGrammar.pruneSplitTrees(partners, mapping);
 
         return mergedGrammar;
     }
@@ -908,18 +937,22 @@ public class Grammar implements Serializable, Cloneable {
      * @param partners
      * @param mapping
      */
-    private void pruneSplitTree(final short[][][] partners, final short[][] mapping) {
+    private void pruneSplitTrees(final short[][][] partners, final short[][] mapping) {
+
         for (int tag = 0; tag < splitTrees.length; tag++) {
             final Tree<Short> splitTree = splitTrees[tag];
 
             final int maxDepth = splitTree.height();
 
             for (final Tree<Short> preTerminal : splitTree.subtrees(maxDepth - 2)) {
+
                 final List<Tree<Short>> children = preTerminal.children();
                 final ArrayList<Tree<Short>> newChildren = new ArrayList<Tree<Short>>(2);
+
                 for (int i = 0; i < children.size(); i++) {
                     final Tree<Short> child = children.get(i);
                     final int curLoc = child.label();
+
                     if (partners[tag][curLoc][0] == curLoc) {
                         newChildren.add(new Tree<Short>(mapping[tag][curLoc]));
                     }

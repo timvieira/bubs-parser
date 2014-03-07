@@ -46,9 +46,6 @@ public class SamplingMergeObjective extends InferenceInformedMergeObjectiveFunct
 
     private final static String PROPERTY_SAMPLING_ITERATIONS = "sampleIterations";
 
-    private final static int SAMPLING_ITERATIONS = GlobalConfigProperties.singleton().getIntProperty(
-            PROPERTY_SAMPLING_ITERATIONS, 10);
-
     @Override
     public void initMergeCandidates(final List<MergeCandidate> mergeCandidates,
             final double[][] substateConditionalProbabilities, final float minimumRuleProbability) {
@@ -76,6 +73,8 @@ public class SamplingMergeObjective extends InferenceInformedMergeObjectiveFunct
         // We know we'll merge the candidates from the bottom of the list
         final List<MergeCandidate> knownMergeTargets = mergeCandidates.subList(0, sampleRangeStart);
 
+        final int SAMPLING_ITERATIONS = GlobalConfigProperties.singleton().getIntProperty(PROPERTY_SAMPLING_ITERATIONS,
+                10);
         final List<ScoredSample> scoredSamples = new ArrayList<ScoredSample>();
 
         for (int i = 0; i < SAMPLING_ITERATIONS; i++) {
@@ -83,8 +82,9 @@ public class SamplingMergeObjective extends InferenceInformedMergeObjectiveFunct
             Collections.shuffle(middleCandidates);
 
             // Sample from the 'middle' candidates, and add the ones we know we'll merge (we might as well merge those
-            // as well here, to better represent performance with the post-merge grammar)
-            // TODO final List<MergeCandidate> sample = middleCandidates.subList(0, sampleSize);
+            // as well here, to better represent performance with the post-merge grammar) Note: we need to manually copy
+            // the list here instead of using subList(), because we're re-shuffling the same list on each sampling
+            // iteration, thus modifying the underlying list.
             final List<MergeCandidate> sample = new ArrayList<MergeCandidate>();
             for (int j = 0; j < sampleSize; j++) {
                 sample.add(middleCandidates.get(j));
@@ -100,6 +100,16 @@ public class SamplingMergeObjective extends InferenceInformedMergeObjectiveFunct
             final Grammar mergedGrammar = GrammarMerger.merge(splitGrammar, mergedLexicon,
                     GrammarMerger.mergePairs(sample, splitGrammar), substateConditionalProbabilities);
             mergedGrammar.computePairsOfUnaries(true);
+
+            // TODO Do we need to do this? (Copied from GrammarTrainer...)
+            // // Retrain lexicon to finish the lexicon merge (updates the unknown-word model)
+            // mergedLexicon = new Lexicon(mergedGrammar.numSubStates, mergedLexicon.getSmoothingParams(),
+            // mergedLexicon.getSmoother(),
+            // !trainingCorpusIncludesUnks, mergedLexicon.getMinRuleProbability());
+            // final ArrayParser parser = new ArrayParser(mergedGrammar, mergedLexicon);
+            // emIteration(parser, grammar, maxLexicon, null, lexicon, trainStateSetTrees, rareWordThreshold);
+            // // remove the unlikely tags
+            // lexicon.removeUnlikelyTags(lexicon.minRuleProbability, -1.0);
 
             // Convert the grammar to BUBS sparse-matrix format and train a Boundary POS FOM
             final long t0 = System.currentTimeMillis();
@@ -141,25 +151,33 @@ public class SamplingMergeObjective extends InferenceInformedMergeObjectiveFunct
 
         final ScoredSample selectedSample = scoredSamples.get(scoredSamples.size() - 1);
         BaseLogger.singleton().info(
-                String.format("Selected sample %d; F1 = %.3f (%.3f)  Speed = %.3f (%.3f)", selectedSample.sampleIndex,
-                        (splitF1 + selectedSample.accuracyDelta) * 100, selectedSample.accuracyDelta * 100, splitSpeed
-                                + selectedSample.efficiencyDelta, selectedSample.efficiencyDelta));
+                String.format("Selected sample %d; F1 = %.3f (%.3f)  Speed = %.3f w/s (%.3f)",
+                        selectedSample.sampleIndex, (splitF1 + selectedSample.accuracyDelta) * 100,
+                        selectedSample.accuracyDelta * 100, splitSpeed + selectedSample.efficiencyDelta,
+                        selectedSample.efficiencyDelta));
         return selectedSample.mergeCandidates;
     }
 
+    /**
+     * Represents a sample of {@link MergeCandidate}s and the scores obtained when parsing with that sample
+     */
     private static class ScoredSample {
+
         private final int sampleIndex;
         private final List<MergeCandidate> mergeCandidates;
+
         /**
          * Difference from performance with fully split grammar (generally negative, since merging will usually degrade
          * accuracy); the best ranking sample will have the highest {@link #accuracyDelta}.
          */
         private final float accuracyDelta;
+
         /**
          * Difference from performance with fully split grammar (generally positive, since merging will usually improve
          * efficiency); the best ranking sample will have the highest {@link #efficiencyDelta}.
          */
         private final float efficiencyDelta;
+
         private int accuracyRanking, efficiencyRanking;
 
         public ScoredSample(final int sampleIndex, final List<MergeCandidate> mergeCandidates,
@@ -197,10 +215,17 @@ public class SamplingMergeObjective extends InferenceInformedMergeObjectiveFunct
 
                 @Override
                 public int compare(final ScoredSample o1, final ScoredSample o2) {
-                    final float sample1Score = o1.accuracyRanking * (1 - GrammarMerger.EFFICIENCY_LAMBDA)
-                            + o1.efficiencyRanking * GrammarMerger.EFFICIENCY_LAMBDA;
-                    final float sample2Score = o2.accuracyRanking * (1 - GrammarMerger.EFFICIENCY_LAMBDA)
-                            + o2.efficiencyRanking * GrammarMerger.EFFICIENCY_LAMBDA;
+                    // We can usually store global config properties in final statics, but that breaks down for unit
+                    // tests which modify the property from test to test. It's a little more expensive to access it
+                    // here, but we don't compare MergeCandidates that often, so it shouldn't be too expensive even when
+                    // sorting.
+                    final float EFFICIENCY_LAMBDA = GlobalConfigProperties.singleton().getFloatProperty(
+                            "efficiencyLambda", 0);
+
+                    final float sample1Score = o1.accuracyRanking * (1 - EFFICIENCY_LAMBDA) + o1.efficiencyRanking
+                            * EFFICIENCY_LAMBDA;
+                    final float sample2Score = o2.accuracyRanking * (1 - EFFICIENCY_LAMBDA) + o2.efficiencyRanking
+                            * EFFICIENCY_LAMBDA;
 
                     return Float.compare(sample1Score, sample2Score);
                 }

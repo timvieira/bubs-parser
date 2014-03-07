@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
 
 import cltool4j.BaseLogger;
 import cltool4j.GlobalConfigProperties;
@@ -19,10 +20,6 @@ import edu.ohsu.cslu.util.IEEEDoubleScaling;
  * Static methods which support merging non-terminals in a {@link Grammar}
  */
 public class GrammarMerger {
-
-    protected final static Numberer tagNumberer = Numberer.getGlobalNumberer("tags");
-
-    final static float EFFICIENCY_LAMBDA = GlobalConfigProperties.singleton().getFloatProperty("efficiencyLambda", 0);
 
     /**
      * This function was written to have the ability to also merge non-sibling pairs, however this functionality is not
@@ -288,14 +285,18 @@ public class GrammarMerger {
         }
 
         BaseLogger.singleton().info("Merging " + selectedMergeCandidates.size() + " siblings.");
+        final Numberer tagNumberer = Numberer.getGlobalNumberer("tags");
+
         for (final MergeCandidate c : selectedMergeCandidates) {
             mergeThesePairs[c.state][c.substate1][c.substate2] = true;
 
             // Output merge pairs
-            final float mergeCost = rankingFunction.objectiveFunction.mergeCost(c);
-            BaseLogger.singleton().info(
-                    String.format("Merging %s_%d and %s_%d Cost : %f", tagNumberer.symbol(c.state), c.substate1,
-                            tagNumberer.symbol(c.state), c.substate2, mergeCost));
+            if (BaseLogger.singleton().isLoggable(Level.INFO)) {
+                final float mergeCost = rankingFunction.objectiveFunction.mergeCost(c);
+                BaseLogger.singleton().info(
+                        String.format("Merging %s_%d and %s_%d Cost : %f", tagNumberer.symbol(c.state), c.substate1,
+                                tagNumberer.symbol(c.state), c.substate2, mergeCost));
+            }
         }
 
         return mergeThesePairs;
@@ -315,6 +316,7 @@ public class GrammarMerger {
             mergePairs[state] = new boolean[grammar.numSubStates[state]][grammar.numSubStates[state]];
         }
 
+        final Numberer tagNumberer = Numberer.getGlobalNumberer("tags");
         for (final MergeCandidate c : mergeCandidates) {
             mergePairs[c.state][c.substate1][c.substate2] = true;
             BaseLogger.singleton().fine(
@@ -463,7 +465,7 @@ public class GrammarMerger {
     public static enum MergeRanking implements Comparator<MergeCandidate> {
 
         /**
-         * Ignores {@link GrammarMerger#EFFICIENCY_LAMBDA} and ranks by estimated likelihood loss
+         * Ranks by estimated likelihood loss (ignoring any specified efficiency lambda parameter)
          */
         Likelihood(new MergeObjectiveFunction() {
             @Override
@@ -530,7 +532,7 @@ public class GrammarMerger {
          * {@link SamplingMergeObjective} does not support
          * {@link MergeObjectiveFunction#initMergeCandidates(List, double[][], float)}, so this objective must be handed
          * as a special case in
-         * {@link GrammarMerger#selectMergePairs(Grammar, Lexicon, double[][], float[][][], int[][][], double, MergeRanking, int, float)}
+         * {@link GrammarMerger#selectMergePairs(Grammar, Lexicon, double[][], float[][][], int[][][], float, MergeRanking, int, float)}
          * .
          */
         Sampled(new SamplingMergeObjective());
@@ -558,6 +560,12 @@ public class GrammarMerger {
         static abstract class MergeObjectiveFunction {
 
             public float mergeCost(final MergeCandidate mergeCandidate) {
+                // We can usually store global config properties in final statics, but that breaks down for unit tests.
+                // It's a little more expensive to access it here, but we don't compare MergeCandidates that often, so
+                // it shouldn't be too expensive even when sorting.
+                final float EFFICIENCY_LAMBDA = GlobalConfigProperties.singleton().getFloatProperty("efficiencyLambda",
+                        0);
+
                 return mergeCandidate.estimatedAccuracyRanking * (1 - EFFICIENCY_LAMBDA)
                         + mergeCandidate.estimatedSpeedRanking * EFFICIENCY_LAMBDA;
             }

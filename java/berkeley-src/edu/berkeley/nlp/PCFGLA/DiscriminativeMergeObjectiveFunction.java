@@ -24,6 +24,7 @@ import java.util.List;
 
 import cltool4j.BaseLogger;
 import edu.berkeley.nlp.PCFGLA.GrammarMerger.MergeCandidate;
+import edu.berkeley.nlp.util.Numberer;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.parser.fom.BoundaryPosModel;
 
@@ -41,6 +42,7 @@ public class DiscriminativeMergeObjectiveFunction extends InferenceInformedMerge
             final double[][] substateConditionalProbabilities, final float minimumRuleProbability) {
 
         final int totalMergeCandidates = mergeCandidates.size();
+        final Numberer numberer = Numberer.getGlobalNumberer("tags");
 
         // Assign estimated speed rankings to be the same as estimated accuracy rankings (already populated by log
         // likelihood)
@@ -66,8 +68,6 @@ public class DiscriminativeMergeObjectiveFunction extends InferenceInformedMerge
                 }
             }
 
-            final String sState = NUMBERER.symbol(mergeCandidate.state);
-
             // Merge the candidate substates
             final Grammar mergedGrammar = splitGrammar.merge(mergeCandidate, substateConditionalProbabilities);
             final Lexicon mergedLexicon = splitLexicon.merge(mergeCandidate);
@@ -87,6 +87,7 @@ public class DiscriminativeMergeObjectiveFunction extends InferenceInformedMerge
             mergeCandidate.estimatedAccuracyDelta = splitF1 - parseResult[0];
             mergeCandidate.estimatedInferenceSpeedDelta = splitSpeed - parseResult[1];
 
+            final String sState = numberer.symbol(mergeCandidate.state);
             BaseLogger
                     .singleton()
                     .info(String

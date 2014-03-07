@@ -81,8 +81,11 @@ public class GrammarTrainer extends BaseCommandlineTool {
     @Option(name = "-mf", metaVar = "fraction", usage = "Fraction of new splits to re-merge in each split-merge cycle")
     private float mergeFraction = 0.5f;
 
-    @Option(name = "-d", metaVar = "file", usage = "Development-set")
+    @Option(name = "-d", optionalChoiceGroup = "devset", metaVar = "file", usage = "Development-set")
     private File devSet;
+
+    @Option(name = "-td", optionalChoiceGroup = "devset", usage = "Use training corpus as the development set (for testing purposes)")
+    private boolean trainingAsDevSet;
 
     @Option(name = "-mrf", metaVar = "objective function", usage = "Merge-candidate ranking function")
     private edu.berkeley.nlp.PCFGLA.GrammarMerger.MergeRanking mergeRankingFunction = edu.berkeley.nlp.PCFGLA.GrammarMerger.MergeRanking.Likelihood;
@@ -148,6 +151,12 @@ public class GrammarTrainer extends BaseCommandlineTool {
     @Option(name = "-ccClassifier", hidden = true, metaVar = "FILE", usage = "Complete closure classifier model (Java Serialized). Used in discriminative merge ranking")
     private File completeClosureClassifierFile = null;
 
+    /**
+     * Normally initialized from {@link #completeClosureClassifierFile}, but package-visible so integration tests can
+     * provide it separately
+     */
+    CompleteClosureModel ccModel;
+
     @Override
     protected void setup() {
         if (outputGrammarDirectory != null && outputGrammarStreams == null && !outputGrammarDirectory.exists()) {
@@ -178,19 +187,26 @@ public class GrammarTrainer extends BaseCommandlineTool {
             final Corpus devSetCorpus = new Corpus(fileAsInputStream(devSet));
             devSetTrees = Corpus.binarizeAndFilterTrees(devSetCorpus.trees(), horizontalMarkovization,
                     maxSentenceLength, binarization);
+
+        } else if (trainingAsDevSet) {
+            // Copy the training-set as a dev-set
+            devSetTrees = Corpus.binarizeAndFilterTrees(trainingCorpus.trees(), horizontalMarkovization,
+                    maxSentenceLength, binarization);
         }
 
         // Special-case to initialize inference-informed ranking functions
         if (mergeRankingFunction == MergeRanking.Discriminative || mergeRankingFunction == MergeRanking.Sampled) {
-            if (devSet == null) {
+            if (devSetTrees == null) {
                 throw new IllegalArgumentException(
-                        "Inference-informed merge ranking functional require a development set (-d option)");
+                        "Inference-informed merge ranking functional require a development set (-d or -dt options)");
             }
             final InferenceInformedMergeObjectiveFunction mergeObjectiveFunction = (InferenceInformedMergeObjectiveFunction) mergeRankingFunction
                     .objectiveFunction();
 
             try {
-                final CompleteClosureModel ccModel = new CompleteClosureModel(completeClosureClassifierFile, null);
+                if (completeClosureClassifierFile != null) {
+                    this.ccModel = new CompleteClosureModel(completeClosureClassifierFile, null);
+                }
 
                 if (ccModel.binarization() != binarization) {
                     throw new IllegalArgumentException("Complete-closure classifier binarization ("
@@ -442,7 +458,10 @@ public class GrammarTrainer extends BaseCommandlineTool {
         if (maxDevSetLikelihood != 0) {
             BaseLogger.singleton().info("Dev-set log likelihood: " + maxDevSetLikelihood);
         }
-        writeGrammar(maxGrammar, maxLexicon, splitMergeCycles);
+
+        if (!writeIntermediateGrammars) {
+            writeGrammar(maxGrammar, maxLexicon, splitMergeCycles);
+        }
     }
 
     /**
@@ -482,11 +501,10 @@ public class GrammarTrainer extends BaseCommandlineTool {
         final double trainingLikelihood = emIteration(parser, currentGrammar, currentLexicon, newGrammar, newLexicon,
                 trainStateSetTrees, rareWordThreshold);
 
-        //
-        // Maximize (M-step)
-        //
-        // remove the unlikely tags
+        // Remove the unlikely tags
         newLexicon.removeUnlikelyTags(newLexicon.minRuleProbability, -1.0);
+
+        // Maximize (M-step)
         newGrammar.optimize(0);
 
         return new EmIterationResult(newGrammar, newLexicon, trainingLikelihood, devSetLikelihood,

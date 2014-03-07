@@ -59,6 +59,10 @@ public class Numberer implements Serializable {
         return n;
     }
 
+    public static void clearGlobalNumberer(final String type) {
+        numbererMap.remove(type);
+    }
+
     public int total() {
         return total;
     }

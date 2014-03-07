@@ -21,15 +21,11 @@ public class SmoothAcrossParentBits implements Smoother, Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private double same;
-
     /** Indexed by unsplit parent, parent split, parent split */
     private double[][][] diffWeights;
 
     public SmoothAcrossParentBits(final double smooth, final Tree<Short>[] splitTrees) {
         // does not smooth across top-level split, otherwise smooths uniformly
-
-        same = 1 - smooth;
 
         final int nStates = splitTrees.length;
         diffWeights = new double[nStates][][];
@@ -66,7 +62,7 @@ public class SmoothAcrossParentBits implements Smoother, Serializable {
                     for (final short i : substatesInBranch) {
                         for (final short j : substatesInBranch) {
                             if (i == j) {
-                                diffWeights[state][i][j] = same;
+                                diffWeights[state][i][j] = 1 - smooth;
                             } else {
                                 diffWeights[state][i][j] = normalizedSmooth;
                             }
