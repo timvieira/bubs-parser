@@ -106,7 +106,7 @@ public abstract class SparseMatrixParser<G extends SparseMatrixGrammar, C extend
         }
     }
 
-    private void initDefaultPruningParams() {
+    protected void initDefaultPruningParams() {
 
         final ConfigProperties props = GlobalConfigProperties.singleton();
 

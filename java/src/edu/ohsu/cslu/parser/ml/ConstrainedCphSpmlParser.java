@@ -81,6 +81,17 @@ public class ConstrainedCphSpmlParser extends SparseMatrixLoopParser<LeftCscSpar
     }
 
     @Override
+    protected void initDefaultPruningParams() {
+
+        // Don't constrain the local beam for constrained parsing (pruning can eliminate the preferred derivation)
+        this.beamWidth = grammar.numNonTerms();
+        this.lexicalRowBeamWidth = grammar.numNonTerms();
+        this.lexicalRowUnaries = grammar.numNonTerms();
+        this.maxLocalDelta = 0f;
+        this.exhaustiveSearch = true;
+    }
+
+    @Override
     protected void initSentence(final ParseTask parseTask) {
 
         super.initSentence(parseTask);
@@ -254,6 +265,9 @@ public class ConstrainedCphSpmlParser extends SparseMatrixLoopParser<LeftCscSpar
      * populates this chart cell. Used to populate unary rules.
      * 
      * @param targetCell
+     * @param constrainingCell
+     * @param start
+     * @param end
      */
     protected void unaryAndPruning(final PackedArrayChartCell targetCell, final PackedArrayChartCell constrainingCell,
             final short start, final short end) {
