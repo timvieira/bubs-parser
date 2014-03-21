@@ -701,17 +701,6 @@ public class RealInsideOutsideCscSparseMatrixGrammar extends Grammar {
         return gf;
     }
 
-    private Binarization binarization(final Collection<Production> binaryProds) {
-        for (final Production p : binaryProds) {
-            if (grammarFormat.isFactored(nonTermSet.getSymbol(p.leftChild))) {
-                return Binarization.LEFT;
-            } else if (grammarFormat.isFactored(nonTermSet.getSymbol(p.rightChild))) {
-                return Binarization.RIGHT;
-            }
-        }
-        return null;
-    }
-
     /**
      * Populates {@link RealInsideOutsideCscSparseMatrixGrammar#lexicalProbabilities},
      * {@link RealInsideOutsideCscSparseMatrixGrammar#lexicalLogProbabilities}, and
@@ -738,33 +727,6 @@ public class RealInsideOutsideCscSparseMatrixGrammar extends Grammar {
                 lexicalParents[child][j] = (short) nonTermSet.getIndex(p.parent);
                 lexicalLogProbabilities[child][j] = p.probability;
                 lexicalProbabilities[child][j++] = java.lang.Math.exp(p.probability);
-            }
-            edu.ohsu.cslu.util.Arrays.sort(lexicalParents[child], lexicalProbabilities[child]);
-        }
-    }
-
-    /**
-     * Populates lexicalLogProbabilities and lexicalParents
-     */
-    private void initLexicalProbabilitiesFromProductions(final Collection<Production> lexicalRules) {
-        @SuppressWarnings("unchecked")
-        final LinkedList<Production>[] lexicalProdsByChild = new LinkedList[lexSet.size()];
-
-        for (int i = 0; i < lexicalProdsByChild.length; i++) {
-            lexicalProdsByChild[i] = new LinkedList<Production>();
-        }
-
-        for (final Production p : lexicalRules) {
-            lexicalProdsByChild[p.leftChild].add(p);
-        }
-
-        for (int child = 0; child < lexicalProdsByChild.length; child++) {
-            lexicalParents[child] = new short[lexicalProdsByChild[child].size()];
-            lexicalProbabilities[child] = new double[lexicalProdsByChild[child].size()];
-            int j = 0;
-            for (final Production p : lexicalProdsByChild[child]) {
-                lexicalParents[child][j] = (short) p.parent;
-                lexicalProbabilities[child][j++] = java.lang.Math.exp(p.prob);
             }
             edu.ohsu.cslu.util.Arrays.sort(lexicalParents[child], lexicalProbabilities[child]);
         }

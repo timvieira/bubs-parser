@@ -55,6 +55,10 @@ import edu.ohsu.cslu.util.Strings;
  */
 public class RealPackedArrayChart extends Chart {
 
+    public final static String PROPERTY_TRUE_MAXRULE_PRODUCT_DECODING = "trueMaxruleProduct";
+    private final static boolean TRUE_MAXRULE_PRODUCT_DECODING = GlobalConfigProperties.singleton().getBooleanProperty(
+            PROPERTY_TRUE_MAXRULE_PRODUCT_DECODING, false);
+
     private final static double MAXG_EPSILON = 1e-8;
 
     public final RealInsideOutsideCscSparseMatrixGrammar sparseMatrixGrammar;
@@ -849,15 +853,16 @@ public class RealPackedArrayChart extends Chart {
                 for (short midpoint = (short) (start + 1); midpoint <= end - 1; midpoint++) {
 
                     final int scalingStep = insideScalingSteps[cellIndex(start, midpoint)]
-                            + insideScalingSteps[cellIndex(midpoint, end)] + outsideScalingSteps[cellIndex(start, end)];
+                            + insideScalingSteps[cellIndex(midpoint, end)] + outsideScalingSteps[cellIndex];
 
                     // Petrov's rule score 'r' is a sum over unsplit categories; we construct a temporary r array
                     // for each midpoint and then maximize over midpoints
                     //
                     // r is indexed by base parent, base left child, base right child
-                    final double[][][] r = new double[maxcVocabulary.size()][][];
+                    final double[][][] scaledR = new double[maxcVocabulary.size()][][];
 
                     final int leftCellIndex = cellIndex(start, midpoint);
+                    final int rightCellIndex = cellIndex(midpoint, end);
                     final int leftStart = minLeftChildIndex(leftCellIndex);
                     final int leftEnd = maxLeftChildIndex(leftCellIndex);
 
@@ -904,28 +909,38 @@ public class RealPackedArrayChart extends Chart {
                                 final short baseRightChild = cscGrammar.nonTermSet.getBaseIndex(splitRightChild);
 
                                 // Allocate space in current-midpoint r array if needed
-                                allocateChildArray(r, baseParent, baseLeftChild);
+                                allocateChildArray(scaledR, baseParent, baseLeftChild);
 
                                 // Add this split rule's contribution to the unsplit rule score r.
                                 // P(A -> B C) * P_in(left child) * P_in(right child) * P_out(parent)
                                 //
                                 // Scaled with IEEEDoubleScaling with the scaling steps for the parent and child cells
-                                r[baseParent][baseLeftChild][baseRightChild] += IEEEDoubleScaling.unscale(
-                                        cscGrammar.rightChildCscBinaryProbabilities[k] * leftChildInside
-                                                * rightChildInside * parentOutside, scalingStep);
+                                scaledR[baseParent][baseLeftChild][baseRightChild] += cscGrammar.rightChildCscBinaryProbabilities[k]
+                                        * leftChildInside * rightChildInside * parentOutside;
 
                                 //
                                 // Compute q (just r divided by the start symbol inside probability)
                                 // Scale with the top cell's scaling step
                                 //
-                                // TODO True max-rule decoding should incorporate the child q's too. We (mistakenly)
-                                // haven't been doing that thus far. It seems to be working better this way, but we
-                                // would be able to prune the search space if we do 'real' max-rule.
+                                // Note: true max-rule decoding incorporates the child cell q's. We've generally found
+                                // that it works better _without_ that (optimizing rule scores for local labels).
+                                // But we have both options.
                                 //
-                                final double q = IEEEDoubleScaling.unscale(r[baseParent][baseLeftChild][baseRightChild]
-                                        / startSymbolInsideProbability, -startSymbolScalingStep);
-                                // TODO * maxQ[leftChildCellIndex][baseLeftChild] *
-                                // maxQ[rightChildCellIndex][baseRightChild]
+                                // TODO I think we could defer computing q and maxQ for each 'r' until after iterating
+                                // over all grammar rules. But that might not save much.
+                                final double q;
+                                if (TRUE_MAXRULE_PRODUCT_DECODING) {
+                                    q = IEEEDoubleScaling.unscale(scaledR[baseParent][baseLeftChild][baseRightChild]
+                                            / startSymbolInsideProbability, scalingStep - startSymbolScalingStep)
+                                            * maxQ[leftCellIndex][baseLeftChild] * maxQ[rightCellIndex][baseRightChild];
+                                } else {
+                                    q = IEEEDoubleScaling.unscale(scaledR[baseParent][baseLeftChild][baseRightChild]
+                                            / startSymbolInsideProbability, scalingStep - startSymbolScalingStep);
+                                }
+
+                                if (q == 0) {
+                                    System.out.println("Underflow?");
+                                }
 
                                 if (q > maxQ[cellIndex][baseParent]) {
                                     maxQ[cellIndex][baseParent] = q;
@@ -940,24 +955,25 @@ public class RealPackedArrayChart extends Chart {
 
                 // Compute unary scores - iterate over populated children (matrix columns). Indexed by base parent and
                 // child
-                final double[][] unaryR = unaryR(cscGrammar, cellIndex);
+                final double[][] unaryR = scaledUnaryR(cscGrammar, cellIndex);
 
                 // Replace any binary or lexical parent scores which are beat by unaries
                 for (short baseParent = 0; baseParent < unaryR.length; baseParent++) {
-                    final double[] parentUnaryR = unaryR[baseParent];
-                    if (parentUnaryR == null) {
+                    final double[] scaledParentUnaryR = unaryR[baseParent];
+                    if (scaledParentUnaryR == null) {
                         continue;
                     }
 
-                    for (short baseChild = 0; baseChild < parentUnaryR.length; baseChild++) {
+                    for (short baseChild = 0; baseChild < scaledParentUnaryR.length; baseChild++) {
                         // Preclude unary chains. Not great, but it's one way to prevent infinite unary loops
-                        final double jointUnaryR = IEEEDoubleScaling.unscale(parentUnaryR[baseChild]
-                                / startSymbolInsideProbability, -startSymbolScalingStep);
+                        final double unaryQ = IEEEDoubleScaling.unscale(scaledParentUnaryR[baseChild]
+                                / startSymbolInsideProbability, insideScalingSteps[cellIndex]
+                                + outsideScalingSteps[cellIndex] - startSymbolScalingStep);
 
-                        if (jointUnaryR > maxQ[cellIndex][baseParent]
+                        if (unaryQ > maxQ[cellIndex][baseParent]
                                 && maxQRightChildren[cellIndex][baseChild] != Production.UNARY_PRODUCTION) {
 
-                            maxQ[cellIndex][baseParent] = jointUnaryR;
+                            maxQ[cellIndex][baseParent] = unaryQ;
                             maxQMidpoints[cellIndex][baseParent] = end;
                             maxQLeftChildren[cellIndex][baseParent] = baseChild;
                             maxQRightChildren[cellIndex][baseParent] = Production.UNARY_PRODUCTION;
@@ -970,10 +986,9 @@ public class RealPackedArrayChart extends Chart {
         return extractMaxQParse(0, size, maxcVocabulary.startSymbol(), maxcVocabulary);
     }
 
-    private double[][] unaryR(final RealInsideOutsideCscSparseMatrixGrammar cscGrammar, final int cellIndex) {
+    private double[][] scaledUnaryR(final RealInsideOutsideCscSparseMatrixGrammar cscGrammar, final int cellIndex) {
 
-        final double[][] unaryR = new double[maxcVocabulary.size()][];
-        final int scalingStep = insideScalingSteps[cellIndex] + outsideScalingSteps[cellIndex];
+        final double[][] scaledUnaryR = new double[maxcVocabulary.size()][];
 
         // Iterate over children in the cell
         final int offset = offset(cellIndex);
@@ -991,18 +1006,18 @@ public class RealPackedArrayChart extends Chart {
                     continue;
                 }
                 // Parent outside x production probability x child inside
-                final double jointScore = IEEEDoubleScaling.unscale(outsideProbabilities[parentIndex], scalingStep)
-                        * cscGrammar.cscUnaryProbabilities[j] * childInsideProbability;
+                final double jointScore = outsideProbabilities[parentIndex] * cscGrammar.cscUnaryProbabilities[j]
+                        * childInsideProbability;
                 final short baseParent = cscGrammar.nonTermSet.getBaseIndex(parent);
 
-                if (unaryR[baseParent] == null) {
-                    unaryR[baseParent] = new double[maxcVocabulary.size()];
+                if (scaledUnaryR[baseParent] == null) {
+                    scaledUnaryR[baseParent] = new double[maxcVocabulary.size()];
                 }
-                unaryR[baseParent][baseChild] += jointScore;
+                scaledUnaryR[baseParent][baseChild] += jointScore;
             }
         }
 
-        return unaryR;
+        return scaledUnaryR;
     }
 
     private void allocateChildArray(final double[][][] currentMidpointR, final short baseParent,
