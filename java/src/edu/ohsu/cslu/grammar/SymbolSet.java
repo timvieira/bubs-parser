@@ -30,8 +30,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Maps objects to integer indices and vice-versa. Wraps an {@link Object2IntMap}, with convenience methods to add
@@ -40,6 +42,8 @@ import java.util.Map;
 public class SymbolSet<E> implements Object2IntSortedMap<E>, Iterable<E>, Serializable {
 
     private static final long serialVersionUID = 1L;
+
+    private static ConcurrentHashMap<Class<? extends Enum<?>>, SymbolSet<String>> cachedEnumSymbolSets = new ConcurrentHashMap<Class<? extends Enum<?>>, SymbolSet<String>>();
 
     protected ArrayList<E> list;
     private Object2IntOpenHashMap<E> map;
@@ -369,4 +373,24 @@ public class SymbolSet<E> implements Object2IntSortedMap<E>, Iterable<E>, Serial
         return sb.toString();
     }
 
+    /**
+     * Returns a {@link SymbolSet} for the specified <code>enum</code> class. Since <code>enum</code>'s are immutable,
+     * the {@link SymbolSet} instances are cached.
+     * 
+     * @param enumClass
+     * @return {@link SymbolSet} for an enumerated class
+     */
+    public static <E extends Enum<E>> SymbolSet<String> forEnum(final Class<E> enumClass) {
+
+        SymbolSet<String> enumSymbolSet = cachedEnumSymbolSets.get(enumClass);
+
+        if (enumSymbolSet == null) {
+            enumSymbolSet = new SymbolSet<String>();
+            for (final E value : EnumSet.allOf(enumClass)) {
+                enumSymbolSet.addSymbol(value.name());
+            }
+            enumSymbolSet.finalize();
+        }
+        return enumSymbolSet;
+    }
 }
