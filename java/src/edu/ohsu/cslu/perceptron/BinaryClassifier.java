@@ -503,7 +503,7 @@ public abstract class BinaryClassifier<S extends BinarySequence> extends Classif
         protected Model(final String featureTemplates, final SymbolSet<String> lexicon,
                 final SymbolSet<String> unkClassSet, final SymbolSet<String> vocabulary, final FloatVector avgWeights,
                 final float bias) {
-            super(featureTemplates, lexicon, unkClassSet, null);
+            super(featureTemplates, lexicon, unkClassSet);
             this.vocabulary = vocabulary;
             this.avgWeights = avgWeights;
             this.bias = bias;

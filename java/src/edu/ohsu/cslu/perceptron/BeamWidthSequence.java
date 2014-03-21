@@ -26,7 +26,6 @@ import java.util.Arrays;
 
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.Production;
-import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.fom.FigureOfMeritModel.FigureOfMerit;
@@ -222,15 +221,6 @@ public class BeamWidthSequence extends ConstituentBoundarySequence implements Mu
     @Override
     public void setPredictedClass(final int cellIndex, final short newClass) {
         predictedClasses[cellIndex] = newClass;
-    }
-
-    @Override
-    public SymbolSet<String> tagSet() {
-        final SymbolSet<String> tagSet = new SymbolSet<String>();
-        for (final int beam : classifier.classBoundaryBeamWidths) {
-            tagSet.addSymbol(Integer.toString(beam));
-        }
-        return tagSet;
     }
 
     @Override

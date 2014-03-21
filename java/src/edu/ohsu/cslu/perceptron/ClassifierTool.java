@@ -170,20 +170,18 @@ public abstract class ClassifierTool<S extends Sequence> extends BaseCommandline
      */
     protected static class Model implements Serializable {
 
-        private static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = 2L;
 
         final String featureTemplates;
         final SymbolSet<String> lexicon;
         final SymbolSet<String> unkClassSet;
-        final SymbolSet<String> posSet;
 
         protected Model(final String featureTemplates, final SymbolSet<String> lexicon,
-                final SymbolSet<String> unkClassSet, final SymbolSet<String> posSet) {
+                final SymbolSet<String> unkClassSet) {
 
             this.featureTemplates = featureTemplates;
             this.lexicon = lexicon;
             this.unkClassSet = unkClassSet;
-            this.posSet = posSet;
         }
     }
 }

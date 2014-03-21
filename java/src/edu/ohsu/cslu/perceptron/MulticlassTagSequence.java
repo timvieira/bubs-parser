@@ -259,11 +259,6 @@ public class MulticlassTagSequence extends BaseSequence implements MulticlassSeq
     }
 
     @Override
-    public SymbolSet<String> tagSet() {
-        return tagSet;
-    }
-
-    @Override
     public String toString() {
         final boolean knownGoldClasses = goldClasses[0] >= 0;
 

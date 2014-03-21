@@ -19,8 +19,6 @@
 
 package edu.ohsu.cslu.perceptron;
 
-import edu.ohsu.cslu.grammar.SymbolSet;
-
 /**
  * Represents a sequence of (possibly-tagged) tokens.
  */
@@ -33,6 +31,4 @@ public interface MulticlassSequence extends Sequence {
     public short[] predictedClasses();
 
     public void setPredictedClass(final int position, final short newClass);
-
-    public SymbolSet<String> tagSet();
 }

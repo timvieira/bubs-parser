@@ -32,7 +32,7 @@ import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.SymbolSet;
-import edu.ohsu.cslu.perceptron.Tagger.MulticlassClassifierResult;
+import edu.ohsu.cslu.perceptron.MulticlassClassifier.MulticlassClassifierResult;
 import edu.ohsu.cslu.tests.JUnit;
 
 /**
@@ -197,7 +197,8 @@ public class TestTagger {
         final Tagger tagger = new Tagger();
         tagger.trainingIterations = 100;
         tagger.train(new BufferedReader(JUnit.unitTestDataAsReader(file)));
-        final MulticlassClassifierResult result = tagger.testAccuracy(new BufferedReader(JUnit.unitTestDataAsReader(file)));
+        final MulticlassClassifierResult result = tagger.testAccuracy(new MulticlassClassifier.LineIterator(JUnit
+                .unitTestDataAsReader(file)));
         // We expect to memorize the training set
         assertEquals(1.0f, result.accuracy(), .01f);
     }

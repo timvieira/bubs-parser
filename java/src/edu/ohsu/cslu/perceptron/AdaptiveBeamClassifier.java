@@ -64,8 +64,8 @@ import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.fom.FigureOfMeritModel;
 import edu.ohsu.cslu.parser.ml.CartesianProductHashSpmlParser;
+import edu.ohsu.cslu.perceptron.MulticlassClassifier.MulticlassClassifierResult;
 import edu.ohsu.cslu.perceptron.Perceptron.LossFunction;
-import edu.ohsu.cslu.perceptron.Tagger.MulticlassClassifierResult;
 
 /**
  * Beam-width prediction model, as described in Bodenstab et al., 2011,
