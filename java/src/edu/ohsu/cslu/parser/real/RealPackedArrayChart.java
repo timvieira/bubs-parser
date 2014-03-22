@@ -56,8 +56,8 @@ import edu.ohsu.cslu.util.Strings;
  */
 public class RealPackedArrayChart extends Chart {
 
-    private final static boolean TRUE_MAXRULE_PRODUCT_DECODING = GlobalConfigProperties.singleton().getBooleanProperty(
-            ParserDriver.OPT_TRUE_MAXRULE_PRODUCT_DECODING, false);
+    private final static boolean LOCAL_MAXRULE_DECODING = GlobalConfigProperties.singleton().getBooleanProperty(
+            ParserDriver.OPT_LOCAL_MAXRULE_DECODING, false);
 
     private final static double MAXG_EPSILON = 1e-8;
 
@@ -929,13 +929,13 @@ public class RealPackedArrayChart extends Chart {
                                 // TODO I think we could defer computing q and maxQ for each 'r' until after iterating
                                 // over all grammar rules. But that might not save much.
                                 final double q;
-                                if (TRUE_MAXRULE_PRODUCT_DECODING) {
+                                if (LOCAL_MAXRULE_DECODING) {
+                                    q = IEEEDoubleScaling.unscale(scaledR[baseParent][baseLeftChild][baseRightChild]
+                                            / startSymbolInsideProbability, scalingStep - startSymbolScalingStep);
+                                } else {
                                     q = IEEEDoubleScaling.unscale(scaledR[baseParent][baseLeftChild][baseRightChild]
                                             / startSymbolInsideProbability, scalingStep - startSymbolScalingStep)
                                             * maxQ[leftCellIndex][baseLeftChild] * maxQ[rightCellIndex][baseRightChild];
-                                } else {
-                                    q = IEEEDoubleScaling.unscale(scaledR[baseParent][baseLeftChild][baseRightChild]
-                                            / startSymbolInsideProbability, scalingStep - startSymbolScalingStep);
                                 }
 
                                 if (q == 0) {
@@ -967,15 +967,15 @@ public class RealPackedArrayChart extends Chart {
                     for (short baseChild = 0; baseChild < scaledParentUnaryR.length; baseChild++) {
                         // Preclude unary chains. Not great, but it's one way to prevent infinite unary loops
                         final double unaryQ;
-                        if (TRUE_MAXRULE_PRODUCT_DECODING) {
+                        if (LOCAL_MAXRULE_DECODING) {
+                            unaryQ = IEEEDoubleScaling.unscale(scaledParentUnaryR[baseChild]
+                                    / startSymbolInsideProbability, insideScalingSteps[cellIndex]
+                                    + outsideScalingSteps[cellIndex] - startSymbolScalingStep);
+                        } else {
                             unaryQ = IEEEDoubleScaling.unscale(scaledParentUnaryR[baseChild]
                                     / startSymbolInsideProbability, insideScalingSteps[cellIndex]
                                     + outsideScalingSteps[cellIndex] - startSymbolScalingStep)
                                     * maxQ[cellIndex][baseChild];
-                        } else {
-                            unaryQ = IEEEDoubleScaling.unscale(scaledParentUnaryR[baseChild]
-                                    / startSymbolInsideProbability, insideScalingSteps[cellIndex]
-                                    + outsideScalingSteps[cellIndex] - startSymbolScalingStep);
                         }
 
                         if (unaryQ > maxQ[cellIndex][baseParent]

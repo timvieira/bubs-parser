@@ -78,8 +78,8 @@ public class PackedArrayChart extends ParallelArrayChart {
     protected final static boolean HEURISTIC_OUTSIDE = GlobalConfigProperties.singleton().getBooleanProperty(
             ParserDriver.OPT_HEURISTIC_OUTSIDE, false);
 
-    private final static boolean TRUE_MAXRULE_PRODUCT_DECODING = GlobalConfigProperties.singleton().getBooleanProperty(
-            ParserDriver.OPT_TRUE_MAXRULE_PRODUCT_DECODING, false);
+    private final static boolean LOCAL_MAXRULE_DECODING = GlobalConfigProperties.singleton().getBooleanProperty(
+            ParserDriver.OPT_LOCAL_MAXRULE_DECODING, false);
 
     /**
      * Parallel array storing non-terminals (parallel to {@link ParallelArrayChart#insideProbabilities},
@@ -831,12 +831,11 @@ public class PackedArrayChart extends ParallelArrayChart {
                                 // TODO I think we could defer computing q and maxQ for each 'r' until after iterating
                                 // over all grammar rules. But that might not save much.
                                 final float q;
-                                if (TRUE_MAXRULE_PRODUCT_DECODING) {
+                                if (LOCAL_MAXRULE_DECODING) {
+                                    q = r[baseParent][baseLeftChild][baseRightChild] - startSymbolInsideProbability;
+                                } else {
                                     q = r[baseParent][baseLeftChild][baseRightChild] - startSymbolInsideProbability
                                             + maxQ[leftCellIndex][baseLeftChild] + maxQ[rightCellIndex][baseRightChild];
-                                } else {
-                                    q = r[baseParent][baseLeftChild][baseRightChild] - startSymbolInsideProbability;
-
                                 }
 
                                 if (q > maxQ[cellIndex][baseParent]) {
@@ -863,11 +862,11 @@ public class PackedArrayChart extends ParallelArrayChart {
                     for (short baseChild = 0; baseChild < parentUnaryR.length; baseChild++) {
                         // Preclude unary chains. Not great, but it's one way to prevent infinite unary loops
                         final float unaryQ;
-                        if (TRUE_MAXRULE_PRODUCT_DECODING) {
+                        if (LOCAL_MAXRULE_DECODING) {
+                            unaryQ = parentUnaryR[baseChild] - startSymbolInsideProbability;
+                        } else {
                             unaryQ = parentUnaryR[baseChild] - startSymbolInsideProbability
                                     + maxQ[cellIndex][baseChild];
-                        } else {
-                            unaryQ = parentUnaryR[baseChild] - startSymbolInsideProbability;
                         }
 
                         if (unaryQ > maxQ[cellIndex][baseParent]
