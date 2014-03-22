@@ -78,6 +78,9 @@ public class PackedArrayChart extends ParallelArrayChart {
     protected final static boolean HEURISTIC_OUTSIDE = GlobalConfigProperties.singleton().getBooleanProperty(
             ParserDriver.OPT_HEURISTIC_OUTSIDE, false);
 
+    private final static boolean TRUE_MAXRULE_PRODUCT_DECODING = GlobalConfigProperties.singleton().getBooleanProperty(
+            ParserDriver.OPT_TRUE_MAXRULE_PRODUCT_DECODING, false);
+
     /**
      * Parallel array storing non-terminals (parallel to {@link ParallelArrayChart#insideProbabilities},
      * {@link ParallelArrayChart#packedChildren}, and {@link ParallelArrayChart#midpoints}. Entries for each cell begin
@@ -750,6 +753,7 @@ public class PackedArrayChart extends ParallelArrayChart {
                     final float[][][] r = new float[maxcVocabulary.size()][][];
 
                     final int leftCellIndex = cellIndex(start, midpoint);
+                    final int rightCellIndex = cellIndex(midpoint, end);
 
                     final int leftStart = minLeftChildIndex(leftCellIndex);
                     final int leftEnd = maxLeftChildIndex(leftCellIndex);
@@ -816,12 +820,24 @@ public class PackedArrayChart extends ParallelArrayChart {
                                                     + rightChildInside + parentOutside, SUM_DELTA);
                                 }
 
-                                // TODO True max-rule decoding should incorporate the child q's too. We (mistakenly)
-                                // haven't been doing that thus far. It seems to be working better this way, but we
-                                // would be able to prune the search space if we do 'real' max-rule.
-                                final float q = r[baseParent][baseLeftChild][baseRightChild]
-                                        - startSymbolInsideProbability; // + maxQ[leftCellIndex][baseLeftChild]
-                                // + maxQ[rightCellIndex][baseRightChild];
+                                //
+                                // Compute q (just r divided by the start symbol inside probability)
+                                // Scale with the top cell's scaling step
+                                //
+                                // Note: true max-rule decoding incorporates the child cell q's. We've generally found
+                                // that it works better _without_ that (optimizing rule scores for local labels).
+                                // But we have both options.
+                                //
+                                // TODO I think we could defer computing q and maxQ for each 'r' until after iterating
+                                // over all grammar rules. But that might not save much.
+                                final float q;
+                                if (TRUE_MAXRULE_PRODUCT_DECODING) {
+                                    q = r[baseParent][baseLeftChild][baseRightChild] - startSymbolInsideProbability
+                                            + maxQ[leftCellIndex][baseLeftChild] + maxQ[rightCellIndex][baseRightChild];
+                                } else {
+                                    q = r[baseParent][baseLeftChild][baseRightChild] - startSymbolInsideProbability;
+
+                                }
 
                                 if (q > maxQ[cellIndex][baseParent]) {
                                     maxQ[cellIndex][baseParent] = q;
@@ -846,10 +862,18 @@ public class PackedArrayChart extends ParallelArrayChart {
                     }
                     for (short baseChild = 0; baseChild < parentUnaryR.length; baseChild++) {
                         // Preclude unary chains. Not great, but it's one way to prevent infinite unary loops
-                        if (parentUnaryR[baseChild] - startSymbolInsideProbability > maxQ[cellIndex][baseParent]
+                        final float unaryQ;
+                        if (TRUE_MAXRULE_PRODUCT_DECODING) {
+                            unaryQ = parentUnaryR[baseChild] - startSymbolInsideProbability
+                                    + maxQ[cellIndex][baseChild];
+                        } else {
+                            unaryQ = parentUnaryR[baseChild] - startSymbolInsideProbability;
+                        }
+
+                        if (unaryQ > maxQ[cellIndex][baseParent]
                                 && maxQRightChildren[cellIndex][baseChild] != Production.UNARY_PRODUCTION) {
 
-                            maxQ[cellIndex][baseParent] = parentUnaryR[baseChild] - startSymbolInsideProbability;
+                            maxQ[cellIndex][baseParent] = unaryQ;
                             maxQMidpoints[cellIndex][baseParent] = end;
                             maxQLeftChildren[cellIndex][baseParent] = baseChild;
                             maxQRightChildren[cellIndex][baseParent] = Production.UNARY_PRODUCTION;

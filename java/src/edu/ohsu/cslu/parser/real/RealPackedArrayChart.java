@@ -30,6 +30,7 @@ import edu.ohsu.cslu.grammar.Vocabulary;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.Parser.DecodeMethod;
+import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.PackedArrayChartCell;
@@ -55,9 +56,8 @@ import edu.ohsu.cslu.util.Strings;
  */
 public class RealPackedArrayChart extends Chart {
 
-    public final static String PROPERTY_TRUE_MAXRULE_PRODUCT_DECODING = "trueMaxruleProduct";
     private final static boolean TRUE_MAXRULE_PRODUCT_DECODING = GlobalConfigProperties.singleton().getBooleanProperty(
-            PROPERTY_TRUE_MAXRULE_PRODUCT_DECODING, false);
+            ParserDriver.OPT_TRUE_MAXRULE_PRODUCT_DECODING, false);
 
     private final static double MAXG_EPSILON = 1e-8;
 
@@ -966,9 +966,17 @@ public class RealPackedArrayChart extends Chart {
 
                     for (short baseChild = 0; baseChild < scaledParentUnaryR.length; baseChild++) {
                         // Preclude unary chains. Not great, but it's one way to prevent infinite unary loops
-                        final double unaryQ = IEEEDoubleScaling.unscale(scaledParentUnaryR[baseChild]
-                                / startSymbolInsideProbability, insideScalingSteps[cellIndex]
-                                + outsideScalingSteps[cellIndex] - startSymbolScalingStep);
+                        final double unaryQ;
+                        if (TRUE_MAXRULE_PRODUCT_DECODING) {
+                            unaryQ = IEEEDoubleScaling.unscale(scaledParentUnaryR[baseChild]
+                                    / startSymbolInsideProbability, insideScalingSteps[cellIndex]
+                                    + outsideScalingSteps[cellIndex] - startSymbolScalingStep)
+                                    * maxQ[cellIndex][baseChild];
+                        } else {
+                            unaryQ = IEEEDoubleScaling.unscale(scaledParentUnaryR[baseChild]
+                                    / startSymbolInsideProbability, insideScalingSteps[cellIndex]
+                                    + outsideScalingSteps[cellIndex] - startSymbolScalingStep);
+                        }
 
                         if (unaryQ > maxQ[cellIndex][baseParent]
                                 && maxQRightChildren[cellIndex][baseChild] != Production.UNARY_PRODUCTION) {

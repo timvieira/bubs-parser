@@ -409,6 +409,12 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     /** Disables unary-constraint classification in {@link AdaptiveBeamModel}. Boolean property. */
     public final static String OPT_DISABLE_UNARY_CLASSIFIER = "disableUnaryClassifier";
 
+    /**
+     * Use 'true' max-rule product decoding (the default is to maximize over rules only within a local cell, rather than
+     * over the entire tree). Ignored unless using '-decode MaxRuleProd'
+     */
+    public final static String OPT_TRUE_MAXRULE_PRODUCT_DECODING = "trueMaxruleProduct";
+
     //
     // Corpus-wide statistics and timings
     //
