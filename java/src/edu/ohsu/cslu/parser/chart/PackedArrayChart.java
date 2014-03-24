@@ -706,6 +706,8 @@ public class PackedArrayChart extends ParallelArrayChart {
                 final int cellIndex = cellIndex(start, end);
                 Arrays.fill(maxQMidpoints[cellIndex], (short) -1);
                 Arrays.fill(maxQ[cellIndex], Float.NEGATIVE_INFINITY);
+                Arrays.fill(maxQLeftChildren[cellIndex], (short) -1);
+                Arrays.fill(maxQRightChildren[cellIndex], (short) -1);
 
                 // Initialize lexical entries in the score arrays - sum outside probability x production probability
                 // over all nonterminal splits

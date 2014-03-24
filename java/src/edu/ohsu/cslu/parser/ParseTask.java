@@ -271,7 +271,8 @@ public class ParseTask {
      */
     public String parseBracketString(final boolean binaryTree, final boolean printUnkLabels, final boolean addTokens,
             final HeadPercolationRuleset headRules) {
-        if (binaryParse == null) {
+
+    	if (binaryParse == null) {
             if (recoveryStrategy != null) {
                 return naryParse().toString();
             }

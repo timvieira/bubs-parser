@@ -68,6 +68,8 @@ public abstract class BaseIoCphSpmlParser extends
         initChart(parseTask);
         insidePass();
 
+        // TODO Support reparsing in inside-outside parsers (BaseIoCph and RealIo)
+
         // If we're using the FOM estimate of outside probabilities, we already populated it during the inside pass
         if (!HEURISTIC_OUTSIDE) {
 
