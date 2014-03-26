@@ -118,15 +118,15 @@ public class Perceptron extends Classifier {
     }
 
     /**
-     * Returns the binary output of the raw perceptron model for the specified feature vector.
+     * Returns the 1-best class output of the raw perceptron model for the specified feature vector.
      * 
      * @param featureVector
-     * @return the binary output of the raw perceptron model for the specified feature vector.
+     * @return the 1-best class output of the raw perceptron model for the specified feature vector.
      */
-    public int classify(final FloatVector[] model, final Vector featureVector) {
-        int bestClass = -1;
+    public short classify(final FloatVector[] model, final Vector featureVector) {
+        short bestClass = -1;
         float score, bestScore = Float.NEGATIVE_INFINITY;
-        for (int i = 0; i < model.length; i++) {
+        for (short i = 0; i < model.length; i++) {
             score = featureVector.dotProduct(model[i]) + bias[i];
             if (score > bestScore) {
                 bestScore = score;
@@ -137,8 +137,36 @@ public class Perceptron extends Classifier {
     }
 
     @Override
-    public int classify(final Vector featureVector) {
+    public short classify(final Vector featureVector) {
         return classify(rawWeights, featureVector);
+    }
+
+    /**
+     * Returns all classes, ranked by the raw perceptron model for the specified feature vector.
+     * 
+     * @param featureVector
+     * @return all classes, ranked by the raw perceptron model for the specified feature vector.
+     */
+    public short[] rank(final FloatVector[] model, final Vector featureVector) {
+        return scoredRank(model, featureVector).classes;
+    }
+
+    /**
+     * Returns all classes, ranked by the raw perceptron model for the specified feature vector.
+     * 
+     * @param featureVector
+     * @return all classes, ranked by the raw perceptron model for the specified feature vector.
+     */
+    public ScoredRanking scoredRank(final FloatVector[] model, final Vector featureVector) {
+
+        final short[] classes = new short[model.length];
+        final float[] scores = new float[model.length];
+
+        for (short i = 0; i < model.length; i++) {
+            classes[i] = i;
+            scores[i] = featureVector.dotProduct(model[i]) + bias[i];
+        }
+        return new ScoredRanking(classes, scores);
     }
 
     // also used by AveragedPerceptron
@@ -291,5 +319,16 @@ public class Perceptron extends Classifier {
     @Override
     public void writeModel(final BufferedWriter stream) throws IOException {
         stream.write(toString());
+    }
+
+    public static class ScoredRanking {
+        public final short[] classes;
+        public final float[] scores;
+
+        public ScoredRanking(final short[] classes, final float[] scores) {
+            this.classes = classes;
+            this.scores = scores;
+            edu.ohsu.cslu.util.Arrays.sort(scores, classes);
+        }
     }
 }

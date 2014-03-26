@@ -133,7 +133,7 @@ public class AveragedPerceptron extends Perceptron {
      * @return the binary output of the averaged perceptron model for the specified feature vector.
      */
     @Override
-    public int classify(final Vector featureVector) {
+    public short classify(final Vector featureVector) {
         // We don't need to rely on the user to update the final model since we can
         // keep track of it ourself. update() is only called for *incorrect* classifications
         // so if we run through additional *correct* training examples, we need to re-average
@@ -206,6 +206,19 @@ public class AveragedPerceptron extends Perceptron {
             }
         }
         return new ScoredClassification(constrainingClass, constrainingScore, 0);
+    }
+
+    @Override
+    public ScoredRanking scoredRank(final FloatVector[] model, final Vector featureVector) {
+
+        final short[] classes = new short[avgWeights.length];
+        final float[] scores = new float[avgWeights.length];
+
+        for (short i = 0; i < avgWeights.length; i++) {
+            classes[i] = i;
+            scores[i] = featureVector.dotProduct(avgWeights[i]) + bias[i];
+        }
+        return new ScoredRanking(classes, scores);
     }
 
     @Override

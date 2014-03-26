@@ -33,7 +33,7 @@ public abstract class Classifier implements Serializable {
 
     public abstract void train(final int goldClass, final BitVector featureVector);
 
-    public abstract int classify(final Vector featureVector);
+    public abstract short classify(final Vector featureVector);
 
     public abstract float computeLoss(final int goldClass, final int guessClass);
 

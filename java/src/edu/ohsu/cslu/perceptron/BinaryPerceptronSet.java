@@ -82,7 +82,7 @@ public class BinaryPerceptronSet extends Classifier {
     // the highest score (although I'm not sure if these should be comparable) or (3) something
     // similar to Clark et. al and sum classifier output
     @Override
-    public int classify(final Vector featureVector) {
+    public short classify(final Vector featureVector) {
 
         if (classifiers[0].classify(featureVector) == 0) { // cell is open or closed
             return 0;
@@ -92,17 +92,17 @@ public class BinaryPerceptronSet extends Classifier {
             for (int i = 1; i < numClassifiers; i++) {
                 // is beam-width <= class2val(classifier[i])
                 if (classifiers[i].classify(featureVector) == 0) {
-                    return i;
+                    return (short) i;
                 }
             }
-            return numClasses() - 1; // last classification of beam-width <= X was false, so return largest
-                                     // beam-width
+            return (short) (numClasses() - 1); // last classification of beam-width <= X was false, so return largest
+            // beam-width
         }
 
         for (int i = numClassifiers - 1; i > 0; i--) {
             // is beam-width > class2val(classifier[i])
             if (classifiers[i].classify(featureVector) == 1) {
-                return i + 1; // the beam-width must be larger than this bin, so return next highest bin
+                return (short) (i + 1); // the beam-width must be larger than this bin, so return next highest bin
             }
         }
         return 1; // last classification said it's <= 1 ... must be 1

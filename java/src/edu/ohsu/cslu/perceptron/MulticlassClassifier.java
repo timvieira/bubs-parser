@@ -149,8 +149,7 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence, F exten
         try {
             final Class<FeatureExtractor<S>> c = (Class<FeatureExtractor<S>>) ((ParameterizedType) getClass()
                     .getGenericSuperclass()).getActualTypeArguments()[1];
-            return c.getConstructor(new Class[] { String.class, SymbolSet.class })
-                    .newInstance(featureTemplates, tagSet);
+            return c.getConstructor(new Class[] { String.class }).newInstance(featureTemplates);
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
@@ -204,6 +203,9 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence, F exten
         // Test the development set
         final long t0 = System.currentTimeMillis();
 
+        // For debugging
+        @SuppressWarnings("unused")
+        int incorrect = 0;
         for (int j = 0; j < devCorpusFeatures.size(); j++) {
             result.sentences++;
             final MulticlassSequence tagSequence = devCorpusSequences.get(j);
@@ -214,6 +216,8 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence, F exten
                     tagSequence.setPredictedClass(k, classify(featureVectors[k]));
                     if (tagSequence.predictedClass(k) == tagSequence.goldClass(k)) {
                         result.correct++;
+                    } else {
+                        incorrect++;
                     }
                     result.words++;
                 }
@@ -347,7 +351,7 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence, F exten
                 String.format("Time: %d seconds\n", (System.currentTimeMillis() - startTime) / 1000));
     }
 
-    private ArrayList<S> readTrainingCorpus(final BufferedReader input) {
+    private ArrayList<S> readTrainingCorpus(final BufferedReader input) throws IOException {
         final ArrayList<S> trainingCorpusSequences = new ArrayList<S>();
 
         if (this.lexicon == null) {
@@ -360,8 +364,10 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence, F exten
             this.decisionTreeUnkClassSet.defaultReturnValue(Grammar.nullSymbolStr);
         }
 
-        this.tagSet = new SymbolSet<String>();
-        this.tagSet.defaultReturnValue(Grammar.nullSymbolStr);
+        if (tagSet == null) {
+            this.tagSet = new SymbolSet<String>();
+            this.tagSet.defaultReturnValue(Grammar.nullSymbolStr);
+        }
 
         //
         // Read in the training corpus and map each token
@@ -633,9 +639,10 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence, F exten
      * 
      * @param r
      * @return <code>Iterable</code> over input instances
+     * @throws IOException if an error occurs while opening or reading the input corpus
      */
     @SuppressWarnings("unchecked")
-    public Iterable<I> corpusReader(final Reader r) {
+    public Iterable<I> corpusReader(final Reader r) throws IOException {
         return (Iterable<I>) new LineIterator(r);
     }
 
