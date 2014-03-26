@@ -269,7 +269,8 @@ public class Arrays {
     }
 
     /**
-     * Sort parallel int[] and float[] arrays (stolen from java.util.Arrays and modified to sort parallel arrays)
+     * Sort parallel int[] and float[] arrays based on the values in <code>x</code> (stolen from java.util.Arrays and
+     * modified to sort parallel arrays)
      */
     public static void sort(final int[] x, final float[] f) {
         sort1(x, f, 0, x.length);
@@ -483,7 +484,8 @@ public class Arrays {
     }
 
     /**
-     * Sort parallel float[] and short[] arrays (stolen from java.util.Arrays and modified to sort parallel arrays)
+     * Sort parallel float[] and short[] arrays based on the values in <code>x</code> (stolen from java.util.Arrays and
+     * modified to sort parallel arrays)
      */
     public static void sort(final float[] x, final short[] p) {
         sort1(x, p, 0, x.length);
