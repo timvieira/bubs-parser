@@ -133,14 +133,15 @@ public class Tagger extends MulticlassClassifier<MulticlassTagSequence, Multicla
 
             input.mark(8);
             final char firstChar = (char) input.read();
+            input.reset();
 
             // If the first input character is a '(', assume the input includes gold tags and evaluate accuracy only.
             if (firstChar == '(') {
-                input.reset();
                 final MulticlassClassifierResult result = testAccuracy(corpusReader(input));
                 BaseLogger.singleton().info(
                         String.format("Accuracy=%.2f  Time=%d\n", result.accuracy() * 100f, result.time));
             } else {
+
                 // Output tagged text.
                 for (final String sentence : corpusReader(input)) {
                     final String tokenizedSentence = Tokenizer.treebankTokenize(sentence);
