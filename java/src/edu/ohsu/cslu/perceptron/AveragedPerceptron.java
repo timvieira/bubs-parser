@@ -209,16 +209,8 @@ public class AveragedPerceptron extends Perceptron {
     }
 
     @Override
-    public ScoredRanking scoredRank(final FloatVector[] model, final Vector featureVector) {
-
-        final short[] classes = new short[avgWeights.length];
-        final float[] scores = new float[avgWeights.length];
-
-        for (short i = 0; i < avgWeights.length; i++) {
-            classes[i] = i;
-            scores[i] = featureVector.dotProduct(avgWeights[i]) + bias[i];
-        }
-        return new ScoredRanking(classes, scores);
+    public ScoredRanking scoredRank(final Vector featureVector) {
+        return super.scoredRank(avgWeights, featureVector);
     }
 
     @Override

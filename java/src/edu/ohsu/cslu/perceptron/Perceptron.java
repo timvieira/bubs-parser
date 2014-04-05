@@ -147,8 +147,8 @@ public class Perceptron extends Classifier {
      * @param featureVector
      * @return all classes, ranked by the raw perceptron model for the specified feature vector.
      */
-    public short[] rank(final FloatVector[] model, final Vector featureVector) {
-        return scoredRank(model, featureVector).classes;
+    public short[] rank(final Vector featureVector) {
+        return scoredRank(featureVector).classes;
     }
 
     /**
@@ -157,7 +157,18 @@ public class Perceptron extends Classifier {
      * @param featureVector
      * @return all classes, ranked by the raw perceptron model for the specified feature vector.
      */
-    public ScoredRanking scoredRank(final FloatVector[] model, final Vector featureVector) {
+    public ScoredRanking scoredRank(final Vector featureVector) {
+        return scoredRank(rawWeights, featureVector);
+    }
+
+    /**
+     * Returns all classes, ranked by the raw perceptron model for the specified feature vector.
+     * 
+     * @param model The selected model
+     * @param featureVector
+     * @return all classes, ranked by the raw perceptron model for the specified feature vector.
+     */
+    protected ScoredRanking scoredRank(final FloatVector[] model, final Vector featureVector) {
 
         final short[] classes = new short[model.length];
         final float[] scores = new float[model.length];
@@ -329,6 +340,8 @@ public class Perceptron extends Classifier {
             this.classes = classes;
             this.scores = scores;
             edu.ohsu.cslu.util.Arrays.sort(scores, classes);
+            edu.ohsu.cslu.util.Arrays.reverse(scores);
+            edu.ohsu.cslu.util.Arrays.reverse(classes);
         }
     }
 }
