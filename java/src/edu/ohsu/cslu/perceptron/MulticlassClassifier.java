@@ -207,22 +207,22 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence, F exten
         @SuppressWarnings("unused")
         int incorrect = 0;
         for (int j = 0; j < devCorpusFeatures.size(); j++) {
-            result.sentences++;
-            final MulticlassSequence tagSequence = devCorpusSequences.get(j);
+            result.sequences++;
+            final MulticlassSequence sequence = devCorpusSequences.get(j);
             final BitVector[] featureVectors = devCorpusFeatures.get(j);
 
             for (int k = 0; k < featureVectors.length; k++) {
                 if (featureVectors[k] != null) {
-                    tagSequence.setPredictedClass(k, classify(featureVectors[k]));
-                    if (tagSequence.predictedClass(k) == tagSequence.goldClass(k)) {
+                    sequence.setPredictedClass(k, classify(featureVectors[k]));
+                    if (sequence.predictedClass(k) == sequence.goldClass(k)) {
                         result.correct++;
                     } else {
                         incorrect++;
                     }
-                    result.words++;
+                    result.instances++;
                 }
             }
-            Arrays.fill(tagSequence.predictedClasses(), (short) 0);
+            Arrays.fill(sequence.predictedClasses(), (short) 0);
         }
         result.time += (int) (System.currentTimeMillis() - t0);
         return result;
@@ -247,9 +247,13 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence, F exten
     public short classify(final BitVector featureVector) {
 
         if (parallelArrayOffsetMap == null) {
-            return (short) perceptronModel.classify(featureVector);
+            return perceptronModel.classify(featureVector);
         }
 
+        return classify(dotProducts(featureVector));
+    }
+
+    protected final float[] dotProducts(final BitVector featureVector) {
         // Compute individual dot-products for each tag
         final float[] dotProducts = new float[tagSet.size()];
 
@@ -286,8 +290,7 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence, F exten
                 }
             }
         }
-
-        return classify(dotProducts);
+        return dotProducts;
     }
 
     /**
@@ -433,7 +436,6 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence, F exten
     MulticlassClassifierResult train(final ArrayList<S> trainingCorpusSequences, final ArrayList<S> devCorpusSequences,
             final int iterations) {
 
-        MulticlassClassifierResult devResult = null;
         featureExtractor = featureExtractor();
         perceptronModel = new AveragedPerceptron(tagSet.size(), featureExtractor.vectorLength());
 
@@ -464,10 +466,7 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence, F exten
 
             // Skip the last iteration - we'll test after we finalize below
             if (!devCorpusSequences.isEmpty() && i < iterations) {
-                devResult = classify(devCorpusSequences, devCorpusFeatures, null);
-                BaseLogger.singleton().info(
-                        String.format("Iteration=%d Devset Accuracy=%.2f  Time=%d\n", i, devResult.accuracy() * 100f,
-                                devResult.time));
+                evaluateDevset(devCorpusSequences, devCorpusFeatures, i);
             }
         }
 
@@ -477,11 +476,27 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence, F exten
 
         // Test on the dev-set
         if (!devCorpusSequences.isEmpty()) {
-            devResult = classify(devCorpusSequences, devCorpusFeatures, null);
-            BaseLogger.singleton().info(
-                    String.format("Iteration=%d Devset Accuracy=%.2f  Time=%d\n", iterations,
-                            devResult.accuracy() * 100f, devResult.time));
+            return evaluateDevset(devCorpusSequences, devCorpusFeatures, iterations);
         }
+
+        return null;
+    }
+
+    /**
+     * Evaluates the development set and reports accuracy. Returns the result as a {@link MulticlassClassifierResult}
+     * 
+     * @param devCorpusSequences
+     * @param devCorpusFeatures
+     * @param trainingIteration
+     * @return Dev-set evaluation
+     */
+    protected MulticlassClassifierResult evaluateDevset(final ArrayList<S> devCorpusSequences,
+            final ArrayList<BitVector[]> devCorpusFeatures, final int trainingIteration) {
+
+        final MulticlassClassifierResult devResult = classify(devCorpusSequences, devCorpusFeatures, null);
+        BaseLogger.singleton().info(
+                String.format("Iteration=%d Devset Accuracy=%.2f  Time=%d\n", trainingIteration,
+                        devResult.accuracy() * 100f, devResult.time));
         return devResult;
     }
 
@@ -647,25 +662,25 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence, F exten
     }
 
     protected static class MulticlassClassifierResult {
-        protected int sentences, words, correct;
+        protected int sequences, instances, correct;
         protected int time;
 
         public MulticlassClassifierResult() {
         }
 
-        public MulticlassClassifierResult(final int sentences, final int words, final int correct, final int time) {
-            this.sentences = sentences;
-            this.words = words;
+        public MulticlassClassifierResult(final int sequences, final int instances, final int correct, final int time) {
+            this.sequences = sequences;
+            this.instances = instances;
             this.correct = correct;
             this.time = time;
         }
 
         public float accuracy() {
-            return correct * 1f / words;
+            return correct * 1f / instances;
         }
 
         public MulticlassClassifierResult sum(final MulticlassClassifierResult other) {
-            return new MulticlassClassifierResult(sentences + other.sentences, words + other.words, correct
+            return new MulticlassClassifierResult(sequences + other.sequences, instances + other.instances, correct
                     + other.correct, time + other.time);
         }
     }

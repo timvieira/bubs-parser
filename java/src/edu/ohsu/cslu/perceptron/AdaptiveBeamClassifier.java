@@ -845,7 +845,7 @@ public class AdaptiveBeamClassifier extends ClassifierTool<BeamWidthSequence> {
             }
         }
 
-        result.sentences++;
+        result.sequences++;
         if (underestimatedBeam > 0) {
             result.sentencesWithMisclassifiedNegative++;
         }
