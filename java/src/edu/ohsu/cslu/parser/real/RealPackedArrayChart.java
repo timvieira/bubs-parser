@@ -938,10 +938,6 @@ public class RealPackedArrayChart extends Chart {
                                             * maxQ[leftCellIndex][baseLeftChild] * maxQ[rightCellIndex][baseRightChild];
                                 }
 
-                                if (q == 0) {
-                                    System.out.println("Underflow?");
-                                }
-
                                 if (q > maxQ[cellIndex][baseParent]) {
                                     maxQ[cellIndex][baseParent] = q;
                                     maxQLeftChildren[cellIndex][baseParent] = baseLeftChild;
