@@ -37,6 +37,8 @@ import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseVector;
 import edu.ohsu.cslu.datastructs.vectors.Vector;
 import edu.ohsu.cslu.parser.Util;
+import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthModel;
+import edu.ohsu.cslu.parser.fom.DiscriminativeFOM;
 import edu.ohsu.cslu.util.Strings;
 
 /**
@@ -99,6 +101,11 @@ public class AveragedPerceptron extends Perceptron {
         super(learningRate, lossFunction, binsStr, featureTemplate, initialWeights);
     }
 
+    /**
+     * Used by the mostly-obsolete {@link PerceptronBeamWidthModel} and {@link DiscriminativeFOM}
+     * 
+     * @param modelFileReader
+     */
     public AveragedPerceptron(final BufferedReader modelFileReader) {
         try {
             this.readModel(modelFileReader);
@@ -126,14 +133,8 @@ public class AveragedPerceptron extends Perceptron {
         lastAveraged = new DenseIntVector(initialWeights.length, 0);
     }
 
-    /**
-     * Returns the class output of the averaged perceptron model for the specified feature vector.
-     * 
-     * @param featureVector
-     * @return the binary output of the averaged perceptron model for the specified feature vector.
-     */
     @Override
-    public short classify(final Vector featureVector) {
+    protected FloatVector[] modelWeights() {
         // We don't need to rely on the user to update the final model since we can
         // keep track of it ourself. update() is only called for *incorrect* classifications
         // so if we run through additional *correct* training examples, we need to re-average
@@ -142,7 +143,8 @@ public class AveragedPerceptron extends Perceptron {
         if (lastExampleAllUpdated < trainExampleNumber) {
             averageAllFeatures();
         }
-        return classify(avgWeights, featureVector);
+
+        return avgWeights;
     }
 
     /**
@@ -206,11 +208,6 @@ public class AveragedPerceptron extends Perceptron {
             }
         }
         return new ScoredClassification(constrainingClass, constrainingScore, 0);
-    }
-
-    @Override
-    public ScoredRanking scoredRank(final Vector featureVector) {
-        return super.scoredRank(avgWeights, featureVector);
     }
 
     @Override
@@ -337,29 +334,12 @@ public class AveragedPerceptron extends Perceptron {
         lastExampleAllUpdated = trainExampleNumber;
     }
 
-    @Override
-    public FloatVector modelWeights(final int modelIndex) {
-        if (lastExampleAllUpdated < trainExampleNumber) {
-            averageAllFeatures();
-        }
-        return avgWeights[modelIndex];
-    }
-
-    public FloatVector rawModelWeights(final int modelIndex) {
-        return rawWeights[modelIndex];
-    }
-
     public void trim() {
         if (avgWeights[0] instanceof SparseVector) {
             for (final FloatVector v : avgWeights) {
                 ((SparseVector) v).trim();
             }
         }
-    }
-
-    @Override
-    public String toString() {
-        return modelToString(avgWeights);
     }
 
     // # === Perceptron Model ===

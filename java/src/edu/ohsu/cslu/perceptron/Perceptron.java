@@ -88,6 +88,10 @@ public class Perceptron extends Classifier {
         }
     }
 
+    protected FloatVector[] modelWeights() {
+        return rawWeights;
+    }
+
     @Override
     public void setBias(final String biasString) {
         final String[] tokens = biasString.split(",");
@@ -123,7 +127,7 @@ public class Perceptron extends Classifier {
      * @param featureVector
      * @return the 1-best class output of the raw perceptron model for the specified feature vector.
      */
-    public short classify(final FloatVector[] model, final Vector featureVector) {
+    public final short classify(final FloatVector[] model, final Vector featureVector) {
         short bestClass = -1;
         float score, bestScore = Float.NEGATIVE_INFINITY;
         for (short i = 0; i < model.length; i++) {
@@ -137,8 +141,8 @@ public class Perceptron extends Classifier {
     }
 
     @Override
-    public short classify(final Vector featureVector) {
-        return classify(rawWeights, featureVector);
+    public final short classify(final Vector featureVector) {
+        return classify(modelWeights(), featureVector);
     }
 
     /**
@@ -147,7 +151,7 @@ public class Perceptron extends Classifier {
      * @param featureVector
      * @return all classes, ranked by the raw perceptron model for the specified feature vector.
      */
-    public short[] rank(final Vector featureVector) {
+    public final short[] rank(final Vector featureVector) {
         return scoredRank(featureVector).classes;
     }
 
@@ -157,8 +161,8 @@ public class Perceptron extends Classifier {
      * @param featureVector
      * @return all classes, ranked by the raw perceptron model for the specified feature vector.
      */
-    public ScoredRanking scoredRank(final Vector featureVector) {
-        return scoredRank(rawWeights, featureVector);
+    public final ScoredRanking scoredRank(final Vector featureVector) {
+        return scoredRank(modelWeights(), featureVector);
     }
 
     /**
@@ -168,7 +172,7 @@ public class Perceptron extends Classifier {
      * @param featureVector
      * @return all classes, ranked by the raw perceptron model for the specified feature vector.
      */
-    protected ScoredRanking scoredRank(final FloatVector[] model, final Vector featureVector) {
+    protected final ScoredRanking scoredRank(final FloatVector[] model, final Vector featureVector) {
 
         final short[] classes = new short[model.length];
         final float[] scores = new float[model.length];
@@ -218,18 +222,11 @@ public class Perceptron extends Classifier {
         rawWeights[guessClass].inPlaceAdd(featureVector, -alpha);
     }
 
-    public FloatVector modelWeights(final int modelIndex) {
-        return rawWeights[modelIndex];
-    }
-
     @Override
     public String toString() {
-        return modelToString(rawWeights);
-    }
-
-    protected String modelToString(final FloatVector[] model) {
+        FloatVector[] model = modelWeights();
         final StringBuilder sb = new StringBuilder((int) (model.length * model[0].length() * 8));
-
+        
         sb.append("# === Perceptron Model ===\n");
         sb.append(String.format("numFeats=%d numClasses=%d bins=%s numTrainExamples=%d \n", model[0].length(),
                 model.length, binsStr, trainExampleNumber));
