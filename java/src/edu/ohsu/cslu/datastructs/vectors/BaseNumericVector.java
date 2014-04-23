@@ -25,6 +25,8 @@ import edu.ohsu.cslu.datastructs.matrices.Matrix;
 
 public abstract class BaseNumericVector extends BaseVector implements NumericVector {
 
+    private static final long serialVersionUID = 1L;
+
     BaseNumericVector(final long length) {
         super(length);
     }

@@ -15,13 +15,15 @@
  * 
  * You should have received a copy of the GNU General Public License
  * along with cslu-common. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.datastructs.matrices;
 
 import java.io.IOException;
 import java.io.Writer;
 
 public abstract class BaseDenseMatrix extends BaseMatrix implements DenseMatrix {
+
+    private static final long serialVersionUID = 1L;
 
     BaseDenseMatrix(final int m, final int n, final boolean symmetric) {
         super(m, n, symmetric);

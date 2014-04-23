@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU General Public License
  * along with cslu-common. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.counters;
 
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -35,6 +35,8 @@ import java.util.HashMap;
  */
 public abstract class CoocurrenceCounter implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     private final Object2IntOpenHashMap<String> singleWordCounts = new Object2IntOpenHashMap<String>();
     private final HashMap<String, Object2IntOpenHashMap<String>> twoWordCounts = new HashMap<String, Object2IntOpenHashMap<String>>();
 
@@ -46,7 +48,7 @@ public abstract class CoocurrenceCounter implements Serializable {
 
     protected void trim() {
         singleWordCounts.trim();
-        for (Object2IntOpenHashMap<String> map : twoWordCounts.values()) {
+        for (final Object2IntOpenHashMap<String> map : twoWordCounts.values()) {
             map.trim();
         }
     }
@@ -83,7 +85,7 @@ public abstract class CoocurrenceCounter implements Serializable {
      * @param w word
      * @return Number of occurrences of the specified word in the corpus.
      */
-    public final int count(String w) {
+    public final int count(final String w) {
         return singleWordCounts.getInt(w);
     }
 
@@ -94,7 +96,7 @@ public abstract class CoocurrenceCounter implements Serializable {
      * @param w word
      * @return Number of occurrences of the specified bigram / pair in the corpus.
      */
-    public final int count(String h, String w) {
+    public final int count(final String h, final String w) {
         final Object2IntOpenHashMap<String> map = twoWordCounts.get(h);
         if (map == null) {
             return 0;
@@ -110,7 +112,7 @@ public abstract class CoocurrenceCounter implements Serializable {
      * @return G-squared statistic for the word pair under consideration. G-squared is always positive; large values
      *         indicate strong dependence between w and h.
      */
-    public final float logLikelihoodRatio(String h, String w) {
+    public final float logLikelihoodRatio(final String h, final String w) {
         final int n = count(h);
         final int c = count(w);
         final int k = count(h, w);
@@ -147,7 +149,7 @@ public abstract class CoocurrenceCounter implements Serializable {
         return (float) (-2 * logLambda);
     }
 
-    public float logOddsRatio(String h, String w) {
+    public float logOddsRatio(final String h, final String w) {
         final int n = count(h);
         final int c = count(w);
         final int k = count(h, w);

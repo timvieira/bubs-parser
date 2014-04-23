@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU General Public License
  * along with cslu-common. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.counters;
 
 import java.io.BufferedReader;
@@ -32,8 +32,10 @@ import java.io.Reader;
  */
 public class BigramCounter extends CoocurrenceCounter {
 
-    public BigramCounter(Reader reader) throws IOException {
-        BufferedReader br = new BufferedReader(reader);
+    private static final long serialVersionUID = 1L;
+
+    public BigramCounter(final Reader reader) throws IOException {
+        final BufferedReader br = new BufferedReader(reader);
         for (String line = br.readLine(); line != null; line = br.readLine()) {
             countSentence(line.split(" "));
         }
@@ -42,7 +44,7 @@ public class BigramCounter extends CoocurrenceCounter {
         trim();
     }
 
-    protected void countSentence(String[] wordArray) {
+    protected void countSentence(final String[] wordArray) {
         // Count the first word separately
         incrementCount(wordArray[0]);
 

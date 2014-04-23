@@ -65,7 +65,6 @@ import edu.ohsu.cslu.parser.Parser.ParserType;
 import edu.ohsu.cslu.parser.Parser.ReparseStrategy;
 import edu.ohsu.cslu.parser.Parser.ResearchParserType;
 import edu.ohsu.cslu.parser.cellselector.AdaptiveBeamModel;
-import edu.ohsu.cslu.parser.cellselector.CellConstraintsComboModel;
 import edu.ohsu.cslu.parser.cellselector.CellSelectorModel;
 import edu.ohsu.cslu.parser.cellselector.CompleteClosureModel;
 import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
@@ -516,13 +515,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
                 defaultCellSelector = false;
             }
 
-            if (cellConstraints != null && beamConstraints != null) {
-                final CellConstraintsComboModel constraintsCombo = new CellConstraintsComboModel();
-                constraintsCombo.addModel(cellConstraints);
-                constraintsCombo.addModel(beamConstraints);
-                cellSelectorModel = constraintsCombo;
-                defaultCellSelector = false;
-            } else if (maxSubtreeSpan != 0) {
+            if (maxSubtreeSpan != 0) {
                 cellSelectorModel = defaultCellSelector ? new LimitedSpanTraversalModel(maxSubtreeSpan, null)
                         : new LimitedSpanTraversalModel(maxSubtreeSpan, cellSelectorModel);
                 defaultCellSelector = false;

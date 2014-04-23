@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU General Public License
  * along with cslu-common. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.counters;
 
 import java.io.BufferedReader;
@@ -33,8 +33,10 @@ import java.util.TreeSet;
  */
 public class SententialCoocurrenceCounter extends CoocurrenceCounter {
 
-    public SententialCoocurrenceCounter(Reader reader) throws IOException {
-        BufferedReader br = new BufferedReader(reader);
+    private static final long serialVersionUID = 1L;
+
+    public SententialCoocurrenceCounter(final Reader reader) throws IOException {
+        final BufferedReader br = new BufferedReader(reader);
         for (String line = br.readLine(); line != null; line = br.readLine()) {
             countSentence(line.split(" "));
         }
@@ -43,7 +45,7 @@ public class SententialCoocurrenceCounter extends CoocurrenceCounter {
         trim();
     }
 
-    protected void countSentence(String[] wordArray) {
+    protected void countSentence(final String[] wordArray) {
         final TreeSet<String> words = new TreeSet<String>();
 
         for (final String word : wordArray) {

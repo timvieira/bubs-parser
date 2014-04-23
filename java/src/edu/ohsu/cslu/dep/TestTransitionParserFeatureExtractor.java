@@ -44,6 +44,7 @@ public class TestTransitionParserFeatureExtractor {
     private int posSetSize;
 
     private SymbolSet<String> labels;
+    @SuppressWarnings("unused")
     private int labelSetSize;
 
     private Arc[] arcs;
