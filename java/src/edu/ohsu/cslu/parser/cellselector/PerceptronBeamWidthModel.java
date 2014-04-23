@@ -29,7 +29,6 @@ import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParseTask;
-import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.Util;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.Chart.Feature;
@@ -193,10 +192,6 @@ public class PerceptronBeamWidthModel extends ChainableCellSelectorModel impleme
                             "INFO: beamconf: " + classCounts + " open=" + (openCells - numOnlyFactored)
                                     + " openFactored=" + numOnlyFactored + " closed=" + (totalCells - openCells));
                 }
-            }
-            if (ParserDriver.chartConstraintsPrint) {
-                BaseLogger.singleton().info("CC_SENT: " + parser.chart.parseTask.sentence);
-                BaseLogger.singleton().info("CC_CELLS: " + toString());
             }
         }
 

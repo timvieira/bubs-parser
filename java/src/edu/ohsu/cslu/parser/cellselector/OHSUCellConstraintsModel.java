@@ -32,7 +32,6 @@ import cltool4j.ConfigProperties;
 import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParseTask;
-import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.Util;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.Chart.ChartCell;
@@ -380,23 +379,7 @@ public class OHSUCellConstraintsModel extends ChainableCellSelectorModel impleme
             }
             cellListIterator = cellList.iterator();
 
-            // int bOpen = 0, eOpen = 0;
-            // for (int i = 0; i < sentLen; i++) {
-            // if (beginScores[i] < beginThresh)
-            // bOpen++;
-            // if (endScores[i] < endThresh)
-            // eOpen++;
-            // }
-            // System.out.println("beginOpen=" + bOpen + " endOpen=" + eOpen);
-
-            if (ParserDriver.chartConstraintsPrint) {
-                BaseLogger.singleton().info("CC_SENT: " + sentence);
-                BaseLogger.singleton().info(perCellString());
-                // System.out.println("listSize=" + cellList.size());
-                cellList.clear(); // do not parse sentence
-            } else {
-                BaseLogger.singleton().finer(toString());
-            }
+            BaseLogger.singleton().finer(toString());
         }
 
         @Override

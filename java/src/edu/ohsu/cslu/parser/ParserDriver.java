@@ -293,11 +293,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     @Option(name = "-abModel", hidden = true, metaVar = "model file", usage = "Adaptive-beam model (Java Serialized)")
     private File adaptiveBeamModelFile = null;
 
-    // Leaving this around for a bit, in case we get back to limited-span parsing, but it doesn't work currently
-    // @Option(name = "-lsccModel", hidden = true,
-    // metaVar = "FILE", usage = "CSLU Chart Constraints model (Roark and Hollingshead, 2008)")
-    // private String limitedSpanChartConstraintsModel = null;
-
     // TODO Document, and remove other options as appropriate. Make -ccClassifier, -abModel aliases, handle multiple
     // models properly
     @Option(name = "-pm", hidden = true, metaVar = "model file", usage = "Cell selector model file")
@@ -312,7 +307,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
 
     /**
      * Parses with a 'hedge' grammar, limiting the span of subconstituents (and combining those limited-span parses
-     * using a heuristic approximation)
+     * using a heuristic approximation). See Yarmohammadi et al., 2014.
      */
     @Option(name = "-maxSubtreeSpan", hidden = true, metaVar = "span", usage = "Maximum subtree span for limited-depth parsing")
     private int maxSubtreeSpan;
@@ -324,10 +319,6 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
     @Option(name = "-head-rules", hidden = true, optionalChoiceGroup = "binary", metaVar = "ruleset", usage = "Enables head-finding using a Charniak-style head-finding ruleset. Specify ruleset as 'charniak' or a rule file.")
     private String headRules = null;
     private HeadPercolationRuleset headPercolationRuleset = null;
-
-    // TODO Remove - this option is obsolete
-    @Option(name = "-ccPrint", hidden = true, usage = "Print Cell Constraints for each input sentence and exit (no parsing done)")
-    public static boolean chartConstraintsPrint = false;
 
     @Option(name = "-debug", hidden = true, usage = "Exit on error with trace (by default, a parse error outputs '()' and continues)")
     public boolean debug = false;
