@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns="http://java.sun.com/xml/ns/javaee" xmlns:web="http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+	id="WebApp_ID" version="2.5">
+
+    <display-name>bubs</display-name>
+
+    <servlet>
+        <servlet-name>ParseServlet</servlet-name>
+        <servlet-class>edu.ohsu.cslu.webapp.ParseServlet</servlet-class>
+
+        <init-param>
+            <param-name>grammar</param-name>
+            <param-value>replace.model.grammar</param-value>
+        </init-param>
+        <init-param>
+            <param-name>fom</param-name>
+            <param-value>replace.model.fom</param-value>
+        </init-param>
+        <init-param>
+            <param-name>pruning</param-name>
+            <param-value>replace.model.pruning</param-value>
+        </init-param>
+
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>ParseServlet</servlet-name>
+        <url-pattern>/parse</url-pattern>
+    </servlet-mapping>
+
+    <welcome-file-list>
+        <welcome-file>index.jsp</welcome-file>
+    </welcome-file-list>
+
+</web-app>
