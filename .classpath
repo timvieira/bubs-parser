@@ -3,10 +3,9 @@
 	<classpathentry kind="src" path="java/src"/>
 	<classpathentry kind="src" path="java/berkeley-src"/>
 	<classpathentry kind="src" path="unit-test-data"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry exported="true" kind="lib" path="java/bsd-lib/fastutil.jar" sourcepath="java/bsd-lib/fastutil-src.jar"/>
 	<classpathentry exported="true" kind="lib" path="java/bsd-lib/jsr166y.jar" sourcepath="java/bsd-lib/jsr166y-src.jar"/>
-	<classpathentry exported="true" kind="lib" path="java/bsd-lib/servlet-api-2.5.jar" />
+	<classpathentry exported="true" kind="lib" path="java/bsd-lib/servlet-api-2.5.jar"/>
 	<classpathentry exported="true" kind="lib" path="java/lgpl-lib/javacl.jar"/>
 	<classpathentry exported="true" kind="lib" path="java/lgpl-lib/jnaerator.jar"/>
 	<classpathentry exported="true" kind="lib" path="java/lgpl-lib/opencl4java.jar"/>
@@ -14,5 +13,6 @@
 	<classpathentry exported="true" kind="lib" path="java/bsd-lib/cltool4j.jar" sourcepath="java/bsd-lib/cltool4j-src.jar"/>
 	<classpathentry kind="lib" path="java/bsd-lib/cjunit.jar" sourcepath="java/bsd-lib/cjunit-src.jar"/>
 	<classpathentry kind="lib" path="java/gpl-lib/weka.jar" sourcepath="java/gpl-lib/weka-src.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="output" path="build"/>
 </classpath>

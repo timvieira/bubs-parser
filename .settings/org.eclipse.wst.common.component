@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project-modules id="moduleCoreId" project-version="1.5.0">
+    <wb-module deploy-name="bubs-parser">
+        <wb-resource deploy-path="/" source-path="/WebContent" tag="defaultRootSource"/>
+        <wb-resource deploy-path="/WEB-INF/classes" source-path="/java/src"/>
+        <wb-resource deploy-path="/WEB-INF/classes" source-path="/java/berkeley-src"/>
+        <wb-resource deploy-path="/WEB-INF/classes" source-path="/unit-test-data"/>
+        <property name="context-root" value="bubs-parser"/>
+        <property name="java-output-path" value="/bubs-parser/build"/>
+    </wb-module>
+</project-modules>

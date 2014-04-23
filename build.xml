@@ -383,6 +383,36 @@
     </target>
 
 
+    <target name="war" depends="compile">
+        <!-- Default properties for model files (if not specified on the command-line) -->
+        <property name="model.grammar" value="models/wsj_l0mm_16_.55_6.gr.gz" />
+        <property name="model.fom" value="models/wsj_l0mm_16_.55_6.lexfom.gz" />
+        <property name="model.pruning" value="models/wsj_cc.mdl.99" />
+        
+        <!-- Substitute model properties into web.xml -->
+        <copy file="WebContent/WEB-INF/web.xml.template" tofile="${dir.build}/WEB-INF/web.xml"/>
+        <replaceregexp file="${dir.build}/WEB-INF/web.xml" match="replace.model.grammar" replace="${model.grammar}" />
+        <replaceregexp file="${dir.build}/WEB-INF/web.xml" match="replace.model.fom" replace="${model.fom}" />
+        <replaceregexp file="${dir.build}/WEB-INF/web.xml" match="replace.model.pruning" replace="${model.pruning}" />
+
+        <!-- Package the war file -->
+        <war file="${dir.dist}/bubs-parser.war">
+
+            <fileset dir="WebContent" includes="**" />
+            <fileset dir="${dir.build}" includes="WEB-INF" />
+                
+            <classes dir="${dir.build}" includes="**/*.class" />
+            <classes dir="." includes="${model.grammar},${model.fom},${model.pruning}" />
+
+            <lib dir="${dir.bsd.lib}" >
+                <exclude name="*-src.jar" />
+                <exclude name="cjunit.jar" />
+                <exclude name="servlet-api-2.5.jar" />
+            </lib>
+        </war>
+    </target>
+    
+    
     <!-- 
     ========================================================================
        Package all training tools and utilities

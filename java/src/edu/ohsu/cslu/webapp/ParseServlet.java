@@ -93,20 +93,20 @@ public class ParseServlet extends HttpServlet {
             // Load grammar, prioritization model, and pruning model from classpath ('grammar', 'fom', 'pruning',
             // respectively)
             final String grammarFile = config.getInitParameter("grammar");
-            BaseLogger.singleton().info("Loading grammar");
+            BaseLogger.singleton().info("Loading grammar from " + grammarFile);
             grammar = new LeftCscSparseMatrixGrammar(new InputStreamReader(new GZIPInputStream(getClass()
                     .getClassLoader().getResourceAsStream(grammarFile))), new DecisionTreeTokenClassifier(),
                     PerfectIntPairHashPackingFunction.class);
             opts.setGrammar(grammar);
 
-            BaseLogger.singleton().info("Loading FOM model");
             final String fomFile = config.getInitParameter("fom");
+            BaseLogger.singleton().info("Loading FOM model from " + fomFile);
             opts.fomModel = new BoundaryLex(FOMType.BoundaryLex, grammar, new BufferedReader(new InputStreamReader(
                     new GZIPInputStream(getClass().getClassLoader().getResourceAsStream(fomFile)),
                     Charset.defaultCharset())));
 
-            BaseLogger.singleton().info("Loading pruning model");
             final String pruningFile = config.getInitParameter("pruning");
+            BaseLogger.singleton().info("Loading pruning model from " + pruningFile);
             opts.cellSelectorModel = new CompleteClosureModel(getClass().getClassLoader().getResourceAsStream(
                     pruningFile), null);
 
