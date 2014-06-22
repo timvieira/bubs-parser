@@ -28,6 +28,8 @@ import org.junit.Test;
 /**
  * Unit tests for {@link TokenClassifier}
  * 
+ * TODO Add a lot more unit tests before optimizing the tokenization routines
+ * 
  * @author Aaron Dunlop
  */
 public class TestTokenizer {
@@ -54,5 +56,18 @@ public class TestTokenizer {
         assertEquals("`` What happens with a question mark ? '' said Bob .",
                 Tokenizer.treebankTokenize("\"What happens with a question mark?\" said Bob."));
         assertEquals("`` Ouch ! '' said Fred .", Tokenizer.treebankTokenize("\"Ouch!\" said Fred."));
+    }
+
+    @Test
+    public void testTreebankDetokenize() {
+        assertEquals(
+                "Phil Smith, Ph.D. said, \"We're on our way.\" (as he ran to the car).",
+                Tokenizer
+                        .treebankDetokenize("Phil Smith , Ph. D. said , `` We 're on our way . '' -LRB- as he ran to the car -RRB- ."));
+        assertEquals("Leisure & Artz [sic].", Tokenizer.treebankDetokenize("Leisure & Artz -LSB- sic -RSB- ."));
+        assertEquals(
+                "don't won't wouldn't it's Mitchell's they're he'd I'm I'll we're you'd they'll I've you've you'd",
+                Tokenizer
+                        .treebankDetokenize("do n't wo n't would n't it 's Mitchell 's they 're he 'd I 'm I 'll we 're you 'd they 'll I 've you 've you 'd "));
     }
 }

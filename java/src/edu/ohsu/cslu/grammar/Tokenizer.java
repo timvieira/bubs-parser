@@ -37,6 +37,8 @@ public class Tokenizer {
      * Note: this implementation uses a lot of on-the-fly regex operations, so it isn't very efficient. It's not a
      * bottleneck for parsing, but probably is for finite-state operations like POS tagging.
      * 
+     * TODO Add a lot more unit tests before optimizing the tokenization routines
+     * 
      * @param sentence A single untokenized sentence.
      * @return Tokenized sentence, with tokens separated by single spaces
      */
@@ -104,4 +106,77 @@ public class Tokenizer {
         return s.replaceAll("\\s+", " ").trim();
     }
 
+    /**
+     * Reverses Penn-Treebank-style tokenization, including marking special characters such as brackets, quotes, etc.
+     * 
+     * Note: this implementation uses a lot of on-the-fly regex operations, so it isn't very efficient. It's not a
+     * bottleneck for parsing, but probably is for finite-state operations like POS tagging.
+     * 
+     * @param sentence A single untokenized sentence.
+     * @return Tokenized sentence, with tokens separated by single spaces
+     */
+    public static String treebankDetokenize(final String sentence) {
+        String s = sentence;
+
+        // Directional open and close quotes
+        s = s.replaceAll("`` ", "\"");
+        // s = s.replaceAll("([ \\(\\[{<])\"", "$1 `` ");
+        s = s.replaceAll(" ''", "\"");
+
+        // Spaces around question marks, exclamation points, and other punctuation (excluding periods)
+        s = s.replaceAll(" ([,;@#$%?!\\]])", "$1 ");
+
+        // Split _final_ periods only
+        s = s.replaceAll(" [.]", ".");
+        // s = s.replaceAll("[.] ([\\[\\({}\\)\\]\"']*)$", " . $1");
+
+        // The Penn Treebank splits Ph.D. -> 'Ph. D.', so we'll special-case that
+        s = s.replaceAll("Ph\\. D\\.", "Ph.D.");
+
+        // Segment ellipses and re-collapse if it was split
+        s = s.replaceAll(" \\.\\.\\.", "...");
+
+        // Parentheses, brackets, etc.
+        s = s.replaceAll(" ?-LRB- ?", " (");
+        s = s.replaceAll(" ?-RRB- ?", ")");
+        s = s.replaceAll(" ?-LSB- ?", " [");
+        s = s.replaceAll(" ?-RSB- ?", "]");
+        s = s.replaceAll(" ?-LCB- ?", " {");
+        s = s.replaceAll(" ?-RCB- ?", "}");
+        s = s.replaceAll(" -- ", "--");
+
+        // s = s.replaceAll("$", " ");
+        // s = s.replaceAll("^", " ");
+
+        s = s.replaceAll("([^'])' ", "$1 ' ");
+
+        // Possessives, contractions, etc.
+        s = s.replaceAll(" '([sSmMdD]) ", "'$1 ");
+        s = s.replaceAll(" 'll ", "'ll ");
+        s = s.replaceAll(" 're ", "'re ");
+        s = s.replaceAll(" 've ", "'ve ");
+        s = s.replaceAll(" n't ", "n't ");
+        s = s.replaceAll(" 'LL ", "'LL ");
+        s = s.replaceAll(" 'RE ", "'RE ");
+        s = s.replaceAll(" 'VE ", "'VE ");
+        s = s.replaceAll(" N'T ", "N'T ");
+
+        // Contractions and pseudo-words
+        // s = s.replaceAll(" ([Cc])annot ", " $1an not ");
+        // s = s.replaceAll(" ([Dd])'ye ", " $1' ye ");
+        // s = s.replaceAll(" ([Gg])imme ", " $1im me ");
+        // s = s.replaceAll(" ([Gg])onna ", " $1on na ");
+        // s = s.replaceAll(" ([Gg])otta ", " $1ot ta ");
+        // s = s.replaceAll(" ([Ll])emme ", " $1em me ");
+        // s = s.replaceAll(" ([Mm])ore'n ", " $1ore 'n ");
+        // s = s.replaceAll(" '([Tt])is ", " $1 is ");
+        // s = s.replaceAll(" '([Tt])was ", " $1 was ");
+        // s = s.replaceAll(" ([Ww])anna ", " $1an na ");
+
+        // Remove spaces from abbreviations
+        // s = s.replaceAll(" ([A-Z]) \\.", " $1. ");
+
+        // Collapse multiple spaces and trim whitespace from beginning and end
+        return s.replaceAll("\\s+", " ").trim();
+    }
 }
