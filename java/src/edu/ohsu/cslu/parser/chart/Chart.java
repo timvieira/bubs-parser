@@ -33,15 +33,15 @@ import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Production;
-import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.parser.ParseTask;
+import edu.ohsu.cslu.util.MutableEnumeration;
 
 public abstract class Chart {
 
     protected int size;
     protected Grammar grammar;
     public ParseTask parseTask;
-    SymbolSet<String> featHash = new SymbolSet<String>();
+    MutableEnumeration<String> featHash = new MutableEnumeration<String>();
 
     protected Chart() {
     }

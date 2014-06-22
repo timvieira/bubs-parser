@@ -28,6 +28,8 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import edu.ohsu.cslu.util.MutableEnumeration;
+
 /**
  * Stores a sparse-matrix grammar in standard compressed-sparse-row (CSR) format
  * 
@@ -128,7 +130,7 @@ public class CsrSparseMatrixGrammar extends SparseMatrixGrammar {
 
     protected CsrSparseMatrixGrammar(final ArrayList<Production> binaryProductions,
             final ArrayList<Production> unaryProductions, final ArrayList<Production> lexicalProductions,
-            final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat,
+            final MutableEnumeration<String> vocabulary, final MutableEnumeration<String> lexicon, final GrammarFormatType grammarFormat,
             final TokenClassifier tokenClassifier, final Class<? extends PackingFunction> functionClass,
             final boolean initCsrMatrices) {
         super(binaryProductions, unaryProductions, lexicalProductions, vocabulary, lexicon, grammarFormat,
@@ -153,7 +155,7 @@ public class CsrSparseMatrixGrammar extends SparseMatrixGrammar {
 
     public CsrSparseMatrixGrammar(final ArrayList<Production> binaryProductions,
             final ArrayList<Production> unaryProductions, final ArrayList<Production> lexicalProductions,
-            final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat,
+            final MutableEnumeration<String> vocabulary, final MutableEnumeration<String> lexicon, final GrammarFormatType grammarFormat,
             final TokenClassifier tokenClassifier, final Class<? extends PackingFunction> functionClass) {
         this(binaryProductions, unaryProductions, lexicalProductions, vocabulary, lexicon, grammarFormat,
                 tokenClassifier, functionClass, true);

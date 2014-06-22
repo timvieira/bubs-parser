@@ -64,13 +64,13 @@ import edu.ohsu.cslu.grammar.SparseMatrixGrammar.NonTerminalClass;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.StringNonTerminal;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.StringNonTerminalComparator;
 import edu.ohsu.cslu.grammar.StringProduction;
-import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.grammar.TokenClassifier;
 import edu.ohsu.cslu.grammar.Vocabulary;
 import edu.ohsu.cslu.lela.FractionalCountGrammar;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.Util;
 import edu.ohsu.cslu.util.Math;
+import edu.ohsu.cslu.util.MutableEnumeration;
 import edu.ohsu.cslu.util.StringPool;
 import edu.ohsu.cslu.util.Strings;
 
@@ -1110,7 +1110,7 @@ public class RealInsideOutsideCscSparseMatrixGrammar extends Grammar {
 
         try {
             return getClass().getConstructor(
-                    new Class[] { ArrayList.class, ArrayList.class, ArrayList.class, SymbolSet.class, SymbolSet.class,
+                    new Class[] { ArrayList.class, ArrayList.class, ArrayList.class, MutableEnumeration.class, MutableEnumeration.class,
                             GrammarFormatType.class, Class.class, boolean.class }).newInstance(
                     new Object[] { unsplitGrammar.binaryProductions(Float.NEGATIVE_INFINITY),
                             unsplitGrammar.unaryProductions(Float.NEGATIVE_INFINITY),
@@ -1119,8 +1119,8 @@ public class RealInsideOutsideCscSparseMatrixGrammar extends Grammar {
         } catch (final Exception e) {
             try {
                 return getClass().getConstructor(
-                        new Class[] { ArrayList.class, ArrayList.class, ArrayList.class, SymbolSet.class,
-                                SymbolSet.class, GrammarFormatType.class }).newInstance(
+                        new Class[] { ArrayList.class, ArrayList.class, ArrayList.class, MutableEnumeration.class,
+                                MutableEnumeration.class, GrammarFormatType.class }).newInstance(
                         new Object[] { unsplitGrammar.binaryProductions(Float.NEGATIVE_INFINITY),
                                 unsplitGrammar.unaryProductions(Float.NEGATIVE_INFINITY),
                                 unsplitGrammar.lexicalProductions(Float.NEGATIVE_INFINITY), baseVocabulary, lexSet,

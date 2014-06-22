@@ -38,8 +38,8 @@ import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.Language;
-import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.parser.Util;
+import edu.ohsu.cslu.util.MutableEnumeration;
 
 /**
  * Induces a basic PCFG from a treebank
@@ -160,7 +160,7 @@ public class InduceCountGrammar extends BaseCommandlineTool {
         grammarWithUnks.write(new PrintWriter(System.out), false, language, grammarFormatType, rareWordThreshold);
     }
 
-    private Int2IntOpenHashMap unkClassMap(final SymbolSet<String> lexicon) {
+    private Int2IntOpenHashMap unkClassMap(final MutableEnumeration<String> lexicon) {
         final Int2IntOpenHashMap unkClassMap = new Int2IntOpenHashMap();
         for (int i = 0; i < lexicon.size(); i++) {
             unkClassMap.put(i, lexicon.addSymbol(DecisionTreeTokenClassifier.berkeleyGetSignature(lexicon.getSymbol(i), false, lexicon)));

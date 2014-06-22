@@ -22,6 +22,8 @@
 
 package edu.ohsu.cslu.grammar;
 
+import edu.ohsu.cslu.util.MutableEnumeration;
+
 
 /**
  * @author Aaron Dunlop
@@ -35,12 +37,12 @@ public class DecisionTreeTokenClassifier extends TokenClassifier {
     }
 
     @Override
-    public int lexiconIndex(final String token, final boolean sentenceInitial, final SymbolSet<String> lexicon) {
+    public int lexiconIndex(final String token, final boolean sentenceInitial, final MutableEnumeration<String> lexicon) {
         return lexicon.getIndex(lexiconEntry(token, sentenceInitial, lexicon));
     }
 
     @Override
-    public String lexiconEntry(final String token, final boolean sentenceInitial, final SymbolSet<String> lexicon) {
+    public String lexiconEntry(final String token, final boolean sentenceInitial, final MutableEnumeration<String> lexicon) {
         if (lexicon.containsKey(token)) {
             return token;
         }
@@ -70,7 +72,7 @@ public class DecisionTreeTokenClassifier extends TokenClassifier {
      * @return A String that is its signature (equivalence class)
      */
     public static String berkeleyGetSignature(final String word, final boolean sentenceInitial,
-            final SymbolSet<String> lexSet) {
+            final MutableEnumeration<String> lexSet) {
         final StringBuilder sb = new StringBuilder(12);
         sb.append("UNK");
 

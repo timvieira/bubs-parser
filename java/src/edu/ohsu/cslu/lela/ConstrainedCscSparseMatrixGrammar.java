@@ -30,7 +30,7 @@ import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.Production;
-import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.util.MutableEnumeration;
 
 /**
  * @author Aaron Dunlop
@@ -56,7 +56,7 @@ public class ConstrainedCscSparseMatrixGrammar extends LeftCscSparseMatrixGramma
 
     public ConstrainedCscSparseMatrixGrammar(final ArrayList<Production> binaryProductions,
             final ArrayList<Production> unaryProductions, final ArrayList<Production> lexicalProductions,
-            final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat,
+            final MutableEnumeration<String> vocabulary, final MutableEnumeration<String> lexicon, final GrammarFormatType grammarFormat,
             final Class<? extends PackingFunction> packingFunctionClass, final boolean initCscMatrices) {
 
         super(binaryProductions, unaryProductions, lexicalProductions, vocabulary, lexicon, grammarFormat,

@@ -24,6 +24,7 @@ package edu.ohsu.cslu.grammar;
 import java.io.Serializable;
 
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
+import edu.ohsu.cslu.util.MutableEnumeration;
 
 public abstract class TokenClassifier implements Serializable {
 
@@ -34,7 +35,7 @@ public abstract class TokenClassifier implements Serializable {
      * is unknown.
      * 
      * Deprecated because it cannot incorporate surrounding context into the tagging decision - use
-     * {@link #lexiconIndices(String, SymbolSet)} instead.
+     * {@link #lexiconIndices(String, MutableEnumeration)} instead.
      * 
      * @param token
      * @param sentenceInitial True if the token is the first word in the sentence (some {@link TokenClassifier}
@@ -44,14 +45,14 @@ public abstract class TokenClassifier implements Serializable {
      */
     @Deprecated
     public abstract String lexiconEntry(final String token, final boolean sentenceInitial,
-            final SymbolSet<String> lexicon);
+            final MutableEnumeration<String> lexicon);
 
     /**
      * Returns the lexicon-mapped index of <code>token</code>, or of the appropriate unknown-word class if
      * <code>token</code> is not present in the <code>lexicon</code>.
      * 
      * Deprecated because it cannot incorporate surrounding context into the tagging decision - use
-     * {@link #lexiconIndices(String, SymbolSet)} instead.
+     * {@link #lexiconIndices(String, MutableEnumeration)} instead.
      * 
      * @param token
      * @param sentenceInitial True if the token is the first word in the sentence (some {@link TokenClassifier}
@@ -60,17 +61,17 @@ public abstract class TokenClassifier implements Serializable {
      * @return the lexicon-mapped indices of <code>token</code>
      */
     @Deprecated
-    public abstract int lexiconIndex(final String token, final boolean sentenceInitial, final SymbolSet<String> lexicon);
+    public abstract int lexiconIndex(final String token, final boolean sentenceInitial, final MutableEnumeration<String> lexicon);
 
     /**
      * Splits the supplied sentence on spaces and returns the lexicon-mapped indices of all words. Convenience method
-     * that calls {@link #lexiconIndex(String, boolean, SymbolSet)} to obtain mapped indices.
+     * that calls {@link #lexiconIndex(String, boolean, MutableEnumeration)} to obtain mapped indices.
      * 
      * @param sentence
      * @param lexicon
      * @return the lexicon-mapped indices of all words
      */
-    public int[] lexiconIndices(final String sentence, final SymbolSet<String> lexicon) {
+    public int[] lexiconIndices(final String sentence, final MutableEnumeration<String> lexicon) {
         // TODO This could probably be done faster with something other than a regex
         final String tokens[] = sentence.split("\\s+");
         final int tokenIndices[] = new int[tokens.length];
@@ -87,7 +88,7 @@ public abstract class TokenClassifier implements Serializable {
      * @param lexicon
      * @return the lexicon-mapped indices of all words in the supplied parse tree
      */
-    public int[] lexiconIndices(final NaryTree<String> goldTree, final SymbolSet<String> lexicon) {
+    public int[] lexiconIndices(final NaryTree<String> goldTree, final MutableEnumeration<String> lexicon) {
         final int tokenIndices[] = new int[goldTree.leaves()];
         int i = 0;
         for (final NaryTree<String> leaf : goldTree.leafTraversal()) {

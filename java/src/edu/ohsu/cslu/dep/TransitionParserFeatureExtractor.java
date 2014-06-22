@@ -31,8 +31,8 @@ import edu.ohsu.cslu.datastructs.vectors.LargeSparseBitVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.dep.DependencyGraph.Arc;
 import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
-import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.perceptron.FeatureExtractor;
+import edu.ohsu.cslu.util.MutableEnumeration;
 
 /**
  * Extracts features for move-classification in Nivre-style dependency parsing from the current state of such a parser
@@ -59,15 +59,15 @@ public class TransitionParserFeatureExtractor extends FeatureExtractor<NivrePars
     final TemplateElement[][] templates;
     final long[] featureOffsets;
 
-    final SymbolSet<String> tokens;
-    final SymbolSet<String> pos;
-    final SymbolSet<String> labels;
+    final MutableEnumeration<String> tokens;
+    final MutableEnumeration<String> pos;
+    final MutableEnumeration<String> labels;
     final int nullPosTag, nullToken, nullLabel;
     final int tokenSetSize, posSetSize, labelSetSize;
     final long featureVectorLength;
 
-    public TransitionParserFeatureExtractor(final SymbolSet<String> tokens, final SymbolSet<String> pos,
-            final SymbolSet<String> labels) {
+    public TransitionParserFeatureExtractor(final MutableEnumeration<String> tokens, final MutableEnumeration<String> pos,
+            final MutableEnumeration<String> labels) {
         // Features:
         //
         // Previous word (on the stack), current word (top-of-stack), next word (not-yet-shifted),
@@ -103,8 +103,8 @@ public class TransitionParserFeatureExtractor extends FeatureExtractor<NivrePars
      * @param tokens
      * @param pos
      */
-    public TransitionParserFeatureExtractor(final String featureTemplates, final SymbolSet<String> tokens,
-            final SymbolSet<String> pos, final SymbolSet<String> labels) {
+    public TransitionParserFeatureExtractor(final String featureTemplates, final MutableEnumeration<String> tokens,
+            final MutableEnumeration<String> pos, final MutableEnumeration<String> labels) {
 
         this.tokens = tokens;
         this.tokenSetSize = tokens.size();

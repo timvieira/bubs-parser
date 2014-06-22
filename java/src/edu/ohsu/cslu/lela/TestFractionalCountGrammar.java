@@ -36,9 +36,9 @@ import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
 
-import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.lela.FractionalCountGrammar.ZeroNoiseGenerator;
 import edu.ohsu.cslu.tests.JUnit;
+import edu.ohsu.cslu.util.MutableEnumeration;
 
 /**
  * Unit tests for {@link FractionalCountGrammar}.
@@ -64,7 +64,7 @@ public class TestFractionalCountGrammar extends CountGrammarTestCase {
     static FractionalCountGrammar SAMPLE_GRAMMAR() {
         final SplitVocabulary vocabulary = new SplitVocabulary(
                 Arrays.asList(new String[] { "top", "a", "b", "c", "d" }));
-        final SymbolSet<String> lexicon = new SymbolSet<String>(new String[] { "e", "f" });
+        final MutableEnumeration<String> lexicon = new MutableEnumeration<String>(new String[] { "e", "f" });
 
         // Build up the same grammar as that induced from the tree in AllElviTests
         final FractionalCountGrammar g = new FractionalCountGrammar(vocabulary, lexicon, null, null, null, 0, 0);
@@ -85,7 +85,7 @@ public class TestFractionalCountGrammar extends CountGrammarTestCase {
 
     private FractionalCountGrammar grammar() {
         final SplitVocabulary vocabulary = new SplitVocabulary(Arrays.asList(new String[] { "top", "a", "b" }));
-        final SymbolSet<String> lexicon = new SymbolSet<String>(new String[] { "c", "d" });
+        final MutableEnumeration<String> lexicon = new MutableEnumeration<String>(new String[] { "c", "d" });
         final FractionalCountGrammar fcg = new FractionalCountGrammar(vocabulary, lexicon, null, null, null, 0, 0);
 
         // top -> a 1

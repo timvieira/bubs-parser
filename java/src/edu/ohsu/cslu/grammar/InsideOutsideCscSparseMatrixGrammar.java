@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 
+import edu.ohsu.cslu.util.MutableEnumeration;
+
 /**
  * Represents binary grammar rules by left child and right child (in addition to the standard parent-based storage), for
  * efficient access during the outside pass of inside-outside parsing.
@@ -132,7 +134,7 @@ public class InsideOutsideCscSparseMatrixGrammar extends LeftCscSparseMatrixGram
 
     public InsideOutsideCscSparseMatrixGrammar(final ArrayList<Production> binaryProductions,
             final ArrayList<Production> unaryProductions, final ArrayList<Production> lexicalProductions,
-            final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat,
+            final MutableEnumeration<String> vocabulary, final MutableEnumeration<String> lexicon, final GrammarFormatType grammarFormat,
             final TokenClassifier tokenClassifier, final Class<? extends PackingFunction> functionClass,
             final boolean initCscMatrices) {
 

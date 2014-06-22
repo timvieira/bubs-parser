@@ -28,8 +28,8 @@ import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
-import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.parser.chart.Chart;
+import edu.ohsu.cslu.util.MutableEnumeration;
 
 /**
  * Represents a sequence of tokens and POS tags, intended for making open/closed decisions on chart cells.
@@ -76,7 +76,7 @@ public class CompleteClosureSequence extends ConstituentBoundarySequence impleme
      * @param posTagSet
      */
     public CompleteClosureSequence(final String parseTree, final Binarization binarization,
-            final SymbolSet<String> lexicon, final SymbolSet<String> unkClassSet, final SymbolSet<String> posTagSet) {
+            final MutableEnumeration<String> lexicon, final MutableEnumeration<String> unkClassSet, final MutableEnumeration<String> posTagSet) {
 
         this(NaryTree.read(parseTree.trim(), String.class).binarize(GrammarFormatType.Berkeley, binarization), lexicon,
                 unkClassSet, posTagSet);
@@ -102,8 +102,8 @@ public class CompleteClosureSequence extends ConstituentBoundarySequence impleme
      * @param unkClassSet
      * @param posSet
      */
-    private CompleteClosureSequence(final BinaryTree<String> parseTree, final SymbolSet<String> lexicon,
-            final SymbolSet<String> unkClassSet, final SymbolSet<String> posSet) {
+    private CompleteClosureSequence(final BinaryTree<String> parseTree, final MutableEnumeration<String> lexicon,
+            final MutableEnumeration<String> unkClassSet, final MutableEnumeration<String> posSet) {
 
         super(parseTree, lexicon, unkClassSet, posSet);
 

@@ -32,6 +32,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 
+import edu.ohsu.cslu.util.MutableEnumeration;
+
 /**
  * Stores a grammar in compressed-sparse-column (CSC) format
  */
@@ -147,7 +149,7 @@ public abstract class CscSparseMatrixGrammar extends SparseMatrixGrammar {
 
     public CscSparseMatrixGrammar(final ArrayList<Production> binaryProductions,
             final ArrayList<Production> unaryProductions, final ArrayList<Production> lexicalProductions,
-            final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat,
+            final MutableEnumeration<String> vocabulary, final MutableEnumeration<String> lexicon, final GrammarFormatType grammarFormat,
             final TokenClassifier tokenClassifier, final Class<? extends PackingFunction> functionClass,
             final boolean initCscMatrices) {
 

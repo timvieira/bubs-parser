@@ -25,6 +25,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses({ TestSymbolSet.class, TestTokenizer.class })
+@Suite.SuiteClasses({ TestTokenizer.class })
 public class AllGrammarTests {
 }

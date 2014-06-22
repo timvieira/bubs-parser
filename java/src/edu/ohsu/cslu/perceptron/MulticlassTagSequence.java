@@ -26,7 +26,7 @@ import java.util.Arrays;
 
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
-import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.util.MutableEnumeration;
 
 /**
  * @author Aaron Dunlop
@@ -34,7 +34,7 @@ import edu.ohsu.cslu.grammar.SymbolSet;
  */
 public class MulticlassTagSequence extends BaseSequence implements MulticlassSequence {
 
-    protected final SymbolSet<String> tagSet;
+    protected final MutableEnumeration<String> tagSet;
     final short[] goldClasses;
     final short[] predictedClasses;
 
@@ -58,10 +58,10 @@ public class MulticlassTagSequence extends BaseSequence implements MulticlassSeq
      * @param unkClassSet
      * @param tagSet
      */
-    public MulticlassTagSequence(final String sentence, final SymbolSet<String> lexicon,
-            final SymbolSet<String> unkClassSet, final SymbolSet<String> posSet,
-            final SymbolSet<String> unigramSuffixSet, final SymbolSet<String> bigramSuffixSet,
-            final SymbolSet<String> tagSet) {
+    public MulticlassTagSequence(final String sentence, final MutableEnumeration<String> lexicon,
+            final MutableEnumeration<String> unkClassSet, final MutableEnumeration<String> posSet,
+            final MutableEnumeration<String> unigramSuffixSet, final MutableEnumeration<String> bigramSuffixSet,
+            final MutableEnumeration<String> tagSet) {
 
         super(lexicon, unkClassSet, posSet, unigramSuffixSet, bigramSuffixSet);
 

@@ -55,6 +55,7 @@ import edu.ohsu.cslu.lela.FractionalCountGrammar;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.Util;
 import edu.ohsu.cslu.util.Math;
+import edu.ohsu.cslu.util.MutableEnumeration;
 import edu.ohsu.cslu.util.StringPool;
 import edu.ohsu.cslu.util.Strings;
 
@@ -320,7 +321,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
 
     protected SparseMatrixGrammar(final ArrayList<Production> binaryProductions,
             final ArrayList<Production> unaryProductions, final ArrayList<Production> lexicalProductions,
-            final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat,
+            final MutableEnumeration<String> vocabulary, final MutableEnumeration<String> lexicon, final GrammarFormatType grammarFormat,
             final TokenClassifier tokenClassifier, final Class<? extends PackingFunction> functionClass) {
         this.nonTermSet = (Vocabulary) vocabulary;
         this.startSymbol = nonTermSet.startSymbol();
@@ -909,7 +910,7 @@ public abstract class SparseMatrixGrammar extends Grammar {
 
         try {
             return getClass().getConstructor(
-                    new Class[] { ArrayList.class, ArrayList.class, ArrayList.class, SymbolSet.class, SymbolSet.class,
+                    new Class[] { ArrayList.class, ArrayList.class, ArrayList.class, MutableEnumeration.class, MutableEnumeration.class,
                             GrammarFormatType.class, TokenClassifier.class, Class.class, boolean.class }).newInstance(
                     new Object[] { unsplitGrammar.binaryProductions(Float.NEGATIVE_INFINITY),
                             unsplitGrammar.unaryProductions(Float.NEGATIVE_INFINITY),
@@ -918,8 +919,8 @@ public abstract class SparseMatrixGrammar extends Grammar {
         } catch (final Exception e) {
             try {
                 return getClass().getConstructor(
-                        new Class[] { ArrayList.class, ArrayList.class, ArrayList.class, SymbolSet.class,
-                                SymbolSet.class, GrammarFormatType.class, TokenClassifier.class }).newInstance(
+                        new Class[] { ArrayList.class, ArrayList.class, ArrayList.class, MutableEnumeration.class,
+                                MutableEnumeration.class, GrammarFormatType.class, TokenClassifier.class }).newInstance(
                         new Object[] { unsplitGrammar.binaryProductions(Float.NEGATIVE_INFINITY),
                                 unsplitGrammar.unaryProductions(Float.NEGATIVE_INFINITY),
                                 unsplitGrammar.lexicalProductions(Float.NEGATIVE_INFINITY), baseVocabulary, lexSet,

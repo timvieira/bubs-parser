@@ -27,9 +27,9 @@ import java.util.LinkedList;
 import edu.ohsu.cslu.datastructs.vectors.BitVector;
 import edu.ohsu.cslu.dep.DependencyGraph.Arc;
 import edu.ohsu.cslu.dep.DependencyGraph.ArcEagerAction;
-import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.perceptron.AveragedPerceptron;
 import edu.ohsu.cslu.perceptron.AveragedPerceptron.ScoredClassification;
+import edu.ohsu.cslu.util.MutableEnumeration;
 
 /**
  * @author Aaron Dunlop
@@ -40,13 +40,13 @@ public class ArcEagerParser {
     public final TransitionParserFeatureExtractor featureExtractor;
     public final AveragedPerceptron actionClassifier;
     public final AveragedPerceptron labelClassifier;
-    public final SymbolSet<String> tokens;
-    public final SymbolSet<String> pos;
-    public final SymbolSet<String> labels;
+    public final MutableEnumeration<String> tokens;
+    public final MutableEnumeration<String> pos;
+    public final MutableEnumeration<String> labels;
 
     public ArcEagerParser(final TransitionParserFeatureExtractor featureExtractor,
             final AveragedPerceptron actionClassifier, final AveragedPerceptron labelClassifier,
-            final SymbolSet<String> tokens, final SymbolSet<String> pos, final SymbolSet<String> labels) {
+            final MutableEnumeration<String> tokens, final MutableEnumeration<String> pos, final MutableEnumeration<String> labels) {
 
         this.featureExtractor = featureExtractor;
         this.actionClassifier = actionClassifier;

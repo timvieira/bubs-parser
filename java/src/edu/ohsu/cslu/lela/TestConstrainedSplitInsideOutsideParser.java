@@ -42,11 +42,11 @@ import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
-import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.lela.FractionalCountGrammar.RandomNoiseGenerator;
 import edu.ohsu.cslu.lela.FractionalCountGrammar.ZeroNoiseGenerator;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.tests.JUnit;
+import edu.ohsu.cslu.util.MutableEnumeration;
 
 /**
  * Unit tests for {@link ConstrainedSplitInsideOutsideParser}.
@@ -112,7 +112,7 @@ public class TestConstrainedSplitInsideOutsideParser {
         final BinaryTree<String> parseTree1 = parseWithGrammar1();
         final ConstrainedChart chart1 = parser1.chart;
 
-        final SymbolSet<String> vocabulary = grammar1.vocabulary;
+        final MutableEnumeration<String> vocabulary = grammar1.vocabulary;
         final short top = (short) vocabulary.getIndex("top");
         final short a_0 = (short) vocabulary.getIndex("a_0");
         final short a_1 = (short) vocabulary.getIndex("a_1");
@@ -212,7 +212,7 @@ public class TestConstrainedSplitInsideOutsideParser {
 
         // Verify expected inside probabilities in a few cells
         final ConstrainedChart chart2 = parser2.chart;
-        final SymbolSet<String> vocabulary = plGrammar2.vocabulary;
+        final MutableEnumeration<String> vocabulary = plGrammar2.vocabulary;
         final short top = (short) vocabulary.getIndex("top");
         final short a_0 = (short) vocabulary.getIndex("a_0");
         final short a_1 = (short) vocabulary.getIndex("a_1");

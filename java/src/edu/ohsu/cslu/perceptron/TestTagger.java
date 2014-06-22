@@ -34,9 +34,9 @@ import org.junit.Test;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.perceptron.MulticlassClassifier.MulticlassClassifierResult;
 import edu.ohsu.cslu.tests.JUnit;
+import edu.ohsu.cslu.util.MutableEnumeration;
 
 /**
  * Unit tests for {@link Tagger} and {@link TaggerFeatureExtractor}.
@@ -45,11 +45,11 @@ public class TestTagger {
 
     private String trainingCorpus;
 
-    private SymbolSet<String> lexicon = new SymbolSet<String>();
-    private SymbolSet<String> unkClassSet = new SymbolSet<String>();
-    private SymbolSet<String> tagSet = new SymbolSet<String>();
-    private SymbolSet<String> unigramSuffixSet = new SymbolSet<String>();
-    private SymbolSet<String> bigramSuffixSet = new SymbolSet<String>();
+    private MutableEnumeration<String> lexicon = new MutableEnumeration<String>();
+    private MutableEnumeration<String> unkClassSet = new MutableEnumeration<String>();
+    private MutableEnumeration<String> tagSet = new MutableEnumeration<String>();
+    private MutableEnumeration<String> unigramSuffixSet = new MutableEnumeration<String>();
+    private MutableEnumeration<String> bigramSuffixSet = new MutableEnumeration<String>();
 
     private ArrayList<MulticlassTagSequence> trainingCorpusSequences = null;
 

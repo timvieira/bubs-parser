@@ -24,7 +24,7 @@ package edu.ohsu.cslu.perceptron;
 
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
-import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.util.MutableEnumeration;
 
 /**
  * Represents a sequence of tokens, each with a binary classification (e.g. for unary constraint classification, as in
@@ -49,8 +49,8 @@ public abstract class BinaryTagSequence extends BaseSequence implements BinarySe
      * @param bigramSuffixSet
      */
     public BinaryTagSequence(final BinaryTree<String> tree,
-            final BinaryClassifier<? extends BinaryTagSequence> classifier, final SymbolSet<String> posSet,
-            final SymbolSet<String> unigramSuffixSet, final SymbolSet<String> bigramSuffixSet) {
+            final BinaryClassifier<? extends BinaryTagSequence> classifier, final MutableEnumeration<String> posSet,
+            final MutableEnumeration<String> unigramSuffixSet, final MutableEnumeration<String> bigramSuffixSet) {
 
         super(classifier.lexicon, classifier.decisionTreeUnkClassSet, posSet, unigramSuffixSet, bigramSuffixSet);
 
@@ -81,8 +81,8 @@ public abstract class BinaryTagSequence extends BaseSequence implements BinarySe
      * @param bigramSuffixSet
      */
     public BinaryTagSequence(final int[] mappedTokens, final BinaryClassifier<? extends BinaryTagSequence> classifier,
-            final SymbolSet<String> posSet, final SymbolSet<String> unigramSuffixSet,
-            final SymbolSet<String> bigramSuffixSet) {
+            final MutableEnumeration<String> posSet, final MutableEnumeration<String> unigramSuffixSet,
+            final MutableEnumeration<String> bigramSuffixSet) {
 
         super(classifier.lexicon, classifier.decisionTreeUnkClassSet, posSet, unigramSuffixSet, bigramSuffixSet);
 

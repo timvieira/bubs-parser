@@ -23,6 +23,8 @@ package edu.ohsu.cslu.grammar;
 
 import java.io.Serializable;
 
+import edu.ohsu.cslu.util.MutableEnumeration;
+
 /**
  * Represents a grammar rule
  * 
@@ -42,14 +44,14 @@ public class Production implements Serializable, Cloneable {
     public final float prob;
 
     // Used in toString() for debugging. Not required for normal use
-    public final SymbolSet<String> vocabulary;
-    public final SymbolSet<String> lexicon;
+    public final MutableEnumeration<String> vocabulary;
+    public final MutableEnumeration<String> lexicon;
 
     // TODO Remove lexicon for unary and binary productions?
 
     // Binary production
     public Production(final int parent, final int leftChild, final int rightChild, final float prob,
-            final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon) {
+            final MutableEnumeration<String> vocabulary, final MutableEnumeration<String> lexicon) {
         assert parent != -1 && leftChild != -1 && rightChild != -1;
         this.parent = parent;
         this.leftChild = leftChild;
@@ -71,7 +73,7 @@ public class Production implements Serializable, Cloneable {
 
     // Binary production
     public Production(final String parent, final String leftChild, final String rightChild, final float prob,
-            final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon) {
+            final MutableEnumeration<String> vocabulary, final MutableEnumeration<String> lexicon) {
         this(vocabulary.addSymbol(parent), vocabulary.addSymbol(leftChild), vocabulary.addSymbol(rightChild), prob,
                 vocabulary, lexicon);
     }
@@ -86,7 +88,7 @@ public class Production implements Serializable, Cloneable {
 
     // Unary or lexical production
     public Production(final int parent, final int child, final float prob, final boolean isLex,
-            final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon) {
+            final MutableEnumeration<String> vocabulary, final MutableEnumeration<String> lexicon) {
 
         assert parent != -1 && child != -1;
         assert !Float.isInfinite(prob);
@@ -115,7 +117,7 @@ public class Production implements Serializable, Cloneable {
 
     // Unary or lexical production
     public Production(final String parent, final String child, final float prob, final boolean isLex,
-            final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon) {
+            final MutableEnumeration<String> vocabulary, final MutableEnumeration<String> lexicon) {
         this.parent = vocabulary.addSymbol(parent);
         this.leftChild = isLex ? lexicon.addSymbol(child) : vocabulary.addSymbol(child);
         this.rightChild = isLex ? LEXICAL_PRODUCTION : UNARY_PRODUCTION;

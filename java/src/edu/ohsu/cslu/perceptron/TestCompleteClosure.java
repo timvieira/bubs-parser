@@ -37,10 +37,10 @@ import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.perceptron.BinaryClassifier.BinaryClassifierResult;
 import edu.ohsu.cslu.tests.JUnit;
+import edu.ohsu.cslu.util.MutableEnumeration;
 
 /**
  * Tests {@link CompleteClosureSequence} and {@link ConstituentBoundaryFeatureExtractor}.
@@ -49,9 +49,9 @@ public class TestCompleteClosure {
 
     private String trainingCorpus;
 
-    private SymbolSet<String> lexicon = new SymbolSet<String>();
-    private SymbolSet<String> unkClassSet = new SymbolSet<String>();
-    private SymbolSet<String> vocabulary = new SymbolSet<String>();
+    private MutableEnumeration<String> lexicon = new MutableEnumeration<String>();
+    private MutableEnumeration<String> unkClassSet = new MutableEnumeration<String>();
+    private MutableEnumeration<String> vocabulary = new MutableEnumeration<String>();
 
     private ArrayList<CompleteClosureSequence> trainingCorpusSequences = null;
 
@@ -227,8 +227,8 @@ public class TestCompleteClosure {
         final String tree = "(ROOT (S (NP (DT The) (NN fish) (NN market)) (VP (VB stands) (RB last))))";
         final CompleteClosureClassifier classifier = new CompleteClosureClassifier(null, null, "lw_rw");
         classifier.trainingIterations = 2;
-        classifier.lexicon = new SymbolSet<String>();
-        classifier.decisionTreeUnkClassSet = new SymbolSet<String>();
+        classifier.lexicon = new MutableEnumeration<String>();
+        classifier.decisionTreeUnkClassSet = new MutableEnumeration<String>();
         classifier.train(new BufferedReader(new StringReader(tree)));
 
         final BinaryClassifierResult result = classifier.classify(new BufferedReader(new StringReader(tree)));
@@ -241,8 +241,8 @@ public class TestCompleteClosure {
         final String file = "corpora/wsj/wsj_24.mrgEC.20";
         final CompleteClosureClassifier classifier = new CompleteClosureClassifier();
         classifier.trainingIterations = 25;
-        classifier.lexicon = new SymbolSet<String>();
-        classifier.decisionTreeUnkClassSet = new SymbolSet<String>();
+        classifier.lexicon = new MutableEnumeration<String>();
+        classifier.decisionTreeUnkClassSet = new MutableEnumeration<String>();
 
         classifier.train(new BufferedReader(JUnit.unitTestDataAsReader(file)));
         final BinaryClassifierResult result = classifier.classify(new BufferedReader(JUnit.unitTestDataAsReader(file)));

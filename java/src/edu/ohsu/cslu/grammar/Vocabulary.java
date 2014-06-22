@@ -26,13 +26,14 @@ import it.unimi.dsi.fastutil.shorts.ShortOpenHashSet;
 import java.util.Collection;
 
 import edu.ohsu.cslu.lela.SplitVocabulary;
+import edu.ohsu.cslu.util.MutableEnumeration;
 
 /**
  * TODO Should we use 'base' or 'unsplit' to denote markov-0 categories?
  * 
  * @author Aaron Dunlop
  */
-public class Vocabulary extends SymbolSet<String> {
+public class Vocabulary extends MutableEnumeration<String> {
 
     private static final long serialVersionUID = 1L;
 

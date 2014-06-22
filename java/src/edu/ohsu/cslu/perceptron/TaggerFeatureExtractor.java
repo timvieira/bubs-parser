@@ -23,7 +23,7 @@
 package edu.ohsu.cslu.perceptron;
 
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.util.MutableEnumeration;
 
 /**
  * Extracts features for multiclass tagging (POS tagging in particular, but other classifications are supported as well)
@@ -90,11 +90,11 @@ public abstract class TaggerFeatureExtractor<S extends Sequence> extends Feature
     final TaggerFeatureExtractor.TemplateElement[][] templates;
     final long[] featureOffsets;
 
-    final SymbolSet<String> lexicon;
-    final SymbolSet<String> tags;
+    final MutableEnumeration<String> lexicon;
+    final MutableEnumeration<String> tags;
 
-    final SymbolSet<String> posSet;
-    final SymbolSet<String> unigramSuffixSet, bigramSuffixSet;
+    final MutableEnumeration<String> posSet;
+    final MutableEnumeration<String> unigramSuffixSet, bigramSuffixSet;
 
     final int nullToken, nullTag;
     final int lexiconSize, tagSetSize, unkClassSetSize, posSetSize, unigramSuffixSetSize, bigramSuffixSetSize;
@@ -109,8 +109,8 @@ public abstract class TaggerFeatureExtractor<S extends Sequence> extends Feature
      * @param tagSet
      * @param posSet
      */
-    public TaggerFeatureExtractor(final String featureTemplates, final SymbolSet<String> lexicon,
-            final SymbolSet<String> unkClassSet, final SymbolSet<String> posSet, final SymbolSet<String> tagSet) {
+    public TaggerFeatureExtractor(final String featureTemplates, final MutableEnumeration<String> lexicon,
+            final MutableEnumeration<String> unkClassSet, final MutableEnumeration<String> posSet, final MutableEnumeration<String> tagSet) {
         this(featureTemplates, lexicon, unkClassSet, posSet, null, null, tagSet);
     }
 
@@ -125,10 +125,10 @@ public abstract class TaggerFeatureExtractor<S extends Sequence> extends Feature
      * @param tagSet
      * @param posSet
      */
-    public TaggerFeatureExtractor(final String featureTemplates, final SymbolSet<String> lexicon,
-            final SymbolSet<String> unkClassSet, final SymbolSet<String> posSet,
-            final SymbolSet<String> unigramSuffixSet, final SymbolSet<String> bigramSuffixSet,
-            final SymbolSet<String> tagSet) {
+    public TaggerFeatureExtractor(final String featureTemplates, final MutableEnumeration<String> lexicon,
+            final MutableEnumeration<String> unkClassSet, final MutableEnumeration<String> posSet,
+            final MutableEnumeration<String> unigramSuffixSet, final MutableEnumeration<String> bigramSuffixSet,
+            final MutableEnumeration<String> tagSet) {
 
         this.lexicon = lexicon;
         this.lexiconSize = lexicon.size();
@@ -141,9 +141,9 @@ public abstract class TaggerFeatureExtractor<S extends Sequence> extends Feature
             this.unigramSuffixSet = unigramSuffixSet;
             this.bigramSuffixSet = bigramSuffixSet;
         } else {
-            this.unigramSuffixSet = new SymbolSet<String>();
+            this.unigramSuffixSet = new MutableEnumeration<String>();
             this.unigramSuffixSet.defaultReturnValue(nullToken);
-            this.bigramSuffixSet = new SymbolSet<String>();
+            this.bigramSuffixSet = new MutableEnumeration<String>();
             this.bigramSuffixSet.defaultReturnValue(nullToken);
 
             for (int i = 0; i < lexicon.size(); i++) {

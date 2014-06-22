@@ -22,7 +22,7 @@
 
 package edu.ohsu.cslu.perceptron;
 
-import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.util.MutableEnumeration;
 
 /**
  * Represents an ordered sequence of tokens, usually (but not necessarily) a sentence. Intended for use by linear
@@ -74,28 +74,28 @@ public class BaseSequence implements Sequence {
     int length;
 
     /** Maps words to integer indices and vice-versa */
-    protected final SymbolSet<String> lexicon;
+    protected final MutableEnumeration<String> lexicon;
 
     /**
-     * A separate (smaller) {@link SymbolSet} containing only unknown-word classes. The lexicon usually contains these
+     * A separate (smaller) {@link MutableEnumeration} containing only unknown-word classes. The lexicon usually contains these
      * as well, but we can limit the feature-set size by treating them separately for classification purposes.
      */
-    protected final SymbolSet<String> unkClassSet;
+    protected final MutableEnumeration<String> unkClassSet;
 
     /**
-     * {@link SymbolSet} containing part-of-speech classes.
+     * {@link MutableEnumeration} containing part-of-speech classes.
      */
-    protected final SymbolSet<String> posSet;
+    protected final MutableEnumeration<String> posSet;
 
     /**
-     * {@link SymbolSet} containing unigram suffixes.
+     * {@link MutableEnumeration} containing unigram suffixes.
      */
-    protected final SymbolSet<String> unigramSuffixSet;
+    protected final MutableEnumeration<String> unigramSuffixSet;
 
     /**
-     * {@link SymbolSet} containing bigram suffixes.
+     * {@link MutableEnumeration} containing bigram suffixes.
      */
-    protected final SymbolSet<String> bigramSuffixSet;
+    protected final MutableEnumeration<String> bigramSuffixSet;
 
     /**
      * Constructor for a training or test sequence. Used by subclass constructors.
@@ -106,9 +106,9 @@ public class BaseSequence implements Sequence {
      * @param unigramSuffixSet
      * @param bigramSuffixSet
      */
-    protected BaseSequence(final SymbolSet<String> lexicon, final SymbolSet<String> unkClassSet,
-            final SymbolSet<String> posSet, final SymbolSet<String> unigramSuffixSet,
-            final SymbolSet<String> bigramSuffixSet) {
+    protected BaseSequence(final MutableEnumeration<String> lexicon, final MutableEnumeration<String> unkClassSet,
+            final MutableEnumeration<String> posSet, final MutableEnumeration<String> unigramSuffixSet,
+            final MutableEnumeration<String> bigramSuffixSet) {
 
         this.lexicon = lexicon;
         this.unkClassSet = unkClassSet;
@@ -123,7 +123,7 @@ public class BaseSequence implements Sequence {
      * @param lexicon
      * @param unkClassSet
      */
-    protected BaseSequence(final SymbolSet<String> lexicon, final SymbolSet<String> unkClassSet) {
+    protected BaseSequence(final MutableEnumeration<String> lexicon, final MutableEnumeration<String> unkClassSet) {
         this(lexicon, unkClassSet, null, null, null);
     }
 

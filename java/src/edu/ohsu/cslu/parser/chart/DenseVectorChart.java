@@ -27,10 +27,10 @@ import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
-import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.grammar.Vocabulary;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.chart.PackedArrayChart.TemporaryChartCell;
+import edu.ohsu.cslu.util.MutableEnumeration;
 
 /**
  * Stores a chart in a 3-way parallel array indexed by non-terminal:
@@ -86,7 +86,7 @@ public class DenseVectorChart extends ParallelArrayChart {
     }
 
     public BinaryTree<String> extractBestParse(final int start, final int end, final int parent,
-            final Vocabulary vocabulary, final SymbolSet<String> lexicon, final PackingFunction packingFunction) {
+            final Vocabulary vocabulary, final MutableEnumeration<String> lexicon, final PackingFunction packingFunction) {
 
         final DenseVectorChartCell packedCell = getCell(start, end);
 

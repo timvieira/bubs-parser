@@ -43,8 +43,8 @@ import edu.ohsu.cslu.datastructs.vectors.MutableSparseFloatVector;
 import edu.ohsu.cslu.datastructs.vectors.MutableSparseIntVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.perceptron.Perceptron.LossFunction;
+import edu.ohsu.cslu.util.MutableEnumeration;
 
 /**
  * Base class for binary classifiers (e.g. {@link CompleteClosureClassifier}. Includes a lot of code duplicated from
@@ -88,7 +88,7 @@ public abstract class BinaryClassifier<S extends BinarySequence> extends Classif
     private transient int trainExampleNumber = 0;
     private transient LossFunction lossFunction;
 
-    protected SymbolSet<String> nonterminalVocabulary;
+    protected MutableEnumeration<String> nonterminalVocabulary;
 
     public BinaryClassifier() {
     }
@@ -97,7 +97,7 @@ public abstract class BinaryClassifier<S extends BinarySequence> extends Classif
      * Constructor for use in embedded training (e.g. when jointly training a POS tagger and unary constraint classifier
      * in {@link AdaptiveBeamClassifier} or {@link CompleteClosureClassifier}).
      */
-    protected BinaryClassifier(final SymbolSet<String> lexicon, final SymbolSet<String> unkClassSet) {
+    protected BinaryClassifier(final MutableEnumeration<String> lexicon, final MutableEnumeration<String> unkClassSet) {
         init(lexicon, unkClassSet);
     }
 
@@ -499,12 +499,12 @@ public abstract class BinaryClassifier<S extends BinarySequence> extends Classif
     protected static class Model extends ClassifierTool.Model {
 
         private static final long serialVersionUID = 1L;
-        final SymbolSet<String> vocabulary;
+        final MutableEnumeration<String> vocabulary;
         final FloatVector avgWeights;
         final float bias;
 
-        protected Model(final String featureTemplates, final SymbolSet<String> lexicon,
-                final SymbolSet<String> unkClassSet, final SymbolSet<String> vocabulary, final FloatVector avgWeights,
+        protected Model(final String featureTemplates, final MutableEnumeration<String> lexicon,
+                final MutableEnumeration<String> unkClassSet, final MutableEnumeration<String> vocabulary, final FloatVector avgWeights,
                 final float bias) {
             super(featureTemplates, lexicon, unkClassSet);
             this.vocabulary = vocabulary;

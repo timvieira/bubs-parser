@@ -32,7 +32,7 @@ import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
-import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.util.MutableEnumeration;
 
 /**
  * Classifies unknown-words into clusters, using lexical features and the surrounding syntax. Trains on transformed
@@ -50,8 +50,8 @@ public class UnkClassTagger extends Tagger {
     @Option(name = "-g", requires = "-m", metaVar = "grammar", usage = "Grammar file.")
     protected File grammarFile;
 
-    SymbolSet<String> unigramSuffixSet;
-    SymbolSet<String> bigramSuffixSet;
+    MutableEnumeration<String> unigramSuffixSet;
+    MutableEnumeration<String> bigramSuffixSet;
 
     /**
      * Default Feature Templates:
@@ -89,13 +89,13 @@ public class UnkClassTagger extends Tagger {
     }
 
     public UnkClassTagger() {
-        this.posSet = new SymbolSet<String>();
+        this.posSet = new MutableEnumeration<String>();
         this.posSet.defaultReturnValue(Grammar.nullSymbolStr);
 
-        this.unigramSuffixSet = new SymbolSet<String>();
+        this.unigramSuffixSet = new MutableEnumeration<String>();
         this.unigramSuffixSet.defaultReturnValue(Grammar.nullSymbolStr);
 
-        this.bigramSuffixSet = new SymbolSet<String>();
+        this.bigramSuffixSet = new MutableEnumeration<String>();
         this.bigramSuffixSet.defaultReturnValue(Grammar.nullSymbolStr);
     }
 
@@ -169,13 +169,13 @@ public class UnkClassTagger extends Tagger {
 
         private static final long serialVersionUID = 1L;
 
-        final SymbolSet<String> unigramSuffixSet;
-        final SymbolSet<String> bigramSuffixSet;
+        final MutableEnumeration<String> unigramSuffixSet;
+        final MutableEnumeration<String> bigramSuffixSet;
 
-        protected Model(final String featureTemplates, final SymbolSet<String> lexicon,
-                final SymbolSet<String> unkClassSet, final SymbolSet<String> posSet,
-                final SymbolSet<String> unigramSuffixSet, final SymbolSet<String> bigramSuffixSet,
-                final SymbolSet<String> tagSet, final Long2IntOpenHashMap parallelArrayOffsetMap,
+        protected Model(final String featureTemplates, final MutableEnumeration<String> lexicon,
+                final MutableEnumeration<String> unkClassSet, final MutableEnumeration<String> posSet,
+                final MutableEnumeration<String> unigramSuffixSet, final MutableEnumeration<String> bigramSuffixSet,
+                final MutableEnumeration<String> tagSet, final Long2IntOpenHashMap parallelArrayOffsetMap,
                 final short[] parallelWeightArrayTags, final float[] parallelWeightArray) {
 
             super(featureTemplates, lexicon, unkClassSet, posSet, tagSet, parallelArrayOffsetMap,

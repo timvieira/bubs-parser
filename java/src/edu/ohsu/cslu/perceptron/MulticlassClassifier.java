@@ -52,9 +52,9 @@ import edu.ohsu.cslu.datastructs.vectors.LargeBitVector;
 import edu.ohsu.cslu.datastructs.vectors.LargeVector;
 import edu.ohsu.cslu.datastructs.vectors.Vector;
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.parser.cellselector.CellSelector;
 import edu.ohsu.cslu.parser.fom.FigureOfMeritModel.FigureOfMerit;
+import edu.ohsu.cslu.util.MutableEnumeration;
 
 /**
  * An efficient implementation of multiclass classification using an averaged perceptron classifier. Tested primarily as
@@ -91,7 +91,7 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence, F exten
     @Option(name = "-tf", metaVar = "fraction", requires = "-ti", usage = "Limit training to a random sample of the full training corpus")
     protected float trainingFraction = 1;
 
-    protected SymbolSet<String> tagSet;
+    protected MutableEnumeration<String> tagSet;
 
     /**
      * Temporary storage of the model during training. After training, this model is superseded by
@@ -129,8 +129,8 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence, F exten
      * Constructor for use in embedded training (e.g. when jointly training a POS tagger and cell-classifier in
      * {@link CompleteClosureClassifier}).
      */
-    public MulticlassClassifier(final String featureTemplates, final SymbolSet<String> lexicon,
-            final SymbolSet<String> unkClassSet, final SymbolSet<String> tagSet) {
+    public MulticlassClassifier(final String featureTemplates, final MutableEnumeration<String> lexicon,
+            final MutableEnumeration<String> unkClassSet, final MutableEnumeration<String> tagSet) {
 
         this.featureTemplates = featureTemplates;
         this.lexicon = lexicon;
@@ -379,17 +379,17 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence, F exten
         final ArrayList<S> trainingCorpusSequences = new ArrayList<S>();
 
         if (this.lexicon == null) {
-            this.lexicon = new SymbolSet<String>();
+            this.lexicon = new MutableEnumeration<String>();
             this.lexicon.defaultReturnValue(Grammar.nullSymbolStr);
         }
 
         if (this.decisionTreeUnkClassSet == null) {
-            this.decisionTreeUnkClassSet = new SymbolSet<String>();
+            this.decisionTreeUnkClassSet = new MutableEnumeration<String>();
             this.decisionTreeUnkClassSet.defaultReturnValue(Grammar.nullSymbolStr);
         }
 
         if (tagSet == null) {
-            this.tagSet = new SymbolSet<String>();
+            this.tagSet = new MutableEnumeration<String>();
             this.tagSet.defaultReturnValue(Grammar.nullSymbolStr);
         }
 
@@ -694,7 +694,7 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence, F exten
         }
     }
 
-    public SymbolSet<String> tagSet() {
+    public MutableEnumeration<String> tagSet() {
         return tagSet;
     }
 
@@ -712,7 +712,7 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence, F exten
 
     protected static class MulticlassClassifierResult {
 
-        protected final SymbolSet<String> tagSet;
+        protected final MutableEnumeration<String> tagSet;
         protected int sequences, instances, correct;
         protected IntVector instancesByClass, correctByClass;
 
@@ -727,18 +727,18 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence, F exten
             this(null, classes);
         }
 
-        public MulticlassClassifierResult(final SymbolSet<String> tagSet) {
+        public MulticlassClassifierResult(final MutableEnumeration<String> tagSet) {
             this(tagSet, tagSet.size());
         }
 
-        private MulticlassClassifierResult(final SymbolSet<String> tagSet, final int classes) {
+        private MulticlassClassifierResult(final MutableEnumeration<String> tagSet, final int classes) {
             this.tagSet = tagSet;
             this.instancesByClass = new DenseIntVector(classes);
             this.correctByClass = new DenseIntVector(classes);
             this.confusionMatrix = new IntMatrix(classes, classes);
         }
 
-        public MulticlassClassifierResult(final SymbolSet<String> tagSet, final int sequences, final int instances,
+        public MulticlassClassifierResult(final MutableEnumeration<String> tagSet, final int sequences, final int instances,
                 final int correct, final IntVector instancesByClass, final IntVector correctByClass,
                 final IntMatrix confusionMatrix, final int time) {
 
@@ -851,14 +851,14 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence, F exten
 
         private static final long serialVersionUID = 1L;
 
-        final SymbolSet<String> tagSet;
+        final MutableEnumeration<String> tagSet;
 
         private final Long2IntOpenHashMap parallelArrayOffsetMap;
         private final short[] parallelWeightArrayTags;
         private final float[] parallelWeightArray;
 
-        protected Model(final String featureTemplates, final SymbolSet<String> lexicon,
-                final SymbolSet<String> unkClassSet, final SymbolSet<String> tagSet,
+        protected Model(final String featureTemplates, final MutableEnumeration<String> lexicon,
+                final MutableEnumeration<String> unkClassSet, final MutableEnumeration<String> tagSet,
                 final Long2IntOpenHashMap parallelArrayOffsetMap, final short[] parallelWeightArrayTags,
                 final float[] parallelWeightArray) {
 

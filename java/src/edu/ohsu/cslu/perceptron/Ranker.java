@@ -31,7 +31,7 @@ import edu.ohsu.cslu.datastructs.matrices.IntMatrix;
 import edu.ohsu.cslu.datastructs.vectors.BitVector;
 import edu.ohsu.cslu.datastructs.vectors.DenseIntVector;
 import edu.ohsu.cslu.datastructs.vectors.IntVector;
-import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.util.MutableEnumeration;
 
 /**
  * Trains and/or eveluated an averaged-perceptron ranking model.
@@ -53,8 +53,8 @@ public abstract class Ranker<S extends MulticlassSequence, F extends FeatureExtr
         super();
     }
 
-    public Ranker(final String featureTemplates, final SymbolSet<String> lexicon, final SymbolSet<String> unkClassSet,
-            final SymbolSet<String> tagSet) {
+    public Ranker(final String featureTemplates, final MutableEnumeration<String> lexicon, final MutableEnumeration<String> unkClassSet,
+            final MutableEnumeration<String> tagSet) {
         super(featureTemplates, lexicon, unkClassSet, tagSet);
     }
 
@@ -173,12 +173,12 @@ public abstract class Ranker<S extends MulticlassSequence, F extends FeatureExtr
         private final IntVector onPage1ByClass;
         private float reciprocalRankSum, pagedReciprocalRankSum;
 
-        public RankerResult(final SymbolSet<String> tagSet) {
+        public RankerResult(final MutableEnumeration<String> tagSet) {
             super(tagSet);
             this.onPage1ByClass = new DenseIntVector(tagSet.size());
         }
 
-        public RankerResult(final SymbolSet<String> tagSet, final int sequences, final int instances,
+        public RankerResult(final MutableEnumeration<String> tagSet, final int sequences, final int instances,
                 final int correct, final int onPage1, final IntVector instancesByClass, final IntVector correctByClass,
                 final IntVector onPage1ByClass, final IntMatrix confusionMatrix, final float reciprocalRankSum,
                 final float pagedReciprocalRankSum, final int time) {

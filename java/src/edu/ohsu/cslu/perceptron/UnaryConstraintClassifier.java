@@ -28,7 +28,7 @@ import java.util.ArrayList;
 
 import cltool4j.BaseLogger;
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.util.MutableEnumeration;
 
 /**
  * Unary constraint classifier, as described in Roark et al., 2012
@@ -46,11 +46,11 @@ public class UnaryConstraintClassifier extends BinaryClassifier<BinaryTagSequenc
 
     private static final long serialVersionUID = 1L;
 
-    SymbolSet<String> unigramSuffixSet;
-    SymbolSet<String> bigramSuffixSet;
+    MutableEnumeration<String> unigramSuffixSet;
+    MutableEnumeration<String> bigramSuffixSet;
 
     /**
-     * Constructs a UnaryConstraintClassifier using the various {@link SymbolSet}s from a {@link Grammar} instance (note
+     * Constructs a UnaryConstraintClassifier using the various {@link MutableEnumeration}s from a {@link Grammar} instance (note
      * that the context-free rules of the {@link Grammar} are not used)
      * 
      * @param featureTemplates
@@ -61,25 +61,25 @@ public class UnaryConstraintClassifier extends BinaryClassifier<BinaryTagSequenc
     }
 
     /**
-     * Constructs a UnaryConstraintClassifier using pre-initialized {@link SymbolSet}s
+     * Constructs a UnaryConstraintClassifier using pre-initialized {@link MutableEnumeration}s
      * 
      * @param featureTemplates
      * @param lexicon
      * @param unkClassSet
      */
-    public UnaryConstraintClassifier(final String featureTemplates, final SymbolSet<String> lexicon,
-            final SymbolSet<String> unkClassSet) {
+    public UnaryConstraintClassifier(final String featureTemplates, final MutableEnumeration<String> lexicon,
+            final MutableEnumeration<String> unkClassSet) {
 
         super(lexicon, unkClassSet);
-        final SymbolSet<String> tagSet = new SymbolSet<String>();
+        final MutableEnumeration<String> tagSet = new MutableEnumeration<String>();
         tagSet.addSymbol("F");
         tagSet.addSymbol("T");
         tagSet.defaultReturnValue(tagSet.addSymbol(Grammar.nullSymbolStr));
 
-        this.unigramSuffixSet = new SymbolSet<String>();
+        this.unigramSuffixSet = new MutableEnumeration<String>();
         this.unigramSuffixSet.defaultReturnValue(Grammar.nullSymbolStr);
 
-        this.bigramSuffixSet = new SymbolSet<String>();
+        this.bigramSuffixSet = new MutableEnumeration<String>();
         this.bigramSuffixSet.defaultReturnValue(Grammar.nullSymbolStr);
 
         this.featureExtractor = new BinaryTaggerFeatureExtractor(featureTemplates, lexicon, unkClassSet,

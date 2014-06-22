@@ -31,6 +31,7 @@ import java.util.TreeSet;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.parser.cellselector.CellSelectorModel;
 import edu.ohsu.cslu.parser.fom.FigureOfMeritModel;
+import edu.ohsu.cslu.util.MutableEnumeration;
 
 /**
  * Represents a Probabilistic Context Free Grammar (PCFG). Such grammars may be built up programatically or may be
@@ -75,33 +76,33 @@ public abstract class Grammar implements Serializable {
     protected final static short OBJECT_SIGNATURE = (short) 0xACED;
 
     // == Grammar Basics ==
-    public SymbolSet<String> lexSet = new SymbolSet<String>();
+    public MutableEnumeration<String> lexSet = new MutableEnumeration<String>();
 
     /**
      * Unknown-word classes for all entries in {@link #lexSet}. Used by some {@link FigureOfMeritModel} and
      * {@link CellSelectorModel} implementations (primarily for discriminative feature extraction). Lazy-initialized on
      * the first access.
      */
-    private SymbolSet<String> unkClassSet;
+    private MutableEnumeration<String> unkClassSet;
 
     /**
      * Coarse (unsplit) non-terminal vocabulary. Used by some {@link FigureOfMeritModel} and {@link CellSelectorModel}
      * implementations (primarily for discriminative feature extraction). Lazy-initialized on the first access.
      */
-    private SymbolSet<String> coarseVocabulary;
+    private MutableEnumeration<String> coarseVocabulary;
 
     /**
      * Preterminal set (parts-of-speech). Used by some {@link FigureOfMeritModel} and {@link CellSelectorModel}
      * implementations (primarily for discriminative feature extraction). Lazy-initialized on the first access.
      */
-    private SymbolSet<String> posSymbolSet;
+    private MutableEnumeration<String> posSymbolSet;
 
     /**
      * Coarse (unsplit) preterminal set (parts-of-speech). Used by some {@link FigureOfMeritModel} and
      * {@link CellSelectorModel} implementations (primarily for discriminative feature extraction). Lazy-initialized on
      * the first access.
      */
-    private SymbolSet<String> coarsePosSymbolSet;
+    private MutableEnumeration<String> coarsePosSymbolSet;
 
     public TokenClassifier tokenClassifier;
     // TODO This field should really be final, but it's initialized in subclass constructors
@@ -355,10 +356,10 @@ public abstract class Grammar implements Serializable {
      *         {@link CellSelectorModel} implementations (primarily for discriminative feature extraction). The returned
      *         set does <em>not</em> contain special UNK tokens for sentence-initial words.
      */
-    public SymbolSet<String> unkClassSet() {
+    public MutableEnumeration<String> unkClassSet() {
 
         if (unkClassSet == null) {
-            unkClassSet = new SymbolSet<String>();
+            unkClassSet = new MutableEnumeration<String>();
             unkClassSet.addSymbol(nullSymbolStr);
             unkClassSet.defaultReturnValue(nullSymbolStr);
 
@@ -374,7 +375,7 @@ public abstract class Grammar implements Serializable {
      * @return Coarse (unsplit) non-terminal vocabulary. Used by some {@link FigureOfMeritModel} and
      *         {@link CellSelectorModel} implementations (primarily for discriminative feature extraction).
      */
-    public SymbolSet<String> coarseVocabulary() {
+    public MutableEnumeration<String> coarseVocabulary() {
 
         if (coarseVocabulary == null) {
             // Grammar implementations differ in the order they store their vocabularies. To ensure the coarse
@@ -384,7 +385,7 @@ public abstract class Grammar implements Serializable {
                 tmp.add(grammarFormat.getBaseNT(nt, false));
             }
 
-            coarseVocabulary = new SymbolSet<String>();
+            coarseVocabulary = new MutableEnumeration<String>();
             coarseVocabulary.addSymbol(nullSymbolStr);
             coarseVocabulary.defaultReturnValue(nullSymbolStr);
             for (final String coarseNt : tmp) {
@@ -399,7 +400,7 @@ public abstract class Grammar implements Serializable {
      * @return Preterminal set (parts-of-speech). Used by some {@link FigureOfMeritModel} and {@link CellSelectorModel}
      *         implementations (primarily for discriminative feature extraction).
      */
-    public SymbolSet<String> posSymbolSet() {
+    public MutableEnumeration<String> posSymbolSet() {
         if (posSymbolSet == null) {
             // Grammar implementations differ in the order they store their vocabularies. To ensure that this
             // representation is consistent, first populate a temporary sorted set.
@@ -408,7 +409,7 @@ public abstract class Grammar implements Serializable {
                 tmp.add(nonTermSet.getSymbol(posIndex));
             }
 
-            posSymbolSet = new SymbolSet<String>();
+            posSymbolSet = new MutableEnumeration<String>();
             posSymbolSet.addSymbol(nullSymbolStr);
             posSymbolSet.defaultReturnValue(nullSymbolStr);
 
@@ -423,7 +424,7 @@ public abstract class Grammar implements Serializable {
      * @return Coarse (unsplit) preterminal set (parts-of-speech). Used by some {@link FigureOfMeritModel} and
      *         {@link CellSelectorModel} implementations (primarily for discriminative feature extraction).
      */
-    public SymbolSet<String> coarsePosSymbolSet() {
+    public MutableEnumeration<String> coarsePosSymbolSet() {
 
         if (coarsePosSymbolSet == null) {
             // Grammar implementations differ in the order they store their vocabularies. To ensure that the coarse
@@ -433,7 +434,7 @@ public abstract class Grammar implements Serializable {
                 tmp.add(grammarFormat.getBaseNT(nonTermSet.getSymbol(posIndex), false));
             }
 
-            coarsePosSymbolSet = new SymbolSet<String>();
+            coarsePosSymbolSet = new MutableEnumeration<String>();
             coarsePosSymbolSet.addSymbol(nullSymbolStr);
             coarsePosSymbolSet.defaultReturnValue(nullSymbolStr);
 

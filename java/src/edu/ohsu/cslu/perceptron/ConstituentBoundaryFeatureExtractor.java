@@ -26,8 +26,8 @@ import edu.ohsu.cslu.datastructs.vectors.BitVector;
 import edu.ohsu.cslu.datastructs.vectors.LargeSparseBitVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.parser.chart.Chart;
+import edu.ohsu.cslu.util.MutableEnumeration;
 
 /**
  * 
@@ -48,7 +48,7 @@ public class ConstituentBoundaryFeatureExtractor<S extends ConstituentBoundarySe
     final TemplateElement[][] templates;
     final long[] featureOffsets;
 
-    final SymbolSet<String> lexicon;
+    final MutableEnumeration<String> lexicon;
 
     final int nullToken, nullTag;
     final int lexiconSize, posSetSize, unkClassSetSize;
@@ -64,8 +64,8 @@ public class ConstituentBoundaryFeatureExtractor<S extends ConstituentBoundarySe
      * @param unkClassSet
      * @param posSet
      */
-    public ConstituentBoundaryFeatureExtractor(final String featureTemplates, final SymbolSet<String> lexicon,
-            final SymbolSet<String> unkClassSet, final SymbolSet<String> posSet, final boolean excludeSpan1Cells) {
+    public ConstituentBoundaryFeatureExtractor(final String featureTemplates, final MutableEnumeration<String> lexicon,
+            final MutableEnumeration<String> unkClassSet, final MutableEnumeration<String> posSet, final boolean excludeSpan1Cells) {
 
         this.lexicon = lexicon;
         this.lexiconSize = lexicon.size();

@@ -19,7 +19,7 @@
  * Further documentation and contact information is available at
  *   https://code.google.com/p/bubs-parser/ 
  */
-package edu.ohsu.cslu.grammar;
+package edu.ohsu.cslu.util;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntCollection;
@@ -42,11 +42,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * Maps objects to integer indices and vice-versa. Wraps an {@link Object2IntMap}, with convenience methods to add
  * mappings and the ability to {@link #finalize()} a map after all symbols have been added.
  */
-public class SymbolSet<E> implements Object2IntSortedMap<E>, Iterable<E>, Serializable {
+public class MutableEnumeration<E> implements Object2IntSortedMap<E>, Iterable<E>, Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private static ConcurrentHashMap<Class<? extends Enum<?>>, SymbolSet<String>> cachedEnumSymbolSets = new ConcurrentHashMap<Class<? extends Enum<?>>, SymbolSet<String>>();
+    private static ConcurrentHashMap<Class<? extends Enum<?>>, MutableEnumeration<String>> cachedEnumSymbolSets = new ConcurrentHashMap<Class<? extends Enum<?>>, MutableEnumeration<String>>();
 
     protected ArrayList<E> list;
     private Object2IntOpenHashMap<E> map;
@@ -55,14 +55,14 @@ public class SymbolSet<E> implements Object2IntSortedMap<E>, Iterable<E>, Serial
 
     private Comparator<? super E> comparator;
 
-    public SymbolSet() {
+    public MutableEnumeration() {
         list = new ArrayList<E>();
         map = new Object2IntOpenHashMap<E>();
         map.defaultReturnValue(defaultReturnValue);
         finalized = false;
     }
 
-    public SymbolSet(final Collection<E> symbols) {
+    public MutableEnumeration(final Collection<E> symbols) {
         this();
         int i = 0;
         for (final E symbol : symbols) {
@@ -71,7 +71,7 @@ public class SymbolSet<E> implements Object2IntSortedMap<E>, Iterable<E>, Serial
         }
     }
 
-    public SymbolSet(final E[] symbols) {
+    public MutableEnumeration(final E[] symbols) {
         this();
         for (int i = 0; i < symbols.length; i++) {
             list.add(symbols[i]);
@@ -81,7 +81,7 @@ public class SymbolSet<E> implements Object2IntSortedMap<E>, Iterable<E>, Serial
 
     /**
      * Returns the integer index of <code>symbol</code>; if the symbol is not already mapped, it is created and added to
-     * the {@link SymbolSet}.
+     * the {@link MutableEnumeration}.
      * 
      * @param symbol
      * @return the integer index of <code>symbol</code>
@@ -281,11 +281,11 @@ public class SymbolSet<E> implements Object2IntSortedMap<E>, Iterable<E>, Serial
     }
 
     /**
-     * Sets the default return value of this {@link SymbolSet} to the mapped integer value of the specified symbol. If
-     * the symbol is currently unmapped and the {@link SymbolSet} is not finalized, the symbol is added.
+     * Sets the default return value of this {@link MutableEnumeration} to the mapped integer value of the specified symbol. If
+     * the symbol is currently unmapped and the {@link MutableEnumeration} is not finalized, the symbol is added.
      * 
      * @param symbol
-     * @throws IllegalArgumentException if the symbol is unmapped and the {@link SymbolSet} is finalized
+     * @throws IllegalArgumentException if the symbol is unmapped and the {@link MutableEnumeration} is finalized
      */
     public void defaultReturnValue(final E symbol) {
         if (map.containsKey(symbol)) {
@@ -377,12 +377,12 @@ public class SymbolSet<E> implements Object2IntSortedMap<E>, Iterable<E>, Serial
             return true;
         }
 
-        if (!(other instanceof SymbolSet)) {
+        if (!(other instanceof MutableEnumeration)) {
             return false;
         }
 
         @SuppressWarnings("unchecked")
-        final SymbolSet<E> otherSS = (SymbolSet<E>) other;
+        final MutableEnumeration<E> otherSS = (MutableEnumeration<E>) other;
 
         if (otherSS.size() != size()) {
             return false;
@@ -401,13 +401,13 @@ public class SymbolSet<E> implements Object2IntSortedMap<E>, Iterable<E>, Serial
     }
 
     @Override
-    public SymbolSet<E> clone() {
+    public MutableEnumeration<E> clone() {
         // A finalized SymbolSet is effectively immutable, so we don't need to create a new instance
         if (finalized) {
             return this;
         }
 
-        return new SymbolSet<>(list);
+        return new MutableEnumeration<>(list);
     }
 
     @Override
@@ -420,18 +420,18 @@ public class SymbolSet<E> implements Object2IntSortedMap<E>, Iterable<E>, Serial
     }
 
     /**
-     * Returns a {@link SymbolSet} for the specified <code>enum</code> class. Since <code>enum</code>'s are immutable,
-     * the {@link SymbolSet} instances are cached.
+     * Returns a {@link MutableEnumeration} for the specified <code>enum</code> class. Since <code>enum</code>'s are immutable,
+     * the {@link MutableEnumeration} instances are cached.
      * 
      * @param enumClass
-     * @return {@link SymbolSet} for an enumerated class
+     * @return {@link MutableEnumeration} for an enumerated class
      */
-    public static <E extends Enum<E>> SymbolSet<String> forEnum(final Class<E> enumClass) {
+    public static <E extends Enum<E>> MutableEnumeration<String> forEnum(final Class<E> enumClass) {
 
-        SymbolSet<String> enumSymbolSet = cachedEnumSymbolSets.get(enumClass);
+        MutableEnumeration<String> enumSymbolSet = cachedEnumSymbolSets.get(enumClass);
 
         if (enumSymbolSet == null) {
-            enumSymbolSet = new SymbolSet<String>();
+            enumSymbolSet = new MutableEnumeration<String>();
             for (final E value : EnumSet.allOf(enumClass)) {
                 enumSymbolSet.addSymbol(value.name());
             }

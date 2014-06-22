@@ -58,7 +58,6 @@ import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
-import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser.ResearchParserType;
 import edu.ohsu.cslu.parser.ParserDriver;
@@ -69,6 +68,7 @@ import edu.ohsu.cslu.parser.fom.FigureOfMeritModel;
 import edu.ohsu.cslu.parser.ml.CartesianProductHashSpmlParser;
 import edu.ohsu.cslu.perceptron.MulticlassClassifier.MulticlassClassifierResult;
 import edu.ohsu.cslu.perceptron.Perceptron.LossFunction;
+import edu.ohsu.cslu.util.MutableEnumeration;
 
 /**
  * Beam-width prediction model, as described in Bodenstab et al., 2011,
@@ -167,7 +167,7 @@ public class AdaptiveBeamClassifier extends ClassifierTool<BeamWidthSequence> {
     @Option(name = "-ccti", metaVar = "iterations", requires = "-ptti", usage = "Train the CC model  n iterations")
     private int ccClassifierTrainingIterations = 2;
 
-    protected SymbolSet<String> vocabulary;
+    protected MutableEnumeration<String> vocabulary;
 
     private Grammar grammar;
 
@@ -337,9 +337,9 @@ public class AdaptiveBeamClassifier extends ClassifierTool<BeamWidthSequence> {
                 init(g);
 
             } else {
-                this.lexicon = new SymbolSet<String>();
-                this.decisionTreeUnkClassSet = new SymbolSet<String>();
-                this.vocabulary = new SymbolSet<String>();
+                this.lexicon = new MutableEnumeration<String>();
+                this.decisionTreeUnkClassSet = new MutableEnumeration<String>();
+                this.vocabulary = new MutableEnumeration<String>();
             }
 
             this.beamWidthClasses = new short[classBoundaryBeamWidths[classBoundaryBeamWidths.length - 1] + 1];
@@ -1134,8 +1134,8 @@ public class AdaptiveBeamClassifier extends ClassifierTool<BeamWidthSequence> {
          * @param lexicon
          * @param decisionTreeUnkClassSet
          */
-        protected BinaryCellClassifier(final String featureTemplates, final SymbolSet<String> lexicon,
-                final SymbolSet<String> decisionTreeUnkClassSet) {
+        protected BinaryCellClassifier(final String featureTemplates, final MutableEnumeration<String> lexicon,
+                final MutableEnumeration<String> decisionTreeUnkClassSet) {
 
             this.featureTemplates = featureTemplates;
             this.lexicon = lexicon;
@@ -1279,8 +1279,8 @@ public class AdaptiveBeamClassifier extends ClassifierTool<BeamWidthSequence> {
          * @param lexicon
          * @param decisionTreeUnkClassSet
          */
-        public FactoredOnlyClassifier(final String featureTemplates, final SymbolSet<String> lexicon,
-                final SymbolSet<String> decisionTreeUnkClassSet) {
+        public FactoredOnlyClassifier(final String featureTemplates, final MutableEnumeration<String> lexicon,
+                final MutableEnumeration<String> decisionTreeUnkClassSet) {
             super(featureTemplates, lexicon, decisionTreeUnkClassSet);
         }
     }
@@ -1364,7 +1364,7 @@ public class AdaptiveBeamClassifier extends ClassifierTool<BeamWidthSequence> {
 
         private static final long serialVersionUID = 2L;
 
-        private final SymbolSet<String> vocabulary;
+        private final MutableEnumeration<String> vocabulary;
         private final Tagger posTagger;
         private final UnaryConstraintClassifier unaryConstraintClassifier;
 
@@ -1376,7 +1376,7 @@ public class AdaptiveBeamClassifier extends ClassifierTool<BeamWidthSequence> {
         private final float[] biases;
         private final int factoredOnlyOffset;
 
-        protected Model(final SymbolSet<String> vocabulary, final Tagger posTagger,
+        protected Model(final MutableEnumeration<String> vocabulary, final Tagger posTagger,
                 final UnaryConstraintClassifier unaryConstraintClassifier, final short[] classBoundaryBeamWidths,
                 final String featureTemplates, final Long2IntOpenHashMap parallelArrayOffsetMap,
                 final byte[] parallelWeightArrayTags, final float[] parallelWeightArray, final float[] biases,

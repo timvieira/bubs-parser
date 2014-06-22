@@ -32,7 +32,7 @@ import org.junit.Test;
 
 import edu.ohsu.cslu.datastructs.vectors.BitVector;
 import edu.ohsu.cslu.dep.DependencyGraph.Arc;
-import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.util.MutableEnumeration;
 
 /**
  * @author Aaron Dunlop
@@ -40,13 +40,13 @@ import edu.ohsu.cslu.grammar.SymbolSet;
  */
 public class TestTransitionParserFeatureExtractor {
 
-    private SymbolSet<String> lexicon;
+    private MutableEnumeration<String> lexicon;
     private int lexiconSize;
 
-    private SymbolSet<String> pos;
+    private MutableEnumeration<String> pos;
     private int posSetSize;
 
-    private SymbolSet<String> labels;
+    private MutableEnumeration<String> labels;
     @SuppressWarnings("unused")
     private int labelSetSize;
 
@@ -54,7 +54,7 @@ public class TestTransitionParserFeatureExtractor {
 
     @Before
     public void setUp() {
-        lexicon = new SymbolSet<String>();
+        lexicon = new MutableEnumeration<String>();
         lexicon.addSymbol(DependencyGraph.NULL);
         lexicon.addSymbol("the");
         lexicon.addSymbol("dog");
@@ -62,7 +62,7 @@ public class TestTransitionParserFeatureExtractor {
         lexicon.addSymbol(DependencyGraph.ROOT.token);
         lexiconSize = lexicon.size();
 
-        pos = new SymbolSet<String>();
+        pos = new MutableEnumeration<String>();
         pos.addSymbol(DependencyGraph.NULL);
         pos.addSymbol("DT");
         pos.addSymbol("NN");
@@ -70,7 +70,7 @@ public class TestTransitionParserFeatureExtractor {
         pos.addSymbol(DependencyGraph.ROOT.pos);
         posSetSize = pos.size();
 
-        labels = new SymbolSet<String>();
+        labels = new MutableEnumeration<String>();
         labels.addSymbol(DependencyGraph.NULL);
         labels.addSymbol("NMOD");
         labels.addSymbol("SBJ");

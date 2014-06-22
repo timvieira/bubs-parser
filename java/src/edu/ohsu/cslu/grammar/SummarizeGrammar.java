@@ -28,6 +28,7 @@ import java.util.HashSet;
 
 import cltool4j.BaseCommandlineTool;
 import edu.ohsu.cslu.util.Math;
+import edu.ohsu.cslu.util.MutableEnumeration;
 import edu.ohsu.cslu.util.Strings;
 
 /**
@@ -67,7 +68,7 @@ public class SummarizeGrammar extends BaseCommandlineTool {
         // Read and discard the summary line
         br.readLine();
 
-        final SymbolSet<String> vocabulary = new SymbolSet<String>();
+        final MutableEnumeration<String> vocabulary = new MutableEnumeration<String>();
         final HashSet<String> posSet = new HashSet<String>();
         final HashSet<String> phraseSet = new HashSet<String>();
 

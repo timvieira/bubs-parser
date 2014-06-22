@@ -24,7 +24,7 @@ package edu.ohsu.cslu.perceptron;
 
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
-import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.util.MutableEnumeration;
 
 /**
  * @author Aaron Dunlop
@@ -47,7 +47,7 @@ public class ConstituentBoundarySequence extends BaseSequence {
      * @param unkClassSet
      */
     public ConstituentBoundarySequence(final int[] mappedTokens, final short[] posTags,
-            final SymbolSet<String> lexicon, final SymbolSet<String> unkClassSet) {
+            final MutableEnumeration<String> lexicon, final MutableEnumeration<String> unkClassSet) {
 
         super(lexicon, unkClassSet);
 
@@ -70,8 +70,8 @@ public class ConstituentBoundarySequence extends BaseSequence {
      * @param unkClassSet
      * @param vocabulary
      */
-    protected ConstituentBoundarySequence(final BinaryTree<String> parseTree, final SymbolSet<String> lexicon,
-            final SymbolSet<String> unkClassSet, final SymbolSet<String> vocabulary) {
+    protected ConstituentBoundarySequence(final BinaryTree<String> parseTree, final MutableEnumeration<String> lexicon,
+            final MutableEnumeration<String> unkClassSet, final MutableEnumeration<String> vocabulary) {
 
         super(lexicon, unkClassSet);
 

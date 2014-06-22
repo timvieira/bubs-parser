@@ -33,7 +33,7 @@ import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
-import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.util.MutableEnumeration;
 
 public class TreeTools extends BaseCommandlineTool {
 
@@ -97,13 +97,13 @@ public class TreeTools extends BaseCommandlineTool {
     protected void run() throws IOException {
 
         // Read in unkWords and knownWords into file
-        SymbolSet<String> knownWords = null;
+        MutableEnumeration<String> knownWords = null;
         if (leavesToUNK) {
             if (knownWordsFile == null) {
                 System.err.println("ERROR: -knownWords must be specified with -leavesToUNK");
                 System.exit(1);
             }
-            knownWords = new SymbolSet<String>();
+            knownWords = new MutableEnumeration<String>();
             final BufferedReader fileStream = new BufferedReader(new FileReader(knownWordsFile));
             for (String line = fileStream.readLine(); line != null; line = fileStream.readLine()) {
                 knownWords.addSymbol(line.trim());
@@ -159,7 +159,7 @@ public class TreeTools extends BaseCommandlineTool {
 
     }
 
-    private void convertLeavesToUNK(final ParseTree tree, final SymbolSet<String> knownWords) {
+    private void convertLeavesToUNK(final ParseTree tree, final MutableEnumeration<String> knownWords) {
         int wordIndex = 0;
         for (final ParseTree node : tree.getLeafNodes()) {
             if (!knownWords.containsKey(node.contents)) {

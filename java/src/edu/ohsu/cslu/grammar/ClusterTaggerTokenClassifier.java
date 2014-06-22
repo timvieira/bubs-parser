@@ -29,6 +29,7 @@ import java.io.IOException;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.perceptron.UnkClassSequence;
 import edu.ohsu.cslu.perceptron.UnkClassTagger;
+import edu.ohsu.cslu.util.MutableEnumeration;
 
 /**
  * Classifies tokens using a sequence-tagger model, assigning each unknown word to one of a set of previously-learned
@@ -49,14 +50,14 @@ public class ClusterTaggerTokenClassifier extends TokenClassifier {
 
     /**
      * Splits the supplied sentence on spaces and returns the lexicon-mapped indices of all words. Convenience method
-     * that calls {@link #lexiconIndex(String, boolean, SymbolSet)} to obtain mapped indices.
+     * that calls {@link #lexiconIndex(String, boolean, MutableEnumeration)} to obtain mapped indices.
      * 
      * @param sentence
      * @param lexicon
      * @return the lexicon-mapped indices of all words
      */
     @Override
-    public int[] lexiconIndices(final String sentence, final SymbolSet<String> lexicon) {
+    public int[] lexiconIndices(final String sentence, final MutableEnumeration<String> lexicon) {
         // TODO This could probably be done faster with something other than a regex
         final String tokens[] = sentence.split("\\s+");
         final int tokenIndices[] = new int[tokens.length];
@@ -81,7 +82,7 @@ public class ClusterTaggerTokenClassifier extends TokenClassifier {
      * @return the lexicon-mapped indices of all words in the supplied parse tree
      */
     @Override
-    public int[] lexiconIndices(final NaryTree<String> goldTree, final SymbolSet<String> lexicon) {
+    public int[] lexiconIndices(final NaryTree<String> goldTree, final MutableEnumeration<String> lexicon) {
         final int tokenIndices[] = new int[goldTree.leaves()];
         int i = 0;
         for (final NaryTree<String> leaf : goldTree.leafTraversal()) {
@@ -91,12 +92,12 @@ public class ClusterTaggerTokenClassifier extends TokenClassifier {
     }
 
     @Override
-    public int lexiconIndex(final String token, final boolean sentenceInitial, final SymbolSet<String> lexicon) {
+    public int lexiconIndex(final String token, final boolean sentenceInitial, final MutableEnumeration<String> lexicon) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public String lexiconEntry(final String token, final boolean sentenceInitial, final SymbolSet<String> lexicon) {
+    public String lexiconEntry(final String token, final boolean sentenceInitial, final MutableEnumeration<String> lexicon) {
         throw new UnsupportedOperationException();
     }
 }

@@ -45,6 +45,7 @@ import cltool4j.BaseLogger;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.lela.FractionalCountGrammar;
 import edu.ohsu.cslu.parser.Util;
+import edu.ohsu.cslu.util.MutableEnumeration;
 import edu.ohsu.cslu.util.StringPool;
 
 /**
@@ -243,8 +244,8 @@ public class ListGrammar extends Grammar {
     }
 
     protected ListGrammar(final ArrayList<Production> binaryProductions, final ArrayList<Production> unaryProductions,
-            final ArrayList<Production> lexicalProductions, final SymbolSet<String> vocabulary,
-            final SymbolSet<String> lexicon, final TokenClassifier tokenClassifier,
+            final ArrayList<Production> lexicalProductions, final MutableEnumeration<String> vocabulary,
+            final MutableEnumeration<String> lexicon, final TokenClassifier tokenClassifier,
             final GrammarFormatType grammarFormat) {
 
         this.nonTermSet = (Vocabulary) vocabulary;
@@ -802,7 +803,7 @@ public class ListGrammar extends Grammar {
 
         try {
             return getClass().getConstructor(
-                    new Class[] { ArrayList.class, ArrayList.class, ArrayList.class, SymbolSet.class, SymbolSet.class,
+                    new Class[] { ArrayList.class, ArrayList.class, ArrayList.class, MutableEnumeration.class, MutableEnumeration.class,
                             GrammarFormatType.class }).newInstance(
                     new Object[] { unsplitGrammar.binaryProductions(Float.NEGATIVE_INFINITY),
                             unsplitGrammar.unaryProductions(Float.NEGATIVE_INFINITY),

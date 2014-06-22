@@ -31,7 +31,7 @@ import cltool4j.BaseCommandlineTool;
 import cltool4j.args4j.Argument;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
-import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.util.MutableEnumeration;
 
 /**
  * Counts unknown word occurrences in a development / test corpus.
@@ -48,7 +48,7 @@ public class CountUnks extends BaseCommandlineTool {
     @Override
     protected void run() throws Exception {
 
-        final SymbolSet<String> lexicon = new SymbolSet<String>();
+        final MutableEnumeration<String> lexicon = new MutableEnumeration<String>();
 
         for (final String line : fileLines(trainingCorpus)) {
             for (final String token : tokens(line)) {

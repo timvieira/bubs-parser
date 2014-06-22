@@ -25,7 +25,7 @@ package edu.ohsu.cslu.perceptron;
 import edu.ohsu.cslu.datastructs.vectors.BitVector;
 import edu.ohsu.cslu.datastructs.vectors.LargeSparseBitVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
-import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.util.MutableEnumeration;
 import edu.ohsu.cslu.util.Strings;
 
 /**
@@ -36,15 +36,15 @@ public class MulticlassTaggerFeatureExtractor extends TaggerFeatureExtractor<Mul
 
     private static final long serialVersionUID = 1L;
 
-    public MulticlassTaggerFeatureExtractor(final String featureTemplates, final SymbolSet<String> lexicon,
-            final SymbolSet<String> unkClassSet, final SymbolSet<String> posSet,
-            final SymbolSet<String> unigramSuffixSet, final SymbolSet<String> bigramSuffixSet,
-            final SymbolSet<String> tagSet) {
+    public MulticlassTaggerFeatureExtractor(final String featureTemplates, final MutableEnumeration<String> lexicon,
+            final MutableEnumeration<String> unkClassSet, final MutableEnumeration<String> posSet,
+            final MutableEnumeration<String> unigramSuffixSet, final MutableEnumeration<String> bigramSuffixSet,
+            final MutableEnumeration<String> tagSet) {
         super(featureTemplates, lexicon, unkClassSet, posSet, unigramSuffixSet, bigramSuffixSet, tagSet);
     }
 
-    public MulticlassTaggerFeatureExtractor(final String featureTemplates, final SymbolSet<String> lexicon,
-            final SymbolSet<String> unkClassSet, final SymbolSet<String> posSet, final SymbolSet<String> tagSet) {
+    public MulticlassTaggerFeatureExtractor(final String featureTemplates, final MutableEnumeration<String> lexicon,
+            final MutableEnumeration<String> unkClassSet, final MutableEnumeration<String> posSet, final MutableEnumeration<String> tagSet) {
         super(featureTemplates, lexicon, unkClassSet, posSet, tagSet);
     }
 

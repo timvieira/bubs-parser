@@ -38,12 +38,12 @@ import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.ParseTree;
 import edu.ohsu.cslu.parser.Parser.ResearchParserType;
 import edu.ohsu.cslu.parser.TreeTools;
 import edu.ohsu.cslu.parser.chart.Chart;
+import edu.ohsu.cslu.util.MutableEnumeration;
 
 /**
  * A figure-of-merit model that conditions boundary probabilities on lexical tokens at or near the boundary. In many
@@ -103,7 +103,7 @@ public final class BoundaryLex extends FigureOfMeritModel {
     private int lexToClassMap[] = null;
 
     /** Used during training to track word classes */
-    private SymbolSet<String> wordClasses;
+    private MutableEnumeration<String> wordClasses;
 
     /**
      * Constructor used at inference time - reads the model from <code>modelReader</code>.
@@ -270,7 +270,7 @@ public final class BoundaryLex extends FigureOfMeritModel {
 
     private void readClusterFile(final File file, final String defaultClass) throws IOException {
 
-        wordClasses = new SymbolSet<String>();
+        wordClasses = new MutableEnumeration<String>();
         final int defaultClassIndex = wordClasses.addSymbol(defaultClass);
         lexToClassMap = new int[grammar.lexSet.size()];
         Arrays.fill(lexToClassMap, defaultClassIndex);

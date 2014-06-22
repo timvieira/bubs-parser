@@ -24,8 +24,8 @@ package edu.ohsu.cslu.perceptron;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.perceptron.BeginConstituentFeatureExtractor.Sentence;
+import edu.ohsu.cslu.util.MutableEnumeration;
 
 /**
  * Extracts features for classifying whether a lexical item can begin a multiword constituent. Depends only on lexical
@@ -44,8 +44,8 @@ public class BeginConstituentFeatureExtractor extends FeatureExtractor<Sentence>
     private final int markovOrder;
     private final int vectorLength;
 
-    private final SymbolSet<String> twoCharacterSuffixes = new SymbolSet<String>();
-    private final SymbolSet<String> threeCharacterSuffixes = new SymbolSet<String>();
+    private final MutableEnumeration<String> twoCharacterSuffixes = new MutableEnumeration<String>();
+    private final MutableEnumeration<String> threeCharacterSuffixes = new MutableEnumeration<String>();
 
     public BeginConstituentFeatureExtractor(final Grammar grammar, final int markovOrder) {
         this.grammar = grammar;

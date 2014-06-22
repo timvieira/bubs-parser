@@ -37,10 +37,10 @@ import edu.ohsu.cslu.dep.DependencyGraph.StackProjectiveAction;
 import edu.ohsu.cslu.dep.TransitionDepParser.ParserAction;
 import edu.ohsu.cslu.dep.TransitionDepParser.ReduceDirection;
 import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
-import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.perceptron.AveragedPerceptron;
 import edu.ohsu.cslu.perceptron.AveragedPerceptron.ScoredClassification;
 import edu.ohsu.cslu.perceptron.Perceptron;
+import edu.ohsu.cslu.util.MutableEnumeration;
 
 /**
  * Trains a perceptron classifier for greedy dependency parsing.
@@ -100,13 +100,13 @@ public class EvalDepClassifiers extends BaseCommandlineTool {
             }
         }
 
-        final SymbolSet<String> tokens = new SymbolSet<String>();
+        final MutableEnumeration<String> tokens = new MutableEnumeration<String>();
         tokens.addSymbol(DependencyGraph.NULL);
         tokens.addSymbol(DependencyGraph.ROOT.token);
-        final SymbolSet<String> pos = new SymbolSet<String>();
+        final MutableEnumeration<String> pos = new MutableEnumeration<String>();
         pos.addSymbol(DependencyGraph.NULL);
         pos.addSymbol(DependencyGraph.ROOT.pos);
-        final SymbolSet<String> labels = new SymbolSet<String>();
+        final MutableEnumeration<String> labels = new MutableEnumeration<String>();
         labels.addSymbol(DependencyGraph.NULL);
         labels.addSymbol(DependencyGraph.ROOT.label);
 

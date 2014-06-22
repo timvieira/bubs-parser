@@ -40,7 +40,7 @@ import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.Production;
-import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.util.MutableEnumeration;
 
 /**
  * Grammar computed from observation counts in a training corpus. Generally used for initial induction of a Markov-0
@@ -276,7 +276,7 @@ public final class StringCountGrammar implements CountGrammar {
      * @param comparator Sort order for the induced vocabulary. If null, non-terminals will be ordered in the order of
      *            their observation, starting with the start symbol.
      * 
-     * @return A {@link SymbolSet} induced from the observed non-terminals, sorted according to the supplied comparator.
+     * @return A {@link MutableEnumeration} induced from the observed non-terminals, sorted according to the supplied comparator.
      */
     public final SplitVocabulary induceVocabulary(final Comparator<String> comparator) {
         final ArrayList<String> nts = new ArrayList<String>(observedNonTerminals);
@@ -287,8 +287,8 @@ public final class StringCountGrammar implements CountGrammar {
         return new SplitVocabulary(nts);
     }
 
-    public final SymbolSet<String> induceLexicon() {
-        return new SymbolSet<String>(new ObjectRBTreeSet<String>(lexicalEntryOccurrences.keySet()));
+    public final MutableEnumeration<String> induceLexicon() {
+        return new MutableEnumeration<String>(new ObjectRBTreeSet<String>(lexicalEntryOccurrences.keySet()));
     }
 
     /**
@@ -308,7 +308,7 @@ public final class StringCountGrammar implements CountGrammar {
     public FractionalCountGrammar toFractionalCountGrammar(final int uncommonWordThreshold, final int rareWordThreshold) {
         final SplitVocabulary vocabulary = induceVocabulary(binaryParentCountComparator());
 
-        final SymbolSet<String> lexicon = induceLexicon();
+        final MutableEnumeration<String> lexicon = induceLexicon();
         final FractionalCountGrammar fcg = new FractionalCountGrammar(vocabulary, lexicon, null, wordCounts(lexicon),
                 sentenceInitialWordCounts(lexicon), uncommonWordThreshold, rareWordThreshold);
 
@@ -347,7 +347,7 @@ public final class StringCountGrammar implements CountGrammar {
         return fcg;
     }
 
-    public ArrayList<Production> binaryProductions(final SymbolSet<String> vocabulary) {
+    public ArrayList<Production> binaryProductions(final MutableEnumeration<String> vocabulary) {
 
         final ArrayList<Production> prods = new ArrayList<Production>();
 
@@ -385,7 +385,7 @@ public final class StringCountGrammar implements CountGrammar {
         return prods;
     }
 
-    public ArrayList<Production> unaryProductions(final SymbolSet<String> vocabulary) {
+    public ArrayList<Production> unaryProductions(final MutableEnumeration<String> vocabulary) {
 
         final ArrayList<Production> prods = new ArrayList<Production>();
 
@@ -414,11 +414,11 @@ public final class StringCountGrammar implements CountGrammar {
         return prods;
     }
 
-    public ArrayList<Production> lexicalProductions(final SymbolSet<String> vocabulary) {
+    public ArrayList<Production> lexicalProductions(final MutableEnumeration<String> vocabulary) {
         return lexicalProductions(vocabulary, induceLexicon());
     }
 
-    public ArrayList<Production> lexicalProductions(final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon) {
+    public ArrayList<Production> lexicalProductions(final MutableEnumeration<String> vocabulary, final MutableEnumeration<String> lexicon) {
 
         final ArrayList<Production> prods = new ArrayList<Production>();
 
@@ -447,7 +447,7 @@ public final class StringCountGrammar implements CountGrammar {
         return prods;
     }
 
-    public Int2IntOpenHashMap wordCounts(final SymbolSet<String> lexicon) {
+    public Int2IntOpenHashMap wordCounts(final MutableEnumeration<String> lexicon) {
 
         final Int2IntOpenHashMap wordCounts = new Int2IntOpenHashMap();
         wordCounts.defaultReturnValue(0);
@@ -464,7 +464,7 @@ public final class StringCountGrammar implements CountGrammar {
         return wordCounts;
     }
 
-    public Int2IntOpenHashMap sentenceInitialWordCounts(final SymbolSet<String> lexicon) {
+    public Int2IntOpenHashMap sentenceInitialWordCounts(final MutableEnumeration<String> lexicon) {
 
         final Int2IntOpenHashMap wordCounts = new Int2IntOpenHashMap();
         wordCounts.defaultReturnValue(0);

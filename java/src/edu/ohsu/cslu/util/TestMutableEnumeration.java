@@ -19,7 +19,7 @@
  * Further documentation and contact information is available at
  *   https://code.google.com/p/bubs-parser/ 
  */
-package edu.ohsu.cslu.grammar;
+package edu.ohsu.cslu.util;
 
 import static org.junit.Assert.assertEquals;
 
@@ -31,15 +31,15 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 /**
- * Unit tests for {@link SymbolSet}.
+ * Unit tests for {@link MutableEnumeration}.
  * 
  * @author Aaron Dunlop
  * @since Jan 12, 2011
  */
 @RunWith(FilteredRunner.class)
-public class TestSymbolSet {
+public class TestMutableEnumeration {
 
-    private final SymbolSet<String> s = new SymbolSet<String>();
+    private final MutableEnumeration<String> s = new MutableEnumeration<String>();
 
     @Before
     public void setUp() {
@@ -117,7 +117,7 @@ public class TestSymbolSet {
 
     @Test
     public void testEquals() {
-        final SymbolSet<String> s2 = new SymbolSet<>();
+        final MutableEnumeration<String> s2 = new MutableEnumeration<>();
 
         s2.addSymbol("D");
         s2.addSymbol("C");
@@ -125,7 +125,7 @@ public class TestSymbolSet {
         s2.addSymbol("A");
         assertEquals(s, s2);
 
-        final SymbolSet<String> s3 = s2.clone();
+        final MutableEnumeration<String> s3 = s2.clone();
         assertEquals(s, s3);
 
     }

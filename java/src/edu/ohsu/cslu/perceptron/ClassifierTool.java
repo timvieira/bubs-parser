@@ -33,7 +33,7 @@ import cltool4j.BaseCommandlineTool;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.SerializeModel;
-import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.util.MutableEnumeration;
 
 /**
  * Base class for tagging/classification tools (e.g. a POS-tagger, complete-closure classifier, etc.).
@@ -76,8 +76,8 @@ public abstract class ClassifierTool<S extends Sequence> extends BaseCommandline
      */
     protected abstract String DEFAULT_FEATURE_TEMPLATES();
 
-    protected SymbolSet<String> lexicon;
-    protected SymbolSet<String> decisionTreeUnkClassSet;
+    protected MutableEnumeration<String> lexicon;
+    protected MutableEnumeration<String> decisionTreeUnkClassSet;
 
     protected FeatureExtractor<S> featureExtractor;
 
@@ -117,14 +117,14 @@ public abstract class ClassifierTool<S extends Sequence> extends BaseCommandline
      * @param newLexicon
      * @param newUnkClassSet
      */
-    void init(final SymbolSet<String> newLexicon, final SymbolSet<String> newUnkClassSet) {
+    void init(final MutableEnumeration<String> newLexicon, final MutableEnumeration<String> newUnkClassSet) {
         this.lexicon = newLexicon;
         this.lexicon.finalize();
         this.decisionTreeUnkClassSet = newUnkClassSet;
         this.decisionTreeUnkClassSet.finalize();
     }
 
-    public SymbolSet<String> lexicon() {
+    public MutableEnumeration<String> lexicon() {
         return lexicon;
     }
 
@@ -180,11 +180,11 @@ public abstract class ClassifierTool<S extends Sequence> extends BaseCommandline
         private static final long serialVersionUID = 2L;
 
         final String featureTemplates;
-        final SymbolSet<String> lexicon;
-        final SymbolSet<String> unkClassSet;
+        final MutableEnumeration<String> lexicon;
+        final MutableEnumeration<String> unkClassSet;
 
-        protected Model(final String featureTemplates, final SymbolSet<String> lexicon,
-                final SymbolSet<String> unkClassSet) {
+        protected Model(final String featureTemplates, final MutableEnumeration<String> lexicon,
+                final MutableEnumeration<String> unkClassSet) {
 
             this.featureTemplates = featureTemplates;
             this.lexicon = lexicon;

@@ -37,8 +37,8 @@ import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree.Binarization;
 import edu.ohsu.cslu.datastructs.vectors.FloatVector;
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.perceptron.AdaptiveBeamClassifier.UnaryConstraintSequence;
+import edu.ohsu.cslu.util.MutableEnumeration;
 
 /**
  * Complete-closure classifier, as described in Bodenstab et al., 2011,
@@ -125,9 +125,9 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
             this.nonterminalVocabulary = grammar.nonTermSet;
             this.decisionTreeUnkClassSet = grammar.unkClassSet();
         } else {
-            this.lexicon = new SymbolSet<String>();
-            this.nonterminalVocabulary = new SymbolSet<String>();
-            this.decisionTreeUnkClassSet = new SymbolSet<String>();
+            this.lexicon = new MutableEnumeration<String>();
+            this.nonterminalVocabulary = new MutableEnumeration<String>();
+            this.decisionTreeUnkClassSet = new MutableEnumeration<String>();
         }
 
         this.featureTemplates = featureTemplates;
@@ -164,8 +164,8 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
     protected void run() throws Exception {
 
         if (trainingIterations > 0) {
-            this.lexicon = new SymbolSet<String>();
-            this.decisionTreeUnkClassSet = new SymbolSet<String>();
+            this.lexicon = new MutableEnumeration<String>();
+            this.decisionTreeUnkClassSet = new MutableEnumeration<String>();
             train(inputAsBufferedReader());
 
         } else {
@@ -208,7 +208,7 @@ public class CompleteClosureClassifier extends BinaryClassifier<CompleteClosureS
 
         this.lexicon.defaultReturnValue(Grammar.nullSymbolStr);
         this.decisionTreeUnkClassSet.defaultReturnValue(Grammar.nullSymbolStr);
-        final SymbolSet<String> posTagSet = new SymbolSet<String>();
+        final MutableEnumeration<String> posTagSet = new MutableEnumeration<String>();
         posTagSet.defaultReturnValue(Grammar.nullSymbolStr);
 
         final long startTime = System.currentTimeMillis();

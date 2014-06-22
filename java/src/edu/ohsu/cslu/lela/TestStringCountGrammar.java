@@ -34,7 +34,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import edu.ohsu.cslu.grammar.Production;
-import edu.ohsu.cslu.grammar.SymbolSet;
+import edu.ohsu.cslu.util.MutableEnumeration;
 
 /**
  * Unit tests for {@link StringCountGrammar}.
@@ -55,7 +55,7 @@ public class TestStringCountGrammar extends CountGrammarTestCase {
 
     @Test
     public void testInduceVocabulary() {
-        final SymbolSet<String> unsortedVocabulary = sg.induceVocabulary(null);
+        final MutableEnumeration<String> unsortedVocabulary = sg.induceVocabulary(null);
         assertEquals(5, unsortedVocabulary.size());
         assertEquals(0, unsortedVocabulary.getIndex("top"));
         assertEquals(2, unsortedVocabulary.getIndex("a"));
@@ -63,7 +63,7 @@ public class TestStringCountGrammar extends CountGrammarTestCase {
         assertEquals(1, unsortedVocabulary.getIndex("c"));
         assertEquals(3, unsortedVocabulary.getIndex("d"));
 
-        final SymbolSet<String> sortedVocabulary = sg.induceVocabulary(sg.binaryParentCountComparator());
+        final MutableEnumeration<String> sortedVocabulary = sg.induceVocabulary(sg.binaryParentCountComparator());
         assertEquals(5, sortedVocabulary.size());
         assertEquals(0, sortedVocabulary.getIndex("top"));
         assertEquals(1, sortedVocabulary.getIndex("a"));
@@ -74,7 +74,7 @@ public class TestStringCountGrammar extends CountGrammarTestCase {
 
     @Test
     public void testInduceLexicon() {
-        final SymbolSet<String> lexicon = sg.induceLexicon();
+        final MutableEnumeration<String> lexicon = sg.induceLexicon();
         assertEquals(2, lexicon.size());
         assertEquals(0, lexicon.getIndex("e"));
         assertEquals(1, lexicon.getIndex("f"));

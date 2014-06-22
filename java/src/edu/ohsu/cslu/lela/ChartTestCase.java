@@ -30,8 +30,8 @@ import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
-import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.lela.FractionalCountGrammar.ZeroNoiseGenerator;
+import edu.ohsu.cslu.util.MutableEnumeration;
 
 /**
  * Shared functionality for {@link TestConstrainedChart} and {@link TestConstrainingChart}
@@ -66,7 +66,7 @@ public class ChartTestCase {
         cscGrammar0 = new ConstrainedInsideOutsideGrammar(grammar0, GrammarFormatType.Berkeley,
                 SparseMatrixGrammar.PerfectIntPairHashPackingFunction.class);
 
-        final SymbolSet<String> vocabulary = grammar0.vocabulary;
+        final MutableEnumeration<String> vocabulary = grammar0.vocabulary;
         top = (short) vocabulary.getIndex("top");
         a = (short) vocabulary.getIndex("a");
         b = (short) vocabulary.getIndex("b");

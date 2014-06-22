@@ -45,14 +45,14 @@ import edu.ohsu.cslu.grammar.GrammarFormatType;
 import edu.ohsu.cslu.grammar.Language;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PackingFunction;
-import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.grammar.Vocabulary;
+import edu.ohsu.cslu.util.MutableEnumeration;
 import edu.ohsu.cslu.util.Strings;
 
 public class FractionalCountGrammar implements CountGrammar, Cloneable {
 
     public final Vocabulary vocabulary;
-    public final SymbolSet<String> lexicon;
+    public final MutableEnumeration<String> lexicon;
     protected final String startSymbol;
 
     /** Parent -> Left child -> Right child -> count */
@@ -93,7 +93,7 @@ public class FractionalCountGrammar implements CountGrammar, Cloneable {
      */
     private final Int2IntOpenHashMap sentenceInitialCorpusWordCounts;
 
-    public FractionalCountGrammar(final Vocabulary vocabulary, final SymbolSet<String> lexicon,
+    public FractionalCountGrammar(final Vocabulary vocabulary, final MutableEnumeration<String> lexicon,
             final PackingFunction packingFunction, final Int2IntOpenHashMap corpusWordCounts,
             final Int2IntOpenHashMap sentenceInitialCorpusWordCounts, final int uncommonWordThreshold,
             final int rareWordThreshold) {

@@ -28,8 +28,8 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 
 import cltool4j.BaseLogger;
-import edu.ohsu.cslu.grammar.SymbolSet;
 import edu.ohsu.cslu.grammar.Tokenizer;
+import edu.ohsu.cslu.util.MutableEnumeration;
 import edu.ohsu.cslu.util.Strings;
 
 /**
@@ -91,7 +91,7 @@ public class Tagger extends MulticlassClassifier<MulticlassTagSequence, Multicla
      * POS tagset (used by some sequence taggers which depend on the output a previous POS-tagging stage). Null
      * otherwise
      */
-    SymbolSet<String> posSet;
+    MutableEnumeration<String> posSet;
 
     @Override
     protected String DEFAULT_FEATURE_TEMPLATES() {
@@ -109,8 +109,8 @@ public class Tagger extends MulticlassClassifier<MulticlassTagSequence, Multicla
      * Constructor for use in embedded training (e.g. when jointly training a POS tagger and cell-classifier in
      * {@link CompleteClosureClassifier}).
      */
-    public Tagger(final String featureTemplates, final SymbolSet<String> lexicon, final SymbolSet<String> unkClassSet,
-            final SymbolSet<String> tagSet) {
+    public Tagger(final String featureTemplates, final MutableEnumeration<String> lexicon, final MutableEnumeration<String> unkClassSet,
+            final MutableEnumeration<String> tagSet) {
         this.featureTemplates = featureTemplates;
         this.lexicon = lexicon;
         this.decisionTreeUnkClassSet = unkClassSet;
@@ -205,10 +205,10 @@ public class Tagger extends MulticlassClassifier<MulticlassTagSequence, Multicla
 
         private static final long serialVersionUID = 1L;
 
-        final SymbolSet<String> posSet;
+        final MutableEnumeration<String> posSet;
 
-        protected Model(final String featureTemplates, final SymbolSet<String> lexicon,
-                final SymbolSet<String> unkClassSet, final SymbolSet<String> posSet, final SymbolSet<String> tagSet,
+        protected Model(final String featureTemplates, final MutableEnumeration<String> lexicon,
+                final MutableEnumeration<String> unkClassSet, final MutableEnumeration<String> posSet, final MutableEnumeration<String> tagSet,
                 final Long2IntOpenHashMap parallelArrayOffsetMap, final short[] parallelWeightArrayTags,
                 final float[] parallelWeightArray) {
 

@@ -26,6 +26,8 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import edu.ohsu.cslu.util.MutableEnumeration;
+
 /**
  * Stores a sparse-matrix grammar in compressed-sparse-column (CSC) format
  * 
@@ -66,7 +68,7 @@ public class LeftCscSparseMatrixGrammar extends CscSparseMatrixGrammar {
 
     public LeftCscSparseMatrixGrammar(final ArrayList<Production> binaryProductions,
             final ArrayList<Production> unaryProductions, final ArrayList<Production> lexicalProductions,
-            final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat,
+            final MutableEnumeration<String> vocabulary, final MutableEnumeration<String> lexicon, final GrammarFormatType grammarFormat,
             final TokenClassifier tokenClassifier, final Class<? extends PackingFunction> packingFunctionClass,
             final boolean initCscMatrices) {
 
@@ -81,7 +83,7 @@ public class LeftCscSparseMatrixGrammar extends CscSparseMatrixGrammar {
 
     public LeftCscSparseMatrixGrammar(final ArrayList<Production> binaryProductions,
             final ArrayList<Production> unaryProductions, final ArrayList<Production> lexicalProductions,
-            final SymbolSet<String> vocabulary, final SymbolSet<String> lexicon, final GrammarFormatType grammarFormat,
+            final MutableEnumeration<String> vocabulary, final MutableEnumeration<String> lexicon, final GrammarFormatType grammarFormat,
             final TokenClassifier tokenClassifier) {
 
         this(binaryProductions, unaryProductions, lexicalProductions, vocabulary, lexicon, grammarFormat,
