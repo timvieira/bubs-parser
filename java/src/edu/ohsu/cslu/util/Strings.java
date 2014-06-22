@@ -51,17 +51,17 @@ public class Strings {
     }
 
     /**
-     * Merges a {@link Collection} of strings into a single string, separated by the specified delimiter.
+     * Merges a {@link Collection} of {@link Object}s into a single string, separated by the specified delimiter.
      * 
-     * @param s
+     * @param o
      * @param delimiter
      * @return a single string, separated by the specified delimiter
      */
-    public static String join(final Collection<String> s, final String delimiter) {
+    public static String join(final Collection<? extends Object> o, final String delimiter) {
         final StringBuilder buffer = new StringBuilder();
-        final Iterator<String> iter = s.iterator();
+        final Iterator<? extends Object> iter = o.iterator();
         while (iter.hasNext()) {
-            buffer.append(iter.next());
+            buffer.append(iter.next().toString());
             if (iter.hasNext()) {
                 buffer.append(delimiter);
             }
@@ -70,7 +70,7 @@ public class Strings {
     }
 
     /**
-     * Merges a {@link Collection} of Objects into a single string, separated by the specified delimiter.
+     * Merges an array of Objects into a single string, separated by the specified delimiter.
      * 
      * @param objs
      * @param delimiter
@@ -262,7 +262,7 @@ public class Strings {
             }
 
             // Regular escape char
-            if (c == '\'') {
+            if (c == escapeChar) {
                 escaped = !escaped;
                 continue;
             }

@@ -199,6 +199,9 @@ public class TestStrings {
         assertArrayEquals(new String[] { "a", "''", "b" }, Strings.splitOn("a,\'\\''\\',b", ',', '\''));
         assertArrayEquals(new String[] { "M'Bow", "98", "8" }, Strings.splitOn("'M\\'Bow',98,8", ',', '\''));
 
+        assertArrayEquals(new String[] { "'0'", "1", " " }, Strings.splitOn("'0'\t1\t ", '\t', '\0'));
+        assertArrayEquals(new String[] { " ", "0", "1" }, Strings.splitOn(" \t0\t1", '\t', '\0'));
+
         // The empty string
         assertArrayEquals("".split(" "), Strings.splitOn("", ',', '\''));
     }
