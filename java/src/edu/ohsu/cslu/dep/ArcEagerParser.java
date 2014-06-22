@@ -36,7 +36,6 @@ import edu.ohsu.cslu.perceptron.AveragedPerceptron.ScoredClassification;
  * @since Jul 5, 2012
  */
 public class ArcEagerParser {
-    private static final long serialVersionUID = 1L;
 
     public final TransitionParserFeatureExtractor featureExtractor;
     public final AveragedPerceptron actionClassifier;
@@ -65,8 +64,8 @@ public class ArcEagerParser {
 
         final int totalSteps = parse.size() * 2 - 1;
         for (int step = 0, next = 0; step < totalSteps; step++) {
-            final BitVector featureVector = featureExtractor.featureVector(new NivreParserContext(stack,
-                    parse.arcs, next), next);
+            final BitVector featureVector = featureExtractor.featureVector(new NivreParserContext(stack, parse.arcs,
+                    next), next);
 
             ArcEagerAction action = null;
             ScoredClassification actionClassification = null;

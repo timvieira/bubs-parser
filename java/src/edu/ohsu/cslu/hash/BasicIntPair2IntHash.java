@@ -27,6 +27,8 @@ public class BasicIntPair2IntHash implements ImmutableIntPair2IntHash {
 
     // TODO Vary the shift
 
+    private static final long serialVersionUID = 1L;
+
     private final Int2IntOpenHashMap hash;
 
     public BasicIntPair2IntHash(final int[][] keyPairs) {

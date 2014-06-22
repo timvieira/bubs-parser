@@ -27,6 +27,8 @@ import edu.ohsu.cslu.util.Math;
 
 public class PerfectIntPair2IntHash implements ImmutableIntPair2IntHash {
 
+    private static final long serialVersionUID = 1L;
+
     private final int maxKey2;
     private final int maxPackedKey;
     private final int modulus;

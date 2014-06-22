@@ -44,6 +44,8 @@ import edu.ohsu.cslu.parser.fom.FigureOfMeritModel.FigureOfMerit;
 /**
  * Command-line tool to convert textual grammar formats to Java serialized object format.
  * 
+ * TODO Not validated in several years.
+ * 
  * @author Aaron Dunlop
  * @since Sep 9, 2010
  */
