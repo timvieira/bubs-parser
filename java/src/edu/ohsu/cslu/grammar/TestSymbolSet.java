@@ -115,4 +115,19 @@ public class TestSymbolSet {
         assertEquals("B", s.getSymbol(1));
     }
 
+    @Test
+    public void testEquals() {
+        final SymbolSet<String> s2 = new SymbolSet<>();
+
+        s2.addSymbol("D");
+        s2.addSymbol("C");
+        s2.addSymbol("B");
+        s2.addSymbol("A");
+        assertEquals(s, s2);
+
+        final SymbolSet<String> s3 = s2.clone();
+        assertEquals(s, s3);
+
+    }
+
 }

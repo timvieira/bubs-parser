@@ -109,12 +109,15 @@ public class SymbolSet<E> implements Object2IntSortedMap<E>, Iterable<E>, Serial
             throw new RuntimeException("Cannot modify a finalized SymbolSet");
         }
 
-        if (index >= list.size()) {
-            throw new IndexOutOfBoundsException();
+        while (list.size() <= index) {
+            list.add(null);
+        }
+        list.set(index, symbol);
+
+        if (map.containsKey(symbol)) {
+            list.set(map.get(symbol), null);
         }
 
-        map.remove(symbol);
-        list.set(index, symbol);
         return map.put(symbol, index);
     }
 
@@ -365,6 +368,46 @@ public class SymbolSet<E> implements Object2IntSortedMap<E>, Iterable<E>, Serial
     @Override
     public Object2IntSortedMap<E> tailMap(final E fromKey) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean equals(final Object other) {
+
+        if (this == other) {
+            return true;
+        }
+
+        if (!(other instanceof SymbolSet)) {
+            return false;
+        }
+
+        @SuppressWarnings("unchecked")
+        final SymbolSet<E> otherSS = (SymbolSet<E>) other;
+
+        if (otherSS.size() != size()) {
+            return false;
+        }
+
+        // Note: We do not compare the 'finalized' field - two instances are considered equal even if one is already
+        // finalized (note that an un-finalized instance could later be mutated, in which case they would no longer be
+        // equal)
+
+        // Compare the 2 lists (we assume the maps will reflect the same entries)
+        if (!list.equals(otherSS.list)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public SymbolSet<E> clone() {
+        // A finalized SymbolSet is effectively immutable, so we don't need to create a new instance
+        if (finalized) {
+            return this;
+        }
+
+        return new SymbolSet<>(list);
     }
 
     @Override
