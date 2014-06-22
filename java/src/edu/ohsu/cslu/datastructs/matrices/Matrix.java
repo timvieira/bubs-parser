@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU General Public License
  * along with cslu-common. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.datastructs.matrices;
 
 import java.io.BufferedReader;
@@ -155,6 +155,14 @@ public interface Matrix extends Serializable, Cloneable {
      * @return the index of the minimum value in the specified row.
      */
     public int rowArgMin(int i);
+
+    /**
+     * Returns the new matrix formed by the sum of this matrix and <code>addend</code>.
+     * 
+     * @param addend The matrix to add
+     * @return the new matrix formed by the sum of this matrix and <code>addend</code>
+     */
+    public Matrix add(Matrix addend);
 
     /**
      * Returns a new matrix scaled by the provided multiplier. Note that a dense matrix is returned even if the original

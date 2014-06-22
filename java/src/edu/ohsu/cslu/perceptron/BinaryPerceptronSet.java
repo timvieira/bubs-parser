@@ -25,8 +25,8 @@ import java.io.IOException;
 import cltool4j.BaseLogger;
 import edu.ohsu.cslu.datastructs.vectors.BitVector;
 import edu.ohsu.cslu.datastructs.vectors.Vector;
-import edu.ohsu.cslu.parser.Util;
 import edu.ohsu.cslu.perceptron.Perceptron.LossFunction;
+import edu.ohsu.cslu.util.Strings;
 
 public class BinaryPerceptronSet extends Classifier {
 
@@ -41,7 +41,7 @@ public class BinaryPerceptronSet extends Classifier {
             final String featureTemplate) {
 
         this.binsStr = binsStr;
-        bins = Util.strToIntArray(binsStr);
+        bins = Strings.parseCommaDelimitedInts(binsStr);
         numClassifiers = bins.length;
         classifiers = new Perceptron[numClassifiers];
 
@@ -62,7 +62,7 @@ public class BinaryPerceptronSet extends Classifier {
             }
             final String[] tokens = stream.readLine().split("\\s");
 
-            bins = Util.strToIntArray(tokens[0].split("=")[1]);
+            bins = Strings.parseCommaDelimitedInts(tokens[0].split("=")[1]);
             BaseLogger.singleton().fine("INFO: Reading BinaryPerceptronSet with bins=" + tokens[0].split("=")[1]);
             numClassifiers = bins.length;
             classifiers = new Perceptron[numClassifiers];

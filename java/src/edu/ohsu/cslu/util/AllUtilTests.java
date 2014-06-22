@@ -31,6 +31,6 @@ import org.junit.runners.Suite;
  */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({ TestMath.class, TestStrings.class, TestEvalb.class, TestPorterStemmer.class,
-        TestIEEEDoubleScaling.class })
+        TestIEEEDoubleScaling.class, TestArrays.class })
 public class AllUtilTests {
 }

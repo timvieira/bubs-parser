@@ -36,7 +36,6 @@ import edu.ohsu.cslu.datastructs.vectors.MutableSparseIntVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.datastructs.vectors.SparseVector;
 import edu.ohsu.cslu.datastructs.vectors.Vector;
-import edu.ohsu.cslu.parser.Util;
 import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthModel;
 import edu.ohsu.cslu.parser.fom.DiscriminativeFOM;
 import edu.ohsu.cslu.util.Strings;
@@ -372,7 +371,7 @@ public class AveragedPerceptron extends Perceptron {
         // final int numFeatures = Integer.parseInt(tokens[0].split("=")[1]);
         final String binsString = tokens[2].substring(tokens[2].indexOf('=') + 1);
         this.binsStr = binsString;
-        this.bins = Util.strToIntArray(binsStr);
+        this.bins = Strings.parseCommaDelimitedInts(binsStr);
         this.avgWeights = new FloatVector[numClasses()];
 
         final String featureTemplateLine = inputReader.readLine();

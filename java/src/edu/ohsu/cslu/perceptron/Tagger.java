@@ -123,7 +123,8 @@ public class Tagger extends MulticlassClassifier<MulticlassTagSequence, Multicla
 
             // Cross-validation (which doesn't output a model) or regular training
             if (crossValidationFolds > 0) {
-                crossValidate(input);
+                final MulticlassClassifierResult totalResult = crossValidate(input);
+                BaseLogger.singleton().info(totalResult.toString());
             } else {
                 train(input);
             }
@@ -139,7 +140,7 @@ public class Tagger extends MulticlassClassifier<MulticlassTagSequence, Multicla
             if (firstChar == '(') {
                 final MulticlassClassifierResult result = testAccuracy(corpusReader(input));
                 BaseLogger.singleton().info(
-                        String.format("Accuracy=%.2f  Time=%d\n", result.accuracy() * 100f, result.time));
+                        String.format("Accuracy=%.2f  Time=%d\n", result.accuracy() * 100f, result.time()));
             } else {
 
                 // Output tagged text.

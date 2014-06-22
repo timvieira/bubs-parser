@@ -29,7 +29,7 @@ import edu.ohsu.cslu.datastructs.vectors.FloatVector;
 import edu.ohsu.cslu.datastructs.vectors.LargeSparseFloatVector;
 import edu.ohsu.cslu.datastructs.vectors.MutableSparseFloatVector;
 import edu.ohsu.cslu.datastructs.vectors.Vector;
-import edu.ohsu.cslu.parser.Util;
+import edu.ohsu.cslu.util.Strings;
 
 public class Perceptron extends Classifier {
 
@@ -78,7 +78,7 @@ public class Perceptron extends Classifier {
         this.featureTemplate = featureTemplate;
         // initBins(binsStr);
         this.binsStr = binsStr;
-        this.bins = Util.strToIntArray(binsStr);
+        this.bins = Strings.parseCommaDelimitedInts(binsStr);
 
         bias = new float[numClasses()];
         Arrays.fill(bias, 0.0f); // default to no bias
@@ -224,9 +224,9 @@ public class Perceptron extends Classifier {
 
     @Override
     public String toString() {
-        FloatVector[] model = modelWeights();
+        final FloatVector[] model = modelWeights();
         final StringBuilder sb = new StringBuilder((int) (model.length * model[0].length() * 8));
-        
+
         sb.append("# === Perceptron Model ===\n");
         sb.append(String.format("numFeats=%d numClasses=%d bins=%s numTrainExamples=%d \n", model[0].length(),
                 model.length, binsStr, trainExampleNumber));
@@ -336,9 +336,9 @@ public class Perceptron extends Classifier {
         public ScoredRanking(final short[] classes, final float[] scores) {
             this.classes = classes;
             this.scores = scores;
-            edu.ohsu.cslu.util.Arrays.sort(scores, classes);
-            edu.ohsu.cslu.util.Arrays.reverse(scores);
-            edu.ohsu.cslu.util.Arrays.reverse(classes);
+            // Sort the highest scores to the beginning of the list (retaining order on ties, to be consistent with
+            // comparisons during training)
+            edu.ohsu.cslu.util.Arrays.reverseSort(scores, classes);
         }
     }
 }

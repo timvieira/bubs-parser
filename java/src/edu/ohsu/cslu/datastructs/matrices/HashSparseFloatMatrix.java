@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU General Public License
  * along with cslu-common. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.datastructs.matrices;
 
 import it.unimi.dsi.fastutil.longs.Long2FloatOpenHashMap;
@@ -72,7 +72,7 @@ public class HashSparseFloatMatrix extends BaseMatrix implements SparseMatrix {
     public HashSparseFloatMatrix clone() {
         final Long2ObjectOpenHashMap<Long2FloatOpenHashMap> newMaps = new Long2ObjectOpenHashMap<Long2FloatOpenHashMap>();
         for (final long key : maps.keySet()) {
-            newMaps.put(key, (Long2FloatOpenHashMap) maps.get(key).clone());
+            newMaps.put(key, maps.get(key).clone());
         }
         return new HashSparseFloatMatrix(m, n, symmetric, newMaps, defaultValue);
     }
@@ -134,6 +134,45 @@ public class HashSparseFloatMatrix extends BaseMatrix implements SparseMatrix {
     @Override
     public float negativeInfinity() {
         return Float.NEGATIVE_INFINITY;
+    }
+
+    public Matrix add(final Matrix addend) {
+
+        if (addend.rows() != rows() || addend.columns() != columns()) {
+            throw new IllegalArgumentException("Matrix dimensions must match");
+        }
+
+        // TODO Handle adding a dense matrix to a sparse matrix
+        if (!(addend instanceof HashSparseFloatMatrix)) {
+            throw new UnsupportedOperationException("Adding " + addend.getClass()
+                    + " to HashSparseFloatMatrix is not currently supported");
+        }
+
+        final HashSparseFloatMatrix sparseAddend = (HashSparseFloatMatrix) addend;
+        final HashSparseFloatMatrix sum = new HashSparseFloatMatrix(rows(), columns(), isSymmetric()
+                && addend.isSymmetric());
+
+        // Iterate over populated entries in both matrices
+        for (final long row : maps.keySet()) {
+            final Long2FloatOpenHashMap columnMap = maps.get(row);
+            for (final long column : columnMap.keySet()) {
+                sum.set(row, column, getFloat(row, column) + sparseAddend.getFloat(row, column));
+            }
+        }
+
+        // We already covered all entries populated in this matrix, but need to add any present in the addend which
+        // aren't populated in this
+        for (final long row : sparseAddend.maps.keySet()) {
+            final Long2FloatOpenHashMap thisColumnMap = maps.get(row);
+            final Long2FloatOpenHashMap addendColumnMap = sparseAddend.maps.get(row);
+            for (final long column : addendColumnMap.keySet()) {
+                if (thisColumnMap == null || !thisColumnMap.containsKey(column)) {
+                    sum.set(row, column, sparseAddend.getFloat(row, column));
+                }
+            }
+        }
+
+        return sum;
     }
 
     @Override

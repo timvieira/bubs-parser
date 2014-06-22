@@ -33,13 +33,18 @@ import java.io.Reader;
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.logging.Level;
 
 import cltool4j.BaseLogger;
 import cltool4j.args4j.Option;
+import edu.ohsu.cslu.datastructs.matrices.IntMatrix;
 import edu.ohsu.cslu.datastructs.vectors.BitVector;
+import edu.ohsu.cslu.datastructs.vectors.DenseIntVector;
 import edu.ohsu.cslu.datastructs.vectors.FloatVector;
+import edu.ohsu.cslu.datastructs.vectors.IntVector;
 import edu.ohsu.cslu.datastructs.vectors.LargeBitVector;
 import edu.ohsu.cslu.datastructs.vectors.LargeVector;
 import edu.ohsu.cslu.datastructs.vectors.Vector;
@@ -75,6 +80,13 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence, F exten
      */
     @Option(name = "-xv", metaVar = "folds", optionalChoiceGroup = "model", usage = "Perform k-fold cross-validation on the training set (dev-set will be ignored and no model file will be written)")
     protected int crossValidationFolds;
+
+    /**
+     * Performs training using a random sample from the full training corpus. Useful to gauge performance as training
+     * data is increased, and can be combined with cross validation ('-xv').
+     */
+    @Option(name = "-tf", metaVar = "fraction", requires = "-ti", usage = "Limit training to a random sample of the full training corpus")
+    protected float trainingFraction = 1;
 
     protected SymbolSet<String> tagSet;
 
@@ -116,6 +128,7 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence, F exten
      */
     public MulticlassClassifier(final String featureTemplates, final SymbolSet<String> lexicon,
             final SymbolSet<String> unkClassSet, final SymbolSet<String> tagSet) {
+
         this.featureTemplates = featureTemplates;
         this.lexicon = lexicon;
         this.decisionTreeUnkClassSet = unkClassSet;
@@ -124,6 +137,7 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence, F exten
 
     @Override
     public void readModel(final InputStream is) throws IOException, ClassNotFoundException {
+
         // Read in the model parameters as a temporary java serialized object and copy into this object
         final ObjectInputStream ois = new ObjectInputStream(is);
         final Model tmp = (Model) ois.readObject();
@@ -168,27 +182,21 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence, F exten
     protected MulticlassClassifierResult testAccuracy(final Iterable<I> input) throws IOException {
 
         final FeatureExtractor<S> fe = featureExtractor();
-        int sentences = 0, words = 0, correct = 0;
         final long t0 = System.currentTimeMillis();
 
-        for (final I instance : input) {
-            sentences++;
-            final S sequence = createSequence(instance);
-            for (int i = 0; i < sequence.length(); i++) {
-                sequence.setPredictedClass(i, classify(fe.featureVector(sequence, i)));
-            }
+        final MulticlassClassifierResult result = createResult();
 
-            for (int j = 0; j < sequence.length(); j++) {
-                if (sequence.goldClass(j) < 0) {
-                    continue;
-                }
-                if (sequence.predictedClass(j) == sequence.goldClass(j)) {
-                    correct++;
-                }
-                words++;
+        for (final I instance : input) {
+
+            final S sequence = createSequence(instance);
+            final BitVector[] featureVectors = new BitVector[sequence.length()];
+            for (int i = 0; i < featureVectors.length; i++) {
+                featureVectors[i] = fe.featureVector(sequence, i);
             }
+            classify(sequence, featureVectors, result);
         }
-        return new MulticlassClassifierResult(sentences, words, correct, (int) (System.currentTimeMillis() - t0));
+        result.time = (int) (System.currentTimeMillis() - t0);
+        return result;
     }
 
     protected abstract S createSequence(final I line);
@@ -197,35 +205,45 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence, F exten
             final ArrayList<BitVector[]> devCorpusFeatures, MulticlassClassifierResult result) {
 
         if (result == null) {
-            result = new MulticlassClassifierResult();
+            result = createResult();
         }
 
         // Test the development set
         final long t0 = System.currentTimeMillis();
 
-        // For debugging
-        @SuppressWarnings("unused")
-        int incorrect = 0;
         for (int j = 0; j < devCorpusFeatures.size(); j++) {
-            result.sequences++;
-            final MulticlassSequence sequence = devCorpusSequences.get(j);
-            final BitVector[] featureVectors = devCorpusFeatures.get(j);
-
-            for (int k = 0; k < featureVectors.length; k++) {
-                if (featureVectors[k] != null) {
-                    sequence.setPredictedClass(k, classify(featureVectors[k]));
-                    if (sequence.predictedClass(k) == sequence.goldClass(k)) {
-                        result.correct++;
-                    } else {
-                        incorrect++;
-                    }
-                    result.instances++;
-                }
-            }
-            Arrays.fill(sequence.predictedClasses(), (short) 0);
+            classify(devCorpusSequences.get(j), devCorpusFeatures.get(j), result);
+            Arrays.fill(devCorpusSequences.get(j).predictedClasses(), (short) 0);
         }
         result.time += (int) (System.currentTimeMillis() - t0);
         return result;
+    }
+
+    private void classify(final MulticlassSequence sequence, final BitVector[] featureVectors,
+            final MulticlassClassifierResult result) {
+
+        result.sequences++;
+
+        for (int k = 0; k < featureVectors.length; k++) {
+            final BitVector featureVector = featureVectors[k];
+
+            if (featureVector == null) {
+                continue;
+            }
+
+            sequence.setPredictedClass(k, classify(featureVector));
+            final short goldClass = sequence.goldClass(k);
+            if (goldClass < 0) {
+                continue;
+            }
+
+            result.instancesByClass.set(goldClass, result.instancesByClass.getInt(goldClass) + 1);
+            if (sequence.predictedClass(k) == goldClass) {
+                result.correct++;
+                result.correctByClass.set(goldClass, result.correctByClass.getInt(goldClass) + 1);
+            }
+            result.instances++;
+        }
     }
 
     /**
@@ -390,13 +408,13 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence, F exten
      * @param input
      * @throws IOException
      */
-    protected void crossValidate(final BufferedReader input) throws IOException {
+    protected MulticlassClassifierResult crossValidate(final BufferedReader input) throws IOException {
 
         final ArrayList<S> allSequences = readTrainingCorpus(input);
 
         final int foldSize = Math.round(1f * allSequences.size() / crossValidationFolds);
 
-        MulticlassClassifierResult totalResult = new MulticlassClassifierResult();
+        MulticlassClassifierResult totalResult = createResult();
 
         for (int i = 0; i < crossValidationFolds; i++) {
 
@@ -418,10 +436,19 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence, F exten
             //
             // Train
             //
-            totalResult = totalResult.sum(train(allSequences, devSequences, trainingIterations));
+            totalResult = totalResult.sum(train(trainingSequences, devSequences, trainingIterations));
         }
 
-        BaseLogger.singleton().info(String.format("Cross-validation Accuracy=%.2f", totalResult.accuracy() * 100f));
+        return totalResult;
+    }
+
+    /**
+     * Creates an instance of {@link MulticlassClassifierResult} or the appropriate subclass thereof
+     * 
+     * @return Result
+     */
+    protected MulticlassClassifierResult createResult() {
+        return new MulticlassClassifierResult(tagSet);
     }
 
     /**
@@ -436,13 +463,27 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence, F exten
     MulticlassClassifierResult train(final ArrayList<S> trainingCorpusSequences, final ArrayList<S> devCorpusSequences,
             final int iterations) {
 
+        final ArrayList<S> selectedTrainingSequences;
+        if (trainingFraction == 1) {
+            selectedTrainingSequences = trainingCorpusSequences;
+        } else {
+            // Sample randomly from the full training corpus
+            selectedTrainingSequences = new ArrayList<S>();
+            @SuppressWarnings("unchecked")
+            final ArrayList<S> tmp = (ArrayList<S>) trainingCorpusSequences.clone();
+            Collections.shuffle(tmp);
+            for (int i = Math.round(trainingCorpusSequences.size() * trainingFraction); i > 0; i--) {
+                selectedTrainingSequences.add(tmp.get(i));
+            }
+        }
+
         featureExtractor = featureExtractor();
         perceptronModel = new AveragedPerceptron(tagSet.size(), featureExtractor.vectorLength());
 
         //
         // Pre-compute all features
         //
-        final ArrayList<BitVector[]> trainingCorpusFeatures = extractFeatures(trainingCorpusSequences);
+        final ArrayList<BitVector[]> trainingCorpusFeatures = extractFeatures(selectedTrainingSequences);
         final ArrayList<BitVector[]> devCorpusFeatures = extractFeatures(devCorpusSequences);
 
         //
@@ -450,7 +491,7 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence, F exten
         //
         for (int i = 1; i <= iterations; i++) {
             for (int j = 0; j < trainingCorpusFeatures.size(); j++) {
-                final S sequence = trainingCorpusSequences.get(j);
+                final S sequence = selectedTrainingSequences.get(j);
 
                 final BitVector[] featureVectors = trainingCorpusFeatures.get(j);
                 for (int k = 0; k < featureVectors.length; k++) {
@@ -495,8 +536,13 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence, F exten
 
         final MulticlassClassifierResult devResult = classify(devCorpusSequences, devCorpusFeatures, null);
         BaseLogger.singleton().info(
-                String.format("Iteration=%d Devset Accuracy=%.2f  Time=%d\n", trainingIteration,
-                        devResult.accuracy() * 100f, devResult.time));
+                String.format("Iteration=%d Devset %s  Time=%d\n", trainingIteration, devResult.toString(),
+                        devResult.time));
+
+        if (BaseLogger.singleton().isLoggable(Level.FINE)) {
+            BaseLogger.singleton().fine(devResult.resultByClassReport());
+        }
+
         return devResult;
     }
 
@@ -662,26 +708,139 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence, F exten
     }
 
     protected static class MulticlassClassifierResult {
+
+        protected final SymbolSet<String> tagSet;
         protected int sequences, instances, correct;
+        protected IntVector instancesByClass, correctByClass;
+
+        /**
+         * Counts of the erroneously predicted classes for each gold class. Indexed by goldClass, prediction; excludes
+         * counts for correct predictions (i.e., m[x,x] == 0 for all x)
+         */
+        protected final IntMatrix confusionMatrix;
         protected int time;
 
-        public MulticlassClassifierResult() {
+        public MulticlassClassifierResult(final int classes) {
+            this(null, classes);
         }
 
-        public MulticlassClassifierResult(final int sequences, final int instances, final int correct, final int time) {
+        public MulticlassClassifierResult(final SymbolSet<String> tagSet) {
+            this(tagSet, tagSet.size());
+        }
+
+        private MulticlassClassifierResult(final SymbolSet<String> tagSet, final int classes) {
+            this.tagSet = tagSet;
+            this.instancesByClass = new DenseIntVector(classes);
+            this.correctByClass = new DenseIntVector(classes);
+            this.confusionMatrix = new IntMatrix(classes, classes);
+        }
+
+        public MulticlassClassifierResult(final SymbolSet<String> tagSet, final int sequences, final int instances,
+                final int correct, final IntVector instancesByClass, final IntVector correctByClass,
+                final IntMatrix confusionMatrix, final int time) {
+
+            this.tagSet = tagSet;
             this.sequences = sequences;
             this.instances = instances;
             this.correct = correct;
             this.time = time;
+
+            assert (instancesByClass.length() == correctByClass.length());
+            this.instancesByClass = instancesByClass;
+            this.correctByClass = correctByClass;
+            this.confusionMatrix = confusionMatrix;
+        }
+
+        public void addSequence() {
+            sequences++;
+        }
+
+        public void addInstance(final short goldClass, final short predictedClass) {
+            instances++;
+            if (instancesByClass != null) {
+                instancesByClass.set(goldClass, instancesByClass.getInt(goldClass) + 1);
+            }
+            if (goldClass == predictedClass) {
+                correct++;
+                if (correctByClass != null) {
+                    correctByClass.set(goldClass, correctByClass.getInt(goldClass) + 1);
+                }
+            } else {
+                // Update the confusion matrix
+                confusionMatrix.increment(goldClass, predictedClass);
+            }
+        }
+
+        public void addTime(final int increment) {
+            time += increment;
         }
 
         public float accuracy() {
             return correct * 1f / instances;
         }
 
+        public float accuracy(final short goldClass) {
+            return correctByClass.getFloat(goldClass) / instancesByClass.getFloat(goldClass);
+        }
+
         public MulticlassClassifierResult sum(final MulticlassClassifierResult other) {
-            return new MulticlassClassifierResult(sequences + other.sequences, instances + other.instances, correct
-                    + other.correct, time + other.time);
+            return new MulticlassClassifierResult(tagSet, sequences + other.sequences, instances + other.instances,
+                    correct + other.correct, (IntVector) instancesByClass.add(other.instancesByClass),
+                    (IntVector) correctByClass.add(other.correctByClass),
+                    (IntMatrix) confusionMatrix.add(other.confusionMatrix), time + other.time);
+        }
+
+        public int time() {
+            return time;
+        }
+
+        public String resultByClassReport() {
+
+            final StringBuilder sb = new StringBuilder(512);
+
+            for (short goldClass = 0; goldClass < instancesByClass.length(); goldClass++) {
+
+                if (instancesByClass.getInt(goldClass) > 0) {
+                    sb.append(String.format("%s (Class %d)    Instances: %5d  Correct: %5d  Accuracy: %.2f\n",
+                            tagSet.getSymbol(goldClass), goldClass, instancesByClass.getInt(goldClass),
+                            correctByClass.getInt(goldClass), accuracy(goldClass)));
+                }
+            }
+            return sb.toString();
+        }
+
+        public String confusionMatrixReport() {
+
+            final StringBuilder sb = new StringBuilder(512);
+
+            for (short goldClass = 0; goldClass < confusionMatrix.rows(); goldClass++) {
+
+                // Skip unobserved classes
+                if (instancesByClass.getInt(goldClass) == 0) {
+                    continue;
+
+                }
+
+                sb.append(String.format("%-20s (Class %5d): total instances %d\n", tagSet.getSymbol(goldClass),
+                        goldClass, instancesByClass.getInt(goldClass)));
+
+                for (short predictedClass = 0; predictedClass < confusionMatrix.columns(); predictedClass++) {
+                    final int errors = confusionMatrix.getInt(goldClass, predictedClass);
+
+                    if (errors != 0) {
+                        if (instancesByClass.getInt(goldClass) > 0) {
+                            sb.append(String.format("    %-20s (Class %5d)    Errors: %d\n",
+                                    tagSet.getSymbol(predictedClass), predictedClass, errors));
+                        }
+                    }
+                }
+            }
+            return sb.toString();
+        }
+
+        @Override
+        public String toString() {
+            return String.format("Accuracy=%.2f", accuracy() * 100f);
         }
     }
 

@@ -15,10 +15,13 @@
  * 
  * You should have received a copy of the GNU General Public License
  * along with cslu-common. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.datastructs.matrices;
 
 import static org.junit.Assert.assertEquals;
+
+import org.junit.Ignore;
+import org.junit.Test;
 
 public class TestHashSparseFloatMatrix extends SparseFloatingPointMatrixTestCase {
 
@@ -40,5 +43,12 @@ public class TestHashSparseFloatMatrix extends SparseFloatingPointMatrixTestCase
     @Override
     public void testNegativeInfinity() throws Exception {
         assertEquals(Float.NEGATIVE_INFINITY, sampleMatrix.negativeInfinity(), 0.01f);
+    }
+
+    @Override
+    @Ignore
+    @Test
+    public void testAddShortMatrix() {
+        // Adding dense matrices to sparse matrices is currently unsupported
     }
 }

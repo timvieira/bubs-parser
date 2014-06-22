@@ -15,10 +15,14 @@
  * 
  * You should have received a copy of the GNU General Public License
  * along with cslu-common. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.datastructs.matrices;
 
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.util.Arrays;
 
 import org.cjunit.FilteredRunner;
 import org.junit.Test;
@@ -41,7 +45,7 @@ public class TestByteMatrix extends DenseIntMatrixTestCase {
     }
 
     @Override
-    protected Matrix create(final float[][] array, boolean symmetric) {
+    protected Matrix create(final float[][] array, final boolean symmetric) {
         final byte[][] byteArray = new byte[array.length][];
         for (int i = 0; i < array.length; i++) {
             byteArray[i] = new byte[array[i].length];
@@ -82,6 +86,35 @@ public class TestByteMatrix extends DenseIntMatrixTestCase {
         assertEquals(FloatMatrix.class, m.getClass());
         assertEquals(280.8, m.getFloat(1, 2), .01f);
         assertEquals(43.2, m.getFloat(2, 3), .01f);
+    }
+
+    /**
+     * Override, since adding sampleMatrix to itself overflows a byte
+     */
+    @Override
+    @Test
+    public void testAdd() {
+        // Verify that add() throws IllegalArgumentException if attempting to add matrices of different dimensions
+        try {
+            sampleMatrix.add(symmetricMatrix);
+            fail("Expected IllegalArgumentException");
+        } catch (final IllegalArgumentException expected) {
+        }
+
+        final byte[][] tmp = new byte[sampleMatrix.rows()][sampleMatrix.columns()];
+        for (int i = 0; i < tmp.length; i++) {
+            Arrays.fill(tmp[i], (byte) -1);
+        }
+        final Matrix addend = new ByteMatrix(tmp);
+
+        // Add sampleMatrix to itself
+        final Matrix sum = sampleMatrix.add(addend);
+        assertTrue("Expected " + sampleMatrix.getClass(), sum.getClass() == sampleMatrix.getClass());
+        for (int i = 0; i < sampleMatrix.rows(); i++) {
+            for (int j = 0; j < sampleMatrix.columns(); j++) {
+                assertEquals(sampleMatrix.getInt(i, j) - 1, sum.getInt(i, j));
+            }
+        }
     }
 
     @Override

@@ -29,7 +29,6 @@ import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.datastructs.vectors.SparseBitVector;
 import edu.ohsu.cslu.parser.ChartParser;
 import edu.ohsu.cslu.parser.ParseTask;
-import edu.ohsu.cslu.parser.Util;
 import edu.ohsu.cslu.parser.chart.Chart;
 import edu.ohsu.cslu.parser.chart.Chart.Feature;
 import edu.ohsu.cslu.perceptron.AveragedPerceptron;
@@ -93,8 +92,8 @@ public class PerceptronBeamWidthModel extends ChainableCellSelectorModel impleme
         beamWidthModel.setBias(beamModelBias);
 
         BaseLogger.singleton().finer(
-                "INFO: beamconf: inferFactoredCells=" + Util.bool2int(inferFactoredCells) + " classifyBaseCells="
-                        + Util.bool2int(classifyBaseCells));
+                "INFO: beamconf: inferFactoredCells=" + (inferFactoredCells ? 1 : 0) + " classifyBaseCells="
+                        + (classifyBaseCells ? 1 : 0));
 
         this.featureList = Chart.featureTemplateStrToEnum(beamWidthModel.getFeatureTemplate().split("\\s+"));
     }

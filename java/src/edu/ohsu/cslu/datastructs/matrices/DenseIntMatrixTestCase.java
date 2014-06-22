@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU General Public License
  * along with cslu-common. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.datastructs.matrices;
 
 import static junit.framework.Assert.assertEquals;

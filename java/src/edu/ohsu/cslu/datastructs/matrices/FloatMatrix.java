@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU General Public License
  * along with cslu-common. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.datastructs.matrices;
 
 import java.io.IOException;
@@ -142,6 +142,21 @@ public final class FloatMatrix extends BaseDenseMatrix {
     @Override
     public void set(final int i, final int j, final String newValue) {
         matrix[i][j] = Float.parseFloat(newValue);
+    }
+
+    public FloatMatrix add(final Matrix addend) {
+
+        if (addend.rows() != rows() || addend.columns() != columns()) {
+            throw new IllegalArgumentException("Matrix dimensions must match");
+        }
+
+        final FloatMatrix sum = new FloatMatrix(rows(), columns());
+        for (int i = 0; i < matrix.length; i++) {
+            for (int j = 0; j < matrix[0].length; j++) {
+                sum.set(i, j, getFloat(i, j) + addend.getFloat(i, j));
+            }
+        }
+        return sum;
     }
 
     /**

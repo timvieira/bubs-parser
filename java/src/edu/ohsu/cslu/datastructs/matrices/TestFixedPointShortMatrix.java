@@ -23,6 +23,7 @@ import static junit.framework.Assert.fail;
 
 import org.cjunit.FilteredRunner;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -178,6 +179,13 @@ public class TestFixedPointShortMatrix extends DenseFloatingPointMatrixTestCase 
     public void testNegativeInfinity() throws Exception {
         assertEquals(Short.MIN_VALUE / 100f, sampleMatrix.negativeInfinity(), .01f);
         assertEquals(Short.MIN_VALUE / 10000f, sampleMatrix2.negativeInfinity(), .01f);
+    }
+
+    @Test
+    @Ignore
+    @Override
+    public void testAddShortMatrix() {
+        // Override to skip adding a short matrix
     }
 
     /**

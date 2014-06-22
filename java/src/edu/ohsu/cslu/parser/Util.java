@@ -22,7 +22,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -33,8 +32,6 @@ import cltool4j.BaseLogger;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.datastructs.narytree.Tree;
 import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.StringEdge;
-import edu.ohsu.cslu.grammar.StringProduction;
 import edu.ohsu.cslu.parser.chart.Chart.SimpleChartEdge;
 
 public class Util {
@@ -48,47 +45,6 @@ public class Util {
                 buffer.append(delimiter);
             }
         }
-        return buffer.toString();
-    }
-
-    public static String join(final Object[] objs, final String delimiter) {
-        final StringBuilder buffer = new StringBuilder();
-        for (int i = 0; i < objs.length; i++) {
-            buffer.append(objs[i].toString());
-            if (i < objs.length - 1) {
-                buffer.append(delimiter);
-            }
-        }
-        return buffer.toString();
-    }
-
-    public static String join(final long[] objs, final String delimiter) {
-        final StringBuilder buffer = new StringBuilder();
-        for (int i = 0; i < objs.length - 1; i++) {
-            buffer.append(Long.toString(objs[i]));
-            buffer.append(delimiter);
-        }
-        buffer.append(Long.toString(objs[objs.length - 1]));
-        return buffer.toString();
-    }
-
-    public static String join(final int[] objs, final String delimiter) {
-        final StringBuilder buffer = new StringBuilder();
-        for (int i = 0; i < objs.length - 1; i++) {
-            buffer.append(Integer.toString(objs[i]));
-            buffer.append(delimiter);
-        }
-        buffer.append(Integer.toString(objs[objs.length - 1]));
-        return buffer.toString();
-    }
-
-    public static String join(final short[] objs, final String delimiter) {
-        final StringBuilder buffer = new StringBuilder();
-        for (int i = 0; i < objs.length - 1; i++) {
-            buffer.append(Short.toString(objs[i]));
-            buffer.append(delimiter);
-        }
-        buffer.append(Short.toString(objs[objs.length - 1]));
         return buffer.toString();
     }
 
@@ -116,62 +72,6 @@ public class Util {
             return new GZIPInputStream(new FileInputStream(fileName));
         }
         return new FileInputStream(fileName);
-    }
-
-    public static String intArray2Str(final int[] data) {
-        String result = "";
-        for (final int val : data) {
-            result += val + " ";
-        }
-        return result.trim();
-    }
-
-    public static String floatArray2Str(final float[] data) {
-        String result = "";
-        for (final float val : data) {
-            result += String.format("%.2f ", val);
-        }
-        return result.trim();
-    }
-
-    public static int bool2int(final boolean value) {
-        if (value) {
-            return 1;
-        }
-        return 0;
-    }
-
-    public static int[] strToIntArray(final String str) {
-        return strToIntArray(str, ",", 0, -1);
-    }
-
-    public static int[] strToIntArray(final String str, final String delim, final float defaultVal, final int numBins) {
-        final float[] floatArray = strToFloatArray(str, delim, defaultVal, numBins);
-        final int[] intArray = new int[floatArray.length];
-        for (int i = 0; i < floatArray.length; i++) {
-            intArray[i] = (int) floatArray[i];
-        }
-        return intArray;
-    }
-
-    public static float[] strToFloatArray(final String str) {
-        return strToFloatArray(str, ",", 0f, -1);
-    }
-
-    // assuming str has the form: x,y,z
-    public static float[] strToFloatArray(final String str, final String delim, final float defaultVal, int numBins) {
-        final String[] tokens = str.split(delim);
-        if (numBins == -1) {
-            numBins = tokens.length;
-        }
-
-        final float[] array = new float[tokens.length];
-        Arrays.fill(array, defaultVal);
-
-        for (int i = 0; i < tokens.length; i++) {
-            array[i] = Float.parseFloat(tokens[i]);
-        }
-        return array;
     }
 
     public static float str2float(final String s) {
@@ -266,82 +166,6 @@ public class Util {
 
         tree.replaceLeafLabels(origLabels);
         return edgeList;
-    }
-
-    private static int getNodeIndex(final Tree<String> item, final LinkedList<Tree<String>> list) {
-        int i = 0;
-        for (final Tree<String> x : list) {
-            if (item == x && item.parent() == x.parent()) {
-                return i;
-            }
-            i++;
-        }
-        return -1;
-    }
-
-    public static Collection<StringEdge> getStringEdgesFromTree(final BinaryTree<String> tree, final Grammar grammar,
-            final boolean includeLeaves, final int startSpanIndex, final int endSpanIndex) {
-
-        final Collection<StringEdge> edgeList = new LinkedList<StringEdge>();
-        final LinkedList<Tree<String>> lexLeaves = new LinkedList<Tree<String>>();
-        // final String[] origLeafLabels = tree.leafLabels();
-        // int i = 0;
-        for (final Tree<String> leaf : tree.leafTraversal()) {
-            // leaf.setLabel(String.format("%d:%s", i, leaf.label()));
-            lexLeaves.add(leaf);
-            // i++;
-        }
-
-        for (final BinaryTree<String> node : tree.preOrderTraversal()) {
-            if (node.isLeaf())
-                continue;
-            if (!includeLeaves && node.children().get(0).isLeaf()) {
-                continue;
-            }
-
-            // final short start = (short) lexLeaves.indexOf(node.leftmostLeaf());
-            final short start = (short) getNodeIndex(node.leftmostLeaf(), lexLeaves);
-            if (startSpanIndex >= 0 && start != startSpanIndex)
-                continue;
-            // final short end = (short) (lexLeaves.indexOf(node.rightmostLeaf()) + 1);
-            final short end = (short) (getNodeIndex(node.rightmostLeaf(), lexLeaves) + 1);
-            if (endSpanIndex >= 0 && end != endSpanIndex)
-                continue;
-            short mid = -1;
-            if (node.children().size() == 2) {
-                // mid = (short) (lexLeaves.indexOf(node.children().get(0).rightmostLeaf()) + 1);
-                mid = (short) (getNodeIndex(node.children().get(0).rightmostLeaf(), lexLeaves) + 1);
-            }
-
-            String childrenStr = node.children().get(0).label();// Util.join(node.childLabels(), " ");
-            if (node.children().size() > 1) {
-                childrenStr += " " + node.children().get(1).label();
-            }
-            final StringEdge e = new StringEdge(new StringProduction(node.label(), childrenStr, 0f), start, mid, end);
-            edgeList.add(e);
-            // System.out.println("AddingGold: " + e.toString());
-        }
-        // i = 0;
-        // for (final Tree<String> leaf : tree.leafTraversal()) {
-        // leaf.setLabel(origLeafLabels[i]);
-        // i++;
-        // }
-        return edgeList;
-    }
-
-    // map [start,end] => [edge1, edge2, ...] where edge1, edge2, ... are in span [start,end]
-    public static HashMap<String, LinkedList<SimpleChartEdge>> edgeListBySpan(final Collection<SimpleChartEdge> edgeList) {
-        final HashMap<String, LinkedList<SimpleChartEdge>> edgeMap = new HashMap<String, LinkedList<SimpleChartEdge>>();
-
-        for (final SimpleChartEdge e : edgeList) {
-            final String key = String.format("%d,%d", e.start, e.end);
-            if (!edgeMap.containsKey(key)) {
-                edgeMap.put(key, new LinkedList<SimpleChartEdge>());
-            }
-            edgeMap.get(key).add(e);
-        }
-
-        return edgeMap;
     }
 
 }

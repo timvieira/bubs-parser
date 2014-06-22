@@ -57,7 +57,7 @@ public abstract class ClassifierTool<S extends Sequence> extends BaseCommandline
     @Option(name = "-ti", metaVar = "iterations", usage = "Train the tagger for n iterations (Optionally tests on dev-set with '-d' and outputs a model with '-m')")
     protected int trainingIterations;
 
-    @Option(name = "-ft", requires = "-ti", metaVar = "templates or file", usage = "Feature templates (comma-delimited), or template file")
+    @Option(name = "-ft", requires = "-ti", optionalChoiceGroup = "templates", metaVar = "templates or file", usage = "Feature templates (comma-delimited), or template file")
     protected String featureTemplates = DEFAULT_FEATURE_TEMPLATES();
 
     @Option(name = "-d", requires = "-ti", metaVar = "file", usage = "Development set. If specified, dev-set accuracy is reported after each training iteration.")
@@ -119,6 +119,10 @@ public abstract class ClassifierTool<S extends Sequence> extends BaseCommandline
         this.lexicon.finalize();
         this.decisionTreeUnkClassSet = newUnkClassSet;
         this.decisionTreeUnkClassSet.finalize();
+    }
+
+    public SymbolSet<String> lexicon() {
+        return lexicon;
     }
 
     protected void finalizeMaps() {

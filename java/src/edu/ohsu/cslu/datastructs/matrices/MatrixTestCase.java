@@ -15,19 +15,21 @@
  * 
  * You should have received a copy of the GNU General Public License
  * along with cslu-common. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.datastructs.matrices;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.StringWriter;
+import java.util.Arrays;
 
 import org.junit.Test;
 
@@ -265,6 +267,44 @@ public abstract class MatrixTestCase {
      */
     @Test
     public abstract void testNegativeInfinity() throws Exception;
+
+    @Test
+    public void testAdd() {
+        // Verify that add() throws IllegalArgumentException if attempting to add matrices of different dimensions
+        try {
+            sampleMatrix.add(symmetricMatrix);
+            fail("Expected IllegalArgumentException");
+        } catch (final IllegalArgumentException expected) {
+        }
+
+        // Add sampleMatrix to itself
+        final Matrix sum = sampleMatrix.add(sampleMatrix);
+        assertTrue("Expected " + sampleMatrix.getClass(), sum.getClass() == sampleMatrix.getClass());
+        for (int i = 0; i < sampleMatrix.rows(); i++) {
+            for (int j = 0; j < sampleMatrix.columns(); j++) {
+                assertEquals(sampleMatrix.getFloat(i, j) * 2, sum.getFloat(i, j), .0001f);
+            }
+        }
+    }
+
+    @Test
+    public void testAddShortMatrix() {
+        // Construct a ShortMatrix and add it to sampleMatrix
+        final short[][] tmp = new short[sampleMatrix.rows()][sampleMatrix.columns()];
+        for (int i = 0; i < tmp.length; i++) {
+            Arrays.fill(tmp[i], (short) -1);
+        }
+        final Matrix addend = new ShortMatrix(tmp);
+
+        final Matrix sum = sampleMatrix.add(addend);
+        assertTrue("Expected " + sampleMatrix.getClass() + " or ShortMatrix", sum.getClass() == sampleMatrix.getClass()
+                || sum.getClass() == ShortMatrix.class);
+        for (int i = 0; i < sampleMatrix.rows(); i++) {
+            for (int j = 0; j < sampleMatrix.columns(); j++) {
+                assertEquals(sampleMatrix.getFloat(i, j) - 1, sum.getFloat(i, j), .0001f);
+            }
+        }
+    }
 
     /**
      * Tests transposition of a matrix.

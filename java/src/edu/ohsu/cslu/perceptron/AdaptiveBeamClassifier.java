@@ -1044,7 +1044,7 @@ public class AdaptiveBeamClassifier extends ClassifierTool<BeamWidthSequence> {
         public int sentencesWithMisclassifiedNegative;
 
         public BeamWidthResult(final int classes) {
-            super();
+            super(classes);
             this.correctNegative = new int[classes];
             this.negativeExamples = new int[classes];
             this.correctPositive = new int[classes];

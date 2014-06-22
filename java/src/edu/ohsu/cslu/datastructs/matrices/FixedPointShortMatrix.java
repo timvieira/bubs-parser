@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU General Public License
  * along with cslu-common. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.datastructs.matrices;
 
 import java.io.IOException;
@@ -213,6 +213,28 @@ public class FixedPointShortMatrix extends BaseDenseMatrix {
             submatrix[i - i0] = row;
         }
         return new FixedPointShortMatrix(submatrix, precision);
+    }
+
+    public Matrix add(final Matrix addend) {
+
+        // It doesn't make sense to add a fixed-point matrix to another type of matrix or to a fixed-point matrix of a
+        // different precision
+        if (!(addend instanceof FixedPointShortMatrix) || ((FixedPointShortMatrix) addend).precision != precision) {
+            throw new IllegalArgumentException("Two matrices must be of the same precision");
+        }
+
+        if (addend.rows() != rows() || addend.columns() != columns()) {
+            throw new IllegalArgumentException("Matrix dimensions must match");
+        }
+
+        final FixedPointShortMatrix sum = new FixedPointShortMatrix(rows(), columns(), precision, isSymmetric()
+                && addend.isSymmetric());
+        for (int i = 0; i < matrix.length; i++) {
+            for (int j = 0; j < matrix[0].length; j++) {
+                sum.set(i, j, getFloat(i, j) + addend.getFloat(i, j));
+            }
+        }
+        return sum;
     }
 
     /**

@@ -216,6 +216,21 @@ public class Strings {
     }
 
     /**
+     * Parses each integer in a comma-delimited array (of the form 'x,y,z,...', or 'x, y, z, ...'
+     * 
+     * @param str
+     * @return Integer array
+     */
+    public static int[] parseCommaDelimitedInts(final String str) {
+        final String[] tokens = str.split(" *, *");
+        final int[] array = new int[tokens.length];
+        for (int i = 0; i < array.length; i++) {
+            array[i] = Integer.parseInt(tokens[i]);
+        }
+        return array;
+    }
+
+    /**
      * Returns the array of strings computed by splitting this string around the specified delimiter. Strings containing
      * the delimiter can be escaped with the specified escape character, and the escape character can itself be escaped
      * with '\'

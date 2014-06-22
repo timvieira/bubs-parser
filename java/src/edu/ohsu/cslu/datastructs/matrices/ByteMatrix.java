@@ -15,7 +15,7 @@
  * 
  * You should have received a copy of the GNU General Public License
  * along with cslu-common. If not, see <http://www.gnu.org/licenses/>
- */ 
+ */
 package edu.ohsu.cslu.datastructs.matrices;
 
 import java.io.IOException;
@@ -156,6 +156,33 @@ public class ByteMatrix extends BaseDenseMatrix {
 
     public void add(final int i, final int j, final int addend) {
         matrix[i][j] += addend;
+    }
+
+    public Matrix add(final Matrix addend) {
+
+        if (addend instanceof FloatMatrix) {
+            return ((FloatMatrix) addend).add(this);
+        }
+
+        if (addend instanceof IntMatrix) {
+            return ((IntMatrix) addend).add(this);
+        }
+
+        if (addend instanceof ShortMatrix) {
+            return ((ShortMatrix) addend).add(this);
+        }
+
+        if (addend.rows() != rows() || addend.columns() != columns()) {
+            throw new IllegalArgumentException("Matrix dimensions must match");
+        }
+
+        final ByteMatrix sum = new ByteMatrix(rows(), columns());
+        for (int i = 0; i < matrix.length; i++) {
+            for (int j = 0; j < matrix[0].length; j++) {
+                sum.set(i, j, getInt(i, j) + addend.getInt(i, j));
+            }
+        }
+        return sum;
     }
 
     /**
