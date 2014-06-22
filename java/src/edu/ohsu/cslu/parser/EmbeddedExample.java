@@ -22,18 +22,18 @@
 package edu.ohsu.cslu.parser;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.zip.GZIPInputStream;
 
-import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
-import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthModel;
-import edu.ohsu.cslu.parser.fom.BoundaryPosModel;
+import edu.ohsu.cslu.parser.cellselector.CompleteClosureModel;
+import edu.ohsu.cslu.parser.fom.BoundaryLex;
 import edu.ohsu.cslu.parser.fom.FigureOfMeritModel.FOMType;
 import edu.ohsu.cslu.parser.spmv.CscSpmvParser;
 
@@ -43,11 +43,11 @@ import edu.ohsu.cslu.parser.spmv.CscSpmvParser;
  * 
  * Usage: EmbeddedExample <grammar file> <edge selector model> <cell selector model>
  * 
- * e.g. EmbeddedExample models/eng.sm6.gr.gz models/eng.sm6.fom.gz models/eng.sm6.bcm.gz
+ * e.g. EmbeddedExample models/wsj_l0mm_16_.55_6.gr.gz models/wsj_l0mm_16_.55_6.lexfom.gz models/wsj_cc.mdl.99
  */
 public class EmbeddedExample {
 
-    public static void main(final String[] args) throws FileNotFoundException, IOException {
+    public static void main(final String[] args) throws FileNotFoundException, IOException, ClassNotFoundException {
 
         // The 'ParserDriver' class also serves as the container for parser options
         final ParserDriver opts = new ParserDriver();
@@ -57,12 +57,9 @@ public class EmbeddedExample {
                 new DecisionTreeTokenClassifier(), PerfectIntPairHashPackingFunction.class);
         opts.setGrammar(grammar);
 
-        // Configure the beam model before we load it from disk
-        GlobalConfigProperties.singleton().setProperty("beamModelBias", "200,200,200,200");
-
         // Create FOMModel and CellSelectorModel instances and load models from disk
-        opts.fomModel = new BoundaryPosModel(FOMType.BoundaryPOS, grammar, uncompressFile(args[1]));
-        opts.cellSelectorModel = new PerceptronBeamWidthModel(uncompressFile(args[2]), null);
+        opts.fomModel = new BoundaryLex(FOMType.BoundaryLex, grammar, uncompressFile(args[1]));
+        opts.cellSelectorModel = new CompleteClosureModel(new File(args[2]), null);
 
         // Create a Parser instance
         final CscSpmvParser parser = new CscSpmvParser(opts, grammar);
