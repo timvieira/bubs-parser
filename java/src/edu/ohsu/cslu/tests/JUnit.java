@@ -21,6 +21,7 @@
  */
 package edu.ohsu.cslu.tests;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -30,7 +31,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
@@ -169,6 +174,21 @@ public class JUnit {
 
     public static void assertArrayEquals(final short[][] expected, final short[][] actual) {
         assertArrayEquals(null, expected, actual);
+    }
+
+    /**
+     * Compares two lists without regard to their implementation (e.g. an {@link ArrayList} and a {@link LinkedList}).
+     * 
+     * @param expected
+     * @param actual
+     */
+    public static <T> void assertListEquals(final List<T> expected, final List<T> actual) {
+        assertEquals("Lengths differ. Expected " + expected.size() + " but was " + actual.size(), expected.size(),
+                actual.size());
+        int i = 0;
+        for (Iterator<T> i1 = expected.iterator(), i2 = actual.iterator(); i1.hasNext(); i++) {
+            assertEquals("Lists differ at position " + i, i1.next(), i2.next());
+        }
     }
 
     public static void assertContains(final Collection<?> collection, final Object expected) {
