@@ -23,10 +23,10 @@ package edu.ohsu.cslu.parser.spmv;
 
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
 
-import jsr166y.ForkJoinTask;
 import cltool4j.BaseLogger;
 import cltool4j.ConfigProperties;
 import cltool4j.GlobalConfigProperties;

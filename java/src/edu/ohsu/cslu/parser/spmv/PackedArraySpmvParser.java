@@ -23,9 +23,9 @@ package edu.ohsu.cslu.parser.spmv;
 
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinTask;
 
-import jsr166y.ForkJoinPool;
-import jsr166y.ForkJoinTask;
 import cltool4j.ConfigProperties;
 import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
