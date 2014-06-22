@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2012 Aaron Dunlop and Nathan Bodenstab
+ * Copyright 2010-2014, Oregon Health & Science University
  * 
  * This file is part of the BUBS Parser.
  * 
@@ -14,7 +14,10 @@
  * GNU Affero General Public License for more details.
  * 
  * You should have received a copy of the GNU Affero General Public License
- * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>
+ * along with the BUBS Parser. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Further documentation and contact information is available at
+ *   https://code.google.com/p/bubs-parser/ 
  */
 
 package edu.ohsu.cslu.parser.cellselector;
