@@ -22,19 +22,14 @@
 
 package edu.ohsu.cslu.tools;
 
-import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
-import it.unimi.dsi.fastutil.doubles.DoubleList;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 import java.io.BufferedReader;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
 
-import weka.core.Attribute;
-import weka.core.FastVector;
-import weka.core.Instance;
-import weka.core.Instances;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
+import edu.ohsu.cslu.util.Arff;
 import edu.ohsu.cslu.util.Strings;
 
 /**
@@ -51,140 +46,32 @@ public class ExtractWekaWordClusteringFeatures extends BaseTextNormalizationTool
     @Override
     protected void run() throws Exception {
 
-        //
-        // Set up attributes
-        //
-        final FastVector attributes = new FastVector();
-
-        // The token itself
-        attributes.addElement(new Attribute("Token", (FastVector) null));
-
-        // Sentence index (1-based)
-        attributes.addElement(new Attribute("SentenceIndex"));
-
-        // Word index (1-based)
-        attributes.addElement(new Attribute("WordIndex"));
-
-        // Occurrence count (the number of times the token/POS-tag combination was observed in the training corpus
-        attributes.addElement(new Attribute("OccurrenceCount"));
-
-        // Previous, current, and next POS tags
-        attributes.addElement(new Attribute("Pos-1", (FastVector) null));
-        attributes.addElement(new Attribute("Pos", (FastVector) null));
-        attributes.addElement(new Attribute("Pos+1", (FastVector) null));
-
-        // Grandparent and great-grandparent non-terminal labels
-        attributes.addElement(new Attribute("GrandparentLabel", (FastVector) null));
-        attributes.addElement(new Attribute("GreatGrandparentLabel", (FastVector) null));
-
-        // Grandparent span
-        final FastVector grandparentSpan = new FastVector();
-        grandparentSpan.addElement("1");
-        grandparentSpan.addElement("2");
-        grandparentSpan.addElement("3");
-        grandparentSpan.addElement("45");
-        grandparentSpan.addElement("6+");
-        attributes.addElement(new Attribute("GrandparentSpan", grandparentSpan));
-        final int grandparentSpan1 = grandparentSpan.indexOf("1");
-        final int grandparentSpan2 = grandparentSpan.indexOf("2");
-        final int grandparentSpan3 = grandparentSpan.indexOf("3");
-        final int grandparentSpan45 = grandparentSpan.indexOf("45");
-        final int grandparentSpan6 = grandparentSpan.indexOf("6+");
-
-        // Grandparent span
-        final FastVector greatGrandparentSpan = new FastVector();
-        greatGrandparentSpan.addElement("1");
-        greatGrandparentSpan.addElement("2");
-        greatGrandparentSpan.addElement("3");
-        greatGrandparentSpan.addElement("45");
-        greatGrandparentSpan.addElement("6+");
-        attributes.addElement(new Attribute("GreatGrandparentSpan", greatGrandparentSpan));
-        final int greatGrandparentSpan1 = greatGrandparentSpan.indexOf("1");
-        final int greatGrandparentSpan2 = greatGrandparentSpan.indexOf("2");
-        final int greatGrandparentSpan3 = greatGrandparentSpan.indexOf("3");
-        final int greatGrandparentSpan45 = greatGrandparentSpan.indexOf("45");
-        final int greatGrandparentSpan6 = greatGrandparentSpan.indexOf("6+");
-
-        // Unigram and bigram suffixes are string attributes
-        attributes.addElement(new Attribute("UnigramSuffix", (FastVector) null));
-        attributes.addElement(new Attribute("BigramSuffix", (FastVector) null));
-
-        // Contains a numeral
-        final FastVector containsNumeralValues = new FastVector();
-        containsNumeralValues.addElement("+num");
-        containsNumeralValues.addElement("-num");
-        attributes.addElement(new Attribute("ContainsNumeral", containsNumeralValues));
-        final int containsNumeralPositive = containsNumeralValues.indexOf("+num");
-        final int containsNumeralNegative = containsNumeralValues.indexOf("-num");
-
-        // Numeral percentage
-        final FastVector numeralPercentage = new FastVector();
-        numeralPercentage.addElement("0");
-        numeralPercentage.addElement("20+");
-        numeralPercentage.addElement("40+");
-        numeralPercentage.addElement("60+");
-        numeralPercentage.addElement("80+");
-        numeralPercentage.addElement("100");
-        attributes.addElement(new Attribute("NumeralPercentage", numeralPercentage));
-        final int numeralPercentage0 = numeralPercentage.indexOf("0");
-        final int numeralPercentage20 = numeralPercentage.indexOf("20+");
-        final int numeralPercentage40 = numeralPercentage.indexOf("40+");
-        final int numeralPercentage60 = numeralPercentage.indexOf("60+");
-        final int numeralPercentage80 = numeralPercentage.indexOf("80+");
-        final int numeralPercentage100 = numeralPercentage.indexOf("100");
-
-        // Contains punctation
-        final FastVector containsPunctuationValues = new FastVector();
-        containsPunctuationValues.addElement("+punct");
-        containsPunctuationValues.addElement("-punct");
-        attributes.addElement(new Attribute("ContainsPunctuation", containsPunctuationValues));
-        final int containsPunctuationPositive = containsPunctuationValues.indexOf("+punct");
-        final int containsPunctuationNegative = containsPunctuationValues.indexOf("-punct");
-
-        // Punctuation percentage
-        final FastVector punctuationPercentage = new FastVector();
-        punctuationPercentage.addElement("0");
-        punctuationPercentage.addElement("20+");
-        punctuationPercentage.addElement("40+");
-        punctuationPercentage.addElement("60+");
-        punctuationPercentage.addElement("80+");
-        punctuationPercentage.addElement("100");
-        attributes.addElement(new Attribute("PunctuationPercentage", punctuationPercentage));
-        final int punctuationPercentage0 = punctuationPercentage.indexOf("0");
-        final int punctuationPercentage20 = punctuationPercentage.indexOf("20+");
-        final int punctuationPercentage40 = punctuationPercentage.indexOf("40+");
-        final int punctuationPercentage60 = punctuationPercentage.indexOf("60+");
-        final int punctuationPercentage80 = punctuationPercentage.indexOf("80+");
-        final int punctuationPercentage100 = punctuationPercentage.indexOf("100");
-
-        // Contains '@'
-        final FastVector containsAtValues = new FastVector();
-        containsAtValues.addElement("+@");
-        containsAtValues.addElement("-@");
-        attributes.addElement(new Attribute("Contains@", containsAtValues));
-        final int containsAtPositive = containsAtValues.indexOf("+@");
-        final int containsAtNegative = containsAtValues.indexOf("-@");
-
-        // Starts-with '#'
-        final FastVector startsWithHashValues = new FastVector();
-        startsWithHashValues.addElement("+#-start");
-        startsWithHashValues.addElement("-#-start");
-        attributes.addElement(new Attribute("StartsWith#", startsWithHashValues));
-        final int startsWithHashPositive = startsWithHashValues.indexOf("+#-start");
-        final int startsWithHashNegative = startsWithHashValues.indexOf("-#-start");
-
-        // Starts-with 'http'
-        final FastVector startsWithHttpValues = new FastVector();
-        startsWithHttpValues.addElement("+http-start");
-        startsWithHttpValues.addElement("-http-start");
-        attributes.addElement(new Attribute("StartsWithHttp", startsWithHttpValues));
-        final int startsWithHttpPositive = startsWithHttpValues.indexOf("+http-start");
-        final int startsWithHttpNegative = startsWithHttpValues.indexOf("-http-start");
-
-        //
-        // Populate instances
-        //
-        final Instances instances = new Instances("RareWords", attributes, 0);
+        final StringBuilder header = new StringBuilder();
+        header.append("@relation RareWords\n");
+        header.append("\n");
+        header.append("@attribute Token string\n");
+        header.append("@attribute SentenceIndex numeric\n");
+        header.append("@attribute WordIndex numeric\n");
+        header.append("@attribute OccurrenceCount numeric\n");
+        header.append("@attribute Pos-1 string\n");
+        header.append("@attribute Pos string\n");
+        header.append("@attribute Pos+1 string\n");
+        header.append("@attribute GrandparentLabel string\n");
+        header.append("@attribute GreatGrandparentLabel string\n");
+        header.append("@attribute GrandparentSpan {1,2,3,45,6+}\n");
+        header.append("@attribute GreatGrandparentSpan {1,2,3,45,6+}\n");
+        header.append("@attribute UnigramSuffix string\n");
+        header.append("@attribute BigramSuffix string\n");
+        header.append("@attribute ContainsNumeral {+num,-num}\n");
+        header.append("@attribute NumeralPercentage {0,20+,40+,60+,80+,100}\n");
+        header.append("@attribute ContainsPunctuation {+punct,-punct}\n");
+        header.append("@attribute PunctuationPercentage {0,20+,40+,60+,80+,100}\n");
+        header.append("@attribute Contains@ {+@,-@}\n");
+        header.append("@attribute StartsWith# {+#-start,-#-start}\n");
+        header.append("@attribute StartsWithHttp {+http-start,-http-start}\n");
+        System.out.print(header.toString());
+        System.out.println();
+        System.out.println("@data");
 
         // Read the entire corpus and count token occurrences
         final BufferedReader br = inputAsBufferedReader();
@@ -217,170 +104,181 @@ public class ExtractWekaWordClusteringFeatures extends BaseTextNormalizationTool
                     continue;
                 }
 
-                final DoubleList values = new DoubleArrayList();
-
-                // Token
-                values.add(instances.attribute(values.size()).addStringValue(token));
+                final StringBuilder sb = new StringBuilder();
+                sb.append(Arff.escape(token));
+                sb.append(',');
 
                 // Sentence and word index
-                values.add(values.size(), sentenceIndex);
-                values.add(values.size(), wordIndex);
+                sb.append(Integer.toString(sentenceIndex));
+                sb.append(',');
+                sb.append(Integer.toString(wordIndex));
+                sb.append(',');
 
                 // Occurrence count
-                values.add(values.size(), observationCount);
+                sb.append(Integer.toString(observationCount));
+                sb.append(',');
 
                 // Previous POS label
                 try {
                     iter.previous();
-                    values.add(instances.attribute(values.size()).addStringValue(iter.previous().parentLabel()));
+                    sb.append(Arff.escape(iter.previous().parentLabel()));
                     iter.next();
                 } catch (final NoSuchElementException e) {
-                    values.add(instances.attribute(values.size()).addStringValue(NULL));
+                    sb.append(NULL);
                 }
+                sb.append(',');
 
                 // Current POS label
-                values.add(instances.attribute(values.size()).addStringValue(iter.next().parentLabel()));
+                sb.append(Arff.escape(iter.next().parentLabel()));
+                sb.append(',');
 
                 // Next POS label
                 try {
-                    values.add(instances.attribute(values.size()).addStringValue(iter.next().parentLabel()));
+                    sb.append(Arff.escape(iter.next().parentLabel()));
                     iter.previous();
                 } catch (final NoSuchElementException e) {
-                    values.add(instances.attribute(values.size()).addStringValue(NULL));
+                    sb.append(NULL);
                 }
+                sb.append(',');
 
                 // Grandparent label (the parent of the POS)
                 final NaryTree<String> grandparent = leaf.parent().parent();
                 NaryTree<String> greatGrandparent = null;
                 if (grandparent != null) {
-                    values.add(instances.attribute(values.size()).addStringValue(grandparent.label()));
+                    sb.append(Arff.escape(grandparent.label()));
+                    sb.append(',');
 
                     // Great-grandparent label
                     greatGrandparent = grandparent.parent();
                     if (greatGrandparent != null) {
-                        values.add(instances.attribute(values.size()).addStringValue(greatGrandparent.label()));
+                        sb.append(Arff.escape(greatGrandparent.label()));
                     } else {
-                        values.add(instances.attribute(values.size()).addStringValue(NULL));
+                        sb.append(NULL);
                     }
+                    sb.append(',');
                 } else {
-                    values.add(instances.attribute(values.size()).addStringValue(NULL));
-                    values.add(instances.attribute(values.size()).addStringValue(NULL));
+                    sb.append(NULL);
+                    sb.append(',');
+                    sb.append(NULL);
+                    sb.append(',');
                 }
 
                 // Grandparent span
                 if (grandparent != null) {
                     switch (grandparent.leaves()) {
                     case 1:
-                        values.add(grandparentSpan1);
-                        break;
                     case 2:
-                        values.add(grandparentSpan2);
-                        break;
                     case 3:
-                        values.add(grandparentSpan3);
+                        sb.append(Integer.toString(grandparent.leaves()));
                         break;
                     case 4:
                     case 5:
-                        values.add(grandparentSpan45);
+                        sb.append("45");
                         break;
                     default:
-                        values.add(grandparentSpan6);
+                        sb.append("6+");
                         break;
                     }
                 } else {
                     // Treat a _very_ shallow tree as span-1
-                    values.add(grandparentSpan1);
+                    sb.append("1");
                 }
+                sb.append(',');
 
                 // Great-grandparent span
                 if (greatGrandparent != null) {
                     switch (greatGrandparent.leaves()) {
                     case 1:
-                        values.add(greatGrandparentSpan1);
-                        break;
                     case 2:
-                        values.add(greatGrandparentSpan2);
-                        break;
                     case 3:
-                        values.add(greatGrandparentSpan3);
+                        sb.append(Integer.toString(greatGrandparent.leaves()));
                         break;
                     case 4:
                     case 5:
-                        values.add(greatGrandparentSpan45);
+                        sb.append("45");
                         break;
                     default:
-                        values.add(greatGrandparentSpan6);
+                        sb.append("6+");
                         break;
                     }
                 } else {
                     // Treat a _very_ shallow tree as span-1
-                    values.add(greatGrandparentSpan1);
+                    sb.append("1");
                 }
+                sb.append(',');
 
                 // Unigram suffix
-                values.add(instances.attribute(values.size()).addStringValue(token.substring(token.length() - 1)));
+                sb.append(Arff.escape(token.substring(token.length() - 1)));
+                sb.append(',');
 
                 // Bigram suffix
                 if (token.length() >= 2) {
-                    values.add(instances.attribute(values.size()).addStringValue(token.substring(token.length() - 2)));
-                } else {
-                    values.add(instances.attribute(values.size()).addStringValue(""));
+                    sb.append(Arff.escape(token.substring(token.length() - 2)));
                 }
+                sb.append(',');
 
                 // Contains-numeral and numeral percentage
                 final float np = Strings.numeralPercentage(token);
                 if (np > 0) {
-                    values.add(containsNumeralPositive);
+                    sb.append("+num");
+                    sb.append(',');
+
                     if (np == 1f) {
-                        values.add(numeralPercentage100);
+                        sb.append("100");
                     } else if (np >= .8f) {
-                        values.add(numeralPercentage80);
+                        sb.append("80+");
                     } else if (np >= .6f) {
-                        values.add(numeralPercentage60);
+                        sb.append("60+");
                     } else if (np >= .4f) {
-                        values.add(numeralPercentage40);
+                        sb.append("40+");
                     } else if (np >= .2f) {
-                        values.add(numeralPercentage20);
+                        sb.append("20+");
                     } else {
-                        values.add(numeralPercentage0);
+                        sb.append("0");
                     }
+                    sb.append(',');
+
                 } else {
-                    values.add(containsNumeralNegative);
-                    values.add(numeralPercentage0);
+                    sb.append("-num");
+                    sb.append(',');
+                    sb.append("0");
+                    sb.append(',');
                 }
 
                 // Contains-numeral and numeral percentage
                 final float pp = Strings.punctuationPercentage(token);
                 if (pp > 0) {
-                    values.add(containsPunctuationPositive);
+                    sb.append("+punct");
+                    sb.append(',');
                     if (pp == 1f) {
-                        values.add(punctuationPercentage100);
+                        sb.append("100");
                     } else if (pp >= .8f) {
-                        values.add(punctuationPercentage80);
+                        sb.append("80+");
                     } else if (pp >= .6f) {
-                        values.add(punctuationPercentage60);
+                        sb.append("60+");
                     } else if (pp >= .4f) {
-                        values.add(punctuationPercentage40);
+                        sb.append("40+");
                     } else if (pp >= .2f) {
-                        values.add(punctuationPercentage20);
+                        sb.append("20+");
                     } else {
-                        values.add(punctuationPercentage0);
+                        sb.append("0");
                     }
+                    sb.append(',');
+
                 } else {
-                    values.add(containsPunctuationNegative);
-                    values.add(punctuationPercentage0);
+                    sb.append("-punct");
+                    sb.append(',');
+                    sb.append("0");
+                    sb.append(',');
                 }
 
-                values.add(token.indexOf('@') >= 0 ? containsAtPositive : containsAtNegative);
-                values.add(token.indexOf('#') == 0 ? startsWithHashPositive : startsWithHashNegative);
-                values.add(token.startsWith("http") ? startsWithHttpPositive : startsWithHttpNegative);
+                sb.append(token.indexOf('@') >= 0 ? "+@," : "-@,");
+                sb.append(token.indexOf('#') == 0 ? "+#-start," : "-#-start,");
+                sb.append(token.startsWith("http") ? "+http-start" : "-http-start");
 
-                instances.add(new Instance(1.0, values.toDoubleArray()));
+                System.out.println(sb.toString());
             }
         }
-
-        // Write the features out in ARFF format
-        System.out.println(instances);
     }
 
     public static void main(final String[] args) {
