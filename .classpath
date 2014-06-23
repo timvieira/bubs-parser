@@ -8,9 +8,10 @@
 	<classpathentry exported="true" kind="lib" path="java/lgpl-lib/javacl.jar"/>
 	<classpathentry exported="true" kind="lib" path="java/lgpl-lib/jnaerator.jar"/>
 	<classpathentry exported="true" kind="lib" path="java/lgpl-lib/opencl4java.jar"/>
-	<classpathentry exported="true" kind="lib" path="java/gpl-lib/junit.jar" sourcepath="java/gpl-lib/junit-src.jar"/>
 	<classpathentry exported="true" kind="lib" path="java/bsd-lib/cltool4j.jar" sourcepath="java/bsd-lib/cltool4j-src.jar"/>
 	<classpathentry kind="lib" path="java/bsd-lib/cjunit.jar" sourcepath="java/bsd-lib/cjunit-src.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="java/bsd-lib/hamcest-core.jar" sourcepath="java/bsd-lib/hamcest-core-src.jar"/>
+	<classpathentry kind="lib" path="java/bsd-lib/junit.jar" sourcepath="java/bsd-lib/junit-src.jar"/>
 	<classpathentry kind="output" path="build"/>
 </classpath>
