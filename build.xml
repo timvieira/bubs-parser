@@ -1,5 +1,5 @@
 <!-- $Id: build.xml 7582 2008-06-17 21:57:19Z chriso $ -->
-<project name="bubs-parser" default="dist" basedir=".">
+<project xmlns:ivy="antlib:org.apache.ivy.ant" name="bubs-parser" default="dist" basedir=".">
 
     <property name="version" value="1.1" />
 
@@ -11,7 +11,13 @@
     <property name="dir.dist" location="build-dist" />
 
     <property name="dir.build.lib" location="build-lib" />
-
+    
+<!-- TODO Can we eliminate the requirement that the user install the Ivy jar in $ANT_HOME/lib ?
+   <path id="ivy.lib.path">
+      <fileset dir="${dir.build.lib}" includes="ivy*.jar" />
+    </path>
+    -->
+    
     <!-- Libraries are split by license. Not terribly important when packaging 
          GPL code, but more important if packaging a non-GPL version -->
     <property name="dir.bsd.lib" location="java/bsd-lib" />
@@ -21,7 +27,7 @@
 
     <import file="genjar-targets.xml" />
 
-    <path id="classpath.libs">
+    <path id="path.local.libs">
         <fileset dir="${dir.bsd.lib}" includes="*.jar" />
         <fileset dir="${dir.lgpl.lib}" includes="*.jar" />
         <fileset dir="${dir.gpl.lib}" includes="*.jar" />
@@ -41,16 +47,29 @@
 
     <!--
     ========================================================================
+        Ivy integration
+    ========================================================================
+    -->
+    <target name="resolve" description="Retrieve dependencies with Ivy">
+        <ivy:retrieve />
+        <ivy:cachepath pathid="path.ivy" />
+    </target>
+    
+    <!--
+    ========================================================================
         Compile all Java code
     ========================================================================
     -->
-    <target name="compile" depends="git-revision" description="Compile Java code and tools">
+    <target name="compile" depends="git-revision,resolve" description="Compile Java code and tools">
         <!-- If the build directory doesn't already exist, create it -->
         <mkdir dir="${dir.build}" />
         <javac includes="**/*.java" destdir="${dir.build}" debug="true" includeantruntime="false">
             <src path="${dir.src}" />
             <src path="java/berkeley-src" />
-            <classpath refid="classpath.libs" />
+            <classpath>
+                <path refid="path.local.libs" />
+                <path refid="path.ivy" />
+            </classpath>
         </javac>
     </target>
 
@@ -60,12 +79,15 @@
        Package documentation 
     ========================================================================
     -->
-    <target name="javadoc">
+    <target name="javadoc" depends="resolve">
         <javadoc destdir="${dir.build.doc}/javadoc">
             <fileset includes="**/*.java" excludes="edu/ohsu/cslu/lela/**,**/Test*.java,**/Profile*.java,**/All*Tests.java,**/*TestCase.java" />
             <src path="${dir.src}" />
             <src path="java/berkeley-src" />
-            <classpath refid="classpath.libs" />
+            <classpath>
+                <path refid="path.local.libs" />
+                <path refid="path.ivy" />
+            </classpath>
         </javadoc>
     </target>
 
@@ -229,6 +251,14 @@
     </target>
 
 
+    <target name="latexcykchart" depends="compile">
+        <antcall target="package-tool">
+            <param name="root-class" value="edu.ohsu.cslu.tools.LatexCykChart" />
+            <param name="tool-name" value="latexcykchart" />
+        </antcall>
+    </target>
+
+
     <!-- -->
     <!-- Pruning and prioritization model training tools -->
     <!-- -->
@@ -335,6 +365,17 @@
     </target>
 
 
+    <target name="split-sentences" depends="compile">
+        <antcall target="package-tool">
+            <param name="root-class" value="edu.ohsu.cslu.perceptron.SplitSentences" />
+            <param name="tool-name" value="split-sentences" />
+            <param name="heap-size" value="512m" />
+            <param name="javadoc-help" value="true" />
+            <param name="license-file" value="java/tools/license.txt" />
+        </antcall>
+    </target>
+    
+    
     <!-- -->
     <!-- Dependency parsing tools -->
     <!-- -->

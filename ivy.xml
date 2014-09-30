@@ -1,0 +1,62 @@
+<ivy-module version="2.0">
+    <info organisation="edu.ohsu.cslu" module="bubs-parser" />
+    
+    <!-- 
+        We're trying to separate dependencies by license-type 
+        (grouping Apache, BSD, and similarly permissive licenses together) 
+         
+        Unfortunately, Maven's repository doesn't have reliable license information, 
+        and a transitive dependency manager won't reflect all dependencies (e.g. a BSD 
+        library might depend on a GPL lib, and suck in GPL code without warning). But 
+        we don't have many dependencies, and we've checked the few we have pretty 
+        thoroughly for license problems, so this division should be OK.
+        
+        For the moment, JavaCL and related projects are the only GPL / LGPL 
+        dependencies (see below), and the versions we use aren't available on Maven 
+        (we'd have to upgrade our OpenCL parsing code to use the newer versions), 
+        so the licenses are pretty easy.
+      -->
+
+    <configurations>
+        <conf name="bsd" />
+        <conf name="lgpl"/>
+        <conf name="gpl" />
+        <conf name="bsd-lgpl" extends="bsd,lgpl" />
+    </configurations>
+    
+    <dependencies>
+        <!-- -->
+        <!-- BSD / Apache -->
+        <!-- -->
+        <dependency org="com.google.code.cltool4j" name="cltool4j" rev="1.0.3" conf="bsd->default" />
+        <dependency org="it.unimi.dsi" name="fastutil" rev="6.5.15" conf="bsd->default" />
+        <dependency org="junit" name="junit" rev="4.11" conf="bsd->default" />
+        <!-- The servlet API is licensed under CDDL as well as GPL, so we can put it in the BSD-style group -->
+        <dependency org="javax.servlet" name="javax.servlet-api" rev="3.0.1" conf="bsd->default" />
+
+        <!-- -->
+        <!-- GPL / LGPL -->
+        <!-- -->
+        <!--
+        <!- opencl4java: LGPL License
+             Dependencies:
+               bridj: New BSD License
+        <dependency org="com.nativelibs4java" name="opencl4java" rev="1.0.0-RC3" conf="lgpl->default"/>
+
+        <!- javacl: New BSD License
+             Dependencies:
+               javacl-core
+             
+             ??? (The following libraries are reported as dependencies, but not retrieved by the Ivy build)
+               org.osgi.core
+               Apache commons-math: Apache License
+        <dependency org="com.nativelibs4java" name="javacl" rev="1.0.0-RC3" conf="lgpl->default" />
+
+        <!- jnaerator: LGPL license
+             Dependencies:
+               jnaerator-runtime: LGPL License
+               ochafik-util: Apache License 2.0
+        <dependency org="org.daisy.libs" name="jnaerator" rev="0.11" conf="lgpl->default" />
+        -->
+    </dependencies>
+</ivy-module>

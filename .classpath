@@ -3,15 +3,11 @@
 	<classpathentry kind="src" path="java/src"/>
 	<classpathentry kind="src" path="java/berkeley-src"/>
 	<classpathentry kind="src" path="unit-test-data"/>
-	<classpathentry exported="true" kind="lib" path="java/bsd-lib/fastutil.jar" sourcepath="java/bsd-lib/fastutil-src.jar"/>
-	<classpathentry exported="true" kind="lib" path="java/bsd-lib/servlet-api-2.5.jar"/>
-	<classpathentry exported="true" kind="lib" path="java/lgpl-lib/javacl.jar"/>
-	<classpathentry exported="true" kind="lib" path="java/lgpl-lib/jnaerator.jar"/>
-	<classpathentry exported="true" kind="lib" path="java/lgpl-lib/opencl4java.jar"/>
-	<classpathentry exported="true" kind="lib" path="java/bsd-lib/cltool4j.jar" sourcepath="java/bsd-lib/cltool4j-src.jar"/>
 	<classpathentry kind="lib" path="java/bsd-lib/cjunit.jar" sourcepath="java/bsd-lib/cjunit-src.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="java/bsd-lib/hamcest-core.jar" sourcepath="java/bsd-lib/hamcest-core-src.jar"/>
-	<classpathentry kind="lib" path="java/bsd-lib/junit.jar" sourcepath="java/bsd-lib/junit-src.jar"/>
+	<classpathentry kind="con" path="org.apache.ivyde.eclipse.cpcontainer.IVYDE_CONTAINER/?project=bubs-parser&amp;ivyXmlPath=ivy.xml&amp;confs=*&amp;ivySettingsPath=&amp;loadSettingsOnDemand=false&amp;ivyUserDir=&amp;propertyFiles=&amp;acceptedTypes=jar%2Cbundle%2Cejb%2Cmaven-plugin&amp;alphaOrder=false&amp;resolveInWorkspace=false&amp;transitiveResolve=true&amp;readOSGiMetadata=false&amp;retrievedClasspath=false&amp;sourceTypes=source&amp;javadocTypes=javadoc&amp;sourceSuffixes=-source%2C-sources%2C-src&amp;javadocSuffixes=-javadoc%2C-javadocs%2C-doc%2C-docs&amp;mapIfOnlyOneSource=false&amp;mapIfOnlyOneJavadoc=false"/>
+	<classpathentry kind="lib" path="java/lgpl-lib/javacl.jar"/>
+	<classpathentry kind="lib" path="java/lgpl-lib/jnaerator.jar"/>
+	<classpathentry kind="lib" path="java/lgpl-lib/opencl4java.jar"/>
 	<classpathentry kind="output" path="build"/>
 </classpath>

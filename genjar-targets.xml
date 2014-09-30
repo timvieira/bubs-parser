@@ -1,5 +1,5 @@
 <!-- $Id: build.xml 7582 2008-06-17 21:57:19Z chriso $ -->
-<project name="genjar-targets" basedir=".">
+<project name="genjar-targets" basedir="." xmlns:ivy="antlib:org.apache.ivy.ant" >
 
     <!-- Use ant-contrib to enable if/then -->
     <taskdef classpath="${dir.build.lib}/ant-contrib-1.0b3.jar" resource="net/sf/antcontrib/antlib.xml" />
@@ -63,7 +63,17 @@
     ========================================================================
     -->
     <target name="package-tool">
+ 
+        <!-- Ivy Integration -->
+        <ivy:cachepath pathid="path.ivy.bsd" type="jar" conf="bsd" />
+        <ivy:cachepath pathid="path.ivy.bsd.src" type="source" conf="bsd" />
 
+        <ivy:cachepath pathid="path.ivy.lgpl" type="jar" conf="lgpl" />
+        <ivy:cachepath pathid="path.ivy.lgpl.src" type="source" conf="lgpl" />
+
+        <ivy:cachepath pathid="path.ivy.gpl" type="jar" conf="gpl" />
+        <ivy:cachepath pathid="path.ivy.gpl.src" type="source" conf="gpl" />
+        
         <!-- Default unspecified parameters -->
         <property name="additional-libs" value="none" />
         <property name="additional-root-classes" value="" />
@@ -91,10 +101,12 @@
             <then>
                 <!-- Remove absolute path, and create a space-separated version (for MANIFEST.MF) 
                      and a comma-separated version (for <runtimeclasspath>) -->
-                <pathconvert property="path.lgpl.libs" pathsep=" ">
+                <pathconvert property="path.lgpl.libs.local" pathsep=" ">
                     <mapper type="flatten" />
                     <fileset dir="${dir.lgpl.lib}" includes="*.jar" excludes="*-src.jar" />
                 </pathconvert>
+                <pathconvert property="path.lgpl.libs.ivy" refid="path.ivy.lgpl" pathsep=" " />
+                <property name="path.lgpl.libs" value="${path.lgpl.libs.local} ${path.lgpl.libs.ivy}" />
                 <pathconvert property="runtimeclasspath.lgpl.libs" pathsep=",">
                     <mapper type="flatten" />
                     <fileset dir="${dir.lgpl.lib}" includes="*.jar" excludes="*-src.jar" />
@@ -111,11 +123,17 @@
             <then>
                 <path id="classpath">
                     <pathelement location="${dir.build}" />
+                    <path refid="path.ivy.bsd" />
+                    <path refid="path.ivy.lgpl" />
+                    <path refid="path.ivy.gpl" />
                     <fileset dir="${dir.bsd.lib}" includes="*.jar" />
                     <fileset dir="${dir.lgpl.lib}" includes="*.jar" />
                     <fileset dir="${dir.gpl.lib}" includes="*.jar" />
                 </path>
                 <path id="sourcepath">
+                    <path refid="path.ivy.bsd.src" />
+                    <path refid="path.ivy.lgpl.src" />
+                    <path refid="path.ivy.gpl.src" />
                     <fileset dir="${dir.bsd.lib}" includes="*-src.jar" />
                     <fileset dir="${dir.lgpl.lib}" includes="*-src.jar" />
                     <fileset dir="${dir.gpl.lib}" includes="*-src.jar" />
@@ -125,9 +143,11 @@
             <else>
                 <path id="classpath">
                     <pathelement location="${dir.build}" />
+                    <path refid="path.ivy.bsd" />
                     <fileset dir="${dir.bsd.lib}" includes="*.jar" />
                 </path>
                 <path id="sourcepath">
+                    <path refid="path.ivy.bsd.src" />
                     <fileset dir="${dir.bsd.lib}" includes="*-src.jar" />
                     <pathelement location="${dir.src}" />
                 </path>
@@ -161,6 +181,9 @@
             <then>
                 <path id="path.javadoc.bin">
                     <fileset dir="." includes="java/**/*.jar" excludes="*-src.jar" />
+                    <path refid="path.ivy.bsd" />
+                    <path refid="path.ivy.lgpl" />
+                    <path refid="path.ivy.gpl" />
                 </path>
 
                 <propertyregex property="root-class-src"
@@ -180,11 +203,11 @@
                     </else>
                 </if>
                     
-                <!-- Note: adding individual jars to 'docletpath' is brittle, but working thus far --> 
+                <!-- This excludes local libraries, but we don't need them for JavaDoc -->
                 <javadoc 
                     classpathref="path.javadoc.bin" 
                     sourcepath="java/src:java/berkeley-src" 
-                    docletpath="${dir.bsd.lib}/cltool4j.jar:${dir.build}:${dir.bsd.lib}/fastutil.jar"
+                    docletpath="${dir.build}:${toString:path.ivy.bsd}:${toString:path.ivy.lgpl}:${toString:path.ivy.gpl}"
                     doclet="cltool4j.UsageDoclet"
                     access="private"
                     sourcefiles="${sourcefile}" 
@@ -233,10 +256,12 @@
             </runtimeclasspath>
         </genjar>
 
+        <!-- Source-file jar (if requested) -->
         <if>
             <isset property="srcjar" />
             <then>
                 <srcjar destfile="${dir.dist}/${tool-name}-src.jar" classjar="${dir.dist}/${tool-name}.jar">
+                    <!-- Note: as of 09-2014, fastutil's deployed source jar (version 6.5.15) prefixes all source packages with 'src', so the sourcepath reference can't find them. -->
                     <sourcepath refid="sourcepath" />
                 </srcjar>
             </then>
