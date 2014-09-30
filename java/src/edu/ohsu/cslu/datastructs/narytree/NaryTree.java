@@ -415,6 +415,14 @@ public class NaryTree<E> implements Tree<E>, Serializable, Cloneable {
         return size == 1;
     }
 
+    public boolean isPreterminal() {
+        return size == 2;
+    }
+
+    public boolean isLeafOrPreterminal() {
+        return size <= 2;
+    }
+
     @Override
     public boolean isLeftmostChild() {
         NaryTree<E> child = this;

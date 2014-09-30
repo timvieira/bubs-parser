@@ -264,15 +264,15 @@ public final class BoundaryPosModel extends FigureOfMeritModel {
                 // -- #(N[i:j], POS[i-1])
                 // -- #(*[i:*], POS[i-1]) -- number of times POS occurs just to the left of any span
 
-                if (node.isNonTerminal() == true) {
-                    if (grammar.nonTermSet.containsKey(node.contents) == false) {
-                        throw new IOException("Nonterminal '" + node.contents
+                if (!node.isLeafOrPreterminal()) {
+                    if (grammar.nonTermSet.containsKey(node.label) == false) {
+                        throw new IOException("Nonterminal '" + node.label
                                 + "' in input tree not found in grammar.  Exiting.");
                     }
-                    leftBoundaryCount.increment(node.contents,
+                    leftBoundaryCount.increment(node.label,
                             convertNull(node.leftBoundaryPOSContents(), Grammar.nullSymbolStr));
                     rightBoundaryCount.increment(convertNull(node.rightBoundaryPOSContents(), Grammar.nullSymbolStr),
-                            node.contents);
+                            node.label);
                 }
             }
 
@@ -284,14 +284,14 @@ public final class BoundaryPosModel extends FigureOfMeritModel {
 
             // iterate through POS tags using .rightNeighbor
             for (ParseTree posNode = tree.leftMostPOS(); posNode != null; posNode = posNode.rightNeighbor) {
-                if (grammar.nonTermSet.containsKey(posNode.contents) == false) {
-                    throw new IOException("Nonterminal '" + posNode.contents
+                if (grammar.nonTermSet.containsKey(posNode.label) == false) {
+                    throw new IOException("Nonterminal '" + posNode.label
                             + "' in input tree not found in grammar.  Exiting.");
                 }
                 historyStr = Util.join(history, joinString);
-                posTransitionCount.increment(posNode.contents, historyStr);
+                posTransitionCount.increment(posNode.label, historyStr);
                 history.removeFirst();
-                history.addLast(posNode.contents);
+                history.addLast(posNode.label);
             }
 
             // finish up with final transition to <null>
@@ -608,26 +608,6 @@ public final class BoundaryPosModel extends FigureOfMeritModel {
                     parseTask.posTags[i] = grammar.posIndexMap[bestPOS];
                 }
             }
-        }
-    }
-
-    // for Beam-Width Prediction, we need the 1-best POS tags from the chart. And
-    // to get these, we need to run the forward-backward algorithm with a model
-    // that has POS transition probabilities. Right now this is only done for the
-    // Boundary FOM, so instead of writing lots more code and creating new model files,
-    // we are simply hi-jacking all of that and overwriting the calcFOM() function to
-    // ignore most of the work that is done during setup.
-    public class InsideWithFwdBkwd extends BoundaryPosFom {
-
-        private static final long serialVersionUID = 1L;
-
-        public InsideWithFwdBkwd() {
-            super(grammar);
-        }
-
-        @Override
-        public float calcFOM(final int start, final int end, final short parent, final float insideProbability) {
-            return insideProbability;
         }
     }
 }

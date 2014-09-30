@@ -29,7 +29,7 @@ import edu.ohsu.cslu.grammar.GrammarFormatType;
 
 public class ParseTree {
 
-    public String contents;
+    public String label;
     public LinkedList<ParseTree> children;
     public ParseTree parent = null;
     // TODO Can we compute these at runtime when needed?
@@ -41,8 +41,8 @@ public class ParseTree {
         this(contents, null);
     }
 
-    public ParseTree(final String contents, final ParseTree parent) {
-        this.contents = contents;
+    public ParseTree(final String label, final ParseTree parent) {
+        this.label = label;
         this.parent = parent;
         children = new LinkedList<ParseTree>();
     }
@@ -116,11 +116,7 @@ public class ParseTree {
         throw new RuntimeException();
     }
 
-    public void addChild(final String child) {
-        addChild(new ParseTree(child));
-    }
-
-    public void addChild(final ParseTree childTree) {
+    private void addChild(final ParseTree childTree) {
         childTree.parent = this;
         children.add(childTree);
     }
@@ -148,21 +144,14 @@ public class ParseTree {
         }
     }
 
-    public String getContents() {
-        return contents;
-    }
-
-    public String getParentContents() {
-        if (parent == null) {
-            return null;
-        }
-        return parent.getContents();
+    public String label() {
+        return label;
     }
 
     // TODO Add as convenience method on Tree<E>
     public ParseTree getUnfactoredParent(final GrammarFormatType grammarType) {
         ParseTree parentNode = this.parent;
-        while (parentNode != null && grammarType.isFactored(parentNode.contents)) {
+        while (parentNode != null && grammarType.isFactored(parentNode.label)) {
             parentNode = parentNode.parent;
         }
         return parentNode;
@@ -173,8 +162,8 @@ public class ParseTree {
     }
 
     // TODO Add as convenience method on Tree<E>
-    public boolean isNonTerminal() {
-        return (isLeaf() == false) && (isPOS() == false);
+    public boolean isLeafOrPreterminal() {
+        return isLeaf() || isPOS();
     }
 
     // TODO Use leaves() == 1 && height() == 2 methods on Tree<E>
@@ -195,7 +184,6 @@ public class ParseTree {
         return false;
     }
 
-    // TODO Add as convenience method on Tree<E>
     public ParseTree leftMostLeaf() {
         if (isLeaf()) {
             return this;
@@ -208,7 +196,6 @@ public class ParseTree {
         return leftMostLeaf().parent;
     }
 
-    // TODO Add as convenience method on Tree<E>
     public ParseTree rightMostLeaf() {
         if (isLeaf()) {
             return this;
@@ -232,49 +219,16 @@ public class ParseTree {
         if (pos == null) {
             return null;
         }
-        return pos.contents;
-    }
-
-    public String leftBoundaryLexContents() {
-        final ParseTree lex = leftMostLeaf().leftNeighbor;
-        if (lex == null) {
-            return null;
-        }
-        return lex.contents;
-    }
-
-    public String rightBoundaryLexContents() {
-        final ParseTree lex = rightMostLeaf().rightNeighbor;
-        if (lex == null) {
-            return null;
-        }
-        return lex.contents;
-    }
-
-    // TODO Inline in consumers
-    public ParseTree rightBoundaryPOS() {
-        return rightMostPOS().rightNeighbor;
+        return pos.label;
     }
 
     // TODO Inline in consumers
     public String rightBoundaryPOSContents() {
-        final ParseTree pos = rightBoundaryPOS();
+        final ParseTree pos = rightMostLeaf().parent;
         if (pos == null) {
             return null;
         }
-        return pos.contents;
-    }
-
-    // TODO Remove (unused)
-    public LinkedList<ParseTree> postOrderTraversal() {
-        final LinkedList<ParseTree> nodes = new LinkedList<ParseTree>();
-
-        for (final ParseTree child : children) {
-            nodes.addAll(child.postOrderTraversal());
-        }
-        nodes.addLast(this);
-
-        return nodes;
+        return pos.label;
     }
 
     public LinkedList<ParseTree> preOrderTraversal() {
@@ -287,10 +241,6 @@ public class ParseTree {
         return nodes;
     }
 
-    public String toBracketFormat() {
-        return toString();
-    }
-
     @Override
     public String toString() {
         return this.toString(false);
@@ -298,10 +248,10 @@ public class ParseTree {
 
     public String toString(final boolean printInsideProb) {
         if (isLeaf()) {
-            return contents;
+            return label;
         }
 
-        String s = "(" + contents;
+        String s = "(" + label;
         // TODO: print NT score here if desired
 
         for (final ParseTree child : children) {
@@ -323,7 +273,7 @@ public class ParseTree {
     public void replaceLeafNodes(final String[] newLeafNodes) {
         int i = 0;
         for (final ParseTree node : getLeafNodes()) {
-            node.contents = newLeafNodes[i];
+            node.label = newLeafNodes[i];
             i++;
         }
 
@@ -352,7 +302,7 @@ public class ParseTree {
     public LinkedList<String> getLeafNodesContent() {
         final LinkedList<String> list = new LinkedList<String>();
         for (final ParseTree node : getLeafNodes()) {
-            list.add(node.contents);
+            list.add(node.label);
         }
         return list;
     }
@@ -367,98 +317,11 @@ public class ParseTree {
         return false;
     }
 
-    // public boolean hasNodeAtSpan(ParseTree toFind, int start, int end) {
-    // // instead of searching the entire tree, we should be able to find a node
-    // // in O(1) by looking up [start][end] incidies
-    //
-    // if (indexedBySpan == false) {
-    // indexBySpan();
-    // }
-    //
-    // if (nodesBySpan[start][end] == null) return false;
-    // for (ParseTree node : nodesBySpan[start][end]) {
-    // if (toFind.contents != node.contents) return false;
-    // if (toFind.children.size() != node.children.size()) return false;
-    // for (int i=0; i<toFind.children.size(); i++) {
-    // if (toFind.children.get(i).contents != node.children.get(i).contents) return false;
-    // }
-    // }
-    //
-    // return true;
-    // }
-
-    // public CellChart convertToChart(final Grammar grammar) throws Exception {
-    //
-    // // create a len+1 by len+1 chart, build ChartEdges from tree nodes and insert
-    // // them into this chart so they can be accessed in O(1) by [start][end]
-    // assert this.isBinaryTree() == true;
-    // assert this.parent == null; // must be root so start/end indicies make sense
-    //
-    // final List<ParseTree> leafNodes = this.getLeafNodes();
-    // int start, end, numChildren;
-    // final int sentLen = leafNodes.size();
-    // boolean newProd;
-    //
-    // // final Chart chart = new Chart(sentLen, ArrayChartCell.class, grammar);
-    // if (true) {
-    // throw new RuntimeException(
-    // "convetToChart() does not work anymore due to changes in Chart.  Either need to create containing Parser instance, or use something other than Chart to store the edges");
-    // }
-    //
-    // final CellChart chart = new CellChart(sentLen, true, null);
-    // Production prod = null;
-    // ChartEdge edge;
-    //
-    // for (final ParseTree node : preOrderTraversal()) {
-    // // TODO: could make this O(1) instead of O(n) ...
-    // start = leafNodes.indexOf(node.leftMostLeaf());
-    // end = leafNodes.indexOf(node.rightMostLeaf()) + 1;
-    // numChildren = node.children.size();
-    // newProd = false;
-    // // System.out.println("convertToChart: node=" + node.contents + " start=" + start + " end=" + end +
-    // " numChildren=" + numChildren);
-    //
-    // if (numChildren > 0) {
-    // final String A = node.contents;
-    // if (numChildren == 2) {
-    // final String B = node.children.get(0).contents;
-    // final String C = node.children.get(1).contents;
-    // prod = grammar.getBinaryProduction(A, B, C);
-    // final int midpt = leafNodes.indexOf(node.children.get(0).rightMostLeaf()) + 1;
-    // edge = chart.new ChartEdge(prod, chart.getCell(start, midpt), chart.getCell(midpt, end));
-    // } else if (numChildren == 1) {
-    // final String B = node.children.get(0).contents;
-    // if (node.isPOS()) {
-    // prod = grammar.getLexicalProduction(A, B);
-    // } else {
-    // prod = grammar.getUnaryProduction(A, B);
-    // }
-    // edge = chart.new ChartEdge(prod, chart.getCell(start, end), null);
-    // } else {
-    // throw new Exception("ERROR: Number of node children is " + node.children.size() +
-    // ".  Expecting <= 2.");
-    // }
-    //
-    // if (prod == null) {
-    // Log.info(0, "WARNING: production does not exist is grammar for node: " + A + " -> " +
-    // node.childrenToString());
-    // return null;
-    // } else if (newProd == true) {
-    // Log.info(0, "WARNING: Production " + prod.toString() + " not found in grammar.  Adding...");
-    // }
-    //
-    // chart.getCell(start, end).updateInside(edge);
-    // }
-    // }
-    //
-    // return chart;
-    // }
-
     // TODO Inline in consumers
     public String childrenToString() {
         String str = "";
         for (final ParseTree node : children) {
-            str += node.contents + " ";
+            str += node.label + " ";
         }
         return str.trim();
     }

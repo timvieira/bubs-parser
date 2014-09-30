@@ -87,8 +87,6 @@ public class TreeTools extends BaseCommandlineTool {
 
     private static BufferedReader inputStream = new BufferedReader(new InputStreamReader(System.in));
 
-    // private static BufferedWriter outputStream = new BufferedWriter(new OutputStreamWriter(System.out));
-
     public static void main(final String[] args) {
         run(args);
     }
@@ -154,7 +152,7 @@ public class TreeTools extends BaseCommandlineTool {
 
     private void extractProductionsFromTree(final ParseTree tree) {
         for (final ParseTree node : tree.preOrderTraversal()) {
-            System.out.println(node.contents + " -> " + node.childrenToString());
+            System.out.println(node.label + " -> " + node.childrenToString());
         }
 
     }
@@ -162,8 +160,9 @@ public class TreeTools extends BaseCommandlineTool {
     private void convertLeavesToUNK(final ParseTree tree, final MutableEnumeration<String> knownWords) {
         int wordIndex = 0;
         for (final ParseTree node : tree.getLeafNodes()) {
-            if (!knownWords.containsKey(node.contents)) {
-                node.contents = DecisionTreeTokenClassifier.berkeleyGetSignature(node.contents, wordIndex == 0, knownWords);
+            if (!knownWords.containsKey(node.label)) {
+                node.label = DecisionTreeTokenClassifier.berkeleyGetSignature(node.label, wordIndex == 0,
+                        knownWords);
             }
             wordIndex += 1;
         }
@@ -185,10 +184,10 @@ public class TreeTools extends BaseCommandlineTool {
 
         for (final ParseTree node : tree.preOrderTraversal()) {
             if (node.span() > 1) {
-                B[Integer.parseInt(node.leftMostLeaf().getContents())] = true;
-                E[Integer.parseInt(node.rightMostLeaf().getContents())] = true;
-            } else if (node.isNonTerminal()) {
-                U[Integer.parseInt(node.rightMostLeaf().getContents())] = true;
+                B[Integer.parseInt(node.leftMostLeaf().label())] = true;
+                E[Integer.parseInt(node.rightMostLeaf().label())] = true;
+            } else if (!node.isLeafOrPreterminal()) {
+                U[Integer.parseInt(node.rightMostLeaf().label())] = true;
             }
         }
 
@@ -210,7 +209,7 @@ public class TreeTools extends BaseCommandlineTool {
             if (node.isPOS() == false && node.children.size() == 1) {
                 unaryChain = true;
                 // System.out.println(node.toString());
-                System.out.print(node.getContents() + " -> " + node.childrenToString() + " ");
+                System.out.print(node.label() + " -> " + node.childrenToString() + " ");
             } else {
                 if (unaryChain == true) {
                     System.out.println();
@@ -227,7 +226,7 @@ public class TreeTools extends BaseCommandlineTool {
         int i = 0;
         while (i < tree.children.size()) {
             final ParseTree child = tree.children.get(i);
-            if (grammarFormatType.isFactored(child.contents)) {
+            if (grammarFormatType.isFactored(child.label)) {
                 tree.children.remove(i);
                 tree.children.addAll(i, child.children);
                 // 'i' remains unchanged so we will process the newly moved children next
@@ -242,23 +241,23 @@ public class TreeTools extends BaseCommandlineTool {
             final int vertMarkov, final boolean annotatePOS, final GrammarFormatType grammarFormatType) {
 
         // vertMarkov (parent annotation)
-        if (!tree.isLeaf() && !grammarFormatType.isFactored(tree.contents) && (!tree.isPOS() || annotatePOS)) {
+        if (!tree.isLeaf() && !grammarFormatType.isFactored(tree.label) && (!tree.isPOS() || annotatePOS)) {
             ParseTree parent = tree.getUnfactoredParent(grammarFormatType);
             final LinkedList<String> parentsStr = new LinkedList<String>();
             for (int i = 0; i < vertMarkov; i++) {
                 if (parent != null) {
-                    parentsStr.addLast(grammarFormatType.getBaseNT(parent.contents, true));
+                    parentsStr.addLast(grammarFormatType.getBaseNT(parent.label, true));
                     parent = parent.getUnfactoredParent(grammarFormatType);
                 }
             }
             if (parentsStr.size() > 0) {
-                tree.contents = grammarFormatType.createParentNT(tree.contents, parentsStr);
+                tree.label = grammarFormatType.createParentNT(tree.label, parentsStr);
             }
         }
 
         if (tree.children.size() > 2) {
             // inherit parent annotation from unfactored parent
-            final String unfactoredParent = tree.children.get(0).getUnfactoredParent(grammarFormatType).contents;
+            final String unfactoredParent = tree.children.get(0).getUnfactoredParent(grammarFormatType).label;
             final LinkedList<ParseTree> remainingChildren = new LinkedList<ParseTree>();
             final LinkedList<String> markovChildrenStr = new LinkedList<String>();
 
@@ -269,7 +268,7 @@ public class TreeTools extends BaseCommandlineTool {
                     final ParseTree child = tree.children.get(n - 2);
                     remainingChildren.addFirst(child);
                     if (markovChildrenStr.size() < horzMarkov) {
-                        markovChildrenStr.addFirst(child.contents);
+                        markovChildrenStr.addFirst(child.label);
                     }
                     tree.children.remove(n - 2);
                 } else {
@@ -277,7 +276,7 @@ public class TreeTools extends BaseCommandlineTool {
                     final ParseTree child = tree.children.get(1);
                     remainingChildren.addLast(child);
                     if (markovChildrenStr.size() < horzMarkov) {
-                        markovChildrenStr.addLast(child.contents);
+                        markovChildrenStr.addLast(child.label);
                     }
                     tree.children.remove(1);
                 }
@@ -317,18 +316,18 @@ public class TreeTools extends BaseCommandlineTool {
             if (allChildrenEmptyNodes(child)) {
                 tree.children.remove(i);
                 i = 0; // re-process children so we can collapse spurious unaries if necessary
-            } else if (!child.isLeaf() && child.contents.matches("^[A-Z]+((-|=)[A-Z0-9]+)+")) {
+            } else if (!child.isLeaf() && child.label.matches("^[A-Z]+((-|=)[A-Z0-9]+)+")) {
                 // ex: NP-SBJ-1 ==> NP
                 // ex: ADVP-TMP ==> ADVP
-                int cutIndex = child.contents.indexOf("-");
-                final int k = child.contents.indexOf("=");
+                int cutIndex = child.label.indexOf("-");
+                final int k = child.label.indexOf("=");
                 // TODO: berkeley also looks for '^' but I didn't see this anywhere in the english
                 // or chinese corpora
                 if (k > 0 && (k < cutIndex || cutIndex < 0)) {
                     cutIndex = k;
                 }
-                child.contents = child.contents.substring(0, cutIndex);
-            } else if (tree.children.size() == 1 && !child.isLeaf() && (tree.contents.equals(child.contents))) {
+                child.label = child.label.substring(0, cutIndex);
+            } else if (tree.children.size() == 1 && !child.isLeaf() && (tree.label.equals(child.label))) {
                 // if we've got a duplicate unary chain, remove it
                 // ex: (NP (NP (NN xxx))) ==> (NP (NN xxx))
                 tree.children = child.children;
@@ -343,7 +342,7 @@ public class TreeTools extends BaseCommandlineTool {
         int i = 0;
         while (i < tree.children.size()) {
             final ParseTree child = tree.children.get(i);
-            if (tree.children.size() == 1 && !child.isLeaf() && (tree.contents.equals(child.contents))) {
+            if (tree.children.size() == 1 && !child.isLeaf() && (tree.label.equals(child.label))) {
                 // if we've got a duplicate unary chain, remove it
                 // ex: (NP (NP (NN xxx))) ==> (NP (NN xxx))
                 tree.children = child.children;
@@ -358,15 +357,15 @@ public class TreeTools extends BaseCommandlineTool {
         int i = 0;
         while (i < tree.children.size()) {
             final ParseTree child = tree.children.get(i);
-            if (!child.isLeaf() && child.contents.matches("^[A-Z]+((-|=)[A-Z0-9]+)+")) {
+            if (!child.isLeaf() && child.label.matches("^[A-Z]+((-|=)[A-Z0-9]+)+")) {
                 // ex: NP-SBJ-1 ==> NP
                 // ex: ADVP-TMP ==> ADVP
-                int cutIndex = child.contents.indexOf("-");
-                final int k = child.contents.indexOf("=");
+                int cutIndex = child.label.indexOf("-");
+                final int k = child.label.indexOf("=");
                 if (k > 0 && (k < cutIndex || cutIndex < 0)) {
                     cutIndex = k;
                 }
-                child.contents = child.contents.substring(0, cutIndex);
+                child.label = child.label.substring(0, cutIndex);
             } else {
                 i++;
                 removeTmpLabels(child);
@@ -393,7 +392,7 @@ public class TreeTools extends BaseCommandlineTool {
         if (tree.isLeaf()) {
             return false;
         } else if (tree.isPOS()) {
-            if (tree.contents.equals("-NONE-")) {
+            if (tree.label.equals("-NONE-")) {
                 return true;
             }
             return false;
@@ -438,14 +437,14 @@ public class TreeTools extends BaseCommandlineTool {
                 }
                 final int right = node.getLeafNodes().size();
 
-                final Integer curLeft = leftMax.get(leaf.contents);
+                final Integer curLeft = leftMax.get(leaf.label);
                 if (curLeft == null || left > curLeft) {
-                    leftMax.put(leaf.contents, left);
+                    leftMax.put(leaf.label, left);
                 }
 
-                final Integer curRight = rightMax.get(leaf.contents);
+                final Integer curRight = rightMax.get(leaf.label);
                 if (curRight == null || right > curRight) {
-                    rightMax.put(leaf.contents, right);
+                    rightMax.put(leaf.label, right);
                 }
             }
 
@@ -461,16 +460,16 @@ public class TreeTools extends BaseCommandlineTool {
         final int n = tree.getLeafNodes().size();
         int i = 0;
         for (final ParseTree leaf : tree.getLeafNodes()) {
-            leaf.contents = new Integer(i).toString();
+            leaf.label = new Integer(i).toString();
             i += 1;
         }
 
         final boolean start[] = new boolean[n + 1];
         final boolean end[] = new boolean[n + 1];
         for (final ParseTree node : tree.preOrderTraversal()) {
-            if (node.isNonTerminal()) {
-                final int leftIndex = Integer.parseInt(node.rightMostLeaf().contents);
-                final int rightIndex = Integer.parseInt(node.leftMostLeaf().contents) + 1;
+            if (!node.isLeafOrPreterminal()) {
+                final int leftIndex = Integer.parseInt(node.rightMostLeaf().label);
+                final int rightIndex = Integer.parseInt(node.leftMostLeaf().label) + 1;
                 // int span = rightIndex - leftIndex;
                 start[leftIndex] = true;
                 end[rightIndex] = false;

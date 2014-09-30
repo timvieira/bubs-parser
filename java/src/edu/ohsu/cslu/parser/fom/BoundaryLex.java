@@ -353,33 +353,33 @@ public final class BoundaryLex extends FigureOfMeritModel {
             }
 
             for (final ParseTree node : tree.preOrderTraversal()) {
-                if (node.isNonTerminal() == true) {
-                    if (grammar.nonTermSet.containsKey(node.contents) == false) {
-                        throw new IOException("Nonterminal '" + node.contents
+                if (!node.isLeafOrPreterminal()) {
+                    if (grammar.nonTermSet.containsKey(node.label) == false) {
+                        throw new IOException("Nonterminal '" + node.label
                                 + "' in input tree not found in grammar.  Exiting.");
                     }
                     final ParseTree lbNode = node.leftMostLeaf().leftNeighbor;
                     final ParseTree rbNode = node.rightMostLeaf().rightNeighbor;
 
-                    leftBoundaryCount.increment(node.contents, cluster(lbNode));
-                    rightBoundaryCount.increment(cluster(rbNode), node.contents);
+                    leftBoundaryCount.increment(node.label, cluster(lbNode));
+                    rightBoundaryCount.increment(cluster(rbNode), node.label);
 
                     // extra UNK counts when not clustering
                     if (lexCounts != null) {
                         if (lbNode != null) {
-                            final String word = lbNode.contents;
+                            final String word = lbNode.label;
                             if (!lexCounts.containsKey(word) || lexCounts.get(word) <= unkThresh) {
                                 final String unkWord = DecisionTreeTokenClassifier.berkeleyGetSignature(word,
                                         lbNode.leftNeighbor == null, grammar.lexSet);
-                                leftBoundaryCount.increment(node.contents, unkWord);
+                                leftBoundaryCount.increment(node.label, unkWord);
                             }
                         }
                         if (rbNode != null) {
-                            final String word = rbNode.contents;
+                            final String word = rbNode.label;
                             if (!lexCounts.containsKey(word) || lexCounts.get(word) <= unkThresh) {
                                 final String unkWord = DecisionTreeTokenClassifier.berkeleyGetSignature(word, false,
                                         grammar.lexSet);
-                                rightBoundaryCount.increment(unkWord, node.contents);
+                                rightBoundaryCount.increment(unkWord, node.label);
                             }
                         }
                     }
@@ -462,7 +462,7 @@ public final class BoundaryLex extends FigureOfMeritModel {
         if (leaf == null) {
             return Grammar.nullSymbolStr;
         }
-        final String word = leaf.contents;
+        final String word = leaf.label;
 
         if (lexToClassMap != null) {
             final int wordIndex = grammar.tokenClassifier.lexiconIndex(word, false, grammar.lexSet);

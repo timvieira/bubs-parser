@@ -90,11 +90,11 @@ public class PriorFOM extends FigureOfMeritModel {
 
             for (final ParseTree node : tree.preOrderTraversal()) {
                 if (node.isLeaf() == false) {
-                    if (grammar.nonTermSet.containsKey(node.contents) == false) {
-                        throw new IOException("Nonterminal '" + node.contents
+                    if (grammar.nonTermSet.containsKey(node.label) == false) {
+                        throw new IOException("Nonterminal '" + node.label
                                 + "' in input tree not found in grammar.  Exiting.");
                     }
-                    ntCount.increment(node.contents, "all");
+                    ntCount.increment(node.label, "all");
                 }
             }
         }

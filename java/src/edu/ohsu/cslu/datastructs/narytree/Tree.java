@@ -214,6 +214,11 @@ public interface Tree<E extends Object> extends Cloneable {
     public Tree<E> rightmostLeaf();
 
     /**
+     * @return True if this {@link Tree} is the immediate parent of a single leaf
+     */
+    public boolean isPreterminal();
+
+    /**
      * Returns a {@link Set} containing string representations of each labeled span with height greater than the
      * specified minimum.
      * 
