@@ -156,40 +156,6 @@ public class MulticlassTagSequence extends BaseSequence implements MulticlassSeq
         }
     }
 
-    // /**
-    // *
-    // * @param tokens
-    // * @param mappedTokens
-    // * @param classifier
-    // */
-    // public MulticlassTagSequence(final String[] tokens, final int[] mappedTokens, final Tagger classifier) {
-    //
-    // super(classifier.lexicon, classifier.decisionTreeUnkClassSet, classifier.posSet, classifier.unigramSuffixSet,
-    // classifier.bigramSuffixSet);
-    //
-    // this.length = tokens.length;
-    // this.tokens = tokens;
-    // this.mappedTokens = mappedTokens;
-    // this.mappedUnkSymbols = new int[length];
-    // this.goldClasses = new short[length];
-    // this.predictedClasses = new short[length];
-    // if (unigramSuffixSet != null) {
-    // this.mappedUnigramSuffix = new int[length];
-    // this.mappedBigramSuffix = new int[length];
-    // }
-    //
-    // for (int i = 0; i < tokens.length; i++) {
-    // final String token = tokens[i];
-    // mappedUnkSymbols[i] = unkClassSet.getIndex(DecisionTreeTokenClassifier.berkeleyGetSignature(token,
-    // i == 0, lexicon));
-    // mappedUnigramSuffix[i] = unigramSuffixSet.getIndex(token.substring(token.length() - 1));
-    // if (token.length() > 1) {
-    // mappedBigramSuffix[i] = bigramSuffixSet.getIndex(token.substring(token.length() - 2));
-    // }
-    // }
-    //
-    // }
-
     /**
      * Maps the specified POS-tag and token into the sequence data structures.
      * 
@@ -282,5 +248,10 @@ public class MulticlassTagSequence extends BaseSequence implements MulticlassSeq
             }
         }
         return sb.toString();
+    }
+
+    @Override
+    public String ordinalValue() {
+        throw new UnsupportedOperationException();
     }
 }

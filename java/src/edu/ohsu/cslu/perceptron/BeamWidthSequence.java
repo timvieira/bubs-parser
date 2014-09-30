@@ -242,4 +242,9 @@ public class BeamWidthSequence extends ConstituentBoundarySequence implements Mu
         }
         return sb.toString();
     }
+
+    @Override
+    public String ordinalValue() {
+        throw new UnsupportedOperationException();
+    }
 }

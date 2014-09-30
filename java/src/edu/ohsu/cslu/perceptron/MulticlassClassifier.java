@@ -24,6 +24,7 @@ package edu.ohsu.cslu.perceptron;
 
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ShortAVLTreeMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 import java.io.BufferedReader;
 import java.io.FileOutputStream;
@@ -90,6 +91,9 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence, F exten
      */
     @Option(name = "-tf", metaVar = "fraction", requires = "-ti", usage = "Limit training to a random sample of the full training corpus")
     protected float trainingFraction = 1;
+
+    @Option(name = "-label", metaVar = "label", usage = "Summarize error evaluation by label (rather than by gold class)")
+    protected String ordinalLabel;
 
     protected MutableEnumeration<String> tagSet;
 
@@ -376,6 +380,7 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence, F exten
     }
 
     private ArrayList<S> readTrainingCorpus(final BufferedReader input) throws IOException {
+
         final ArrayList<S> trainingCorpusSequences = new ArrayList<S>();
 
         if (this.lexicon == null) {
@@ -714,7 +719,8 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence, F exten
 
         protected final MutableEnumeration<String> tagSet;
         protected int sequences, instances, correct;
-        protected IntVector instancesByClass, correctByClass;
+        protected final IntVector instancesByClass, correctByClass;
+        protected final Object2IntOpenHashMap<String> instancesByLabel, correctByLabel;
 
         /**
          * Counts of the erroneously predicted classes for each gold class. Indexed by goldClass, prediction; excludes
@@ -735,12 +741,16 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence, F exten
             this.tagSet = tagSet;
             this.instancesByClass = new DenseIntVector(classes);
             this.correctByClass = new DenseIntVector(classes);
+            this.instancesByLabel = new Object2IntOpenHashMap<>();
+            this.correctByLabel = new Object2IntOpenHashMap<>();
             this.confusionMatrix = new IntMatrix(classes, classes);
         }
 
-        public MulticlassClassifierResult(final MutableEnumeration<String> tagSet, final int sequences, final int instances,
-                final int correct, final IntVector instancesByClass, final IntVector correctByClass,
-                final IntMatrix confusionMatrix, final int time) {
+        public MulticlassClassifierResult(final MutableEnumeration<String> tagSet, final int sequences,
+                final int instances, final int correct, final IntVector instancesByClass,
+                final IntVector correctByClass, final IntMatrix confusionMatrix,
+                final Object2IntOpenHashMap<String> instancesByLabel,
+                final Object2IntOpenHashMap<String> correctByLabel, final int time) {
 
             this.tagSet = tagSet;
             this.sequences = sequences;
@@ -752,21 +762,31 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence, F exten
             this.instancesByClass = instancesByClass;
             this.correctByClass = correctByClass;
             this.confusionMatrix = confusionMatrix;
+            this.instancesByLabel = instancesByLabel;
+            this.correctByLabel = correctByLabel;
         }
 
         public void addSequence() {
             sequences++;
         }
 
-        public void addInstance(final short goldClass, final short predictedClass) {
+        public void addInstance(final short goldClass, final short predictedClass, final String ordinalValue) {
+
             instances++;
             if (instancesByClass != null) {
                 instancesByClass.set(goldClass, instancesByClass.getInt(goldClass) + 1);
+                if (ordinalValue != null) {
+                    instancesByLabel.put(ordinalValue, instancesByLabel.getInt(ordinalValue) + 1);
+                }
             }
+
             if (goldClass == predictedClass) {
                 correct++;
                 if (correctByClass != null) {
                     correctByClass.set(goldClass, correctByClass.getInt(goldClass) + 1);
+                }
+                if (ordinalValue != null) {
+                    correctByLabel.put(ordinalValue, correctByLabel.getInt(ordinalValue) + 1);
                 }
             } else {
                 // Update the confusion matrix
@@ -786,11 +806,26 @@ public abstract class MulticlassClassifier<S extends MulticlassSequence, F exten
             return correctByClass.getFloat(goldClass) / instancesByClass.getFloat(goldClass);
         }
 
+        public float accuracy(final String label) {
+            return correctByLabel.getInt(label) * 1f / instancesByLabel.getInt(label);
+        }
+
         public MulticlassClassifierResult sum(final MulticlassClassifierResult other) {
             return new MulticlassClassifierResult(tagSet, sequences + other.sequences, instances + other.instances,
                     correct + other.correct, (IntVector) instancesByClass.add(other.instancesByClass),
                     (IntVector) correctByClass.add(other.correctByClass),
-                    (IntMatrix) confusionMatrix.add(other.confusionMatrix), time + other.time);
+                    (IntMatrix) confusionMatrix.add(other.confusionMatrix), sum(instancesByLabel,
+                            other.instancesByLabel), sum(correctByLabel, other.correctByLabel), time + other.time);
+        }
+
+        protected Object2IntOpenHashMap<String> sum(final Object2IntOpenHashMap<String> map1,
+                final Object2IntOpenHashMap<String> map2) {
+            final Object2IntOpenHashMap<String> sum = new Object2IntOpenHashMap<>();
+            sum.putAll(map1);
+            for (final String key : map2.keySet()) {
+                sum.put(key, sum.getInt(key) + map2.getInt(key));
+            }
+            return sum;
         }
 
         public int time() {

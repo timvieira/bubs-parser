@@ -34,4 +34,13 @@ public interface MulticlassSequence extends Sequence {
     public short[] predictedClasses();
 
     public void setPredictedClass(final int position, final short newClass);
+
+    /**
+     * Returns an ordinal value associated with this instance. Used to break out error evaluation by classes (other than
+     * the gold class). Optional operation.
+     * 
+     * @return an ordinal value associated with this instance
+     * @throws UnsupportedOperationException if not supported by this implementation
+     */
+    public String ordinalValue();
 }
