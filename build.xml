@@ -22,7 +22,7 @@
          GPL code, but more important if packaging a non-GPL version -->
     <property name="dir.bsd.lib" location="java/bsd-lib" />
     <property name="dir.lgpl.lib" location="java/lgpl-lib" />
-    <property name="dir.gpl.lib" location="java/gpl-lib" />
+    <!-- <property name="dir.gpl.lib" location="java/gpl-lib" /> -->
     <property name="dir.cslu.lib" location="java/cslu-lib" />
 
     <import file="genjar-targets.xml" />
@@ -30,7 +30,7 @@
     <path id="path.local.libs">
         <fileset dir="${dir.bsd.lib}" includes="*.jar" />
         <fileset dir="${dir.lgpl.lib}" includes="*.jar" />
-        <fileset dir="${dir.gpl.lib}" includes="*.jar" />
+        <!-- <fileset dir="${dir.gpl.lib}" includes="*.jar" /> -->
         <fileset dir="${dir.cslu.lib}" includes="*.jar" />
     </path>
 
