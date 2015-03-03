@@ -22,7 +22,7 @@
          GPL code, but more important if packaging a non-GPL version -->
     <property name="dir.bsd.lib" location="java/bsd-lib" />
     <property name="dir.lgpl.lib" location="java/lgpl-lib" />
-    <!-- <property name="dir.gpl.lib" location="java/gpl-lib" /> -->
+    <property name="dir.gpl.lib" location="java/gpl-lib" />
     <property name="dir.cslu.lib" location="java/cslu-lib" />
 
     <import file="genjar-targets.xml" />
@@ -247,6 +247,14 @@
             <param name="root-class" value="edu.ohsu.cslu.tools.TreeGrep" />
             <param name="tool-name" value="treegrep" />
             <param name="package-gpl-libs" value="true" />
+        </antcall>
+    </target>
+
+
+    <target name="find-heads" depends="compile">
+        <antcall target="package-tool">
+            <param name="root-class" value="edu.ohsu.cslu.tools.FindHeads" />
+            <param name="tool-name" value="find-heads" />
         </antcall>
     </target>
 
@@ -487,7 +495,7 @@
         <property name="file.dist" value="${dir.dist}/bubs-parser-${DSTAMP}.tgz" />
         <tar destfile="${file.dist}" compression="gzip">
             <tarfileset dir="${dir.dist}" includes="parse,parse.jar,parse-src.jar" prefix="bubs-parser" />
-            <tarfileset dir="${dir.models}" includes="*.gz" prefix="bubs-parser" />
+            <tarfileset dir="${dir.models}" includes="wsj_l0mm*.gz,wsj_cc.mdl.995" prefix="bubs-parser" />
         </tar>
     </target>
 

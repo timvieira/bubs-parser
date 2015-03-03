@@ -23,7 +23,6 @@ package edu.ohsu.cslu.parser;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Reader;
@@ -443,7 +442,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
             if (headRules.equalsIgnoreCase("charniak")) {
                 headPercolationRuleset = new CharniakHeadPercolationRuleset();
             } else {
-                headPercolationRuleset = new HeadPercolationRuleset(new FileReader(headRules));
+                headPercolationRuleset = new HeadPercolationRuleset(fileAsBufferedReader(headRules));
             }
         }
 
